@@ -1,0 +1,9 @@
+{"ts": "2026-05-13T17:10:01+00:00", "event": "run_started", "frame_source": "simulated", "xy_driver": "dryrun", "z_driver": "dryrun"}
+{"ts": "2026-05-13T17:10:01+00:00", "event": "detection_ok", "tag": "Initial P1", "attempt": 1, "center": [359, 119], "conf": 0.9681, "focus_score": 614.316}
+{"ts": "2026-05-13T17:10:01+00:00", "event": "target_initialized", "target": [359, 119]}
+{"ts": "2026-05-13T17:10:01+00:00", "event": "detection_ok", "tag": "Iter 1 after Z up (P2 before)", "attempt": 1, "center": [359, 119], "conf": 0.9681, "focus_score": 614.316}
+{"ts": "2026-05-13T17:10:01+00:00", "event": "detection_ok", "tag": "Iter 1 align P2 round 1", "attempt": 1, "center": [359, 119], "conf": 0.9681, "focus_score": 614.316}
+{"ts": "2026-05-13T17:10:01+00:00", "event": "detection_ok", "tag": "Iter 1 after Z down (P3 before)", "attempt": 1, "center": [359, 119], "conf": 0.9681, "focus_score": 614.316}
+{"ts": "2026-05-13T17:10:01+00:00", "event": "detection_ok", "tag": "Iter 1 align P3 round 1", "attempt": 1, "center": [359, 119], "conf": 0.9681, "focus_score": 614.316}
+{"ts": "2026-05-13T17:10:01+00:00", "event": "converged", "p1": [359, 119], "p2": [359, 119], "p3": [359, 119]}
+{"ts": "2026-05-13T17:10:01+00:00", "event": "run_finished", "status": "success"}

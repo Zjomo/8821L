@@ -1,0 +1,2693 @@
+{
+  "timestamp": "2026-05-13T19:59:35.857371",
+  "project_path": "e:\\jupyter file\\2_Optics\\8821L",
+  "checks": {
+    "build": {
+      "status": "failed",
+      "errors": [
+        "语法错误: SpotZoom.py - invalid non-printable character U+FEFF (<unknown>, line 1)"
+      ],
+      "warnings": []
+    },
+    "code_quality": {
+      "total_files": 154,
+      "total_lines": 111355,
+      "avg_complexity": 77.74025974025975,
+      "issues": [
+        {
+          "file": "correct_robot.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (9483行)"
+        },
+        {
+          "file": "SpotZoom.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\active_learning_collector.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\adaptive_gain.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\adaptive_gain_scheduler.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\adaptive_noise_suppressor.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\adaptive_optics_pipeline.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\anomaly_detector.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\auto_alignment_optimizer.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (808行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\auto_alignment_optimizer.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\auto_calibration.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (2245行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\auto_calibration.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\backend_accelerator.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\beam_stability_analyzer.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\cellpose_adapter.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\classic_spot_detector.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\composable_optical_pipeline.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (1359行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\composable_optical_pipeline.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\config_auto_tuner.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\continual_learner.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (896行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\continual_learner.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\continuous_state_estimator.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (1182行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\continuous_state_estimator.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\convergence_predictor.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\data_pipeline_orchestrator.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (650行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\data_pipeline_orchestrator.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\deep_spot_detector.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\deep_vibration_predictor.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (1116行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\deep_vibration_predictor.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\diagnostic_health_monitor.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (823行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\diagnostic_health_monitor.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\differentiable_optical_optimizer.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (1973行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\differentiable_optical_optimizer.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\differentiable_ray_tracer.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (1842行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\digital_twin_simulator.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (2821行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\digital_twin_simulator.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\domain_randomizer.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (710行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\domain_randomizer.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\event_bus.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (633行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\event_bus.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\federated_coordinator.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\federated_learning_coordinator.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (757行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\federated_learning_coordinator.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\focus_search.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\gaussian_fitter.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (962行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\gaussian_fitter.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\graph_neural_optimizer.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\holographic_spot_reconstructor.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (569行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\holographic_spot_reconstructor.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\image_jacobian.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\image_quality_assessor.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\innovation_frontier_v17.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (1233行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\innovation_frontier_v17.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\innovation_frontier_v18.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (1592行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\innovation_frontier_v18.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\innovation_frontier_v19.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (2105行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\innovation_frontier_v19.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\innovation_frontier_v20.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (2863行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\innovation_frontier_v20.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\innovation_frontier_v21.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (1647行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\innovation_frontier_v21.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\innovation_frontier_v22.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (2482行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\innovation_frontier_v22.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\innovation_frontier_v23.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (3557行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\innovation_frontier_v23.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\innovation_frontier_v24.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\innovation_frontier_v25.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (1155行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\innovation_frontier_v25.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\innovation_frontier_v26.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (1041行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\innovation_frontier_v26.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\intelligent_experiment_scheduler.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\kalman_tracker.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\learning_mpc_controller.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (1733行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\learning_mpc_controller.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\lodestar_detector.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (1252行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\lodestar_detector.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\lqr_controller.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\mamba_predictor.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (1078行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\mamba_predictor.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\meta_learner.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\meta_learning_adapter.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\microscopy_image_enhancer.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (586行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\microscopy_image_enhancer.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\modal_controller.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (644行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\modal_controller.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\model_optimizer.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\mpc_controller.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (1224行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\mpc_controller.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\multi_layer_turbulence_simulator.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (1010行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\multi_layer_turbulence_simulator.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\multi_scale_enhancer.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\multi_spot_tracker.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\napari_adapter.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (599行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\napari_adapter.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\neural_operator_proxy.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\optical_flow_tracker.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\optical_system_identifier.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (761行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\optical_system_identifier.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\optical_transfer_function_analyzer.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\phase_retrieval_analyzer.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (593行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\phase_retrieval_analyzer.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\physics_constrained_reconstructor.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\physics_informed_particle_tracker.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\pinn_beam_solver.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (1329行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\pinn_beam_solver.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\psf_estimator.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (850行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\psf_estimator.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\realtime_control_pipeline.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (2201行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\realtime_control_pipeline.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\realtime_diagnostics_dashboard.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (605行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\realtime_diagnostics_dashboard.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\realtime_performance_monitor.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\rl_environment.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\robust_estimator.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (639行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\robust_estimator.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\safety_manager.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\sam2_spot_segmenter.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (1021行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\self_tuning_controller.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (655行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\smart_refinement_controller.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (784行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\smart_refinement_controller.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\spectral_analyzer.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (798行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\spectral_analyzer.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\spot_morphology_analyzer.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (775行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\spot_morphology_analyzer.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\spot_quality.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\stardist_adapter.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\subpixel_centroid.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\temporal_fusion_predictor.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (510行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\temporal_fusion_predictor.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\trajectory_recorder.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\transfer_learning_adapter.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (710行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\transfer_learning_adapter.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\turbulence_simulator.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (691行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\turbulence_simulator.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\vibration_compensator.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (709行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\vibration_compensator.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\vizarr_adapter.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (503行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\vizarr_adapter.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\wavefront_predictor.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (553行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\wavefront_predictor.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\wavefront_sensorless_corrector.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (507行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\wavefront_sensorless_corrector.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\xai_diagnostic.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (586行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\xai_diagnostic.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\zernike_analyzer.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\zerocostdl4mic_adapter.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (509行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\zerocostdl4mic_adapter.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\__init__.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (752行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\__init__.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v2\\adaptive_beam_propagator.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v2\\closed_loop_ao_controller.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v2\\data_driven_mpc.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v2\\deep_image_prior_enhancer.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v2\\fourier_psf_analyzer.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v2\\lqg_robust_controller.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v3\\strehl_quality_assessor.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (654行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v3\\synthetic_data_generator.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (518行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v3\\system_identifier.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (652行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v3\\__init__.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v4\\adaptive_scheduler.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v4\\beam_propagation_engine.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v4\\digital_twin_enhancer.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (672行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v4\\digital_twin_enhancer.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v4\\intelligent_anomaly_healer.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (706行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v4\\intelligent_anomaly_healer.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v4\\multi_objective_bayesian_opt.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (611行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v4\\multi_objective_bayesian_opt.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v4\\multi_sensor_fusion.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v4\\online_ao_corrector.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v4\\__init__.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v5\\careamics_adapter.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v5\\context_aware_detector.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v5\\dm_calibrator_v2.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v5\\gpu_phase_retrieval.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v5\\nena_precision_assessor.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v5\\predictive_health_monitor.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v5\\realtime_pipeline_v2.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v5\\regression_guard.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v5\\self_supervised_denoiser_v2.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v5\\sensorless_ao_v2.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v5\\subspace_system_identifier.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v5\\uncertainty_aware_localizer_v2.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v5\\__init__.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v6\\adaptive_feedforward_controller.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v6\\bayesian_pid_optimizer.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v6\\coherent_sensitivity_analyzer.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v6\\convergence_guard.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v6\\diffusion_spot_enhancer.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v6\\multi_scale_spot_detector.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v6\\psf_fingerprint_analyzer.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v6\\runtime_profiler.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v6\\synthetic_diffraction_generator.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v6\\temporal_ensemble_tracker.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v6\\__init__.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v7\\attention_spot_tracker.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (654行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v7\\attention_spot_tracker.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v7\\causal_state_predictor.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (587行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v7\\causal_state_predictor.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v7\\fourier_phase_correlator.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (600行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v7\\fourier_phase_correlator.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v7\\neural_ode_controller.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (622行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v7\\neural_ode_controller.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v7\\optimal_transport_aligner.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (527行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v7\\optimal_transport_aligner.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v7\\self_supervised_denoiser.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (622行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v7\\self_supervised_denoiser.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v7\\topology_aware_optimizer.py",
+          "type": "file_too_long",
+          "message": "文件超过500行 (625行)"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v7\\topology_aware_optimizer.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning_v7\\__init__.py",
+          "type": "function_too_long",
+          "message": "发现超过50行的函数"
+        }
+      ]
+    },
+    "module_structure": {
+      "modules": [
+        "active_learning_collector",
+        "adaptive_gain",
+        "adaptive_gain_scheduler",
+        "adaptive_noise_suppressor",
+        "adaptive_optics_pipeline",
+        "anomaly_detector",
+        "auto_alignment_optimizer",
+        "auto_calibration",
+        "backend_accelerator",
+        "beam_stability_analyzer",
+        "cellpose_adapter",
+        "classic_spot_detector",
+        "composable_optical_pipeline",
+        "config_auto_tuner",
+        "continual_learner",
+        "continuous_state_estimator",
+        "convergence_predictor",
+        "data_pipeline_orchestrator",
+        "deep_spot_detector",
+        "deep_vibration_predictor",
+        "diagnostic_health_monitor",
+        "differentiable_optical_optimizer",
+        "differentiable_ray_tracer",
+        "digital_twin_simulator",
+        "domain_randomizer",
+        "event_bus",
+        "federated_coordinator",
+        "federated_learning_coordinator",
+        "focus_search",
+        "gaussian_fitter",
+        "graph_neural_optimizer",
+        "holographic_spot_reconstructor",
+        "image_jacobian",
+        "image_quality_assessor",
+        "innovation_frontier_v17",
+        "innovation_frontier_v18",
+        "innovation_frontier_v19",
+        "innovation_frontier_v20",
+        "innovation_frontier_v21",
+        "innovation_frontier_v22",
+        "innovation_frontier_v23",
+        "innovation_frontier_v24",
+        "innovation_frontier_v25",
+        "innovation_frontier_v26",
+        "intelligent_experiment_scheduler",
+        "kalman_tracker",
+        "learning_mpc_controller",
+        "lodestar_detector",
+        "lqr_controller",
+        "mamba_predictor",
+        "meta_learner",
+        "meta_learning_adapter",
+        "microscopy_image_enhancer",
+        "modal_controller",
+        "model_optimizer",
+        "mpc_controller",
+        "multi_layer_turbulence_simulator",
+        "multi_scale_enhancer",
+        "multi_spot_tracker",
+        "napari_adapter",
+        "neural_operator_proxy",
+        "optical_flow_tracker",
+        "optical_system_identifier",
+        "optical_transfer_function_analyzer",
+        "phase_retrieval_analyzer",
+        "physics_constrained_reconstructor",
+        "physics_informed_particle_tracker",
+        "pinn_beam_solver",
+        "psf_estimator",
+        "realtime_control_pipeline",
+        "realtime_diagnostics_dashboard",
+        "realtime_performance_monitor",
+        "rl_environment",
+        "robust_estimator",
+        "safety_manager",
+        "sam2_spot_segmenter",
+        "self_tuning_controller",
+        "smart_refinement_controller",
+        "spectral_analyzer",
+        "spot_morphology_analyzer",
+        "spot_quality",
+        "stardist_adapter",
+        "subpixel_centroid",
+        "temporal_fusion_predictor",
+        "trajectory_recorder",
+        "transfer_learning_adapter",
+        "turbulence_simulator",
+        "vibration_compensator",
+        "vizarr_adapter",
+        "wavefront_predictor",
+        "wavefront_sensorless_corrector",
+        "xai_diagnostic",
+        "zernike_analyzer",
+        "zernike_common",
+        "zerocostdl4mic_adapter",
+        "__init__"
+      ],
+      "dependencies": {
+        "active_learning_collector": [],
+        "adaptive_gain": [],
+        "adaptive_gain_scheduler": [],
+        "adaptive_noise_suppressor": [],
+        "adaptive_optics_pipeline": [],
+        "anomaly_detector": [],
+        "auto_alignment_optimizer": [],
+        "auto_calibration": [],
+        "backend_accelerator": [],
+        "beam_stability_analyzer": [],
+        "cellpose_adapter": [],
+        "classic_spot_detector": [],
+        "composable_optical_pipeline": [],
+        "config_auto_tuner": [],
+        "continual_learner": [],
+        "continuous_state_estimator": [],
+        "convergence_predictor": [],
+        "data_pipeline_orchestrator": [],
+        "deep_spot_detector": [],
+        "deep_vibration_predictor": [],
+        "diagnostic_health_monitor": [],
+        "differentiable_optical_optimizer": [],
+        "differentiable_ray_tracer": [],
+        "digital_twin_simulator": [],
+        "domain_randomizer": [],
+        "event_bus": [],
+        "federated_coordinator": [],
+        "federated_learning_coordinator": [],
+        "focus_search": [],
+        "gaussian_fitter": [],
+        "graph_neural_optimizer": [],
+        "holographic_spot_reconstructor": [],
+        "image_jacobian": [],
+        "image_quality_assessor": [],
+        "innovation_frontier_v17": [],
+        "innovation_frontier_v18": [],
+        "innovation_frontier_v19": [],
+        "innovation_frontier_v20": [],
+        "innovation_frontier_v21": [],
+        "innovation_frontier_v22": [],
+        "innovation_frontier_v23": [],
+        "innovation_frontier_v24": [],
+        "innovation_frontier_v25": [],
+        "innovation_frontier_v26": [],
+        "intelligent_experiment_scheduler": [],
+        "kalman_tracker": [],
+        "learning_mpc_controller": [],
+        "lodestar_detector": [],
+        "lqr_controller": [],
+        "mamba_predictor": [],
+        "meta_learner": [],
+        "meta_learning_adapter": [],
+        "microscopy_image_enhancer": [],
+        "modal_controller": [],
+        "model_optimizer": [],
+        "mpc_controller": [],
+        "multi_layer_turbulence_simulator": [],
+        "multi_scale_enhancer": [],
+        "multi_spot_tracker": [],
+        "napari_adapter": [],
+        "neural_operator_proxy": [],
+        "optical_flow_tracker": [],
+        "optical_system_identifier": [],
+        "optical_transfer_function_analyzer": [],
+        "phase_retrieval_analyzer": [],
+        "physics_constrained_reconstructor": [],
+        "physics_informed_particle_tracker": [],
+        "pinn_beam_solver": [],
+        "psf_estimator": [],
+        "realtime_control_pipeline": [],
+        "realtime_diagnostics_dashboard": [],
+        "realtime_performance_monitor": [],
+        "rl_environment": [],
+        "robust_estimator": [],
+        "safety_manager": [],
+        "sam2_spot_segmenter": [],
+        "self_tuning_controller": [],
+        "smart_refinement_controller": [],
+        "spectral_analyzer": [],
+        "spot_morphology_analyzer": [],
+        "spot_quality": [],
+        "stardist_adapter": [],
+        "subpixel_centroid": [],
+        "temporal_fusion_predictor": [],
+        "trajectory_recorder": [],
+        "transfer_learning_adapter": [],
+        "turbulence_simulator": [],
+        "vibration_compensator": [],
+        "vizarr_adapter": [],
+        "wavefront_predictor": [],
+        "wavefront_sensorless_corrector": [],
+        "xai_diagnostic": [],
+        "zernike_analyzer": [],
+        "zernike_common": [],
+        "zerocostdl4mic_adapter": [],
+        "__init__": []
+      },
+      "circular_deps": [],
+      "isolated_modules": [
+        "active_learning_collector",
+        "adaptive_gain",
+        "adaptive_gain_scheduler",
+        "adaptive_noise_suppressor",
+        "adaptive_optics_pipeline",
+        "anomaly_detector",
+        "auto_alignment_optimizer",
+        "auto_calibration",
+        "backend_accelerator",
+        "beam_stability_analyzer",
+        "cellpose_adapter",
+        "classic_spot_detector",
+        "composable_optical_pipeline",
+        "config_auto_tuner",
+        "continual_learner",
+        "continuous_state_estimator",
+        "convergence_predictor",
+        "data_pipeline_orchestrator",
+        "deep_spot_detector",
+        "deep_vibration_predictor",
+        "diagnostic_health_monitor",
+        "differentiable_optical_optimizer",
+        "differentiable_ray_tracer",
+        "digital_twin_simulator",
+        "domain_randomizer",
+        "event_bus",
+        "federated_coordinator",
+        "federated_learning_coordinator",
+        "focus_search",
+        "gaussian_fitter",
+        "graph_neural_optimizer",
+        "holographic_spot_reconstructor",
+        "image_jacobian",
+        "image_quality_assessor",
+        "innovation_frontier_v17",
+        "innovation_frontier_v18",
+        "innovation_frontier_v19",
+        "innovation_frontier_v20",
+        "innovation_frontier_v21",
+        "innovation_frontier_v22",
+        "innovation_frontier_v23",
+        "innovation_frontier_v24",
+        "innovation_frontier_v25",
+        "innovation_frontier_v26",
+        "intelligent_experiment_scheduler",
+        "kalman_tracker",
+        "learning_mpc_controller",
+        "lodestar_detector",
+        "lqr_controller",
+        "mamba_predictor",
+        "meta_learner",
+        "meta_learning_adapter",
+        "microscopy_image_enhancer",
+        "modal_controller",
+        "model_optimizer",
+        "mpc_controller",
+        "multi_layer_turbulence_simulator",
+        "multi_scale_enhancer",
+        "multi_spot_tracker",
+        "napari_adapter",
+        "neural_operator_proxy",
+        "optical_flow_tracker",
+        "optical_system_identifier",
+        "optical_transfer_function_analyzer",
+        "phase_retrieval_analyzer",
+        "physics_constrained_reconstructor",
+        "physics_informed_particle_tracker",
+        "pinn_beam_solver",
+        "psf_estimator",
+        "realtime_control_pipeline",
+        "realtime_diagnostics_dashboard",
+        "realtime_performance_monitor",
+        "rl_environment",
+        "robust_estimator",
+        "safety_manager",
+        "sam2_spot_segmenter",
+        "self_tuning_controller",
+        "smart_refinement_controller",
+        "spectral_analyzer",
+        "spot_morphology_analyzer",
+        "spot_quality",
+        "stardist_adapter",
+        "subpixel_centroid",
+        "temporal_fusion_predictor",
+        "trajectory_recorder",
+        "transfer_learning_adapter",
+        "turbulence_simulator",
+        "vibration_compensator",
+        "vizarr_adapter",
+        "wavefront_predictor",
+        "wavefront_sensorless_corrector",
+        "xai_diagnostic",
+        "zernike_analyzer",
+        "zernike_common",
+        "zerocostdl4mic_adapter"
+      ]
+    },
+    "performance": {
+      "slow_operations": [
+        {
+          "type": "too_many_versions",
+          "message": "发现 10 个 frontier 版本，可能导致启动缓慢",
+          "files": [
+            "innovation_frontier_v17.py",
+            "innovation_frontier_v18.py",
+            "innovation_frontier_v19.py",
+            "innovation_frontier_v20.py",
+            "innovation_frontier_v21.py",
+            "innovation_frontier_v22.py",
+            "innovation_frontier_v23.py",
+            "innovation_frontier_v24.py",
+            "innovation_frontier_v25.py",
+            "innovation_frontier_v26.py"
+          ]
+        }
+      ],
+      "memory_intensive": [],
+      "inefficient_patterns": [
+        {
+          "file": "SpotZoom.py",
+          "pattern": "nested_loop",
+          "message": "嵌套循环"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\adaptive_noise_suppressor.py",
+          "pattern": "nested_loop",
+          "message": "嵌套循环"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\adaptive_optics_pipeline.py",
+          "pattern": "nested_loop",
+          "message": "嵌套循环"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\auto_calibration.py",
+          "pattern": "nested_loop",
+          "message": "嵌套循环"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\deep_spot_detector.py",
+          "pattern": "nested_loop",
+          "message": "嵌套循环"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\differentiable_optical_optimizer.py",
+          "pattern": "list_concat",
+          "message": "列表拼接，建议使用extend"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\domain_randomizer.py",
+          "pattern": "nested_loop",
+          "message": "嵌套循环"
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\event_bus.py",
+          "pattern": "nested_loop",
+          "message": "嵌套循环"
+        }
+      ]
+    },
+    "coupling": {
+      "high_coupling_modules": [],
+      "coupling_matrix": {}
+    },
+    "duplicates": {
+      "similar_functions": [],
+      "duplicate_configs": [],
+      "common_patterns": []
+    },
+    "exception_handling": {
+      "bare_excepts": [],
+      "missing_handlers": [],
+      "overly_broad": [
+        {
+          "file": "SpotZoom.py",
+          "line": 72
+        },
+        {
+          "file": "SpotZoom.py",
+          "line": 650
+        },
+        {
+          "file": "SpotZoom.py",
+          "line": 657
+        },
+        {
+          "file": "SpotZoom.py",
+          "line": 1873
+        },
+        {
+          "file": "SpotZoom.py",
+          "line": 1890
+        },
+        {
+          "file": "SpotZoom.py",
+          "line": 2125
+        },
+        {
+          "file": "SpotZoom.py",
+          "line": 2315
+        },
+        {
+          "file": "SpotZoom.py",
+          "line": 2570
+        },
+        {
+          "file": "SpotZoom.py",
+          "line": 2588
+        },
+        {
+          "file": "SpotZoom.py",
+          "line": 2622
+        },
+        {
+          "file": "SpotZoom.py",
+          "line": 2625
+        },
+        {
+          "file": "SpotZoom.py",
+          "line": 2690
+        },
+        {
+          "file": "SpotZoom.py",
+          "line": 2697
+        },
+        {
+          "file": "SpotZoom.py",
+          "line": 2701
+        },
+        {
+          "file": "SpotZoom.py",
+          "line": 2815
+        },
+        {
+          "file": "SpotZoom.py",
+          "line": 2824
+        },
+        {
+          "file": "SpotZoom.py",
+          "line": 3010
+        },
+        {
+          "file": "SpotZoom.py",
+          "line": 3014
+        },
+        {
+          "file": "SpotZoom.py",
+          "line": 3117
+        },
+        {
+          "file": "SpotZoom.py",
+          "line": 4471
+        },
+        {
+          "file": "SpotZoom.py",
+          "line": 5393
+        },
+        {
+          "file": "SpotZoom.py",
+          "line": 5404
+        },
+        {
+          "file": "SpotZoom.py",
+          "line": 5738
+        },
+        {
+          "file": "SpotZoom.py",
+          "line": 6422
+        },
+        {
+          "file": "SpotZoom.py",
+          "line": 7501
+        },
+        {
+          "file": "SpotZoom.py",
+          "line": 9458
+        },
+        {
+          "file": "SpotZoom.py",
+          "line": 9463
+        },
+        {
+          "file": "SpotZoom.py",
+          "line": 9468
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\event_bus.py",
+          "line": 207
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\event_bus.py",
+          "line": 261
+        },
+        {
+          "file": "SpotZoom_Machine_Learning\\event_bus.py",
+          "line": 271
+        }
+      ]
+    },
+    "dependencies": {
+      "required": [
+        "numpy",
+        "scipy",
+        "cv2",
+        "matplotlib"
+      ],
+      "optional": [
+        "torch",
+        "tensorflow",
+        "sklearn"
+      ],
+      "missing": [],
+      "installed": [
+        "numpy",
+        "scipy",
+        "cv2",
+        "matplotlib"
+      ],
+      "version_conflicts": []
+    },
+    "static_resources": {
+      "images": [],
+      "models": [],
+      "configs": [],
+      "missing_references": []
+    }
+  },
+  "issues": [
+    {
+      "level": "high",
+      "category": "build",
+      "message": "语法错误: SpotZoom.py - invalid non-printable character U+FEFF (<unknown>, line 1)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "correct_robot.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom.py: 文件超过500行 (9483行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\active_learning_collector.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\adaptive_gain.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\adaptive_gain_scheduler.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\adaptive_noise_suppressor.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\adaptive_optics_pipeline.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\anomaly_detector.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\auto_alignment_optimizer.py: 文件超过500行 (808行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\auto_alignment_optimizer.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\auto_calibration.py: 文件超过500行 (2245行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\auto_calibration.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\backend_accelerator.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\beam_stability_analyzer.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\cellpose_adapter.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\classic_spot_detector.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\composable_optical_pipeline.py: 文件超过500行 (1359行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\composable_optical_pipeline.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\config_auto_tuner.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\continual_learner.py: 文件超过500行 (896行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\continual_learner.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\continuous_state_estimator.py: 文件超过500行 (1182行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\continuous_state_estimator.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\convergence_predictor.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\data_pipeline_orchestrator.py: 文件超过500行 (650行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\data_pipeline_orchestrator.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\deep_spot_detector.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\deep_vibration_predictor.py: 文件超过500行 (1116行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\deep_vibration_predictor.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\diagnostic_health_monitor.py: 文件超过500行 (823行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\diagnostic_health_monitor.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\differentiable_optical_optimizer.py: 文件超过500行 (1973行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\differentiable_optical_optimizer.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\differentiable_ray_tracer.py: 文件超过500行 (1842行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\digital_twin_simulator.py: 文件超过500行 (2821行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\digital_twin_simulator.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\domain_randomizer.py: 文件超过500行 (710行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\domain_randomizer.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\event_bus.py: 文件超过500行 (633行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\event_bus.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\federated_coordinator.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\federated_learning_coordinator.py: 文件超过500行 (757行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\federated_learning_coordinator.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\focus_search.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\gaussian_fitter.py: 文件超过500行 (962行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\gaussian_fitter.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\graph_neural_optimizer.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\holographic_spot_reconstructor.py: 文件超过500行 (569行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\holographic_spot_reconstructor.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\image_jacobian.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\image_quality_assessor.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\innovation_frontier_v17.py: 文件超过500行 (1233行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\innovation_frontier_v17.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\innovation_frontier_v18.py: 文件超过500行 (1592行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\innovation_frontier_v18.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\innovation_frontier_v19.py: 文件超过500行 (2105行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\innovation_frontier_v19.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\innovation_frontier_v20.py: 文件超过500行 (2863行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\innovation_frontier_v20.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\innovation_frontier_v21.py: 文件超过500行 (1647行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\innovation_frontier_v21.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\innovation_frontier_v22.py: 文件超过500行 (2482行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\innovation_frontier_v22.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\innovation_frontier_v23.py: 文件超过500行 (3557行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\innovation_frontier_v23.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\innovation_frontier_v24.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\innovation_frontier_v25.py: 文件超过500行 (1155行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\innovation_frontier_v25.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\innovation_frontier_v26.py: 文件超过500行 (1041行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\innovation_frontier_v26.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\intelligent_experiment_scheduler.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\kalman_tracker.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\learning_mpc_controller.py: 文件超过500行 (1733行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\learning_mpc_controller.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\lodestar_detector.py: 文件超过500行 (1252行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\lodestar_detector.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\lqr_controller.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\mamba_predictor.py: 文件超过500行 (1078行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\mamba_predictor.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\meta_learner.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\meta_learning_adapter.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\microscopy_image_enhancer.py: 文件超过500行 (586行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\microscopy_image_enhancer.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\modal_controller.py: 文件超过500行 (644行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\modal_controller.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\model_optimizer.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\mpc_controller.py: 文件超过500行 (1224行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\mpc_controller.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\multi_layer_turbulence_simulator.py: 文件超过500行 (1010行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\multi_layer_turbulence_simulator.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\multi_scale_enhancer.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\multi_spot_tracker.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\napari_adapter.py: 文件超过500行 (599行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\napari_adapter.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\neural_operator_proxy.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\optical_flow_tracker.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\optical_system_identifier.py: 文件超过500行 (761行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\optical_system_identifier.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\optical_transfer_function_analyzer.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\phase_retrieval_analyzer.py: 文件超过500行 (593行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\phase_retrieval_analyzer.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\physics_constrained_reconstructor.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\physics_informed_particle_tracker.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\pinn_beam_solver.py: 文件超过500行 (1329行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\pinn_beam_solver.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\psf_estimator.py: 文件超过500行 (850行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\psf_estimator.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\realtime_control_pipeline.py: 文件超过500行 (2201行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\realtime_control_pipeline.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\realtime_diagnostics_dashboard.py: 文件超过500行 (605行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\realtime_diagnostics_dashboard.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\realtime_performance_monitor.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\rl_environment.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\robust_estimator.py: 文件超过500行 (639行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\robust_estimator.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\safety_manager.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\sam2_spot_segmenter.py: 文件超过500行 (1021行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\self_tuning_controller.py: 文件超过500行 (655行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\smart_refinement_controller.py: 文件超过500行 (784行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\smart_refinement_controller.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\spectral_analyzer.py: 文件超过500行 (798行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\spectral_analyzer.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\spot_morphology_analyzer.py: 文件超过500行 (775行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\spot_morphology_analyzer.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\spot_quality.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\stardist_adapter.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\subpixel_centroid.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\temporal_fusion_predictor.py: 文件超过500行 (510行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\temporal_fusion_predictor.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\trajectory_recorder.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\transfer_learning_adapter.py: 文件超过500行 (710行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\transfer_learning_adapter.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\turbulence_simulator.py: 文件超过500行 (691行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\turbulence_simulator.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\vibration_compensator.py: 文件超过500行 (709行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\vibration_compensator.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\vizarr_adapter.py: 文件超过500行 (503行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\vizarr_adapter.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\wavefront_predictor.py: 文件超过500行 (553行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\wavefront_predictor.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\wavefront_sensorless_corrector.py: 文件超过500行 (507行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\wavefront_sensorless_corrector.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\xai_diagnostic.py: 文件超过500行 (586行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\xai_diagnostic.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\zernike_analyzer.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\zerocostdl4mic_adapter.py: 文件超过500行 (509行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\zerocostdl4mic_adapter.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\__init__.py: 文件超过500行 (752行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning\\__init__.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v2\\adaptive_beam_propagator.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v2\\closed_loop_ao_controller.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v2\\data_driven_mpc.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v2\\deep_image_prior_enhancer.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v2\\fourier_psf_analyzer.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v2\\lqg_robust_controller.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v3\\strehl_quality_assessor.py: 文件超过500行 (654行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v3\\synthetic_data_generator.py: 文件超过500行 (518行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v3\\system_identifier.py: 文件超过500行 (652行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v3\\__init__.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v4\\adaptive_scheduler.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v4\\beam_propagation_engine.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v4\\digital_twin_enhancer.py: 文件超过500行 (672行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v4\\digital_twin_enhancer.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v4\\intelligent_anomaly_healer.py: 文件超过500行 (706行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v4\\intelligent_anomaly_healer.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v4\\multi_objective_bayesian_opt.py: 文件超过500行 (611行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v4\\multi_objective_bayesian_opt.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v4\\multi_sensor_fusion.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v4\\online_ao_corrector.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v4\\__init__.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v5\\careamics_adapter.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v5\\context_aware_detector.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v5\\dm_calibrator_v2.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v5\\gpu_phase_retrieval.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v5\\nena_precision_assessor.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v5\\predictive_health_monitor.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v5\\realtime_pipeline_v2.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v5\\regression_guard.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v5\\self_supervised_denoiser_v2.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v5\\sensorless_ao_v2.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v5\\subspace_system_identifier.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v5\\uncertainty_aware_localizer_v2.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v5\\__init__.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v6\\adaptive_feedforward_controller.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v6\\bayesian_pid_optimizer.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v6\\coherent_sensitivity_analyzer.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v6\\convergence_guard.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v6\\diffusion_spot_enhancer.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v6\\multi_scale_spot_detector.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v6\\psf_fingerprint_analyzer.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v6\\runtime_profiler.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v6\\synthetic_diffraction_generator.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v6\\temporal_ensemble_tracker.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v6\\__init__.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v7\\attention_spot_tracker.py: 文件超过500行 (654行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v7\\attention_spot_tracker.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v7\\causal_state_predictor.py: 文件超过500行 (587行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v7\\causal_state_predictor.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v7\\fourier_phase_correlator.py: 文件超过500行 (600行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v7\\fourier_phase_correlator.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v7\\neural_ode_controller.py: 文件超过500行 (622行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v7\\neural_ode_controller.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v7\\optimal_transport_aligner.py: 文件超过500行 (527行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v7\\optimal_transport_aligner.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v7\\self_supervised_denoiser.py: 文件超过500行 (622行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v7\\self_supervised_denoiser.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v7\\topology_aware_optimizer.py: 文件超过500行 (625行)"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v7\\topology_aware_optimizer.py: 发现超过50行的函数"
+    },
+    {
+      "level": "medium",
+      "category": "code_quality",
+      "message": "SpotZoom_Machine_Learning_v7\\__init__.py: 发现超过50行的函数"
+    },
+    {
+      "level": "high",
+      "category": "performance",
+      "message": "frontier版本过多 (10个)，建议合并或懒加载"
+    }
+  ],
+  "recommendations": [
+    {
+      "priority": "high",
+      "category": "build",
+      "action": "修复构建错误",
+      "details": "解决语法错误和缺失文件问题"
+    },
+    {
+      "priority": "high",
+      "category": "performance",
+      "action": "优化启动性能",
+      "details": "合并frontier版本或实现懒加载机制"
+    },
+    {
+      "priority": "low",
+      "category": "testing",
+      "action": "添加单元测试",
+      "details": "为核心模块添加测试覆盖"
+    },
+    {
+      "priority": "low",
+      "category": "documentation",
+      "action": "完善文档",
+      "details": "添加API文档和使用说明"
+    }
+  ],
+  "scores": {
+    "code_quality": 0
+  },
+  "priority_summary": {
+    "high": 2,
+    "medium": 210,
+    "low": 0
+  },
+  "overall_score": 0,
+  "health_status": "critical"
+}

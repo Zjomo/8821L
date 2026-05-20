@@ -1,0 +1,6 @@
+{"ts": "2026-05-17T22:16:36+00:00", "event": "run_lock_acquired", "lock_file": "artifacts\\spotzoom_v70_missing_image.lock"}
+{"ts": "2026-05-17T22:16:36+00:00", "event": "run_started", "frame_source": "simulated", "xy_driver": "dryrun", "z_driver": "dryrun", "open_source_bundle": "frontier_2026_tracking_stack"}
+{"ts": "2026-05-17T22:16:36+00:00", "event": "run_finished", "status": "failed", "error": "Simulation image not found: __tmp_missing_image_v70.jpg"}
+{"ts": "2026-05-17T22:21:18+00:00", "event": "run_lock_acquired", "lock_file": "artifacts\\spotzoom_v70_missing_image.lock"}
+{"ts": "2026-05-17T22:21:18+00:00", "event": "run_started", "frame_source": "simulated", "xy_driver": "dryrun", "z_driver": "dryrun", "open_source_bundle": "frontier_2026_tracking_stack"}
+{"ts": "2026-05-17T22:21:18+00:00", "event": "run_finished", "status": "failed", "error": "Simulation image not found: __tmp_missing_image_v70.jpg"}

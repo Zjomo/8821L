@@ -1,0 +1,83 @@
+{
+  "check1_syntax_import": {
+    "syntax_errors": [],
+    "spotzoom_py_compiles": true,
+    "package_imports": {
+      "SpotZoom_Machine_Learning": {"status": "compiles"},
+      "SpotZoom_Machine_Learning_v2": {"status": "compiles"},
+      "SpotZoom_Machine_Learning_v3": {"status": "compiles"},
+      "SpotZoom_Machine_Learning_v4": {"status": "compiles"},
+      "SpotZoom_Machine_Learning_v5": {"status": "compiles"},
+      "SpotZoom_Machine_Learning_v6": {"status": "compiles"}
+    },
+    "missing_modules": {},
+    "encoding_issues": [
+      {"file": "e:\\jupyter file\\2_Optics\\8821L\\SpotZoom.py", "line": 31, "pattern": "妯″潡"},
+      {"file": "e:\\jupyter file\\2_Optics\\8821L\\SpotZoom.py", "line": 65, "pattern": "妯″潡"},
+      {"file": "e:\\jupyter file\\2_Optics\\8821L\\SpotZoom.py", "line": 72, "pattern": "妯″潡"}
+    ],
+    "unreferenced_modules": [
+      "SpotZoom_Machine_Learning/image_quality_assessor.py",
+      "SpotZoom_Machine_Learning/napari_adapter.py",
+      "SpotZoom_Machine_Learning/optical_transfer_function_analyzer.py",
+      "SpotZoom_Machine_Learning/physics_informed_particle_tracker.py",
+      "SpotZoom_Machine_Learning/vizarr_adapter.py",
+      "SpotZoom_Machine_Learning/wavefront_sensorless_corrector.py",
+      "SpotZoom_Machine_Learning/zernike_common.py"
+    ]
+  },
+  "check2_code_quality": {
+    "total_files": 134,
+    "total_lines": 100388,
+    "total_code_lines": 72756,
+    "total_comment_lines": 10926,
+    "total_blank_lines": 16706,
+    "total_classes": 687,
+    "total_functions": 2408,
+    "long_files_count": 59,
+    "long_functions_count": 58,
+    "docstring_coverage": 95.9,
+    "duplicate_signatures": 94
+  },
+  "check3_architecture": {
+    "total_modules": 133,
+    "total_unique_dependencies": 48,
+    "internal_dependencies": 1,
+    "external_dependencies": 47,
+    "circular_dependencies": 0,
+    "alignment_config_fields": 246,
+    "total_try_except": 220,
+    "bare_except": 0,
+    "broad_except": 92,
+    "files_using_logging": 85,
+    "files_using_print": 45
+  },
+  "check4_configuration": {
+    "total_params": 246,
+    "params_with_defaults": 0,
+    "params_without_defaults": 0,
+    "problematic_defaults": 3,
+    "potentially_unused_params": 15
+  },
+  "check5_safety": {
+    "division_issues_total": 559,
+    "unbounded_loops_no_break": 0,
+    "unbounded_loops_with_break": 2,
+    "recursion_patterns": 0,
+    "isinstance_checks": 34,
+    "none_checks": 968,
+    "assertions": 14,
+    "files_importing_threading": 8,
+    "lock_usage": 10,
+    "thread_creation": 10,
+    "class_level_mutable_state": 3
+  },
+  "summary": {
+    "critical_count": 0,
+    "high_count": 1,
+    "medium_count": 123,
+    "low_count": 17,
+    "positive_count": 2,
+    "total_issues": 143
+  }
+}

@@ -1,0 +1,2 @@
+{"ts": "2026-05-17T11:10:06+00:00", "event": "run_started", "frame_source": "simulated", "xy_driver": "dryrun", "z_driver": "dryrun", "open_source_bundle": "none"}
+{"ts": "2026-05-17T11:10:06+00:00", "event": "run_finished", "status": "failed", "error": "Simulation image not found: __missing_image__.jpg"}

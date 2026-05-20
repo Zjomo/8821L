@@ -1,0 +1,19 @@
+{"ts": "2026-05-17T13:09:00+00:00", "event": "run_lock_acquired", "lock_file": "E:\\jupyter file\\2_Optics\\8821L\\artifacts\\spotzoom.lock.json"}
+{"ts": "2026-05-17T13:09:00+00:00", "event": "run_started", "frame_source": "simulated", "xy_driver": "dryrun", "z_driver": "dryrun", "open_source_bundle": "none"}
+{"ts": "2026-05-17T13:09:00+00:00", "event": "detection_ok", "tag": "Initial P1", "attempt": 1, "center": [361, 119], "conf": 0.9726, "focus_score": 692.19}
+{"ts": "2026-05-17T13:09:00+00:00", "event": "target_initialized", "target": [361, 119]}
+{"ts": "2026-05-17T13:09:00+00:00", "event": "detection_ok", "tag": "Iter 1 after Z up (P2 before)", "attempt": 1, "center": [361, 121], "conf": 0.9648, "focus_score": 675.217}
+{"ts": "2026-05-17T13:09:00+00:00", "event": "detection_ok", "tag": "Iter 1 align P2 round 1", "attempt": 1, "center": [361, 118], "conf": 0.9697, "focus_score": 692.056}
+{"ts": "2026-05-17T13:09:00+00:00", "event": "detection_ok", "tag": "Iter 1 after Z down (P3 before)", "attempt": 1, "center": [361, 118], "conf": 0.9646, "focus_score": 713.109}
+{"ts": "2026-05-17T13:09:00+00:00", "event": "detection_ok", "tag": "Iter 1 align P3 round 1", "attempt": 1, "center": [358, 117], "conf": 0.9721, "focus_score": 713.036}
+{"ts": "2026-05-17T13:09:00+00:00", "event": "converged", "p1": [361, 119], "p2": [361, 118], "p3": [358, 117]}
+{"ts": "2026-05-17T13:09:00+00:00", "event": "run_finished", "status": "success"}
+{"ts": "2026-05-17T13:09:31+00:00", "event": "run_started", "frame_source": "simulated", "xy_driver": "dryrun", "z_driver": "dryrun", "open_source_bundle": "none"}
+{"ts": "2026-05-17T13:09:31+00:00", "event": "detection_ok", "tag": "Initial P1", "attempt": 1, "center": [360, 121], "conf": 0.9707, "focus_score": 728.772}
+{"ts": "2026-05-17T13:09:31+00:00", "event": "target_initialized", "target": [360, 121]}
+{"ts": "2026-05-17T13:09:31+00:00", "event": "detection_ok", "tag": "Iter 1 after Z up (P2 before)", "attempt": 1, "center": [361, 121], "conf": 0.9716, "focus_score": 700.932}
+{"ts": "2026-05-17T13:09:31+00:00", "event": "detection_ok", "tag": "Iter 1 align P2 round 1", "attempt": 1, "center": [358, 120], "conf": 0.963, "focus_score": 731.566}
+{"ts": "2026-05-17T13:09:31+00:00", "event": "detection_ok", "tag": "Iter 1 after Z down (P3 before)", "attempt": 1, "center": [361, 119], "conf": 0.9685, "focus_score": 681.4}
+{"ts": "2026-05-17T13:09:31+00:00", "event": "detection_ok", "tag": "Iter 1 align P3 round 1", "attempt": 1, "center": [360, 122], "conf": 0.9719, "focus_score": 741.264}
+{"ts": "2026-05-17T13:09:31+00:00", "event": "converged", "p1": [360, 121], "p2": [358, 120], "p3": [360, 122]}
+{"ts": "2026-05-17T13:09:31+00:00", "event": "run_finished", "status": "success"}

@@ -1,0 +1,527 @@
+{
+  "timestamp": "2026-05-11 11:07:13",
+  "project_path": "e:\\jupyter file\\2_Optics\\8821L",
+  "overall_score": 0,
+  "summary": {
+    "total_files": 20,
+    "total_issues": 63,
+    "severity_distribution": {
+      "low": 23,
+      "medium": 40
+    },
+    "category_distribution": {
+      "code_quality": 42,
+      "performance": 21
+    }
+  },
+  "recommendations": [
+    "性能问题较多，建议进行性能剖析和优化",
+    "代码质量问题较多，建议引入代码审查和静态分析工具"
+  ],
+  "issues": [
+    {
+      "severity": "low",
+      "category": "code_quality",
+      "module": "SpotZoom.py",
+      "description": "行长度超过 120 字符",
+      "line_number": 851,
+      "suggestion": "考虑换行或重构代码"
+    },
+    {
+      "severity": "low",
+      "category": "code_quality",
+      "module": "SpotZoom.py",
+      "description": "行长度超过 120 字符",
+      "line_number": 1108,
+      "suggestion": "考虑换行或重构代码"
+    },
+    {
+      "severity": "low",
+      "category": "code_quality",
+      "module": "SpotZoom.py",
+      "description": "行长度超过 120 字符",
+      "line_number": 1534,
+      "suggestion": "考虑换行或重构代码"
+    },
+    {
+      "severity": "low",
+      "category": "code_quality",
+      "module": "SpotZoom.py",
+      "description": "行长度超过 120 字符",
+      "line_number": 1660,
+      "suggestion": "考虑换行或重构代码"
+    },
+    {
+      "severity": "low",
+      "category": "code_quality",
+      "module": "SpotZoom.py",
+      "description": "行长度超过 120 字符",
+      "line_number": 1772,
+      "suggestion": "考虑换行或重构代码"
+    },
+    {
+      "severity": "low",
+      "category": "code_quality",
+      "module": "SpotZoom.py",
+      "description": "行长度超过 120 字符",
+      "line_number": 2076,
+      "suggestion": "考虑换行或重构代码"
+    },
+    {
+      "severity": "low",
+      "category": "code_quality",
+      "module": "SpotZoom.py",
+      "description": "行长度超过 120 字符",
+      "line_number": 2248,
+      "suggestion": "考虑换行或重构代码"
+    },
+    {
+      "severity": "low",
+      "category": "code_quality",
+      "module": "SpotZoom.py",
+      "description": "行长度超过 120 字符",
+      "line_number": 2249,
+      "suggestion": "考虑换行或重构代码"
+    },
+    {
+      "severity": "low",
+      "category": "code_quality",
+      "module": "SpotZoom.py",
+      "description": "行长度超过 120 字符",
+      "line_number": 2311,
+      "suggestion": "考虑换行或重构代码"
+    },
+    {
+      "severity": "low",
+      "category": "code_quality",
+      "module": "SpotZoom.py",
+      "description": "行长度超过 120 字符",
+      "line_number": 2312,
+      "suggestion": "考虑换行或重构代码"
+    },
+    {
+      "severity": "low",
+      "category": "code_quality",
+      "module": "SpotZoom.py",
+      "description": "行长度超过 120 字符",
+      "line_number": 2322,
+      "suggestion": "考虑换行或重构代码"
+    },
+    {
+      "severity": "low",
+      "category": "code_quality",
+      "module": "SpotZoom.py",
+      "description": "使用 print 而非 logging",
+      "line_number": 2063,
+      "suggestion": "使用 LOGGER.info/debug 替代 print"
+    },
+    {
+      "severity": "low",
+      "category": "code_quality",
+      "module": "SpotZoom.py",
+      "description": "使用 print 而非 logging",
+      "line_number": 2066,
+      "suggestion": "使用 LOGGER.info/debug 替代 print"
+    },
+    {
+      "severity": "low",
+      "category": "code_quality",
+      "module": "SpotZoom.py",
+      "description": "使用 print 而非 logging",
+      "line_number": 2076,
+      "suggestion": "使用 LOGGER.info/debug 替代 print"
+    },
+    {
+      "severity": "low",
+      "category": "code_quality",
+      "module": "SpotZoom.py",
+      "description": "使用 print 而非 logging",
+      "line_number": 2082,
+      "suggestion": "使用 LOGGER.info/debug 替代 print"
+    },
+    {
+      "severity": "low",
+      "category": "code_quality",
+      "module": "SpotZoom.py",
+      "description": "使用 print 而非 logging",
+      "line_number": 2093,
+      "suggestion": "使用 LOGGER.info/debug 替代 print"
+    },
+    {
+      "severity": "low",
+      "category": "code_quality",
+      "module": "SpotZoom.py",
+      "description": "使用 print 而非 logging",
+      "line_number": 2102,
+      "suggestion": "使用 LOGGER.info/debug 替代 print"
+    },
+    {
+      "severity": "low",
+      "category": "code_quality",
+      "module": "SpotZoom.py",
+      "description": "使用 print 而非 logging",
+      "line_number": 2109,
+      "suggestion": "使用 LOGGER.info/debug 替代 print"
+    },
+    {
+      "severity": "low",
+      "category": "code_quality",
+      "module": "SpotZoom_Machine_Learning\\realtime_performance_monitor.py",
+      "description": "行长度超过 120 字符",
+      "line_number": 238,
+      "suggestion": "考虑换行或重构代码"
+    },
+    {
+      "severity": "low",
+      "category": "code_quality",
+      "module": "SpotZoom_Machine_Learning\\safety_manager.py",
+      "description": "行长度超过 120 字符",
+      "line_number": 117,
+      "suggestion": "考虑换行或重构代码"
+    },
+    {
+      "severity": "low",
+      "category": "code_quality",
+      "module": "SpotZoom_Machine_Learning\\safety_manager.py",
+      "description": "行长度超过 120 字符",
+      "line_number": 140,
+      "suggestion": "考虑换行或重构代码"
+    },
+    {
+      "severity": "low",
+      "category": "code_quality",
+      "module": "SpotZoom_Machine_Learning\\safety_manager.py",
+      "description": "行长度超过 120 字符",
+      "line_number": 189,
+      "suggestion": "考虑换行或重构代码"
+    },
+    {
+      "severity": "low",
+      "category": "code_quality",
+      "module": "SpotZoom_Machine_Learning\\safety_manager.py",
+      "description": "行长度超过 120 字符",
+      "line_number": 196,
+      "suggestion": "考虑换行或重构代码"
+    },
+    {
+      "severity": "medium",
+      "category": "performance",
+      "module": "correct_robot.py",
+      "description": "循环中创建 numpy 数组",
+      "line_number": 262,
+      "suggestion": "将数组创建移到循环外部"
+    },
+    {
+      "severity": "medium",
+      "category": "performance",
+      "module": "SpotZoom.py",
+      "description": "循环中进行文件操作",
+      "line_number": 292,
+      "suggestion": "批量处理或使用缓冲区"
+    },
+    {
+      "severity": "medium",
+      "category": "performance",
+      "module": "SpotZoom.py",
+      "description": "循环中进行文件操作",
+      "line_number": 295,
+      "suggestion": "批量处理或使用缓冲区"
+    },
+    {
+      "severity": "medium",
+      "category": "performance",
+      "module": "SpotZoom.py",
+      "description": "循环中创建 numpy 数组",
+      "line_number": 666,
+      "suggestion": "将数组创建移到循环外部"
+    },
+    {
+      "severity": "medium",
+      "category": "performance",
+      "module": "SpotZoom.py",
+      "description": "循环中创建 numpy 数组",
+      "line_number": 707,
+      "suggestion": "将数组创建移到循环外部"
+    },
+    {
+      "severity": "medium",
+      "category": "performance",
+      "module": "SpotZoom.py",
+      "description": "循环中进行文件操作",
+      "line_number": 900,
+      "suggestion": "批量处理或使用缓冲区"
+    },
+    {
+      "severity": "medium",
+      "category": "performance",
+      "module": "SpotZoom.py",
+      "description": "循环中进行文件操作",
+      "line_number": 1023,
+      "suggestion": "批量处理或使用缓冲区"
+    },
+    {
+      "severity": "medium",
+      "category": "performance",
+      "module": "SpotZoom.py",
+      "description": "循环中进行文件操作",
+      "line_number": 1040,
+      "suggestion": "批量处理或使用缓冲区"
+    },
+    {
+      "severity": "medium",
+      "category": "performance",
+      "module": "SpotZoom.py",
+      "description": "循环中进行文件操作",
+      "line_number": 1125,
+      "suggestion": "批量处理或使用缓冲区"
+    },
+    {
+      "severity": "medium",
+      "category": "performance",
+      "module": "SpotZoom.py",
+      "description": "循环中进行文件操作",
+      "line_number": 1209,
+      "suggestion": "批量处理或使用缓冲区"
+    },
+    {
+      "severity": "medium",
+      "category": "performance",
+      "module": "SpotZoom.py",
+      "description": "循环中进行文件操作",
+      "line_number": 1323,
+      "suggestion": "批量处理或使用缓冲区"
+    },
+    {
+      "severity": "medium",
+      "category": "performance",
+      "module": "SpotZoom_Machine_Learning\\active_learning_collector.py",
+      "description": "循环中进行文件操作",
+      "line_number": 387,
+      "suggestion": "批量处理或使用缓冲区"
+    },
+    {
+      "severity": "medium",
+      "category": "performance",
+      "module": "SpotZoom_Machine_Learning\\active_learning_collector.py",
+      "description": "循环中进行文件操作",
+      "line_number": 417,
+      "suggestion": "批量处理或使用缓冲区"
+    },
+    {
+      "severity": "medium",
+      "category": "performance",
+      "module": "SpotZoom_Machine_Learning\\active_learning_collector.py",
+      "description": "循环中进行文件操作",
+      "line_number": 418,
+      "suggestion": "批量处理或使用缓冲区"
+    },
+    {
+      "severity": "medium",
+      "category": "performance",
+      "module": "SpotZoom_Machine_Learning\\classic_spot_detector.py",
+      "description": "循环中创建 numpy 数组",
+      "line_number": 325,
+      "suggestion": "将数组创建移到循环外部"
+    },
+    {
+      "severity": "medium",
+      "category": "performance",
+      "module": "SpotZoom_Machine_Learning\\focus_search.py",
+      "description": "循环中创建 numpy 数组",
+      "line_number": 322,
+      "suggestion": "将数组创建移到循环外部"
+    },
+    {
+      "severity": "medium",
+      "category": "performance",
+      "module": "SpotZoom_Machine_Learning\\focus_search.py",
+      "description": "循环中创建 numpy 数组",
+      "line_number": 323,
+      "suggestion": "将数组创建移到循环外部"
+    },
+    {
+      "severity": "medium",
+      "category": "performance",
+      "module": "SpotZoom_Machine_Learning\\model_optimizer.py",
+      "description": "循环中创建 numpy 数组",
+      "line_number": 254,
+      "suggestion": "将数组创建移到循环外部"
+    },
+    {
+      "severity": "medium",
+      "category": "performance",
+      "module": "SpotZoom_Machine_Learning\\optical_flow_tracker.py",
+      "description": "循环中创建 numpy 数组",
+      "line_number": 349,
+      "suggestion": "将数组创建移到循环外部"
+    },
+    {
+      "severity": "medium",
+      "category": "performance",
+      "module": "SpotZoom_Machine_Learning\\trajectory_recorder.py",
+      "description": "循环中进行文件操作",
+      "line_number": 245,
+      "suggestion": "批量处理或使用缓冲区"
+    },
+    {
+      "severity": "medium",
+      "category": "performance",
+      "module": "SpotZoom_Machine_Learning\\zernike_analyzer.py",
+      "description": "循环中创建 numpy 数组",
+      "line_number": 274,
+      "suggestion": "将数组创建移到循环外部"
+    },
+    {
+      "severity": "medium",
+      "category": "code_quality",
+      "module": "SpotZoom.py",
+      "description": "空的异常处理块 (except + pass)",
+      "line_number": 87,
+      "suggestion": "添加适当的错误处理或日志记录"
+    },
+    {
+      "severity": "medium",
+      "category": "code_quality",
+      "module": "SpotZoom.py",
+      "description": "空的异常处理块 (except + pass)",
+      "line_number": 94,
+      "suggestion": "添加适当的错误处理或日志记录"
+    },
+    {
+      "severity": "medium",
+      "category": "code_quality",
+      "module": "SpotZoom.py",
+      "description": "空的异常处理块 (except + pass)",
+      "line_number": 806,
+      "suggestion": "添加适当的错误处理或日志记录"
+    },
+    {
+      "severity": "medium",
+      "category": "code_quality",
+      "module": "SpotZoom.py",
+      "description": "空的异常处理块 (except + pass)",
+      "line_number": 977,
+      "suggestion": "添加适当的错误处理或日志记录"
+    },
+    {
+      "severity": "medium",
+      "category": "code_quality",
+      "module": "SpotZoom.py",
+      "description": "空的异常处理块 (except + pass)",
+      "line_number": 1042,
+      "suggestion": "添加适当的错误处理或日志记录"
+    },
+    {
+      "severity": "medium",
+      "category": "code_quality",
+      "module": "SpotZoom.py",
+      "description": "空的异常处理块 (except + pass)",
+      "line_number": 1053,
+      "suggestion": "添加适当的错误处理或日志记录"
+    },
+    {
+      "severity": "medium",
+      "category": "code_quality",
+      "module": "SpotZoom.py",
+      "description": "空的异常处理块 (except + pass)",
+      "line_number": 1167,
+      "suggestion": "添加适当的错误处理或日志记录"
+    },
+    {
+      "severity": "medium",
+      "category": "code_quality",
+      "module": "SpotZoom.py",
+      "description": "空的异常处理块 (except + pass)",
+      "line_number": 1176,
+      "suggestion": "添加适当的错误处理或日志记录"
+    },
+    {
+      "severity": "medium",
+      "category": "code_quality",
+      "module": "SpotZoom.py",
+      "description": "空的异常处理块 (except + pass)",
+      "line_number": 1362,
+      "suggestion": "添加适当的错误处理或日志记录"
+    },
+    {
+      "severity": "medium",
+      "category": "code_quality",
+      "module": "SpotZoom.py",
+      "description": "空的异常处理块 (except + pass)",
+      "line_number": 1366,
+      "suggestion": "添加适当的错误处理或日志记录"
+    },
+    {
+      "severity": "medium",
+      "category": "code_quality",
+      "module": "SpotZoom.py",
+      "description": "空的异常处理块 (except + pass)",
+      "line_number": 1469,
+      "suggestion": "添加适当的错误处理或日志记录"
+    },
+    {
+      "severity": "medium",
+      "category": "code_quality",
+      "module": "SpotZoom.py",
+      "description": "空的异常处理块 (except + pass)",
+      "line_number": 2379,
+      "suggestion": "添加适当的错误处理或日志记录"
+    },
+    {
+      "severity": "medium",
+      "category": "code_quality",
+      "module": "SpotZoom.py",
+      "description": "空的异常处理块 (except + pass)",
+      "line_number": 2474,
+      "suggestion": "添加适当的错误处理或日志记录"
+    },
+    {
+      "severity": "medium",
+      "category": "code_quality",
+      "module": "SpotZoom.py",
+      "description": "空的异常处理块 (except + pass)",
+      "line_number": 2479,
+      "suggestion": "添加适当的错误处理或日志记录"
+    },
+    {
+      "severity": "medium",
+      "category": "code_quality",
+      "module": "SpotZoom.py",
+      "description": "空的异常处理块 (except + pass)",
+      "line_number": 2484,
+      "suggestion": "添加适当的错误处理或日志记录"
+    },
+    {
+      "severity": "medium",
+      "category": "code_quality",
+      "module": "SpotZoom_Machine_Learning\\model_optimizer.py",
+      "description": "空的异常处理块 (except + pass)",
+      "line_number": 234,
+      "suggestion": "添加适当的错误处理或日志记录"
+    },
+    {
+      "severity": "medium",
+      "category": "code_quality",
+      "module": "SpotZoom_Machine_Learning\\safety_manager.py",
+      "description": "空的异常处理块 (except + pass)",
+      "line_number": 236,
+      "suggestion": "添加适当的错误处理或日志记录"
+    },
+    {
+      "severity": "medium",
+      "category": "code_quality",
+      "module": "SpotZoom.py",
+      "description": "模块耦合度过高，依赖 29 个其他模块",
+      "line_number": null,
+      "suggestion": "考虑拆分模块或使用依赖注入降低耦合"
+    },
+    {
+      "severity": "medium",
+      "category": "code_quality",
+      "module": "SpotZoom_Machine_Learning\\__init__.py",
+      "description": "模块耦合度过高，依赖 17 个其他模块",
+      "line_number": null,
+      "suggestion": "考虑拆分模块或使用依赖注入降低耦合"
+    }
+  ]
+}

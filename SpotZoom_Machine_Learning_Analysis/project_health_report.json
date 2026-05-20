@@ -1,0 +1,525 @@
+{
+  "summary": {
+    "total_checks": 10,
+    "passed": 5,
+    "failed": 2,
+    "warnings": 3,
+    "health_score": 0,
+    "total_issues": 86,
+    "severity_distribution": {
+      "critical": 1,
+      "low": 31,
+      "medium": 31,
+      "high": 23
+    },
+    "category_distribution": {
+      "build": 1,
+      "quality": 54,
+      "performance": 24,
+      "security": 7
+    }
+  },
+  "check_results": [
+    {
+      "name": "代码结构检查",
+      "status": "pass",
+      "duration_ms": 731.04,
+      "metrics": {
+        "total_python_files": 154
+      },
+      "issue_count": 0
+    },
+    {
+      "name": "语法检查",
+      "status": "fail",
+      "duration_ms": 776.52,
+      "metrics": {
+        "syntax_errors": 1,
+        "files_checked": 154
+      },
+      "issue_count": 1
+    },
+    {
+      "name": "导入检查",
+      "status": "pass",
+      "duration_ms": 1648.21,
+      "metrics": {},
+      "issue_count": 0
+    },
+    {
+      "name": "代码质量检查",
+      "status": "warning",
+      "duration_ms": 3336.23,
+      "metrics": {
+        "long_lines": 81,
+        "missing_docstrings": 332,
+        "too_many_locals": 358,
+        "complex_functions": 30
+      },
+      "issue_count": 35
+    },
+    {
+      "name": "性能瓶颈检查",
+      "status": "warning",
+      "duration_ms": 228.93,
+      "metrics": {},
+      "issue_count": 24
+    },
+    {
+      "name": "异常处理检查",
+      "status": "warning",
+      "duration_ms": 1711.37,
+      "metrics": {},
+      "issue_count": 16
+    },
+    {
+      "name": "重复代码检查",
+      "status": "pass",
+      "duration_ms": 966.79,
+      "metrics": {
+        "duplicate_clusters": 0
+      },
+      "issue_count": 0
+    },
+    {
+      "name": "耦合度检查",
+      "status": "pass",
+      "duration_ms": 1751.37,
+      "metrics": {
+        "total_modules": 146,
+        "avg_dependencies": 3.2260273972602738
+      },
+      "issue_count": 0
+    },
+    {
+      "name": "安全漏洞检查",
+      "status": "fail",
+      "duration_ms": 400.67,
+      "metrics": {},
+      "issue_count": 7
+    },
+    {
+      "name": "文档完整性检查",
+      "status": "pass",
+      "duration_ms": 1685.49,
+      "metrics": {
+        "undocumented_items": 338
+      },
+      "issue_count": 3
+    }
+  ],
+  "prioritized_issues": [
+    {
+      "priority": "critical",
+      "category": "build",
+      "module": "SpotZoom.py",
+      "description": "语法错误: invalid non-printable character U+FEFF",
+      "suggestion": "修复语法错误",
+      "line": 1
+    },
+    {
+      "priority": "high",
+      "category": "quality",
+      "module": "SpotZoom_Machine_Learning\\auto_calibration.py",
+      "description": "异常处理中使用空 pass 语句",
+      "suggestion": "添加适当的错误处理或日志记录",
+      "line": 1716
+    },
+    {
+      "priority": "high",
+      "category": "quality",
+      "module": "SpotZoom_Machine_Learning\\backend_accelerator.py",
+      "description": "异常处理中使用空 pass 语句",
+      "suggestion": "添加适当的错误处理或日志记录",
+      "line": 137
+    },
+    {
+      "priority": "high",
+      "category": "quality",
+      "module": "SpotZoom_Machine_Learning\\backend_accelerator.py",
+      "description": "异常处理中使用空 pass 语句",
+      "suggestion": "添加适当的错误处理或日志记录",
+      "line": 145
+    },
+    {
+      "priority": "high",
+      "category": "quality",
+      "module": "SpotZoom_Machine_Learning\\backend_accelerator.py",
+      "description": "异常处理中使用空 pass 语句",
+      "suggestion": "添加适当的错误处理或日志记录",
+      "line": 153
+    },
+    {
+      "priority": "high",
+      "category": "quality",
+      "module": "SpotZoom_Machine_Learning\\innovation_frontier_v18.py",
+      "description": "异常处理中使用空 pass 语句",
+      "suggestion": "添加适当的错误处理或日志记录",
+      "line": 1083
+    },
+    {
+      "priority": "high",
+      "category": "quality",
+      "module": "SpotZoom_Machine_Learning\\model_optimizer.py",
+      "description": "异常处理中使用空 pass 语句",
+      "suggestion": "添加适当的错误处理或日志记录",
+      "line": 234
+    },
+    {
+      "priority": "high",
+      "category": "quality",
+      "module": "SpotZoom_Machine_Learning\\psf_estimator.py",
+      "description": "异常处理中使用空 pass 语句",
+      "suggestion": "添加适当的错误处理或日志记录",
+      "line": 585
+    },
+    {
+      "priority": "high",
+      "category": "quality",
+      "module": "SpotZoom_Machine_Learning\\realtime_control_pipeline.py",
+      "description": "异常处理中使用空 pass 语句",
+      "suggestion": "添加适当的错误处理或日志记录",
+      "line": 1981
+    },
+    {
+      "priority": "high",
+      "category": "quality",
+      "module": "SpotZoom_Machine_Learning\\spectral_analyzer.py",
+      "description": "异常处理中使用空 pass 语句",
+      "suggestion": "添加适当的错误处理或日志记录",
+      "line": 696
+    },
+    {
+      "priority": "high",
+      "category": "quality",
+      "module": "SpotZoom_Machine_Learning\\spectral_analyzer.py",
+      "description": "异常处理中使用空 pass 语句",
+      "suggestion": "添加适当的错误处理或日志记录",
+      "line": 711
+    },
+    {
+      "priority": "high",
+      "category": "quality",
+      "module": "SpotZoom_Machine_Learning\\spectral_analyzer.py",
+      "description": "异常处理中使用空 pass 语句",
+      "suggestion": "添加适当的错误处理或日志记录",
+      "line": 726
+    },
+    {
+      "priority": "high",
+      "category": "quality",
+      "module": "SpotZoom_Machine_Learning\\zerocostdl4mic_adapter.py",
+      "description": "异常处理中使用空 pass 语句",
+      "suggestion": "添加适当的错误处理或日志记录",
+      "line": 111
+    },
+    {
+      "priority": "high",
+      "category": "quality",
+      "module": "SpotZoom_Machine_Learning\\zerocostdl4mic_adapter.py",
+      "description": "异常处理中使用空 pass 语句",
+      "suggestion": "添加适当的错误处理或日志记录",
+      "line": 117
+    },
+    {
+      "priority": "high",
+      "category": "quality",
+      "module": "SpotZoom_Machine_Learning\\zerocostdl4mic_adapter.py",
+      "description": "异常处理中使用空 pass 语句",
+      "suggestion": "添加适当的错误处理或日志记录",
+      "line": 196
+    },
+    {
+      "priority": "high",
+      "category": "quality",
+      "module": "SpotZoom_Machine_Learning_v2\\data_driven_mpc.py",
+      "description": "异常处理中使用空 pass 语句",
+      "suggestion": "添加适当的错误处理或日志记录",
+      "line": 410
+    },
+    {
+      "priority": "high",
+      "category": "quality",
+      "module": "SpotZoom_Machine_Learning_v2\\data_driven_mpc.py",
+      "description": "异常处理中使用空 pass 语句",
+      "suggestion": "添加适当的错误处理或日志记录",
+      "line": 437
+    },
+    {
+      "priority": "high",
+      "category": "security",
+      "module": "SpotZoom_Machine_Learning\\cellpose_adapter.py",
+      "description": "安全问题: 使用 eval()",
+      "suggestion": "避免使用 eval，使用 ast.literal_eval 或 json.loads",
+      "line": null
+    },
+    {
+      "priority": "high",
+      "category": "security",
+      "module": "SpotZoom_Machine_Learning\\innovation_frontier_v20.py",
+      "description": "安全问题: 使用 eval()",
+      "suggestion": "避免使用 eval，使用 ast.literal_eval 或 json.loads",
+      "line": null
+    },
+    {
+      "priority": "high",
+      "category": "security",
+      "module": "SpotZoom_Machine_Learning\\innovation_frontier_v23.py",
+      "description": "安全问题: 使用 input()",
+      "suggestion": "验证用户输入",
+      "line": null
+    },
+    {
+      "priority": "high",
+      "category": "security",
+      "module": "SpotZoom_Machine_Learning\\physics_constrained_reconstructor.py",
+      "description": "安全问题: 使用 input()",
+      "suggestion": "验证用户输入",
+      "line": null
+    },
+    {
+      "priority": "high",
+      "category": "security",
+      "module": "SpotZoom_Machine_Learning\\pinn_beam_solver.py",
+      "description": "安全问题: 使用 input()",
+      "suggestion": "验证用户输入",
+      "line": null
+    },
+    {
+      "priority": "high",
+      "category": "security",
+      "module": "SpotZoom_Machine_Learning_v5\\careamics_adapter.py",
+      "description": "安全问题: 使用 eval()",
+      "suggestion": "避免使用 eval，使用 ast.literal_eval 或 json.loads",
+      "line": null
+    },
+    {
+      "priority": "high",
+      "category": "security",
+      "module": "SpotZoom_Machine_Learning_v5\\gpu_phase_retrieval.py",
+      "description": "安全问题: 使用 eval()",
+      "suggestion": "避免使用 eval，使用 ast.literal_eval 或 json.loads",
+      "line": null
+    },
+    {
+      "priority": "medium",
+      "category": "quality",
+      "module": "SpotZoom_Machine_Learning\\adaptive_noise_suppressor.py",
+      "description": "函数 suppress 复杂度过高 (12 个分支)",
+      "suggestion": "考虑将函数拆分为多个小函数",
+      "line": 139
+    },
+    {
+      "priority": "medium",
+      "category": "quality",
+      "module": "SpotZoom_Machine_Learning\\auto_calibration.py",
+      "description": "函数 _assess_calibration_quality 复杂度过高 (14 个分支)",
+      "suggestion": "考虑将函数拆分为多个小函数",
+      "line": 2071
+    },
+    {
+      "priority": "medium",
+      "category": "quality",
+      "module": "SpotZoom_Machine_Learning\\diagnostic_health_monitor.py",
+      "description": "函数 _check_dimension_threshold 复杂度过高 (13 个分支)",
+      "suggestion": "考虑将函数拆分为多个小函数",
+      "line": 573
+    },
+    {
+      "priority": "medium",
+      "category": "quality",
+      "module": "SpotZoom_Machine_Learning\\diagnostic_health_monitor.py",
+      "description": "函数 _generate_recommendations 复杂度过高 (14 个分支)",
+      "suggestion": "考虑将函数拆分为多个小函数",
+      "line": 678
+    },
+    {
+      "priority": "medium",
+      "category": "quality",
+      "module": "SpotZoom_Machine_Learning\\differentiable_optical_optimizer.py",
+      "description": "函数 optimize 复杂度过高 (14 个分支)",
+      "suggestion": "考虑将函数拆分为多个小函数",
+      "line": 1604
+    },
+    {
+      "priority": "medium",
+      "category": "quality",
+      "module": "SpotZoom_Machine_Learning\\differentiable_ray_tracer.py",
+      "description": "函数 optimize_parameters 复杂度过高 (13 个分支)",
+      "suggestion": "考虑将函数拆分为多个小函数",
+      "line": 1326
+    },
+    {
+      "priority": "medium",
+      "category": "quality",
+      "module": "SpotZoom_Machine_Learning\\differentiable_ray_tracer.py",
+      "description": "函数 get_health_report 复杂度过高 (12 个分支)",
+      "suggestion": "考虑将函数拆分为多个小函数",
+      "line": 1588
+    },
+    {
+      "priority": "medium",
+      "category": "quality",
+      "module": "SpotZoom_Machine_Learning\\focus_search.py",
+      "description": "函数 _golden_section_search 复杂度过高 (14 个分支)",
+      "suggestion": "考虑将函数拆分为多个小函数",
+      "line": 199
+    },
+    {
+      "priority": "medium",
+      "category": "quality",
+      "module": "SpotZoom_Machine_Learning\\innovation_frontier_v20.py",
+      "description": "函数 propagate 复杂度过高 (13 个分支)",
+      "suggestion": "考虑将函数拆分为多个小函数",
+      "line": 1538
+    },
+    {
+      "priority": "medium",
+      "category": "quality",
+      "module": "SpotZoom_Machine_Learning\\innovation_frontier_v20.py",
+      "description": "函数 optimize 复杂度过高 (12 个分支)",
+      "suggestion": "考虑将函数拆分为多个小函数",
+      "line": 2031
+    },
+    {
+      "priority": "medium",
+      "category": "quality",
+      "module": "SpotZoom_Machine_Learning\\innovation_frontier_v22.py",
+      "description": "函数 train 复杂度过高 (13 个分支)",
+      "suggestion": "考虑将函数拆分为多个小函数",
+      "line": 1912
+    },
+    {
+      "priority": "medium",
+      "category": "quality",
+      "module": "SpotZoom_Machine_Learning\\innovation_frontier_v23.py",
+      "description": "函数 _apply_augmentation 复杂度过高 (12 个分支)",
+      "suggestion": "考虑将函数拆分为多个小函数",
+      "line": 354
+    },
+    {
+      "priority": "medium",
+      "category": "quality",
+      "module": "SpotZoom_Machine_Learning\\innovation_frontier_v23.py",
+      "description": "函数 _build_trajectories 复杂度过高 (13 个分支)",
+      "suggestion": "考虑将函数拆分为多个小函数",
+      "line": 1207
+    },
+    {
+      "priority": "medium",
+      "category": "quality",
+      "module": "SpotZoom_Machine_Learning\\innovation_frontier_v23.py",
+      "description": "函数 _zernike_polynomial 复杂度过高 (11 个分支)",
+      "suggestion": "考虑将函数拆分为多个小函数",
+      "line": 1788
+    },
+    {
+      "priority": "medium",
+      "category": "quality",
+      "module": "SpotZoom_Machine_Learning\\innovation_frontier_v23.py",
+      "description": "函数 optimize 复杂度过高 (12 个分支)",
+      "suggestion": "考虑将函数拆分为多个小函数",
+      "line": 3134
+    },
+    {
+      "priority": "medium",
+      "category": "quality",
+      "module": "SpotZoom_Machine_Learning\\innovation_frontier_v26.py",
+      "description": "函数 process 复杂度过高 (13 个分支)",
+      "suggestion": "考虑将函数拆分为多个小函数",
+      "line": 274
+    },
+    {
+      "priority": "medium",
+      "category": "quality",
+      "module": "SpotZoom_Machine_Learning\\learning_mpc_controller.py",
+      "description": "函数 _solve_mpc 复杂度过高 (11 个分支)",
+      "suggestion": "考虑将函数拆分为多个小函数",
+      "line": 1189
+    },
+    {
+      "priority": "medium",
+      "category": "quality",
+      "module": "SpotZoom_Machine_Learning\\mamba_predictor.py",
+      "description": "函数 update 复杂度过高 (11 个分支)",
+      "suggestion": "考虑将函数拆分为多个小函数",
+      "line": 598
+    },
+    {
+      "priority": "medium",
+      "category": "quality",
+      "module": "SpotZoom_Machine_Learning\\mamba_predictor.py",
+      "description": "函数 analyze 复杂度过高 (13 个分支)",
+      "suggestion": "考虑将函数拆分为多个小函数",
+      "line": 836
+    },
+    {
+      "priority": "medium",
+      "category": "quality",
+      "module": "SpotZoom_Machine_Learning\\microscopy_image_enhancer.py",
+      "description": "函数 enhance 复杂度过高 (14 个分支)",
+      "suggestion": "考虑将函数拆分为多个小函数",
+      "line": 474
+    },
+    {
+      "priority": "medium",
+      "category": "quality",
+      "module": "SpotZoom_Machine_Learning\\multi_spot_tracker.py",
+      "description": "函数 update 复杂度过高 (12 个分支)",
+      "suggestion": "考虑将函数拆分为多个小函数",
+      "line": 96
+    },
+    {
+      "priority": "medium",
+      "category": "quality",
+      "module": "SpotZoom_Machine_Learning\\realtime_control_pipeline.py",
+      "description": "函数 run_one_cycle 复杂度过高 (14 个分支)",
+      "suggestion": "考虑将函数拆分为多个小函数",
+      "line": 1869
+    },
+    {
+      "priority": "medium",
+      "category": "quality",
+      "module": "SpotZoom_Machine_Learning\\zernike_common.py",
+      "description": "函数 zernike_radial 复杂度过高 (17 个分支)",
+      "suggestion": "考虑将函数拆分为多个小函数",
+      "line": 96
+    },
+    {
+      "priority": "medium",
+      "category": "quality",
+      "module": "SpotZoom_Machine_Learning_v2\\closed_loop_ao_controller.py",
+      "description": "函数 update 复杂度过高 (11 个分支)",
+      "suggestion": "考虑将函数拆分为多个小函数",
+      "line": 143
+    },
+    {
+      "priority": "medium",
+      "category": "quality",
+      "module": "SpotZoom_Machine_Learning_v5\\regression_guard.py",
+      "description": "函数 _check_code_quality 复杂度过高 (11 个分支)",
+      "suggestion": "考虑将函数拆分为多个小函数",
+      "line": 378
+    },
+    {
+      "priority": "medium",
+      "category": "quality",
+      "module": "SpotZoom_Machine_Learning_v6\\coherent_sensitivity_analyzer.py",
+      "description": "函数 compute_sensitivity_matrix 复杂度过高 (11 个分支)",
+      "suggestion": "考虑将函数拆分为多个小函数",
+      "line": 163
+    }
+  ],
+  "recommendations": [
+    "【紧急】修复 1 个严重问题，这些问题可能导致系统崩溃",
+    "【重要】处理 23 个高风险问题，影响系统稳定性",
+    "【构建】修复构建问题，确保代码可以正常运行",
+    "【性能】优化性能瓶颈，提升系统响应速度",
+    "【质量】代码质量需要改进，建议进行代码重构",
+    "【安全】修复安全漏洞，确保系统安全",
+    "建立持续集成/持续部署(CI/CD)流程",
+    "添加自动化测试覆盖关键功能",
+    "定期进行代码审查",
+    "更新文档保持与代码同步"
+  ]
+}

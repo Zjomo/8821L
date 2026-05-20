@@ -1,0 +1,3367 @@
+import os
+import sys
+
+script_dir   = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(script_dir)
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+def _configure_console_encoding() -> None:
+    if os.name != "nt":
+        return
+    try:
+        os.system("chcp 65001 > nul")
+    except Exception:
+        pass
+    for stream_name in ("stdout", "stderr"):
+        stream = getattr(sys, stream_name, None)
+        if hasattr(stream, "reconfigure"):
+            try:
+                stream.reconfigure(encoding="utf-8", errors="replace")
+            except Exception:
+                pass
+
+_configure_console_encoding()
+
+import ctypes
+import ctypes.wintypes as _wt
+import time
+import threading
+import numpy as np
+import cv2
+import win32gui
+import win32api
+import win32con
+import pyautogui
+from pynput import keyboard
+from typing import Tuple, Optional, List
+
+from src.snake_scan import (
+    ScanConfig, HardwareInterface, SegmentationInference,
+    SnakeScanController, SEG_PALETTE, SegClass,
+    PathSkeletonExtractor,
+)
+from src.newport_driver import NewportPicomotorDriver
+
+# XPS控制器驱动
+sys.path.append(os.path.join(project_root, "..", "XPS", "__analysis_tmp", "XPS-Q-Drivers", "XPS-Q_Drivers", "XPS-Q_Python_Drivers"))
+from XPS_Q8_drivers import XPS
+from src.skeleton_coordinates import (
+    extract_skeleton_coordinates,
+    save_skeleton_coordinates,
+    visualize_skeleton_coordinates,
+)
+
+# ============================================================
+# 模块级 ctypes 结构体定义
+# ============================================================
+class _MOUSEINPUT(ctypes.Structure):
+    _fields_ = [
+        ("dx", _wt.LONG), ("dy", _wt.LONG),
+        ("mouseData", _wt.DWORD), ("dwFlags", _wt.DWORD),
+        ("time", _wt.DWORD), ("dwExtraInfo", ctypes.POINTER(ctypes.c_ulong)),
+    ]
+
+class _KEYBDINPUT(ctypes.Structure):
+    _fields_ = [
+        ("wVk", _wt.WORD), ("wScan", _wt.WORD),
+        ("dwFlags", _wt.DWORD), ("time", _wt.DWORD),
+        ("dwExtraInfo", ctypes.POINTER(ctypes.c_ulong)),
+    ]
+
+class _INPUT_UNION(ctypes.Union):
+    _fields_ = [("mi", _MOUSEINPUT), ("ki", _KEYBDINPUT)]
+
+class _INPUT(ctypes.Structure):
+    _fields_ = [("type", _wt.DWORD), ("_input", _INPUT_UNION)]
+
+_INPUT_KEYBOARD  = 1
+_KEYEVENTF_KEYUP = 0x0002
+_VK_LEFT         = 0x25
+_VK_RIGHT        = 0x27
+_WHEEL_DELTA     = 120
+_INPUT_SZ        = ctypes.sizeof(_INPUT)
+
+
+# ============================================================
+# 1. ToupView 硬件接口
+# ============================================================
+class PaintWindowHardware(HardwareInterface):
+
+    def __init__(self, scan_cfg: ScanConfig,
+                 window_title_contains: str = "ToupView",
+                 capture_margin: int = 0,
+                 use_driver: bool = True,
+                 driver_x_sign: int = -1,
+                 driver_type: str = "newport"):
+        super().__init__(scan_cfg)
+        self.title_kw    = window_title_contains
+        self.margin      = capture_margin
+        self.hwnd:        Optional[int] = None
+        self.scroll_hwnd: Optional[int] = None
+        self._lock = threading.Lock()
+
+        self.use_driver = bool(use_driver)
+        self.driver_x_sign = -1 if int(driver_x_sign) < 0 else 1
+        self.driver_type = driver_type  # "newport" or "xps"
+        self.newport = None
+        self.xps = None
+        self.xps_socket_id = None
+        self.xps_group_name = "ILS300LM"
+        
+        if self.use_driver:
+            if self.driver_type == "newport":
+                print("\n" + "="*50)
+                print("正在连接 Newport Picomotor 驱动器...")
+                self.newport = NewportPicomotorDriver()
+                if self.newport.is_connected():
+                    print("✅ Newport 驱动器连接成功！")
+                    vel = getattr(self.cfg, "driver_velocity", None)
+                    acc = getattr(self.cfg, "driver_acceleration", None)
+                    if vel is not None or acc is not None:
+                        self.newport.configure_motion(axis=1, velocity=vel, acceleration=acc)
+                        self.newport.configure_motion(axis=2, velocity=vel, acceleration=acc)
+                    test_steps = 100
+                    print(f"正在执行 1s 连接测试 (轴1 移动 {test_steps} 步)...")
+                    self.newport.move_relative(1, self.driver_x_sign * test_steps, wait=False)
+                    time.sleep(1.0)
+                    self.newport.stop(1)
+                    print("✅ 连接测试完成")
+                else:
+                    print("❌ Newport 驱动器连接失败，请检查 USB 连接或驱动文件")
+                print("="*50 + "\n")
+            elif self.driver_type == "xps":
+                print("\n" + "="*50)
+                print("正在连接 XPS 控制器...")
+                try:
+                    self.xps = XPS()
+                    # 连接到 XPS 控制器，默认 IP 和端口
+                    self.xps_socket_id = self.xps.TCP_ConnectToServer("192.168.1.100", 5001, 10)
+                    if self.xps_socket_id != -1:
+                        print("✅ XPS 控制器连接成功！")
+                        # 登录 XPS 控制器
+                        login_result = self.xps.Login(self.xps_socket_id, "Administrator", "Administrator")
+                        if login_result[0] == 0:
+                            print("✅ XPS 控制器登录成功！")
+                            # 初始化组
+                            init_result = self.xps.GroupInitialize(self.xps_socket_id, self.xps_group_name)
+                            if init_result[0] == 0:
+                                print("✅ XPS 控制器组初始化成功！")
+                                # 启用运动
+                                enable_result = self.xps.GroupMotionEnable(self.xps_socket_id, self.xps_group_name)
+                                if enable_result[0] == 0:
+                                    print("✅ XPS 控制器运动启用成功！")
+                                else:
+                                    print(f"❌ XPS 控制器运动启用失败: {enable_result[1]}")
+                            else:
+                                print(f"❌ XPS 控制器组初始化失败: {init_result[1]}")
+                        else:
+                            print(f"❌ XPS 控制器登录失败: {login_result[1]}")
+                    else:
+                        print("❌ XPS 控制器连接失败，请检查网络连接")
+                except Exception as e:
+                    print(f"❌ XPS 控制器初始化失败: {str(e)}")
+                print("="*50 + "\n")
+
+        self._connect()
+
+    def _connect(self):
+        windows = []
+        def _cb(hwnd, _):
+            if win32gui.IsWindowVisible(hwnd):
+                title = win32gui.GetWindowText(hwnd)
+                if self.title_kw in title:
+                    windows.append((hwnd, title))
+            return True
+        win32gui.EnumWindows(_cb, None)
+        if not windows:
+            raise RuntimeError(f"未找到包含 '{self.title_kw}' 的窗口")
+        self.hwnd, title = windows[0]
+        self.scroll_hwnd = self._find_scroll_child(self.hwnd) or self.hwnd
+        print(f"[HW] 已连接: '{title}'  hwnd={self.hwnd}  scroll={self.scroll_hwnd}")
+
+    def _find_scroll_child(self, parent: int) -> Optional[int]:
+        candidates = []
+        def _cb(hwnd, _):
+            style = win32api.GetWindowLong(hwnd, win32con.GWL_STYLE)
+            if (style & win32con.WS_HSCROLL) and (style & win32con.WS_VSCROLL):
+                candidates.append(hwnd)
+            return True
+        win32gui.EnumChildWindows(parent, _cb, None)
+        return candidates[-1] if candidates else None
+
+    def grab_frame(self) -> np.ndarray:
+        try:
+            l, t, r, b = win32gui.GetWindowRect(self.hwnd)
+        except Exception:
+            return self._black_frame()
+        window_width  = r - l
+        window_height = b - t
+        cap_x = l + 8; cap_y = t + 30
+        cap_w = window_width - 16; cap_h = window_height - 40
+        if cap_w <= 0 or cap_h <= 0:
+            cap_x, cap_y, cap_w, cap_h = l, t, window_width, window_height
+        shot  = pyautogui.screenshot(region=(cap_x, cap_y, cap_w, cap_h))
+        frame = cv2.cvtColor(np.array(shot), cv2.COLOR_RGB2BGR)
+        fw, fh = self.cfg.frame_w, self.cfg.frame_h
+        if self._roi is not None:
+            rx, ry, rw, rh = self._roi
+            h, w = frame.shape[:2]
+            rx = max(0, min(rx, w - 1)); ry = max(0, min(ry, h - 1))
+            rw = min(rw, w - rx);        rh = min(rh, h - ry)
+            if rw > 0 and rh > 0:
+                frame = cv2.resize(frame[ry:ry+rh, rx:rx+rw], (fw, fh),
+                                   interpolation=cv2.INTER_LINEAR)
+        if frame.shape[0] != fh or frame.shape[1] != fw:
+            canvas = np.zeros((fh, fw, 3), dtype=np.uint8)
+            h, w = min(frame.shape[0], fh), min(frame.shape[1], fw)
+            canvas[:h, :w] = frame[:h, :w]
+            frame = canvas
+        return frame
+
+    def _black_frame(self) -> np.ndarray:
+        return np.zeros((self.cfg.frame_h, self.cfg.frame_w, 3), dtype=np.uint8)
+
+    _roi: Optional[Tuple[int, int, int, int]] = None
+
+    def select_roi(self):
+        raw = self._grab_raw()
+        win = "请框选识别区域（拖拽鼠标）  Enter确认  C/ESC取消"
+        cv2.namedWindow(win, cv2.WINDOW_NORMAL)
+        cv2.resizeWindow(win, min(raw.shape[1], 1400), min(raw.shape[0], 900))
+        hint = raw.copy()
+        cv2.putText(hint, "拖拽选择识别区域  Enter=确认  C/ESC=取消全帧",
+                    (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
+        if self._roi:
+            rx, ry, rw, rh = self._roi
+            cv2.rectangle(hint, (rx, ry), (rx+rw, ry+rh), (0, 255, 0), 2)
+            cv2.putText(hint, f"当前ROI: ({rx},{ry}) {rw}x{rh}",
+                        (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+        roi = cv2.selectROI(win, hint, showCrosshair=True, fromCenter=False)
+        cv2.destroyWindow(win)
+        x, y, w, h = roi
+        if w > 10 and h > 10:
+            self._roi = (int(x), int(y), int(w), int(h))
+            print(f"[ROI] 已设置: x={x} y={y} w={w} h={h}")
+        else:
+            self._roi = None
+            print("[ROI] 已清除，使用全帧")
+
+    def _grab_raw(self) -> np.ndarray:
+        try:
+            l, t, r, b = win32gui.GetWindowRect(self.hwnd)
+        except Exception:
+            return self._black_frame()
+        window_width  = r - l
+        window_height = b - t
+        if window_width <= 0 or window_height <= 0:
+            return self._black_frame()
+        cap_x = l + 8; cap_y = t + 30
+        cap_w = window_width - 16; cap_h = window_height - 40
+        if cap_w <= 0 or cap_h <= 0:
+            cap_x, cap_y, cap_w, cap_h = l, t, window_width, window_height
+        max_size = 1920
+        if cap_w > max_size or cap_h > max_size:
+            scale = max_size / max(cap_w, cap_h)
+            cap_w = int(cap_w * scale); cap_h = int(cap_h * scale)
+        shot = pyautogui.screenshot(region=(cap_x, cap_y, cap_w, cap_h))
+        return cv2.cvtColor(np.array(shot), cv2.COLOR_RGB2BGR)
+
+    def _window_center_lparam(self) -> int:
+        try:
+            l, t, r, b = win32gui.GetWindowRect(self.hwnd)
+            cx, cy = (l + r) // 2, (t + b) // 2
+        except Exception:
+            cx, cy = 400, 300
+        return (cy & 0xFFFF) << 16 | (cx & 0xFFFF)
+
+    def move_y(self, steps: int):
+        ticks = abs(int(steps))
+        if ticks == 0: return
+        
+        # 对接到 Newport 驱动器 Y 轴 (假设轴 2)
+        if self.use_driver and self.driver_type == "newport" and self.newport is not None and self.newport.is_connected():
+            self.newport.move_relative(2, steps)
+            return
+        
+        # 对接到 XPS 控制器 Y 轴
+        if self.use_driver and self.driver_type == "xps" and self.xps is not None and self.xps_socket_id != -1:
+            try:
+                # XPS 控制器使用相对移动，单位为微米
+                # 假设每个步骤对应 1 微米
+                displacement = steps * 1.0  # 转换为微米
+                # XPS 控制器的位移顺序通常是 [X, Y, Z]
+                # 这里我们只移动 Y 轴，所以 X 和 Z 为 0
+                result = self.xps.GroupMoveRelative(self.xps_socket_id, self.xps_group_name, [0, displacement, 0])
+                if result[0] != 0:
+                    print(f"❌ XPS 控制器 Y 轴移动失败: {result[1]}")
+            except Exception as e:
+                print(f"❌ XPS 控制器 Y 轴移动异常: {str(e)}")
+            return
+
+        # 备用方案：ToupView 窗口滚动
+        delta  = -_WHEEL_DELTA if steps > 0 else +_WHEEL_DELTA
+        wparam = (delta & 0xFFFF) << 16
+        lparam = self._window_center_lparam()
+        with self._lock:
+            for _ in range(ticks):
+                win32api.SendMessage(self.scroll_hwnd, 0x020A, wparam, lparam)
+
+    def move_x(self, steps: int):
+        ticks = abs(int(steps))
+        if ticks == 0: return
+
+        # 对接到 Newport 驱动器 X 轴 (假设轴 1)
+        if self.use_driver and self.driver_type == "newport" and self.newport is not None and self.newport.is_connected():
+            self.newport.move_relative(1, self.driver_x_sign * steps)
+            return
+        
+        # 对接到 XPS 控制器 X 轴
+        if self.use_driver and self.driver_type == "xps" and self.xps is not None and self.xps_socket_id != -1:
+            try:
+                # XPS 控制器使用相对移动，单位为微米
+                # 假设每个步骤对应 1 微米
+                displacement = self.driver_x_sign * steps * 1.0  # 转换为微米，并应用方向
+                # XPS 控制器的位移顺序通常是 [X, Y, Z]
+                # 这里我们只移动 X 轴，所以 Y 和 Z 为 0
+                result = self.xps.GroupMoveRelative(self.xps_socket_id, self.xps_group_name, [displacement, 0, 0])
+                if result[0] != 0:
+                    print(f"❌ XPS 控制器 X 轴移动失败: {result[1]}")
+            except Exception as e:
+                print(f"❌ XPS 控制器 X 轴移动异常: {str(e)}")
+            return
+
+        # 备用方案：ToupView 窗口键盘模拟
+        vk = _VK_RIGHT if steps > 0 else _VK_LEFT
+        win32gui.SetForegroundWindow(self.hwnd)
+        time.sleep(0.04)
+        for _ in range(ticks):
+            inputs = (_INPUT * 2)()
+            inputs[0].type = _INPUT_KEYBOARD
+            inputs[0]._input.ki.wVk = vk
+            inputs[1].type = _INPUT_KEYBOARD
+            inputs[1]._input.ki.wVk     = vk
+            inputs[1]._input.ki.dwFlags = _KEYEVENTF_KEYUP
+            ctypes.windll.user32.SendInput(2, inputs, _INPUT_SZ)
+
+
+# ============================================================
+# 2. 骨架叠加渲染器（支持干净主路径）
+# ============================================================
+class SkeletonOverlay:
+    """
+    封装单帧骨架提取 + 叠加绘制逻辑。
+
+    显示层次（由底到顶）：
+      1. 原图 / 分割叠加
+      2. 灰色细线  ── 完整骨架所有像素
+      3. 红色粗线  ── 最长主路径（含环/分支，原样保留）
+      4. 黄色粗线  ── 干净主路径（无环无分支）[show_clean=True 时显示]
+      5. 青色粗线  ── 切割路径（从左上角开始，带方向箭头）[show_cutting=True 时显示]
+      6. 文字统计信息
+    """
+    COLOR_ALL    = (160, 160, 160)   # 完整骨架：灰色
+    COLOR_MAIN   = (0,   0,   255)   # 最长路径：红色（原样保留）
+    COLOR_CLEAN  = (0,   255, 255)   # 干净路径：黄色
+    COLOR_CUTTING = (255, 0, 255)    # 切割路径：青色
+    RADIUS_ALL   = 1
+    RADIUS_MAIN  = 3
+    RADIUS_CLEAN = 3
+    RADIUS_CUTTING = 3
+
+    def __init__(self, scan_cfg: ScanConfig):
+        self.extractor = PathSkeletonExtractor(scan_cfg)
+
+    def apply(self, image: np.ndarray, mask: np.ndarray,
+              show_stats: bool = True,
+              show_clean: bool = True,
+              show_cutting: bool = True) -> Tuple[np.ndarray, int, int, int, int]:
+        """
+        在 image 上叠加骨架并返回结果。
+
+        Args:
+            image        : BGR 图像
+            mask         : 语义分割掩码
+            show_stats   : 是否在左下角绘制统计文字
+            show_clean   : 是否绘制黄色干净路径层（C 键控制）
+            show_cutting : 是否绘制青色切割路径层（V 键控制）
+
+        Returns:
+            out     : 叠加结果图像
+            n_all   : 完整骨架像素数
+            n_main  : 最长路径像素数
+            n_clean : 干净路径像素数
+            n_cutting: 切割路径像素数
+        """
+        full_skel, main_skel, _ = self.extractor.extract_from_mask(mask)
+        n_all  = int(np.sum(full_skel > 0))
+        n_main = int(np.sum(main_skel > 0))
+
+        if n_all == 0:
+            return image.copy(), 0, 0, 0, 0
+
+        # ① 完整骨架（灰色细线）
+        out = self.extractor.draw_all_skeleton(
+            image, main_skel, color=self.COLOR_MAIN, radius=self.RADIUS_MAIN)
+
+        # ② 最长路径（红色粗线，原样保留）
+        # Single-path mode: skip the old duplicate longest-path overlay.
+
+        # ③ 干净主路径（黄色粗线，无环无分支）
+        n_clean = 0
+        if show_clean:
+            clean_mask, _ = self.extractor.extract_clean_main_path(
+                mask, precomputed_skel=full_skel)
+            n_clean = int(np.sum(clean_mask > 0))
+            if n_clean > 0:
+                out = self.extractor.draw_all_skeleton(
+                    out, clean_mask, color=self.COLOR_CLEAN, radius=self.RADIUS_CLEAN)
+
+        # ④ 切割路径（青色粗线，从左上角开始，带方向箭头）
+        n_cutting = 0
+        if show_cutting:
+            cutting_mask, cutting_points, cutting_directions = self.extractor.extract_cutting_path(
+                mask, precomputed_skel=full_skel)
+            n_cutting = int(np.sum(cutting_mask > 0))
+            if n_cutting > 0:
+                out = self.extractor.draw_cutting_path_with_arrows(
+                    out, cutting_mask, cutting_directions,
+                    path_color=self.COLOR_CUTTING, arrow_color=(0, 255, 0),
+                    arrow_spacing=30, arrow_size=15)
+
+        # ⑤ 统计文字
+        if show_stats:
+            cv2.putText(out,
+                        f"All:{n_all}  Main:{n_main}  Clean:{n_clean}  Cut:{n_cutting}",
+                        (10, image.shape[0] - 35),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 1)
+
+        return out, n_all, n_main, n_clean, n_cutting
+
+
+# ============================================================
+# 3. 实时分割 + 骨架预览
+# ============================================================
+class DisplayConfig:
+    def __init__(self,
+                 panel_scale: float = 1.0,
+                 columns: int = 3,
+                 window_w: Optional[int] = None,
+                 window_h: Optional[int] = None):
+        assert columns in (1, 2, 3), "columns 只能是 1 / 2 / 3"
+        assert 0.1 <= panel_scale <= 4.0
+        self.panel_scale = panel_scale
+        self.columns     = columns
+        self.window_w    = window_w
+        self.window_h    = window_h
+
+    def panel_size(self, frame_w: int, frame_h: int) -> Tuple[int, int]:
+        return (max(1, int(frame_w * self.panel_scale)),
+                max(1, int(frame_h * self.panel_scale)))
+
+    def window_size(self, frame_w: int, frame_h: int) -> Tuple[int, int]:
+        pw, ph = self.panel_size(frame_w, frame_h)
+        return (self.window_w or pw * self.columns,
+                self.window_h or ph)
+
+    def resize_panel(self, img: np.ndarray, frame_w: int, frame_h: int) -> np.ndarray:
+        pw, ph = self.panel_size(frame_w, frame_h)
+        if img.shape[1] == pw and img.shape[0] == ph:
+            return img
+        interp = cv2.INTER_AREA if self.panel_scale < 1.0 else cv2.INTER_LINEAR
+        return cv2.resize(img, (pw, ph), interpolation=interp)
+
+
+class RealtimeSegViewer:
+    """
+    显示布局（列数由 DisplayConfig.columns 控制）：
+    ┌──────────────┬──────────────┬──────────────┐
+    │  原始画面     │  分割叠加    │ 分割+骨架     │
+    └──────────────┴──────────────┴──────────────┘
+
+    键位：W/S 上下  A/D 左右  K 切换骨架  C 切换干净路径  V 切换切割路径  +/- 缩放  Q 退出
+    """
+    ALPHA = 0.45
+    STEP  = 5
+    _SCALE_STEP = 0.1
+    _SCALE_MIN  = 0.2
+    _SCALE_MAX  = 3.0
+
+    def __init__(self, hw: PaintWindowHardware,
+                 seg: SegmentationInference,
+                 scan_cfg: ScanConfig,
+                 disp_cfg: Optional["DisplayConfig"] = None):
+        self.hw            = hw
+        self.seg           = seg
+        self.skeleton      = SkeletonOverlay(scan_cfg)
+        self.disp          = disp_cfg or DisplayConfig()
+        self.running       = True
+        self.show_skeleton = True
+        self.show_clean    = True          # ★ C 键切换干净路径显示
+        self.show_cutting  = True          # ★ V 键切换切割路径显示
+        self._trigger_roi  = False
+        self._x = self._y = self._steps = 0
+
+    def _on_key(self, key):
+        try:
+            ch = key.char
+        except AttributeError:
+            return
+        s = self.STEP
+        ch_l = ch.lower()
+        if   ch_l == 'w': self.hw.move_y(-s); self._y -= s; self._steps += 1
+        elif ch_l == 's': self.hw.move_y(+s); self._y += s; self._steps += 1
+        elif ch_l == 'a': self.hw.move_x(-s); self._x -= s; self._steps += 1
+        elif ch_l == 'd': self.hw.move_x(+s); self._x += s; self._steps += 1
+        elif ch_l == 'k': self.show_skeleton = not self.show_skeleton
+        elif ch_l == 'c': self.show_clean    = not self.show_clean   # ★ 新增
+        elif ch_l == 'v': self.show_cutting  = not self.show_cutting # ★ 新增
+        elif ch_l == 'r': self._trigger_roi  = True
+        elif ch in ('+', '='): self._scale_step(+self._SCALE_STEP)
+        elif ch == '-':        self._scale_step(-self._SCALE_STEP)
+        elif ch_l == 'q': self.running = False; return False
+
+    def _scale_step(self, delta: float):
+        new_scale = round(self.disp.panel_scale + delta, 2)
+        new_scale = max(self._SCALE_MIN, min(self._SCALE_MAX, new_scale))
+        self.disp.panel_scale = new_scale
+        fw, fh = self.hw.cfg.frame_w, self.hw.cfg.frame_h
+        ww, wh = self.disp.window_size(fw, fh)
+        cv2.resizeWindow("语义分割+骨架 | WASD移动  K骨架  C干净路径  Q退出", ww, wh)
+        print(f"[Display] scale={new_scale:.2f}  窗口={ww}x{wh}")
+
+    @staticmethod
+    def _colorize(mask: np.ndarray) -> np.ndarray:
+        vis = np.zeros((*mask.shape, 3), dtype=np.uint8)
+        for cls, color in SEG_PALETTE.items():
+            vis[mask == cls] = color
+        return vis
+
+    def _draw_legend(self, img: np.ndarray) -> np.ndarray:
+        y = 20
+        for cls, color in SEG_PALETTE.items():
+            if cls == SegClass.BACKGROUND:
+                continue
+            cv2.rectangle(img, (10, y - 12), (28, y + 4), color, -1)
+            cv2.putText(img, cls.name, (34, y),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+            y += 22
+        return img
+
+    def _blend_seg(self, frame: np.ndarray, mask: np.ndarray) -> np.ndarray:
+        overlay = self._colorize(mask)
+        blended = cv2.addWeighted(frame, 1 - self.ALPHA, overlay, self.ALPHA, 0)
+        return self._draw_legend(blended)
+
+    def _draw_pos(self, img: np.ndarray) -> np.ndarray:
+        cv2.putText(img,
+                    f"X:{self._x:+5d}  Y:{self._y:+5d}  Steps:{self._steps}",
+                    (10, img.shape[0] - 12),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 255, 255), 1)
+        return img
+
+    def run(self):
+        win_name = "语义分割+骨架 | WASD移动  K骨架  C干净路径  +/-缩放  Q退出"
+        fw, fh   = self.hw.cfg.frame_w, self.hw.cfg.frame_h
+        ww, wh   = self.disp.window_size(fw, fh)
+
+        cv2.namedWindow(win_name, cv2.WINDOW_NORMAL)
+        cv2.resizeWindow(win_name, ww, wh)
+
+        print("是否先框选识别区域？直接按 Enter 跳过，或按 R 键随时框选")
+        self.hw.select_roi()
+
+        listener = keyboard.Listener(on_press=self._on_key)
+        listener.start()
+
+        print("\n" + "=" * 60)
+        print("🔬 实时语义分割 + 骨架识别  v2.1")
+        print(f"  布局: {self.disp.columns}列  缩放:{self.disp.panel_scale:.2f}  窗口:{ww}x{wh}")
+        print("  W/S→上下  A/D→左右  K→骨架  C→干净路径  V→切割路径  R→重选ROI  +/-→缩放  Q→退出")
+        print("  颜色: 灰=完整骨架  红=最长路径(原样)  黄=干净路径(无环无分支)  青=切割路径(从左上角)")
+        print("=" * 60 + "\n")
+
+        while self.running:
+            if self._trigger_roi:
+                self._trigger_roi = False
+                self.hw.select_roi()
+                ww, wh = self.disp.window_size(fw, fh)
+                cv2.resizeWindow(win_name, ww, wh)
+
+            t0 = time.time()
+            frame = self.hw.grab_frame()
+            mask  = self.seg.predict(frame)
+
+            frame_disp = frame.copy()
+            if self.hw._roi:
+                rx, ry, rw, rh = self.hw._roi
+                cv2.putText(frame_disp, f"ROI({rx},{ry}) {rw}x{rh}  [R]重选",
+                            (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 255, 0), 1)
+            else:
+                cv2.putText(frame_disp, "[R] 按R框选ROI",
+                            (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 200, 200), 1)
+
+            seg_view = self._blend_seg(frame.copy(), mask)
+
+            if self.show_skeleton:
+                # ★ apply() 现在返回 5 个值
+                skel_view, n_all, n_main, n_clean, n_cutting = self.skeleton.apply(
+                    seg_view.copy(), mask,
+                    show_stats=True,
+                    show_clean=self.show_clean,
+                    show_cutting=self.show_cutting,
+                )
+                tag = (f"[K]Skel ON  "
+                       f"[C]Clean:{'ON ' if self.show_clean else 'OFF'}"
+                       f"({n_clean}px)  "
+                       f"[V]Cut:{'ON ' if self.show_cutting else 'OFF'}"
+                       f"({n_cutting}px)")
+                cv2.putText(skel_view, tag,
+                            (skel_view.shape[1] - 260, 20),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 255), 1)
+            else:
+                skel_view = seg_view.copy()
+                cv2.putText(skel_view, "[K] Skel OFF",
+                            (skel_view.shape[1] - 130, 20),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (100, 100, 100), 1)
+
+            self._draw_pos(seg_view)
+            self._draw_pos(skel_view)
+
+            def rs(img): return self.disp.resize_panel(img, fw, fh)
+            if   self.disp.columns == 1:
+                panel = rs(skel_view)
+            elif self.disp.columns == 2:
+                panel = np.hstack([rs(seg_view), rs(skel_view)])
+            else:
+                panel = np.hstack([rs(frame_disp), rs(seg_view), rs(skel_view)])
+
+            cv2.imshow(win_name, panel)
+
+            fps = 1.0 / max(time.time() - t0, 1e-6)
+            cv2.setWindowTitle(win_name,
+                f"FPS:{fps:.1f}  X:{self._x}  Y:{self._y}"
+                f"  scale:{self.disp.panel_scale:.2f}"
+                f"  骨架:{'ON' if self.show_skeleton else 'OFF'}"
+                f"  干净路径:{'ON' if self.show_clean else 'OFF'}"
+                f"  切割路径:{'ON' if self.show_cutting else 'OFF'}")
+
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                self.running = False
+
+        listener.stop()
+        cv2.destroyAllWindows()
+        print(f"\n✅ 退出  位置:({self._x},{self._y})  步数:{self._steps}")
+
+
+# ============================================================
+# 4. 切割模拟器
+# ============================================================
+class CuttingSimulator:
+    """
+    切割模拟器：在骨架生成后，控制ToupView视角沿切割路径移动，模拟切割过程
+    
+    功能：
+    1. 在生成"最优切割路径"后，控制局部视角
+    2. 基于骨架的像素点位置，在规划好的路径上，模拟"切割"过程
+    3. 在snake模式下，重新控制toupview的界面，回到初始点（左上角）
+    4. 控制上下左右，让画面的中心始终沿"切割路径"移动
+    """
+    
+    def __init__(self, hw: PaintWindowHardware, scan_cfg: ScanConfig):
+        self.hw = hw
+        self.cfg = scan_cfg
+        self.running = True
+        self.paused = False
+        self.current_index = 0
+        self.cutting_points = []
+        self.directions = []
+        self._listener = None
+        self._capture_window = None
+        self._window_name = "??????"
+        self.closed_loop = True
+
+    @staticmethod
+    def _get_direction_index(dy: int, dx: int) -> int:
+        direction_map = {
+            (0, 1): 0,
+            (1, 0): 1,
+            (0, -1): 2,
+            (-1, 0): 3,
+            (1, 1): 4,
+            (1, -1): 5,
+            (-1, 1): 6,
+            (-1, -1): 7,
+        }
+        key = (int(np.sign(dy)), int(np.sign(dx)))
+        return direction_map.get(key, 0)
+
+    def _ensure_closed_loop(
+        self,
+        cutting_points: List[Tuple[int, int]],
+    ) -> List[Tuple[int, int]]:
+        if len(cutting_points) < 2:
+            return list(cutting_points)
+
+        closed_points = list(cutting_points)
+        if closed_points[0] != closed_points[-1]:
+            closed_points.append(closed_points[0])
+        return closed_points
+
+    def _directions_from_points(
+        self,
+        points: List[Tuple[int, int]],
+    ) -> List[Tuple[int, int, int]]:
+        directions: List[Tuple[int, int, int]] = []
+        for idx in range(len(points) - 1):
+            y0, x0 = points[idx]
+            y1, x1 = points[idx + 1]
+            if y0 == y1 and x0 == x1:
+                continue
+            directions.append((y0, x0, self._get_direction_index(y1 - y0, x1 - x0)))
+        return directions
+
+    def set_cutting_path(self, cutting_points: List[Tuple[int, int]], 
+                        directions: List[Tuple[int, int, int]]):
+        """
+        ??????
+
+        Args:
+            cutting_points: ??????? [(y,x), ...]
+            directions: ?????? [(y,x,dir_idx), ...]
+        """
+        _ = directions
+        points = list(cutting_points)
+        if self.closed_loop:
+            points = self._ensure_closed_loop(points)
+
+        self.cutting_points = points
+        self.directions = self._directions_from_points(points)
+        self.current_index = 0
+        print(
+            f"[CuttingSim] ????????? {len(self.cutting_points)} ??, "
+            f"??={self.cutting_points[0] if self.cutting_points else None}, "
+            f"??={self.cutting_points[-1] if self.cutting_points else None}"
+        )
+
+    def _initialize_capture_window(self):
+        """
+        初始化捕获窗口
+        """
+        print(f"[CutSim] 正在创建捕获窗口: {self._window_name}")
+        cv2.namedWindow(self._window_name, cv2.WINDOW_NORMAL)
+        cv2.resizeWindow(self._window_name, 800, 600)  # 设置窗口大小
+        print(f"[CutSim] 捕获窗口已创建")
+        
+    def _capture_and_display(self):
+        """
+        捕获ToupView画面并显示
+        """
+        frame = self.hw.grab_frame()
+        if frame is not None and frame.size > 0:
+            # 添加进度信息到画面
+            progress = (self.current_index + 1) / len(self.cutting_points) * 100
+            target_y, target_x = self.cutting_points[self.current_index] if self.current_index < len(self.cutting_points) else (0, 0)
+            
+            # 绘制像素网格
+            h, w = frame.shape[:2]
+            grid_size = 50  # 网格大小，单位：像素
+            
+            # 绘制垂直网格线
+            for x in range(0, w, grid_size):
+                cv2.line(frame, (x, 0), (x, h), (200, 200, 200), 1)
+            
+            # 绘制水平网格线
+            for y in range(0, h, grid_size):
+                cv2.line(frame, (0, y), (w, y), (200, 200, 200), 1)
+            
+            # 标注当前视野中心
+            center_x, center_y = w // 2, h // 2
+            cv2.circle(frame, (center_x, center_y), 5, (0, 0, 255), -1)  # 中心圆点
+            cv2.drawMarker(frame, (center_x, center_y), (0, 0, 255), 
+                          markerType=cv2.MARKER_CROSS, markerSize=20, thickness=2)
+            
+            # 绘制进度条
+            bar_width = int(w * 0.8)
+            bar_height = 20
+            bar_x = (w - bar_width) // 2
+            bar_y = h - 40
+            
+            # 背景条
+            cv2.rectangle(frame, (bar_x, bar_y), (bar_x + bar_width, bar_y + bar_height), (50, 50, 50), -1)
+            # 进度条
+            progress_width = int(bar_width * progress / 100)
+            cv2.rectangle(frame, (bar_x, bar_y), (bar_x + progress_width, bar_y + bar_height), (0, 255, 0), -1)
+            # 进度文字
+            cv2.putText(frame, f"进度: {progress:.1f}%", (bar_x, bar_y - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+            # 当前位置
+            cv2.putText(frame, f"位置: ({target_x}, {target_y}) 点: {self.current_index + 1}/{len(self.cutting_points)}",
+                        (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+            
+            # 显示画面
+            cv2.imshow(self._window_name, frame)
+            # 处理键盘事件
+            key = cv2.waitKey(1) & 0xFF
+            if key == ord('q'):
+                self.running = False
+            elif key == ord(' '):
+                self.paused = not self.paused
+                print(f"[CutSim] {'暂停' if self.paused else '继续'}切割模拟")
+            elif key == ord('r'):
+                self.current_index = 0
+                self.paused = False
+                print("[CutSim] 重新开始切割模拟")
+        
+    def reset_to_initial_position(self):
+        """
+        重置视角到初始点（左上角）
+        通过发送大量向上和向左的移动指令回到左上角
+        """
+        print("[CuttingSim] 正在重置视角到初始点（左上角）...")
+        
+        # 发送大量向上和向左的移动指令
+        reset_steps = 1000
+        self.hw.move_y(-reset_steps)  # 向上
+        time.sleep(0.1)
+        self.hw.move_x(-reset_steps)  # 向左
+        time.sleep(0.1)
+        
+        print("[CutSim] 视角已重置到初始点")
+        
+    def _on_key(self, key):
+        """
+        键盘事件处理
+        """
+        try:
+            ch = key.char.lower()
+            if ch == ' ':
+                self.paused = not self.paused
+                print(f"[CutSim] {'暂停' if self.paused else '继续'}切割模拟")
+            elif ch == 'q':
+                print("[CutSim] Q 键按下，退出切割模拟...")
+                self.running = False
+                return False
+            elif ch == 'r':
+                print("[CutSim] R 键按下，重新开始切割模拟...")
+                self.current_index = 0
+                self.paused = False
+        except AttributeError:
+            pass
+            
+    def _calculate_movement(self, current_pos: Tuple[int, int], 
+                          target_pos: Tuple[int, int]) -> Tuple[int, int]:
+        """
+        计算从当前位置到目标位置的移动量
+        
+        Args:
+            current_pos: 当前位置 (y, x)
+            target_pos: 目标位置 (y, x)
+            
+        Returns:
+            (dy, dx): y和x方向的移动步数
+        """
+        dy = target_pos[0] - current_pos[0]
+        dx = target_pos[1] - current_pos[1]
+        return dy, dx
+        
+    def run(self, speed: float = 0.05):
+        """
+        运行切割模拟
+        
+        Args:
+            speed: 移动速度（秒），越小越快
+        """
+        if not self.cutting_points:
+            print("[CutSim] 错误：切割路径未设置！")
+            return
+            
+        print("\n" + "=" * 60)
+        print("🔬 切割模拟器")
+        print("=" * 60)
+        print(f"  切割路径点数: {len(self.cutting_points)}")
+        print(f"  移动速度: {speed:.3f}秒/步")
+        print("  控制键:")
+        print("    空格键 - 暂停/继续")
+        print("    R 键   - 重新开始")
+        print("    Q 键   - 退出")
+        print("=" * 60 + "\n")
+        
+        # 初始化捕获窗口
+        self._initialize_capture_window()
+        
+        # 重置视角到初始点
+        self.reset_to_initial_position()
+        
+        # 启动键盘监听
+        self._listener = keyboard.Listener(on_press=self._on_key)
+        self._listener.start()
+        
+        try:
+            # 获取第一帧作为当前位置
+            frame = self.hw.grab_frame()
+            h, w = frame.shape[:2] if frame is not None else (776, 1028)
+            center_y, center_x = h // 2, w // 2
+            
+            # 假设初始位置在全局坐标系的(0, 0)
+            current_global_y = 0
+            current_global_x = 0
+            
+            while self.running and self.current_index < len(self.cutting_points):
+                if self.paused:
+                    # 即使暂停也要显示画面
+                    self._capture_and_display()
+                    time.sleep(0.1)
+                    continue
+                    
+                # 获取当前目标点
+                target_y, target_x = self.cutting_points[self.current_index]
+                
+                # 计算移动量
+                dy = target_y - current_global_y
+                dx = target_x - current_global_x
+                
+                # 移动视角
+                if dy != 0:
+                    self.hw.move_y(-dy)  # 注意：move_y的符号与y轴方向相反
+                    time.sleep(0.01)
+                if dx != 0:
+                    self.hw.move_x(dx)
+                    time.sleep(0.01)
+                
+                # 更新当前位置
+                current_global_y = target_y
+                current_global_x = target_x
+                
+                # 捕获并显示画面
+                self._capture_and_display()
+                
+                # 显示进度
+                progress = (self.current_index + 1) / len(self.cutting_points) * 100
+                if self.current_index % 10 == 0:
+                    print(f"[CutSim] 进度: {progress:.1f}% ({self.current_index + 1}/{len(self.cutting_points)}) "
+                          f"位置: ({target_x}, {target_y})")
+                
+                # 移动到下一个点
+                self.current_index += 1
+                
+                # 控制速度
+                time.sleep(speed)
+                
+            print("\n" + "=" * 60)
+            print("✅ 切割模拟完成！")
+            print("=" * 60)
+            
+        except KeyboardInterrupt:
+            print("[CutSim] 用户中断切割模拟")
+        finally:
+            if self._listener:
+                self._listener.stop()
+            # 清理窗口
+            cv2.destroyWindow(self._window_name) if cv2.getWindowProperty(self._window_name, cv2.WND_PROP_VISIBLE) >= 1 else None
+            print("[CutSim] 切割模拟结束，清理资源...")
+
+
+# ============================================================
+# 5. 主程序
+# ============================================================
+def main():
+    scan_cfg = ScanConfig(
+        frame_w=1028, frame_h=776,
+        um_per_pixel=1.0*15,               # 每个像素的微米数【越大，扫描范围越大】    snake 1.0 snake_simu 15
+        um_per_step=1.0*15,                # 每个步骤的微米数【越大，移动越快】        snake 1.0 snake_simu 15   
+        move_speed_steps=5,                  # 移动的步骤数【越大，移动步数越多】        snake 10000，snake_simu 3
+        row_overlap_ratio=0.1,               # 行重叠比例
+        corner_roi_size=80, 
+        corner_ratio_threshold=0.25,
+        corner_confirm_count=5,
+        boundary_lock_margin_steps=10,
+        skeleton_path_radius=1,
+        skeleton_highlight_radius=3,
+        skeleton_min_length=12,
+        cutting_branch_min_length=3,
+        driver_velocity=2000,
+        driver_acceleration=10000,
+        output_dir=r"E:/jupyter file/2_Optics/CoreSegment/scan_output/ToupView/test10",
+        
+        video_fps=10,
+        save_debug_frames=True,
+    )
+
+    # 模式
+    MODE = "realtime"
+    MODE = "snake"
+    MODE = "snake_xps"
+    MODE = "snake_simu"
+    
+    
+    # 切割模拟配置
+    ENABLE_CUTTING_SIMULATION = True  # 是否启用切割模拟
+    CUTTING_SIMULATION_SPEED = 0.05   # 切割模拟速度（秒/步），越小越快
+
+    # 窗口名称
+    window_title_contains = "ToupView"
+
+    use_driver = (MODE == "snake" or MODE == "snake_xps")
+    driver_type = "xps" if MODE == "snake_xps" else "newport"
+    hw  = PaintWindowHardware(
+        scan_cfg,
+        window_title_contains=window_title_contains,
+        capture_margin=0,
+        use_driver=use_driver,
+        driver_type=driver_type,
+    )
+    seg = SegmentationInference()
+
+    if MODE == "realtime":
+        disp_cfg = DisplayConfig(panel_scale=0.4, columns=2)
+        RealtimeSegViewer(hw, seg, scan_cfg, disp_cfg).run()
+
+    elif MODE in ("snake", "snake_simu", "snake_xps"):
+        print("\n" + "=" * 60)
+        if MODE == "snake":
+            print("🔧 Snake 模式 - 控制 Newport 驱动器切割")
+        elif MODE == "snake_xps":
+            print("🔧 Snake_XPS 模式 - 控制 XPS 控制器切割")
+        else:
+            print("🔧 Snake_Simu 模式 - 模拟显微镜切割")
+        print("=" * 60)
+        print("请框选需要扫描的芯片区域，排除工具栏等干扰区域")
+        print("直接按 Enter 跳过，使用全帧扫描")
+        print("=" * 60 + "\n")
+        hw.select_roi()
+
+        if hw._roi:
+            rx, ry, rw, rh = hw._roi
+            print(f"[Snake] ROI 已设置: x={rx} y={ry} w={rw} h={rh}")
+        else:
+            print(f"[Snake] 未设置 ROI，使用全帧扫描")
+
+        class SnakeScanControllerWithROI(SnakeScanController):
+            def __init__(self, scan_cfg, hw):
+                super().__init__(scan_cfg, hw)
+                self._trigger_roi = False
+                self._listener    = None
+                self._running     = True
+
+            def _save_cutting_path_coordinates(self, cutting_points, cutting_directions, output_path):
+                """
+                保存切割路径坐标到 JSON 文件
+                
+                Args:
+                    cutting_points: 切割路径点列表 [(y,x), ...]
+                    cutting_directions: 方向信息列表 [(y,x,dir_idx), ...]
+                    output_path: 输出 JSON 文件路径
+                """
+                import json
+                import os
+                
+                # 确保路径存在
+                os.makedirs(os.path.dirname(output_path), exist_ok=True)
+                
+                # 转换坐标系统：从 (y, x) 转换为 (x, y)
+                cutting_points_converted = [(int(x), int(y)) for y, x in cutting_points]
+                
+                # 方向名称映射
+                direction_names = ['右', '下', '左', '上', '右下', '左下', '右上', '左上']
+                
+                # 准备数据
+                cutting_data = {
+                    'cutting_points': cutting_points_converted,
+                    'cutting_count': len(cutting_points_converted),
+                    'directions': [
+                        {
+                            'y': int(y),
+                            'x': int(x),
+                            'direction': direction_names[dir_idx] if dir_idx < len(direction_names) else f'方向{dir_idx}',
+                            'direction_index': int(dir_idx)
+                        }
+                        for y, x, dir_idx in cutting_directions
+                    ],
+                    'direction_count': len(cutting_directions),
+                    'start_point': cutting_points_converted[0] if cutting_points_converted else None,
+                    'end_point': cutting_points_converted[-1] if cutting_points_converted else None
+                }
+                
+                # 保存为 JSON
+                with open(output_path, 'w', encoding='utf-8') as f:
+                    json.dump(cutting_data, f, indent=2, ensure_ascii=False)
+                
+                print(f"切割路径坐标已保存到: {output_path}")
+
+            def _on_key(self, key):
+                try:
+                    ch = key.char.lower()
+                    if ch == 'r':
+                        self._trigger_roi = True
+                        print("[Snake] R 键按下，准备重新选择 ROI...")
+                    elif ch == 'q':
+                        print("[Snake] Q 键按下，准备退出...")
+                        self._running = False
+                        return False
+                except AttributeError:
+                    pass
+
+            def run(self):
+                self._listener = keyboard.Listener(on_press=self._on_key)
+                self._listener.start()
+
+                try:
+                    print("\n" + "=" * 60)
+                    print("🔧 Snake 扫描模式  R=重选ROI  Q=退出")
+                    print("=" * 60 + "\n")
+
+                    import threading
+
+                    def scan_thread():
+                        try:
+                            super(SnakeScanControllerWithROI, self).run()
+                        except Exception as e:
+                            print(f"[Snake] 扫描过程中发生错误: {e}")
+                        finally:
+                            self._running = False
+
+                    t = threading.Thread(target=scan_thread, daemon=True)
+                    t.start()
+
+                    while self._running:
+                        if self._trigger_roi:
+                            self._trigger_roi = False
+                            print("[Snake] 正在重新选择 ROI...")
+                            self.hw.select_roi()
+                            if self.hw._roi:
+                                rx, ry, rw, rh = self.hw._roi
+                                print(f"[Snake] 新 ROI 已设置: x={rx} y={ry} w={rw} h={rh}")
+                        time.sleep(0.1)
+
+                    t.join()
+
+                    # ★ 扫描完成后提取骨架坐标
+                    print("\n" + "=" * 60)
+                    print("📍 提取骨架坐标")
+                    print("=" * 60)
+
+                    # ★ 解包 10 个返回值
+                    (global_map_with_skeleton, global_mask, global_mask_color_with_skeleton,
+                     full_skeleton, longest_path_mask, longest_path_points,
+                     clean_path_mask, clean_path_points,
+                     cutting_path_mask, cutting_path_points, cutting_directions) = self.stitcher.build_global_map()
+
+                    os.makedirs(self.cfg.output_dir, exist_ok=True)
+                    cv2.imwrite(os.path.join(self.cfg.output_dir, "global_map.png"), global_map_with_skeleton)
+                    cv2.imwrite(os.path.join(self.cfg.output_dir, "global_mask.png"), global_mask)
+                    cv2.imwrite(os.path.join(self.cfg.output_dir, "global_mask_color.png"), global_mask_color_with_skeleton)
+                    print(f"✅ 全局地图已保存到: {self.cfg.output_dir}")
+
+                    coordinates = extract_skeleton_coordinates(
+                        global_mask, self.cfg, use_physical_units=False)
+
+                    print(f"✅ 骨架坐标提取完成:")
+                    print(f"   - 完整骨架点数量: {coordinates['skeleton_count']}")
+                    print(f"   - 最长路径点数量: {coordinates['longest_path_count']}")
+                    print(f"   - 干净路径点数量: {len(clean_path_points)}")
+                    print(f"   - 切割路径点数量: {len(cutting_path_points)}")
+
+                    output_json = os.path.join(self.cfg.output_dir, "skeleton_coordinates.json")
+                    save_skeleton_coordinates(coordinates, output_json)
+                    print(f"✅ 骨架坐标已保存到: {output_json}")
+
+                    # ★ 保存切割路径坐标
+                    cutting_json = os.path.join(self.cfg.output_dir, "cutting_path_coordinates.json")
+                    self._save_cutting_path_coordinates(cutting_path_points, cutting_directions, cutting_json)
+                    print(f"✅ 切割路径坐标已保存到: {cutting_json}")
+
+                    print("📊 可视化骨架坐标...")
+                    visualized = visualize_skeleton_coordinates(
+                        global_map_with_skeleton, coordinates,
+                        point_radius=2,
+                        skeleton_color=(0, 0, 255),
+                        path_color=(0, 255, 0))
+
+                    output_image = os.path.join(
+                        self.cfg.output_dir, "skeleton_coordinates_visualization.png")
+                    cv2.imwrite(output_image, visualized)
+                    print(f"✅ 可视化结果已保存到: {output_image}")
+
+                    print("\n📋 前10个骨架点坐标:")
+                    for i, (x, y) in enumerate(coordinates['skeleton_points'][:10]):
+                        print(f"   [{i+1}] ({x:.1f}, {y:.1f})")
+
+                    print("\n📋 干净路径前10个点坐标 (y,x):")
+                    for i, (y, x) in enumerate(clean_path_points[:10]):
+                        print(f"   [{i+1}] ({x:.1f}, {y:.1f})")
+
+                    print("\n📋 切割路径前10个点坐标 (y,x):")
+                    for i, (y, x) in enumerate(cutting_path_points[:10]):
+                        print(f"   [{i+1}] ({x:.1f}, {y:.1f})")
+
+                    print("\n📋 切割路径方向统计:")
+                    direction_names = ['右', '下', '左', '上', '右下', '左下', '右上', '左上']
+                    dir_counts = {}
+                    for _, _, dir_idx in cutting_directions:
+                        dir_counts[dir_idx] = dir_counts.get(dir_idx, 0) + 1
+                    for dir_idx, count in sorted(dir_counts.items()):
+                        dir_name = direction_names[dir_idx] if dir_idx < len(direction_names) else f'方向{dir_idx}'
+                        print(f"   {dir_name}: {count} 次")
+
+                    print("\n" + "=" * 60)
+                    print("✅ 所有任务完成！")
+                    print("=" * 60)
+                    
+                    # ★ 启动切割模拟（如果启用）
+                    if ENABLE_CUTTING_SIMULATION:
+                        print("\n" + "=" * 60)
+                        print("🔬 准备启动切割模拟...")
+                        print("=" * 60)
+                        
+                        try:
+                            input("\n按 Enter 键开始切割模拟，或 Ctrl+C 跳过...")
+                            
+                            # 创建切割模拟器
+                            simulator = CuttingSimulator(hw, self.cfg)
+                            
+                            # 设置切割路径
+                            simulator.set_cutting_path(cutting_path_points, cutting_directions)
+                            
+                            # 运行切割模拟
+                            simulator.run(speed=CUTTING_SIMULATION_SPEED)
+                        except KeyboardInterrupt:
+                            print("\n[Snake] 用户跳过切割模拟")
+                    else:
+                        print("\n[Snake] 切割模拟已禁用（ENABLE_CUTTING_SIMULATION = False）")
+
+                except KeyboardInterrupt:
+                    print("[Snake] 用户中断扫描")
+                finally:
+                    if self._listener:
+                        self._listener.stop()
+                    print("[Snake] 扫描结束，清理资源...")
+
+        snake_controller = SnakeScanControllerWithROI(scan_cfg, hw)
+        snake_controller.run()
+
+
+if __name__ == "__main__":
+    main()
+
+
+"""
+閾斿洤鑸伴幍寮块崗銊ョ湰閸︽澘娴橀弸鍕紦缁崵绮?(Snake Scan Global Map Builder) v6.5
+==========================================================
+閺囧瓨鏌? 閺傛澘楠炴彃鍣ｆ稉鏄忕熅瀵板嫭褰侀崣鏍电礄閸樺娅庨悳鐭鹃崪灞藉瀻閺€绱?
+      - 閻忔媽澹婄紒鍡欏殠閿涙艾鐣弫鎾弸鍓佺秹缂?
+      - 缁俱垼澹婄划妤冨殠閿涙碍娓堕梹鑳熅瀵板嫸绱欓崢鐔哥壉娣囨繄鏆€閿涘苯鎯堥悳?閸掑棙鏁敍?
+      - 姒涘嫯澹婄划妤冨殠閿涙艾鍏遍崙鈧稉鏄忕熅瀵板嫸绱欓柧鐐崶缍滷S閿涘苯浜ゆ惔鏇炲箵闂勩倗骞嗙捄鎷伴崚鍡樻暜閿?
+"""
+
+import os
+os.chdir("..")
+
+import torch
+from torch import nn
+import numpy as np
+import cv2
+import time
+import json
+import logging
+from pathlib import Path
+from dataclasses import dataclass, field
+from enum import IntEnum, auto
+from typing import Optional, Tuple, List, Dict, Set
+
+import networkx as nx
+from skimage.morphology import skeletonize
+
+from src.model_head import ASPPDecoder
+from src.model_backbone import DinoBackbone
+from src.common import image_to_tensor
+from src.utils import outputs_to_maps, visualize_maps
+from pathlib import Path
+import sys
+
+def _configure_console_encoding() -> None:
+    if os.name != "nt":
+        return
+    try:
+        os.system("chcp 65001 > nul")
+    except Exception:
+        pass
+    for stream_name in ("stdout", "stderr"):
+        stream = getattr(sys, stream_name, None)
+        if hasattr(stream, "reconfigure"):
+            try:
+                stream.reconfigure(encoding="utf-8", errors="replace")
+            except Exception:
+                pass
+
+_configure_console_encoding()
+
+current_file = Path(__file__).resolve()
+project_root = current_file.parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+
+import config.config as cfg
+
+logging.basicConfig(level=logging.INFO, format="[%(asctime)s] %(levelname)s: %(message)s")
+logger = logging.getLogger("SnakeScan")
+
+IMG_SIZE             = cfg.IMG_SIZE
+PATCH_SIZE           = cfg.PATCH_SIZE
+IMG_MEAN             = np.array(cfg.IMG_MEAN, dtype=np.float32)[:, None, None]
+IMG_STD              = np.array(cfg.IMG_STD, dtype=np.float32)[:, None, None]
+HIDDEN_DIM           = cfg.HIDDEN_DIM
+TARGET_SIZE          = cfg.TARGET_SIZE
+DINOV3_DIR           = cfg.DINOV3_DIR
+DINO_MODEL           = cfg.DINO_MODEL
+DINO_WEIGHTS         = cfg.DINO_WEIGHTS
+MODEL_TO_NUM_LAYERS  = cfg.MODEL_TO_NUM_LAYERS
+MODEL_TO_EMBED_DIM   = cfg.MODEL_TO_EMBED_DIM
+MODEL_PATH_INFERENCE = cfg.MODEL_PATH_INFERENCE
+CLASS_NAMES_PATH     = cfg.CLASS_NAMES_PATH
+
+
+class SegClass(IntEnum):
+    BACKGROUND = 0
+    ROAD       = 1
+    OBSTACLE   = 2
+    BOUNDARY   = 3
+
+class PhysicalCorner(IntEnum):
+    TOP_LEFT     = auto()
+    TOP_RIGHT    = auto()
+    BOTTOM_LEFT  = auto()
+    BOTTOM_RIGHT = auto()
+
+class Direction(IntEnum):
+    TOP    = auto()
+    BOTTOM = auto()
+    LEFT   = auto()
+    RIGHT  = auto()
+
+class ViewCorner(IntEnum):
+    TOP_LEFT     = auto()
+    TOP_RIGHT    = auto()
+    BOTTOM_LEFT  = auto()
+    BOTTOM_RIGHT = auto()
+
+SEG_PALETTE = {
+    SegClass.BACKGROUND: (0,   0,   0),
+    SegClass.ROAD:       (0,   255, 0),
+    SegClass.OBSTACLE:   (255, 0,   0),
+    SegClass.BOUNDARY:   (0,   0,   255),
+}
+
+PHYSICAL_CORNER_REQUIREMENTS = {
+    PhysicalCorner.TOP_LEFT:     {ViewCorner.TOP_LEFT, ViewCorner.TOP_RIGHT, ViewCorner.BOTTOM_LEFT},
+    PhysicalCorner.TOP_RIGHT:    {ViewCorner.TOP_LEFT, ViewCorner.TOP_RIGHT, ViewCorner.BOTTOM_RIGHT},
+    PhysicalCorner.BOTTOM_LEFT:  {ViewCorner.TOP_LEFT, ViewCorner.BOTTOM_LEFT, ViewCorner.BOTTOM_RIGHT},
+    PhysicalCorner.BOTTOM_RIGHT: {ViewCorner.TOP_RIGHT, ViewCorner.BOTTOM_LEFT, ViewCorner.BOTTOM_RIGHT},
+}
+
+
+# ============================================================
+# 0. 閹靛伎闁板秶鐤?
+# ============================================================
+@dataclass
+class ScanConfig:
+    frame_w: int = 1028
+    frame_h: int = 776
+    um_per_pixel: float = 1.0
+    um_per_step: float = 1.0
+
+    move_speed_steps: int = 100
+    row_overlap_ratio: float = 0.2
+
+    corner_roi_size: int = 80
+    corner_ratio_threshold: float = 0.25
+    corner_confirm_count: int = 4
+    boundary_lock_margin_steps: int = 10
+
+    skeleton_path_radius: int = 1
+    skeleton_highlight_radius: int = 5
+    skeleton_min_length: int = 12
+    cutting_branch_min_length: int = 8
+
+    output_dir: str = r"F:/0_My_jupyter/0_Optical/scan_output"
+    video_fps: int = 10
+    save_debug_frames: bool = True
+
+    boundary_dark_enable: bool = True
+    boundary_dark_threshold: int = 50
+    boundary_dark_use_corner_rois: bool = True
+    boundary_dark_morph_kernel: int = 3
+
+    driver_velocity: Optional[int] = None
+    driver_acceleration: Optional[int] = None
+
+    @property
+    def pixels_per_step(self) -> float:
+        return self.um_per_step / self.um_per_pixel
+
+    @property
+    def frame_h_steps(self) -> int:
+        effective_h = self.frame_h * (1.0 - self.row_overlap_ratio)
+        return int(effective_h / self.um_per_pixel / self.um_per_step / 1 )         # snake_simu
+        # return int(effective_h / self.um_per_pixel / self.um_per_step * 7 )             # snake
+
+    @property
+    def frame_w_steps(self) -> int:
+        return int(self.frame_w / self.um_per_pixel / self.um_per_step * 3)      # snake_simu
+        # return int(self.frame_w * self.um_per_pixel / self.um_per_step * 3 )            # snake
+
+
+# ============================================================
+# 1. 鐠囩疅閸掑棗澹婇幒銊ф倞閸?
+# ============================================================
+class SegmentationInference:
+    def __init__(self):
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+
+        with open(CLASS_NAMES_PATH) as f:
+            self.class_names = [line.strip() for line in f]
+        self.num_classes = len(self.class_names)
+        logger.info(f"Classes: {self.num_classes}  Names: {self.class_names}")
+
+        n_layers_dino = MODEL_TO_NUM_LAYERS[DINO_MODEL]
+        dino_model = torch.hub.load(
+            repo_or_dir=DINOV3_DIR, model=DINO_MODEL,
+            source="local", weights=DINO_WEIGHTS,
+        )
+        self.backbone = DinoBackbone(dino_model, n_layers_dino).to(self.device)
+        self.backbone.eval()
+
+        embed_dim = MODEL_TO_EMBED_DIM[DINO_MODEL]
+        self.head = ASPPDecoder(
+            in_ch=embed_dim, num_classes=self.num_classes,
+            target_size=(TARGET_SIZE, TARGET_SIZE),
+        ).to(self.device)
+        self.head.load_state_dict(torch.load(MODEL_PATH_INFERENCE, map_location=self.device))
+        self.head.eval()
+        logger.info(f"Inference device: {self.device}")
+
+    @torch.no_grad()
+    def predict(self, frame_bgr: np.ndarray) -> np.ndarray:
+        original_h, original_w = frame_bgr.shape[:2]
+        image_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
+        image_resized = cv2.resize(image_rgb, (IMG_SIZE, IMG_SIZE), interpolation=cv2.INTER_LINEAR)
+        image_tensor = image_to_tensor(image_resized, IMG_MEAN, IMG_STD).unsqueeze(0).to(self.device)
+        feat = self.backbone(image_tensor)
+        semantic_logits = self.head(feat)
+        semantic_map = outputs_to_maps(semantic_logits, (IMG_SIZE, IMG_SIZE))
+        mask = cv2.resize(semantic_map.astype(np.uint8), (original_w, original_h),
+                          interpolation=cv2.INTER_NEAREST)
+        return mask
+
+
+# ============================================================
+# 2. 鐠虹窞妤犮劍鐏﹂幓鎰絿閸ｇ礄閺傛澘楠炴彃鍣ｆ稉鏄忕熅瀵板嫭褰侀崣鏍电礆
+# ============================================================
+class PathSkeletonExtractor:
+    """
+    鐠虹窞妤犮劍鐏﹂幓鎰絿閸ｃ劊鈧?
+    閺傛澘 extract_clean_main_path()閿涙艾鐨㈡銊︾仸閸掑棜袙娑撴椽鎽煎▓纰夌礉
+    闁俺绻冮柧鐐崶?DFS 閹垫儳鍩岄弮鐘靛箚閺冪姴鍨庨弨娈戦張鈧梹鍨剼缁辩姾鐭惧鍕┾偓?
+    """
+
+    def __init__(self, cfg: ScanConfig):
+        self.cfg = cfg
+
+    def _extract_raw_skeleton(self, mask: np.ndarray) -> np.ndarray:
+        h, w = mask.shape
+        scale = 0.5
+        small_h, small_w = int(h * scale), int(w * scale)
+
+        if small_h < 10 or small_w < 10:
+            road_mask = (mask == SegClass.ROAD).astype(np.uint8)
+        else:
+            small_mask = cv2.resize(mask, (small_w, small_h), interpolation=cv2.INTER_NEAREST)
+            road_mask = (small_mask == SegClass.ROAD).astype(np.uint8)
+
+        if np.sum(road_mask) == 0:
+            logger.debug("  mask contains no road pixels")
+            return np.zeros_like(mask)
+
+        kernel_close = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9))
+        kernel_open = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+        road_mask = cv2.morphologyEx(road_mask, cv2.MORPH_CLOSE, kernel_close)
+        road_mask = cv2.morphologyEx(road_mask, cv2.MORPH_OPEN, kernel_open)
+
+        skel = skeletonize(road_mask > 0).astype(np.uint8)
+        if np.sum(skel) == 0:
+            return np.zeros_like(mask)
+
+        if small_h != h or small_w != w:
+            skel = cv2.resize(skel, (w, h), interpolation=cv2.INTER_NEAREST)
+            skel = skeletonize(skel > 0).astype(np.uint8)
+
+        n_labels, labels, stats, _ = cv2.connectedComponentsWithStats(skel, connectivity=8)
+        if n_labels > 2:
+            largest_label = 1 + np.argmax(stats[1:, cv2.CC_STAT_AREA])
+            skel = (labels == largest_label).astype(np.uint8)
+
+        skel = self._remove_burrs(skel, min_length=self.cfg.skeleton_min_length)
+        return skel
+
+    def _path_mask_from_points(
+        self,
+        shape: Tuple[int, int],
+        path_points: List[Tuple[int, int]],
+    ) -> np.ndarray:
+        path_mask = np.zeros(shape, dtype=np.uint8)
+        if not path_points:
+            return path_mask
+
+        for y, x in path_points:
+            if 0 <= y < shape[0] and 0 <= x < shape[1]:
+                path_mask[y, x] = 1
+        return path_mask
+
+    def _find_single_path(self, G: nx.Graph) -> List[Tuple[int, int]]:
+        if len(G.nodes) == 0:
+            return []
+
+        start = min(G.nodes, key=lambda p: (p[0], p[1]))
+
+        def farthest_node(src: Tuple[int, int]) -> Tuple[int, int]:
+            distances = nx.single_source_shortest_path_length(G, src)
+            return max(
+                distances.items(),
+                key=lambda item: (item[1], -item[0][0], -item[0][1]),
+            )[0]
+
+        a = farthest_node(start)
+        b = farthest_node(a)
+        try:
+            return nx.shortest_path(G, a, b)
+        except Exception:
+            return [a]
+
+    # 閳光偓閳光偓 閸樼喐婀侀弬瑙勭《閿涘牅绻氶幐浣风瑝閸欐﹫绱氶埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧?
+
+    def extract_from_mask(self, mask: np.ndarray) -> Tuple[np.ndarray, np.ndarray, List[Tuple[int, int]]]:
+        skel = self._extract_raw_skeleton(mask)
+        if np.sum(skel) == 0:
+            return np.zeros_like(mask), np.zeros_like(mask), []
+
+        skeleton_pixels = np.argwhere(skel > 0)
+        if len(skeleton_pixels) < 2:
+            return skel, skel, []
+
+        G = self._skeleton_to_graph(skel, skeleton_pixels)
+        endpoints = self._find_endpoints(skel, skeleton_pixels)
+        longest_path_points = self._find_longest_path(G, endpoints)
+        if not longest_path_points:
+            longest_path_points = self._find_single_path(G)
+        longest_path_mask = self._path_mask_from_points(skel.shape, longest_path_points)
+
+        logger.debug(
+            f"  full skeleton pixels: {int(np.sum(skel > 0))}, "
+            f"main path length: {len(longest_path_points)}"
+        )
+        return skel, longest_path_mask, longest_path_points
+
+    def _skeleton_to_graph(self, skel: np.ndarray, skeleton_pixels: np.ndarray) -> nx.Graph:
+        G = nx.Graph()
+        dirs = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
+        for y, x in skeleton_pixels:
+            G.add_node((y, x))
+        for y, x in skeleton_pixels:
+            for dy, dx in dirs:
+                ny, nx_ = y + dy, x + dx
+                if (ny, nx_) in G:
+                    G.add_edge((y, x), (ny, nx_), weight=1)
+        return G
+
+    def _find_endpoints(self, skel: np.ndarray, skeleton_pixels: np.ndarray) -> List[Tuple[int, int]]:
+        endpoints = []
+        dirs = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
+        for y, x in skeleton_pixels:
+            nbs = sum(
+                1 for dy, dx in dirs
+                if 0 <= y+dy < skel.shape[0] and 0 <= x+dx < skel.shape[1]
+                and skel[y+dy, x+dx] == 1
+            )
+            if nbs == 1:
+                endpoints.append((y, x))
+        return endpoints
+
+    def _remove_burrs(self, skel: np.ndarray, min_length: int = 5) -> np.ndarray:
+        skeleton_pixels = np.argwhere(skel > 0)
+        if len(skeleton_pixels) < 2:
+            return skel
+
+        G = self._skeleton_to_graph(skel, skeleton_pixels)
+        degrees = dict(G.degree())
+        endpoints = [node for node, degree in degrees.items() if degree == 1]
+
+        nodes_to_remove = set()
+        for endpoint in endpoints:
+            current = endpoint
+            path = [current]
+            visited = {current}
+            while True:
+                unvisited = [n for n in G.neighbors(current) if n not in visited]
+                if not unvisited:
+                    break
+                nxt = unvisited[0]
+                path.append(nxt)
+                visited.add(nxt)
+                if degrees[nxt] > 2:
+                    break
+                current = nxt
+            if len(path) < min_length:
+                nodes_to_remove.update(path)
+
+        cleaned_skel = skel.copy()
+        for (y, x) in nodes_to_remove:
+            cleaned_skel[y, x] = 0
+        return cleaned_skel
+
+    def _find_longest_path(self, G: nx.Graph, endpoints: List[Tuple[int, int]]) -> List[Tuple[int, int]]:
+        if len(endpoints) < 2:
+            return []
+
+        max_endpoints = 20
+        if len(endpoints) > max_endpoints:
+            np.random.shuffle(endpoints)
+            endpoints = endpoints[:max_endpoints]
+
+        max_dist = -1
+        best_pair = None
+        early_stop_threshold = 0.9
+
+        for i, start in enumerate(endpoints):
+            if start not in G:
+                continue
+            try:
+                distances = nx.single_source_shortest_path_length(G, start)
+            except:
+                continue
+            for end in endpoints[i+1:]:
+                if end not in distances:
+                    continue
+                dist = distances[end]
+                if dist > max_dist:
+                    max_dist = dist
+                    best_pair = (start, end)
+                    if max_dist > len(G.nodes) * early_stop_threshold:
+                        return nx.shortest_path(G, best_pair[0], best_pair[1])
+
+        if best_pair is None:
+            return []
+        return nx.shortest_path(G, best_pair[0], best_pair[1])
+
+    def draw_all_skeleton(self, image: np.ndarray, skeleton: np.ndarray,
+                          color: Tuple[int, int, int] = (0, 0, 255),
+                          radius: Optional[int] = None) -> np.ndarray:
+        out = image.copy()
+        r = radius if radius is not None else self.cfg.skeleton_path_radius
+        for (y, x) in np.argwhere(skeleton > 0):
+            cv2.circle(out, (int(x), int(y)), r, color, -1)
+        return out
+
+    def draw_skeleton_with_highlight(self, image: np.ndarray,
+                                     full_skeleton: np.ndarray,
+                                     longest_path: np.ndarray,
+                                     base_color: Tuple[int, int, int] = (128, 128, 128),
+                                     highlight_color: Tuple[int, int, int] = (0, 0, 255),
+                                     base_radius: Optional[int] = None,
+                                     highlight_radius: Optional[int] = None) -> np.ndarray:
+        out = image.copy()
+        br = base_radius if base_radius is not None else self.cfg.skeleton_path_radius
+        hr = highlight_radius if highlight_radius is not None else self.cfg.skeleton_highlight_radius
+        for (y, x) in np.argwhere(full_skeleton > 0):
+            cv2.circle(out, (int(x), int(y)), br, base_color, -1)
+        for (y, x) in np.argwhere(longest_path > 0):
+            cv2.circle(out, (int(x), int(y)), hr, highlight_color, -1)
+        return out
+
+    # 閳光偓閳光偓 閳?閺傛澘閿涙艾鍏遍崙鈧稉鏄忕熅瀵板嫭褰侀崣?閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓
+
+    def extract_clean_main_path(
+        self,
+        mask: np.ndarray,
+        precomputed_skel: Optional[np.ndarray] = None,
+    ) -> Tuple[np.ndarray, List[Tuple[int, int]]]:
+        """
+        閹绘劕褰囬獮鎻掑櫍娑撴槒鐭惧鍕剁窗閸樺娅庢銊︾仸娑撳閺堝骞嗙捄鎷伴崚鍡樻暜閿涘矁绻戦崶鐐扮閺夆剝妫ら崚鍡楀级閻ㄥ嫬鍎氱槐鐘绘懠閵?
+
+        缁犳纭堕敍?
+          1. 鐏忓棝閺嬭泛鍨庣憴锝勮礋閵嗗矂鎽煎▓鐐光偓宥忕礄娑撱倕鍙ч懞鍌濆Ν閻愰€涚闂傚娈戞潻鐐电敾閸嶅繒绀屾惔蹇撳灙閿?
+          2. 閸︺劑鎽煎▓闈涙禈娑撴暏 DFS 閹垫儳鍎氱槐鐘斥偓缁樻殶閺堚偓婢舵氨娈戠粻鈧崡鏇＄熅瀵?
+             - 濮ｅ繑娼柧鐐張鈧径姘辨暏娑撯偓濞?閳?濞戝牓娅庨悳鐭?
+             - 濮ｅ繋閲滈崗瀹犲Ν閼哄倻鍋ｉ張鈧径姘辩病鏉╁洣绔村▎?閳?濞戝牓娅庨崚鍡樻暜
+
+        Args:
+            mask            : 鐠囩疅閸掑棗澹婇幒鈺冪垳
+            precomputed_skel: 瀹稿弶婀佺€瑰本鏆ｆ銊︾仸閿涘湤one 閸掓瑥鍞撮柈銊╁櫢閺傜増褰侀崣鏍电礆
+
+        Returns:
+            clean_mask  : (H,W) uint8閿涘矁鐭惧鍕剼缁?1
+            path_points : [(y,x), ...] 閹稿鐭惧鍕€庢惔蹇斿笓閸?
+        """
+        if precomputed_skel is not None:
+            full_skel = precomputed_skel.copy()
+        else:
+            full_skel = self._extract_raw_skeleton(mask)
+
+        if np.sum(full_skel) == 0:
+            return np.zeros_like(mask, dtype=np.uint8), []
+
+        skel_pts = np.argwhere(full_skel > 0)
+        if len(skel_pts) < 2:
+            return full_skel.copy(), [(int(r[0]), int(r[1])) for r in skel_pts]
+
+        G = self._skeleton_to_graph(full_skel, skel_pts)
+        start_point = self._find_top_left_start_point(skel_pts, G)
+        if start_point is None:
+            return np.zeros_like(mask, dtype=np.uint8), []
+
+        path_pixels, _ = self._greedy_cutting_path(G, start_point, full_skel.shape)
+        path_pixels = self._cleanup_cutting_points(path_pixels)
+        if not path_pixels:
+            return np.zeros_like(mask, dtype=np.uint8), []
+
+        clean_mask = self._rasterize_path(path_pixels, mask.shape)
+        return clean_mask, path_pixels
+
+    def _extract_chains(self, G: nx.Graph) -> List[List[Tuple[int, int]]]:
+        """
+        鐏忓棝閺嬭泛娴橀崚鍡毿掓稉娲懠濞堥潧鍨悰銊ｂ偓?
+        閸忓疇濡懞鍌滃仯閿涙氨閻?鎼?1) 閹?閸掑棗寮堕悙?鎼达腹澧?)閵?
+        闁剧偓 = 娴犲簼绔存稉鍙ч懞鍌濆Ν閻愯閮ㄦ惔?2 閻ㄥ嫯濡悙鐟版娴肩鍩屾稉瀣╃娑撳彠閼哄倽濡悙鍦畱閸嶅繒绀屾惔蹇撳灙閵?
+        """
+        junction_set = frozenset(n for n in G.nodes() if G.degree(n) != 2)
+
+        # 缁惧箚鐠虹礄閹碘偓閺堝濡悙鐟板=2閿?
+        if not junction_set:
+            start = next(iter(G.nodes()))
+            return [list(nx.dfs_preorder_nodes(G, start))]
+
+        chains = []
+        visited_edges: set = set()
+
+        for jn in junction_set:
+            for nb in list(G.neighbors(jn)):
+                edge_key = (jn, nb) if jn < nb else (nb, jn)
+                if edge_key in visited_edges:
+                    continue
+                visited_edges.add(edge_key)
+
+                chain = [jn, nb]
+                prev, cur = jn, nb
+
+                while cur not in junction_set:
+                    nexts = [n for n in G.neighbors(cur) if n != prev]
+                    if not nexts:
+                        break
+                    nxt = nexts[0]
+                    ek = (cur, nxt) if cur < nxt else (nxt, cur)
+                    visited_edges.add(ek)
+                    chain.append(nxt)
+                    prev, cur = cur, nxt
+
+                if len(chain) >= 2:
+                    chains.append(chain)
+
+        return chains
+
+    def _find_longest_chain_path(
+        self,
+        chains: List[List[Tuple[int, int]]],
+    ) -> List[Tuple[int, int]]:
+        """
+        閸︺劑鎽煎▓闈涙禈娑撴暏 DFS 閺嬫矮濡囬幍鈧張澶岀暆閸楁洝鐭惧鍕剁礉鏉╂柨娲栭崓蹇曠閹粯鏆熼張鈧径姘辨畱娑撯偓閺壜扳偓?
+        閼哄倻鍋ｉ弫鎷岀Т鏉?300 閺冩儼鍤滈崝銊ュ瀼閹硅礋鐠愮妇缁涙牜鏆愭禒銉﹀付閸掓儼鈧妞傞妴?
+        """
+        _MAX_DFS_NODES = 300
+
+        if not chains:
+            return []
+
+        # 閺嬪嫬缂撻柧鐐柇缁樺复鐞?
+        adj: Dict = {}
+        for idx, chain in enumerate(chains):
+            a, b = chain[0], chain[-1]
+            adj.setdefault(a, []).append((idx, b))
+            if a != b:
+                adj.setdefault(b, []).append((idx, a))
+
+        all_nodes = list(adj.keys())
+
+        if len(all_nodes) > _MAX_DFS_NODES:
+            return self._greedy_chain_path(chains, adj)
+
+        best_len:  List[int]  = [0]
+        best_segs: List[list] = [[]]
+
+        def dfs(node, used_chains, used_nodes, cur_len, cur_segs):
+            if cur_len > best_len[0]:
+                best_len[0] = cur_len
+                best_segs[0] = cur_segs[:]
+            for cidx, nxt in adj.get(node, []):
+                if cidx in used_chains or nxt in used_nodes:
+                    continue
+                used_chains.add(cidx)
+                used_nodes.add(nxt)
+                cur_segs.append((cidx, node))
+                dfs(nxt, used_chains, used_nodes,
+                    cur_len + len(chains[cidx]), cur_segs)
+                cur_segs.pop()
+                used_nodes.discard(nxt)
+                used_chains.discard(cidx)
+
+        for start in all_nodes:
+            dfs(start, set(), {start}, 0, [])
+
+        if not best_segs[0]:
+            longest = max(chains, key=len)
+            return [(int(y), int(x)) for y, x in longest]
+
+        # 閹稿銆庢惔蹇斿閹恒儱鍎氱槐鐙呯礄閸忓彉闊╃粩鍋ｉ崢濠氬櫢閿?
+        pixel_path: List[Tuple[int, int]] = []
+        for cidx, from_node in best_segs[0]:
+            chain = chains[cidx]
+            seg = chain if chain[0] == from_node else chain[::-1]
+            a = (int(seg[0][0]), int(seg[0][1]))
+            if pixel_path and pixel_path[-1] == a:
+                pixel_path.extend((int(y), int(x)) for y, x in seg[1:])
+            else:
+                pixel_path.extend((int(y), int(x)) for y, x in seg)
+
+        return pixel_path
+
+    def _greedy_chain_path(
+        self,
+        chains: List[List[Tuple[int, int]]],
+        adj: Dict,
+    ) -> List[Tuple[int, int]]:
+        """Build a greedy path on the chain graph and return pixel points."""
+        if not chains:
+            return []
+
+        degrees = {node: len(adj[node]) for node in adj}
+        endpoints = [n for n, d in degrees.items() if d == 1]
+        start = endpoints[0] if endpoints else next(iter(adj))
+
+        pixel_path: List[Tuple[int, int]] = []
+        used_chains: set = set()
+        used_nodes: set = {start}
+        cur = start
+
+        while True:
+            candidates = [
+                (idx, nxt, len(chains[idx]))
+                for idx, nxt in adj.get(cur, [])
+                if idx not in used_chains and nxt not in used_nodes
+            ]
+            if not candidates:
+                break
+            cidx, nxt, _ = max(candidates, key=lambda t: t[2])
+
+            chain = chains[cidx]
+            seg = chain if chain[0] == cur else chain[::-1]
+            a = (int(seg[0][0]), int(seg[0][1]))
+            if pixel_path and pixel_path[-1] == a:
+                pixel_path.extend((int(y), int(x)) for y, x in seg[1:])
+            else:
+                pixel_path.extend((int(y), int(x)) for y, x in seg)
+
+            used_chains.add(cidx)
+            used_nodes.add(nxt)
+            cur = nxt
+
+        return pixel_path
+    def _full_coverage_cutting_path(
+        self,
+        G: nx.Graph,
+        start_point: Tuple[int, int],
+        shape: Tuple[int, int]
+    ) -> Tuple[List[Tuple[int, int]], List[Tuple[int, int, int]]]:
+        """
+        閸忋劏鐭惧鍕惄鏍у瀼閸撹尙鐣诲▔鏇窗绾箽閸掑洤澹婄捄绶炵紒蹇氱箖妤犮劍鐏︽稉濠勬畱閹碘偓閺堝鐭惧鍕┾偓?
+
+        缁犳纭剁粵鏍殣閿?
+          1. 娴犲骸涔忔稉濠呯挧宄伴悙鐟扮磻婵?
+          2. 娴ｈ法鏁ゅǎ鍗炲娴兼ê鍘涢幖婊呭偍(DFS)闁秴宸婚幍鈧張澶庡Ν閻?
+          3. 闁洤鍩岄崚鍡樻暜閺冭绱濇导妯哄帥闁瀚ㄩ崥鎴濆礁閵嗕礁鎮滄稉瀣畱閺傜懓鎮?
+          4. 闁秴宸荤€瑰本鍨氶崥搴礉瑜般垺鍨氭稉鈧弶陇閻╂牗澧嶉張澶庣熅瀵板嫮娈戦崚鍥у鐠虹窞
+
+        Args:
+            G           : 妤犮劍鐏﹂崶?
+            start_point : 鐠у嘲閻?
+            shape       : 閸ユ儳鍎氳ぐ銏㈠Ц (h, w)
+
+        Returns:
+            cutting_points : 閸掑洤澹婄捄绶為悙鐟板灙鐞?
+            directions     : 閺傜懓鎮滄穱鈩冧紖閸掓銆?
+        """
+        h, w = shape
+        visited = set()
+        cutting_points = []
+        directions = []
+        
+        def dfs(current: Tuple[int, int], prev: Optional[Tuple[int, int]]):
+            if current not in G:
+                return
+            
+            # 濮ｅ繑鐠佸潡妫堕柈鑺ュ潑閸旂姴鍩岀捄绶炴稉绱濈涵绻氶幍鈧張澶庣熅瀵板嫰鍏樼悮閻?
+            cutting_points.append(current)
+            
+            # 鐠侊紕鐣婚弬鐟版倻
+            if prev is not None:
+                dy = current[0] - prev[0]
+                dx = current[1] - prev[1]
+                dir_idx = self._get_direction_index(dy, dx)
+                directions.append((current[0], current[1], dir_idx))
+            
+            # 閺嶅洩娑撳搫鍑＄拋鍧楁６
+            visited.add(current)
+            
+            # 閼惧嘲褰囬柇璇茬湷楠炶埖瀵滄导妯哄帥缁狙勫笓鎼?
+            neighbors = list(G.neighbors(current))
+            if not neighbors:
+                return
+            
+            # 閹稿鏌熼崥鎴滅喘閸忓牏楠囬幒鎺戠碍閿涙艾褰?> 娑?> 閸欏厖绗?> 閸欏厖绗?> 瀹革缚绗?> 瀹?> 娑?> 瀹革缚绗?
+            def direction_priority(neighbor):
+                dy = neighbor[0] - current[0]
+                dx = neighbor[1] - current[1]
+                # 鐠侊紕鐣婚弬鐟版倻瀵版鍨?
+                score = dx * 2 + dy * 1.5
+                # 鐠烘繄閹晝缍?
+                dist = abs(dy) + abs(dx)
+                if dist > 1:
+                    score -= dist * 0.5
+                # 閺堥梻娈戦柇璇茬湷娴兼ê鍘?
+                if neighbor not in visited:
+                    score += 10
+                return score
+            
+            # 閹稿绱崗鍫㈤獓閹烘帒绨柇璇茬湷
+            neighbors.sort(key=direction_priority, reverse=True)
+            
+            # 闁帒缍婄拋鍧楁６闁鐪?
+            for neighbor in neighbors:
+                if neighbor not in visited:
+                    dfs(neighbor, current)
+                elif neighbor != prev:
+                    # 瀹歌尙绮＄拋鍧楁６鏉╁洨娈戦懞鍌滃仯閿涘奔绲炬稉宥嗘Ц閸撳秳绔存稉濡悙鐧哥礉閸欏厴閺勫箚鐠?
+                    # 鐠佹澘缍嶆潻鏂挎礀閺傜懓鎮?
+                    dy = neighbor[0] - current[0]
+                    dx = neighbor[1] - current[1]
+                    dir_idx = self._get_direction_index(dy, dx)
+                    directions.append((current[0], current[1], dir_idx))
+                    cutting_points.append(neighbor)
+        
+        # 瀵偓婵│FS闁秴宸?
+        dfs(start_point, None)
+        
+        return cutting_points, directions
+
+    def extract_cutting_path(
+        self,
+        mask: np.ndarray,
+        precomputed_skel: Optional[np.ndarray] = None,
+        cover_all_paths: bool = False
+    ):
+        """
+        鎻愬彇鍒囧壊璺緞锛氫粠宸︿笂瑙掕捣鐐瑰紑濮嬶紝鐢熸垚鍙墽琛屽垏鍓茶矾寰勩€?
+        """
+        if precomputed_skel is not None:
+            full_skel = precomputed_skel.copy()
+        else:
+            if cover_all_paths:
+                road_mask = (mask == SegClass.ROAD).astype(np.uint8)
+                if np.sum(road_mask) == 0:
+                    return np.zeros_like(mask, dtype=np.uint8), [], []
+
+                kernel_close = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9))
+                kernel_open = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+                road_mask = cv2.morphologyEx(road_mask, cv2.MORPH_CLOSE, kernel_close)
+                road_mask = cv2.morphologyEx(road_mask, cv2.MORPH_OPEN, kernel_open)
+
+                full_skel = skeletonize(road_mask > 0).astype(np.uint8)
+                if np.sum(full_skel) == 0:
+                    return np.zeros_like(mask, dtype=np.uint8), [], []
+            else:
+                full_skel = self._extract_raw_skeleton(mask)
+
+        skel_pts = np.argwhere(full_skel > 0)
+        if len(skel_pts) < 2:
+            points = [(int(r[0]), int(r[1])) for r in skel_pts]
+            return self._rasterize_path(points, mask.shape), points, []
+
+        G = self._skeleton_to_graph(full_skel, skel_pts)
+        start_point = self._find_top_left_start_point(skel_pts, G)
+        if start_point is None:
+            return np.zeros_like(mask, dtype=np.uint8), [], []
+
+        if cover_all_paths:
+            cutting_points, _ = self._full_coverage_cutting_path(G, start_point, full_skel.shape)
+        else:
+            cutting_points, _ = self._greedy_cutting_path(G, start_point, full_skel.shape)
+            cutting_points = self._cleanup_cutting_points(cutting_points)
+
+        if not cutting_points:
+            return np.zeros_like(mask, dtype=np.uint8), [], []
+
+        directions = self._directions_from_points(cutting_points)
+        cutting_mask = self._rasterize_path(cutting_points, mask.shape)
+        return cutting_mask, cutting_points, directions
+
+    def _find_top_left_start_point(
+        self,
+        skel_pts: np.ndarray,
+        G: Optional[nx.Graph] = None,
+    ) -> Optional[Tuple[int, int]]:
+        if len(skel_pts) == 0:
+            return None
+
+        candidate_points: List[Tuple[int, int]]
+        if G is not None and len(G.nodes) > 0:
+            endpoints = [node for node, degree in G.degree() if degree == 1]
+            if endpoints:
+                candidate_points = [(int(y), int(x)) for (y, x) in endpoints]
+            else:
+                candidate_points = [(int(y), int(x)) for y, x in skel_pts]
+        else:
+            candidate_points = [(int(y), int(x)) for y, x in skel_pts]
+
+        return min(candidate_points, key=lambda p: (p[0] + p[1], p[0], p[1]))
+
+    def _get_direction_index(self, dy: int, dx: int) -> int:
+        direction_map = {
+            (0, 1): 0,
+            (1, 0): 1,
+            (0, -1): 2,
+            (-1, 0): 3,
+            (1, 1): 4,
+            (1, -1): 5,
+            (-1, 1): 6,
+            (-1, -1): 7,
+        }
+        key = (int(np.sign(dy)), int(np.sign(dx)))
+        return direction_map.get(key, 0)
+
+    def _neighbor_priority(self, current: Tuple[int, int], neighbor: Tuple[int, int]) -> float:
+        dy = neighbor[0] - current[0]
+        dx = neighbor[1] - current[1]
+        score = dx * 2.0 + dy * 1.5
+        dist = abs(dy) + abs(dx)
+        if dist > 1:
+            score -= (dist - 1) * 0.5
+        return score
+
+    def _cleanup_cutting_points(
+        self,
+        points: List[Tuple[int, int]],
+    ) -> List[Tuple[int, int]]:
+        if not points:
+            return []
+
+        cleaned: List[Tuple[int, int]] = []
+        for point in points:
+            if cleaned and point == cleaned[-1]:
+                continue
+            cleaned.append(point)
+        return cleaned
+
+    def _directions_from_points(
+        self,
+        points: List[Tuple[int, int]],
+    ) -> List[Tuple[int, int, int]]:
+        directions: List[Tuple[int, int, int]] = []
+        for idx in range(len(points) - 1):
+            y0, x0 = points[idx]
+            y1, x1 = points[idx + 1]
+            if y0 == y1 and x0 == x1:
+                continue
+            directions.append((y0, x0, self._get_direction_index(y1 - y0, x1 - x0)))
+        return directions
+
+    def _greedy_cutting_path(
+        self,
+        G: nx.Graph,
+        start_point: Tuple[int, int],
+        shape: Tuple[int, int]
+    ) -> Tuple[List[Tuple[int, int]], List[Tuple[int, int, int]]]:
+        _ = shape
+        if start_point not in G:
+            return [], []
+
+        visited: Set[Tuple[int, int]] = {start_point}
+        cutting_points: List[Tuple[int, int]] = [start_point]
+
+        first_neighbors = sorted(
+            list(G.neighbors(start_point)),
+            key=lambda n: self._neighbor_priority(start_point, n),
+            reverse=True,
+        )
+        stack: List[Tuple[Tuple[int, int], Optional[Tuple[int, int]], List[Tuple[int, int]], int]] = [
+            (start_point, None, first_neighbors, 0)
+        ]
+
+        while stack:
+            current, parent, neighbors, idx = stack[-1]
+
+            if idx >= len(neighbors):
+                stack.pop()
+                if stack:
+                    cutting_points.append(stack[-1][0])
+                continue
+
+            next_point = neighbors[idx]
+            stack[-1] = (current, parent, neighbors, idx + 1)
+            if next_point == parent or next_point in visited:
+                continue
+
+            visited.add(next_point)
+            cutting_points.append(next_point)
+            next_neighbors = sorted(
+                [n for n in G.neighbors(next_point) if n != current],
+                key=lambda n: self._neighbor_priority(next_point, n),
+                reverse=True,
+            )
+            stack.append((next_point, current, next_neighbors, 0))
+
+        return cutting_points, self._directions_from_points(cutting_points)
+
+    def _rasterize_path(
+        self,
+        points: List[Tuple[int, int]],
+        shape: Tuple[int, int],
+    ) -> np.ndarray:
+        raster = np.zeros(shape, dtype=np.uint8)
+        if not points:
+            return raster
+
+        h, w = shape
+        y0, x0 = points[0]
+        if 0 <= y0 < h and 0 <= x0 < w:
+            raster[y0, x0] = 1
+
+        for y1, x1 in points[1:]:
+            cv2.line(raster, (int(x0), int(y0)), (int(x1), int(y1)), 1, 1)
+            y0, x0 = y1, x1
+        return raster
+
+    def draw_cutting_path_with_arrows(
+        self,
+        image: np.ndarray,
+        cutting_mask: np.ndarray,
+        directions: List[Tuple[int, int, int]],
+        path_color: Tuple[int, int, int] = (0, 255, 255),
+        arrow_color: Tuple[int, int, int] = (255, 0, 0),
+        arrow_spacing: int = 20,
+        arrow_size: int = 10
+    ) -> np.ndarray:
+        """
+        缂佹ê鍩楅崚鍥у鐠虹窞閿涘苯鑻熼崷銊ㄧ熅瀵板嫪绗傞弽鍥ㄦ暈閺傜懓鎮滅粻銇旈妴?
+
+        Args:
+            image         : 鏉堟挸鍙嗛崶鎯у剼
+            cutting_mask  : 閸掑洤澹婄捄绶為幒鈺冪垳
+            directions    : 閺傜懓鎮滄穱鈩冧紖閸掓銆?[(y,x,dir_idx), ...]
+            path_color    : 鐠虹窞妫版粏澹?(B, G, R)
+            arrow_color   : 缁犮仈妫版粏澹?(B, G, R)
+            arrow_spacing : 缁犮仈闂傜绐涢敍鍫濆剼缁辩媴绱?
+            arrow_size    : 缁犮仈婢堆冪毈
+
+        Returns:
+            鐢附婀侀崚鍥у鐠虹窞閸滃本鏌熼崥鎴犳径瀵告畱閸ユ儳鍎?
+        """
+        import cv2
+        
+        output = image.copy()
+        
+        # 缂佹ê鍩楃捄绶?
+        for (y, x) in np.argwhere(cutting_mask > 0):
+            cv2.circle(output, (int(x), int(y)), self.cfg.skeleton_path_radius, path_color, -1)
+        
+        # 缂佹ê鍩楅弬鐟版倻缁犮仈
+        arrow_directions = [
+            (0, 1),    # 0: 閸?
+            (1, 0),    # 1: 娑?
+            (0, -1),   # 2: 瀹?
+            (-1, 0),   # 3: 娑?
+            (1, 1),    # 4: 閸欏厖绗?
+            (1, -1),   # 5: 瀹革缚绗?
+            (-1, 1),   # 6: 閸欏厖绗?
+            (-1, -1),  # 7: 瀹革缚绗?
+        ]
+        
+        # 閹稿妫块梾鏃傜帛閸掑墎婢?
+        for i in range(0, len(directions), arrow_spacing):
+            y, x, dir_idx = directions[i]
+            if dir_idx < len(arrow_directions):
+                dy, dx = arrow_directions[dir_idx]
+                
+                # 鐠侊紕鐣荤粻銇旂紒鍫㈠仯
+                end_y = y + dy * arrow_size
+                end_x = x + dx * arrow_size
+                
+                # 缂佹ê鍩楃粻銇?
+                cv2.arrowedLine(output, (int(x), int(y)), (int(end_x), int(end_y)), 
+                               arrow_color, 2, tipLength=0.5)
+        
+        return output
+    def simulate_cutting_process(
+        self,
+        skeleton_mask: np.ndarray,
+        cutting_points: List[Tuple[int, int]],
+        cutting_directions: List[Tuple[int, int, int]],
+        display_delay: int = 100
+    ):
+        """
+        閸︺劍娓剁紒鍫ラ弸鏈电瑐濡剝瀚欓崚鍥у鏉╁洨鈻奸敍宀勨偓鎰弰鍓с仛閸掑洤澹婃潻娑樺閵?
+
+        Args:
+            skeleton_mask    : 閺堚偓缂佸牓閺嬭埖甯洪惍?
+            cutting_points   : 閸掑洤澹婄捄绶為悙鐟板灙鐞?
+            cutting_directions: 閺傜懓鎮滄穱鈩冧紖閸掓銆?
+            display_delay    : 閺勫墽銇氬鎯扮箿閿涘牊缁夋帪绱?
+        """
+        import cv2
+        
+        if not cutting_points:
+            print("???????????????")
+            return
+        
+        print("\n" + "=" * 70)
+        print("??????")
+        print("=" * 70)
+        print(f"   - 閸掑洤澹婄捄绶為悙瑙勬殶闁? {len(cutting_points)}")
+        print(f"   - 閺傜懓鎮滈弽鍥ㄦ暈閺佷即鍣? {len(cutting_directions)}")
+        print(f"   - 鐠у嘲閻? {cutting_points[0]}")
+        print(f"   - 缂佸牊閻? {cutting_points[-1]}")
+        print(f"   - 閺勫墽銇氬鎯扮箿: {display_delay}ms")
+        print("\n棣冨籍 瀵偓婵膩閹风喎鍨忛崜鑼剁箖缁?..")
+        print("   ? ESC ?????")
+        print("=" * 70 + "\n")
+        
+        # 閸掓稑缂撻弰鍓с仛缁愭褰?
+        window_name = "??????"
+        cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+        
+        # 鐠侊紕鐣荤捄绶為梹鍨
+        path_length = 0
+        for i in range(1, len(cutting_points)):
+            y1, x1 = cutting_points[i-1]
+            y2, x2 = cutting_points[i]
+            path_length += np.sqrt((y2 - y1)**2 + (x2 - x1)**2)
+        print(f"   - ?????: {path_length:.2f} ??")
+        
+        # 濡剝瀚欓崚鍥у鏉╁洨鈻?
+        for i in range(len(cutting_points)):
+            # 閸掓稑缂撹ぐ鎾冲鐢?
+            current_frame = np.zeros((*skeleton_mask.shape, 3), dtype=np.uint8)
+            
+            # 缂佹ê鍩楃€瑰本鏆ｆ銊︾仸閿涘牏浼嗛懝璇х礆
+            for y, x in np.argwhere(skeleton_mask > 0):
+                cv2.circle(current_frame, (int(x), int(y)), 1, (100, 100, 100), -1)
+            
+            # 缂佹ê鍩楀鎻掑瀼閸撹尙娈戦柈銊ュ瀻閿涘牏璞㈤懝璇х礆
+            for j in range(i + 1):
+                yj, xj = cutting_points[j]
+                cv2.circle(current_frame, (int(xj), int(yj)), 2, (0, 255, 0), -1)
+            
+            # 缂佹ê鍩楅張鍨忛崜鑼畱闁劌鍨庨敍鍫㈠閼硅绱?
+            for j in range(i + 1, len(cutting_points)):
+                yj, xj = cutting_points[j]
+                cv2.circle(current_frame, (int(xj), int(yj)), 2, (0, 0, 255), -1)
+            
+            # 缂佹ê鍩楄ぐ鎾冲娴ｅ秶鐤嗛敍鍫ｆ憫閼硅绱?
+            y, x = cutting_points[i]
+            cv2.circle(current_frame, (int(x), int(y)), 4, (255, 0, 0), -1)
+            
+            # 濞ｈ濮為弬鐟版倻娣団剝浼?
+            if i < len(cutting_directions):
+                _, _, dir_idx = cutting_directions[i]
+                direction_names = ['R', 'D', 'L', 'U', 'RD', 'LD', 'RU', 'LU']
+                dir_name = direction_names[dir_idx] if dir_idx < len(direction_names) else f'UNK({dir_idx})'
+                
+                # 缂佹ê鍩楅弬鐟版倻缁犮仈
+                arrow_directions = [
+                    (0, 1), (1, 0), (0, -1), (-1, 0),
+                    (1, 1), (1, -1), (-1, 1), (-1, -1)
+                ]
+                if dir_idx < len(arrow_directions):
+                    dy, dx = arrow_directions[dir_idx]
+                    arrow_size = 15
+                    end_y = y + dy * arrow_size
+                    end_x = x + dx * arrow_size
+                    cv2.arrowedLine(current_frame, (int(x), int(y)), 
+                                   (int(end_x), int(end_y)), 
+                                   (0, 255, 255), 2, tipLength=0.5)
+                
+                # 濞ｈ濮為弬鍥х摟娣団剝浼?
+                cv2.putText(current_frame, f"閺傜懓鎮? {dir_name}", (10, 30), 
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
+            
+            # 濞ｈ濮炴潻娑樺娣団剝浼?
+            progress = (i + 1) / len(cutting_points) * 100
+            cv2.putText(current_frame, f"鏉╂稑瀹? {progress:.1f}%", (10, 60), 
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
+            cv2.putText(current_frame, f"瑜版挸澧犻悙? ({x}, {y})", (10, 90), 
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
+            cv2.putText(current_frame, f"瀹告彃鍨忛崜? {i+1}/{len(cutting_points)}", (10, 120), 
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
+            
+            # 閺勫墽銇氱紒鎾寸亯
+            cv2.imshow(window_name, current_frame)
+            
+            # 濡偓閺屻儵鏁惄妯跨翻閸?
+            key = cv2.waitKey(display_delay)
+            if key == 27:  # ESC 闁?
+                print("\n???????????")
+                break
+        
+        cv2.destroyAllWindows()
+        print("\n????????")
+
+
+
+# ============================================================
+# 3. 閸戠姳缍嶇憴鎺曟儰濡偓濞村娅?
+# ============================================================
+@dataclass
+class PhysicalCornerState:
+    corner_type: PhysicalCorner
+    is_locked: bool = False
+    lock_position_steps: Optional[Tuple[int, int]] = None
+    consecutive_count: int = 0
+
+    def update(self, detected: bool, current_pos: Tuple[int, int], confirm_n: int) -> bool:
+        if self.is_locked:
+            return False
+        if detected:
+            self.consecutive_count += 1
+            if self.consecutive_count >= confirm_n:
+                self.is_locked = True
+                self.lock_position_steps = current_pos
+                return True
+        else:
+            self.consecutive_count = 0
+        return False
+
+    def reset(self):
+        self.is_locked = False
+        self.lock_position_steps = None
+        self.consecutive_count = 0
+
+
+class GeometricCornerDetector:
+    def __init__(self, cfg: ScanConfig):
+        self.cfg = cfg
+        self.roi_size = cfg.corner_roi_size
+        self.threshold = cfg.corner_ratio_threshold
+        self.confirm_n = cfg.corner_confirm_count
+        self.margin = cfg.boundary_lock_margin_steps
+
+        self._corners: Dict[PhysicalCorner, PhysicalCornerState] = {
+            corner: PhysicalCornerState(corner) for corner in PhysicalCorner
+        }
+        self._view_rois = self._compute_view_rois(cfg.frame_w, cfg.frame_h)
+        self._current_pos: Tuple[int, int] = (0, 0)
+        self._cached_boundaries: Dict[Direction, Optional[int]] = {
+            Direction.TOP: None, Direction.BOTTOM: None,
+            Direction.LEFT: None, Direction.RIGHT: None,
+        }
+
+    def update_position(self, x_steps: int, y_steps: int):
+        self._current_pos = (x_steps, y_steps)
+
+    def _compute_view_rois(self, w: int, h: int) -> Dict[ViewCorner, Tuple[int, int, int, int]]:
+        s = self.roi_size
+        return {
+            ViewCorner.TOP_LEFT:     (0, 0, s, s),
+            ViewCorner.TOP_RIGHT:    (w - s, 0, w, s),
+            ViewCorner.BOTTOM_LEFT:  (0, h - s, s, h),
+            ViewCorner.BOTTOM_RIGHT: (w - s, h - s, w, h),
+        }
+
+    def _get_region(self, mask: np.ndarray, corner: ViewCorner) -> np.ndarray:
+        x1, y1, x2, y2 = self._view_rois[corner]
+        return mask[y1:y2, x1:x2]
+
+    def _ratio(self, region: np.ndarray) -> float:
+        if region.size == 0:
+            return 0.0
+        return float(np.sum(region == SegClass.BOUNDARY)) / region.size
+
+    def _detect_view_corners(self, mask: np.ndarray) -> Set[ViewCorner]:
+        detected = set()
+        for corner in ViewCorner:
+            region = self._get_region(mask, corner)
+            if self._ratio(region) >= self.threshold:
+                detected.add(corner)
+        return detected
+
+    def _check_physical_corner(self, mask: np.ndarray, physical_corner: PhysicalCorner) -> bool:
+        required = PHYSICAL_CORNER_REQUIREMENTS[physical_corner]
+        detected = self._detect_view_corners(mask)
+        return required.issubset(detected)
+
+    def _update_and_lock_corners(self, mask: np.ndarray):
+        for corner in PhysicalCorner:
+            if self._corners[corner].is_locked:
+                continue
+            detected = self._check_physical_corner(mask, corner)
+            if self._corners[corner].update(detected, self._current_pos, self.confirm_n):
+                logger.info(f"  Corner locked: {corner.name} @ {self._current_pos}")
+
+    def _infer_boundaries_from_corners(self):
+        tl = self._corners[PhysicalCorner.TOP_LEFT]
+        tr = self._corners[PhysicalCorner.TOP_RIGHT]
+        if tl.is_locked and tr.is_locked and self._cached_boundaries[Direction.TOP] is None:
+            y = (tl.lock_position_steps[1] + tr.lock_position_steps[1]) // 2 + self.margin
+            self._cached_boundaries[Direction.TOP] = y
+            logger.info(f"  Inferred top boundary: Y={y}")
+
+        bl = self._corners[PhysicalCorner.BOTTOM_LEFT]
+        br = self._corners[PhysicalCorner.BOTTOM_RIGHT]
+        if bl.is_locked and br.is_locked and self._cached_boundaries[Direction.BOTTOM] is None:
+            y = (bl.lock_position_steps[1] + br.lock_position_steps[1]) // 2 - self.margin
+            self._cached_boundaries[Direction.BOTTOM] = y
+            logger.info(f"  Inferred bottom boundary: Y={y}")
+
+        if tl.is_locked and bl.is_locked and self._cached_boundaries[Direction.LEFT] is None:
+            x = (tl.lock_position_steps[0] + bl.lock_position_steps[0]) // 2 + self.margin
+            self._cached_boundaries[Direction.LEFT] = x
+            logger.info(f"  Inferred left boundary: X={x}")
+
+        if tr.is_locked and br.is_locked and self._cached_boundaries[Direction.RIGHT] is None:
+            x = (tr.lock_position_steps[0] + br.lock_position_steps[0]) // 2 - self.margin
+            self._cached_boundaries[Direction.RIGHT] = x
+            logger.info(f"  Inferred right boundary: X={x}")
+
+    def has_top_boundary(self, mask: np.ndarray) -> bool:
+        self._update_and_lock_corners(mask)
+        self._infer_boundaries_from_corners()
+        if self._cached_boundaries[Direction.TOP] is not None:
+            return self._current_pos[1] <= self._cached_boundaries[Direction.TOP]
+        detected = self._detect_view_corners(mask)
+        return (ViewCorner.TOP_LEFT in detected and ViewCorner.TOP_RIGHT in detected)
+
+    def has_bottom_boundary(self, mask: np.ndarray) -> bool:
+        self._update_and_lock_corners(mask)
+        self._infer_boundaries_from_corners()
+        if self._cached_boundaries[Direction.BOTTOM] is not None:
+            return self._current_pos[1] >= self._cached_boundaries[Direction.BOTTOM]
+        detected = self._detect_view_corners(mask)
+        return (ViewCorner.BOTTOM_LEFT in detected and ViewCorner.BOTTOM_RIGHT in detected)
+
+    def has_left_boundary(self, mask: np.ndarray) -> bool:
+        self._update_and_lock_corners(mask)
+        self._infer_boundaries_from_corners()
+        if self._cached_boundaries[Direction.LEFT] is not None:
+            return self._current_pos[0] <= self._cached_boundaries[Direction.LEFT]
+        detected = self._detect_view_corners(mask)
+        return (ViewCorner.TOP_LEFT in detected and ViewCorner.BOTTOM_LEFT in detected)
+
+    def has_right_boundary(self, mask: np.ndarray) -> bool:
+        self._update_and_lock_corners(mask)
+        self._infer_boundaries_from_corners()
+        if self._cached_boundaries[Direction.RIGHT] is not None:
+            return self._current_pos[0] >= self._cached_boundaries[Direction.RIGHT]
+        detected = self._detect_view_corners(mask)
+        return (ViewCorner.TOP_RIGHT in detected and ViewCorner.BOTTOM_RIGHT in detected)
+
+    def reset_direction(self, direction: str):
+        dir_map = {
+            "top": Direction.TOP, "bottom": Direction.BOTTOM,
+            "left": Direction.LEFT, "right": Direction.RIGHT
+        }
+        if direction not in dir_map:
+            return
+        d = dir_map[direction]
+        self._cached_boundaries[d] = None
+        if d == Direction.TOP:
+            self._corners[PhysicalCorner.TOP_LEFT].reset()
+            self._corners[PhysicalCorner.TOP_RIGHT].reset()
+        elif d == Direction.BOTTOM:
+            self._corners[PhysicalCorner.BOTTOM_LEFT].reset()
+            self._corners[PhysicalCorner.BOTTOM_RIGHT].reset()
+        elif d == Direction.LEFT:
+            self._corners[PhysicalCorner.TOP_LEFT].reset()
+            self._corners[PhysicalCorner.BOTTOM_LEFT].reset()
+        elif d == Direction.RIGHT:
+            self._corners[PhysicalCorner.TOP_RIGHT].reset()
+            self._corners[PhysicalCorner.BOTTOM_RIGHT].reset()
+        logger.info(f"  [boundary] reset direction cache: {direction}")
+
+    def reset_all(self):
+        for c in PhysicalCorner:
+            self._corners[c].reset()
+        for d in Direction:
+            self._cached_boundaries[d] = None
+        logger.info("  [boundary] all direction caches cleared")
+
+    def get_status(self) -> Dict:
+        return {
+            "physical_corners": {
+                c.name: {
+                    "locked": self._corners[c].is_locked,
+                    "pos": self._corners[c].lock_position_steps,
+                    "consecutive": self._corners[c].consecutive_count
+                } for c in PhysicalCorner
+            },
+            "inferred_boundaries": {d.name: self._cached_boundaries[d] for d in Direction},
+            "current_pos": self._current_pos
+        }
+
+    def status_str(self, mask: np.ndarray) -> str:
+        detected = self._detect_view_corners(mask)
+        view_status = "".join([
+            "TL" if ViewCorner.TOP_LEFT in detected else "..",
+            "TR" if ViewCorner.TOP_RIGHT in detected else "..",
+            "BL" if ViewCorner.BOTTOM_LEFT in detected else "..",
+            "BR" if ViewCorner.BOTTOM_RIGHT in detected else "..",
+        ])
+        corner_symbols = []
+        for c in PhysicalCorner:
+            state = self._corners[c]
+            if state.is_locked:
+                corner_symbols.append(f"{c.name[0]}{c.name[-1]}棣冩晙")
+            elif state.consecutive_count > 0:
+                corner_symbols.append(f"{c.name[0]}{c.name[-1]}{state.consecutive_count}")
+            else:
+                corner_symbols.append(f"{c.name[0]}{c.name[-1]}--")
+        locked_bounds = [f"{d.name[0]}@{v}" for d, v in self._cached_boundaries.items() if v is not None]
+        lock_str = f" | {','.join(locked_bounds)}" if locked_bounds else ""
+        return f"[{view_status}] [{' '.join(corner_symbols)}]{lock_str}"
+
+
+# ============================================================
+# 4. 绾閹恒儱褰?
+# ============================================================
+class HardwareInterface:
+    def __init__(self, cfg: ScanConfig):
+        self.cfg = cfg
+
+    def grab_frame(self) -> np.ndarray:
+        raise NotImplementedError
+
+    def grab_frame_and_mask(self, seg_model: SegmentationInference) -> Tuple[np.ndarray, np.ndarray]:
+        frame = self.grab_frame()
+        mask = seg_model.predict(frame)
+        if self.cfg.boundary_dark_enable:
+            thr = int(self.cfg.boundary_dark_threshold)
+            dark = np.all(frame <= thr, axis=2)
+            if self.cfg.boundary_dark_use_corner_rois:
+                s = int(self.cfg.corner_roi_size)
+                h, w = mask.shape[:2]
+                s = max(1, min(s, h, w))
+                roi = np.zeros((h, w), dtype=bool)
+                roi[:s, :s] = True
+                roi[:s, w - s:w] = True
+                roi[h - s:h, :s] = True
+                roi[h - s:h, w - s:w] = True
+                dark = dark & roi
+            k = int(self.cfg.boundary_dark_morph_kernel)
+            if k >= 2:
+                kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (k, k))
+                dark_u8 = cv2.morphologyEx(dark.astype(np.uint8), cv2.MORPH_OPEN, kernel)
+                dark = dark_u8.astype(bool)
+            promote = dark & (mask == int(SegClass.BACKGROUND))
+            if np.any(promote):
+                mask = mask.copy()
+                mask[promote] = int(SegClass.BOUNDARY)
+        return frame, mask
+
+    def move_x(self, steps: int):
+        raise NotImplementedError
+
+    def move_y(self, steps: int):
+        raise NotImplementedError
+
+
+# ============================================================
+# 5. 閸忋劌鐪崷鏉挎禈閹峰吋甯撮崳?
+# ============================================================
+class GlobalMapStitcher:
+    def __init__(self, cfg: ScanConfig):
+        self.cfg = cfg
+        self.tiles: List[Tuple[int, int, np.ndarray, np.ndarray]] = []
+        self.cur_gx = 0
+        self.cur_gy = 0
+        self.skeleton_extractor = PathSkeletonExtractor(cfg)
+        self.det, self.matcher, self.method = self._create_detector()
+
+    def _create_detector(self):
+        try:
+            det = cv2.SIFT_create(nfeatures=3000)
+            matcher = cv2.BFMatcher(cv2.NORM_L2, crossCheck=False)
+            logger.info("[stitch] using SIFT feature detector")
+            return det, matcher, "SIFT"
+        except:
+            det = cv2.ORB_create(nfeatures=3000)
+            matcher = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=False)
+            logger.info("[stitch] using ORB feature detector")
+            return det, matcher, "ORB"
+
+    def _match_features(self, desc1, desc2, ratio: float = 0.75) -> list:
+        if desc1 is None or desc2 is None:
+            return []
+        matches = self.matcher.knnMatch(desc1, desc2, k=2)
+        good = []
+        for m_pair in matches:
+            if len(m_pair) == 2:
+                m, n = m_pair
+                if m.distance < ratio * n.distance:
+                    good.append(m)
+        return good
+
+    def _estimate_homography(self, kp1, kp2, matches, min_match: int = 10):
+        if len(matches) < min_match:
+            return None, None
+        pts1 = np.float32([kp1[m.queryIdx].pt for m in matches])
+        pts2 = np.float32([kp2[m.trainIdx].pt for m in matches])
+        H, mask = cv2.findHomography(pts2, pts1, cv2.RANSAC, 5.0,
+                                     maxIters=2000, confidence=0.995)
+        if H is None:
+            return None, None
+        inliers = mask.ravel().sum()
+        logger.debug(f"    閸栧綊鍘ら悙?{len(matches)}, 閸愬懐鍋?{inliers}")
+        if inliers < min_match:
+            return None, None
+        return H, mask
+
+    def record_tile(self, frame_bgr: np.ndarray, mask: np.ndarray):
+        self.tiles.append((self.cur_gx, self.cur_gy, frame_bgr.copy(), mask.copy()))
+
+    def update_position(self, dx_pixels: int, dy_pixels: int):
+        self.cur_gx += dx_pixels
+        self.cur_gy += dy_pixels
+
+    def build_global_map(self, use_feature_matching: bool = True,
+                         output_size_limit: int = 8000):
+        """
+        閺嬪嫬缂撻崗銊ョ湰閸︽澘娴橀妴?
+
+        Returns (10閸忓啰绮?:
+            global_map_with_skeleton         : 閸忋劌鐪崷鏉挎禈閿涘牏浼嗘銊︾仸+缁俱垺娓堕梹鑳熅瀵?姒涘嫬鍏遍崙鈧捄绶?闂堟帒鍨忛崜鑼剁熅瀵板嫸绱?
+            global_mask                      : 閸樼喎鐠囩疅閹衡晝鐖?
+            global_mask_color_with_skeleton  : 瑜扳晞澹婄拠绠熼幒鈺冪垳+鐎瑰本鏆ｆ銊︾仸
+            full_skeleton                    : 鐎瑰本鏆ｆ銊︾仸娴滃苯鈧厧娴?
+            longest_path_mask                : 閺堚偓闂€鑳熅瀵板嫪绨╅崐鐓庢禈閿涘牆鎯堥悳?閸掑棙鏁敍灞藉斧閺嶈渹绻氶悾娆欑礆
+            longest_path_points              : 閺堚偓闂€鑳熅瀵板嫮鍋ｉ崚妤勩€?
+            clean_path_mask                  : 閳?楠炴彃鍣ｆ稉鏄忕熅瀵板嫪绨╅崐鐓庢禈閿涘牊妫ら悳妫ら崚鍡樻暜閿?
+            clean_path_points                : 閳?楠炴彃鍣ｆ稉鏄忕熅瀵板嫮鍋ｉ崚妤勩€?
+            cutting_path_mask                : 閳?閸掑洤澹婄捄绶炴禍灞解偓鐓庢禈閿涘牅绮犲锔跨瑐鐟欐帒绱戞慨瀣剁礆
+            cutting_path_points              : 閳?閸掑洤澹婄捄绶為悙鐟板灙鐞?
+            cutting_directions                : 閳?閸掑洤澹婄捄绶為弬鐟版倻娣団剝浼?[(y,x,dir_idx), ...]
+        """
+        if not self.tiles:
+            empty = np.zeros((1, 1, 3), np.uint8)
+            return (empty, np.zeros((1, 1), np.uint8), empty,
+                    np.zeros((1, 1)), np.zeros((1, 1)), [],
+                    np.zeros((1, 1)), [],
+                    np.zeros((1, 1)), [], [])
+
+        logger.info(f"[stitch] building global map from {len(self.tiles)} tiles")
+
+        if use_feature_matching and len(self.tiles) >= 2:
+            return self._build_with_feature_matching(output_size_limit)
+        else:
+            return self._build_simple()
+
+    def _build_with_feature_matching(self, output_size_limit: int):
+        logger.info("[stitch] extracting features from tiles")
+        kps, descs = [], []
+        for i, (gx, gy, frame, mask) in enumerate(self.tiles):
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            gray = cv2.equalizeHist(gray)
+            kp, desc = self.det.detectAndCompute(gray, None)
+            kps.append(kp)
+            descs.append(desc)
+            if (i+1) % 10 == 0:
+                logger.info(f"  processed {i+1}/{len(self.tiles)} tiles")
+
+        logger.info("[stitch] estimating transforms between tiles")
+        H_global = [np.eye(3, dtype=np.float64)]
+        for i in range(1, len(self.tiles)):
+            good_matches = self._match_features(descs[i-1], descs[i])
+            H_local, _ = self._estimate_homography(kps[i-1], kps[i], good_matches)
+            if H_local is not None:
+                H_global.append(H_global[-1] @ H_local)
+            else:
+                dx = self.tiles[i][0] - self.tiles[i-1][0]
+                dy = self.tiles[i][1] - self.tiles[i-1][1]
+                H_pos = np.array([[1, 0, dx], [0, 1, dy], [0, 0, 1]], dtype=np.float64)
+                H_global.append(H_global[-1] @ H_pos)
+
+        h, w = self.tiles[0][2].shape[:2]
+        corners_base = np.float32([[0, 0], [w, 0], [w, h], [0, h]])
+        all_corners = []
+        for H in H_global:
+            c = cv2.perspectiveTransform(corners_base.reshape(-1, 1, 2), H).reshape(-1, 2)
+            all_corners.append(c)
+        all_corners = np.vstack(all_corners)
+
+        x_min, y_min = all_corners.min(axis=0)
+        x_max, y_max = all_corners.max(axis=0)
+        canvas_w = int(np.ceil(x_max - x_min))
+        canvas_h = int(np.ceil(y_max - y_min))
+
+        scale = 1.0
+        if canvas_w > output_size_limit or canvas_h > output_size_limit:
+            scale = output_size_limit / max(canvas_w, canvas_h)
+            canvas_w = int(canvas_w * scale)
+            canvas_h = int(canvas_h * scale)
+            logger.info(f"[stitch] output scaled by factor {scale:.3f}")
+
+        logger.info(f"[stitch] canvas size: {canvas_w} x {canvas_h} px")
+        T = np.array([[scale, 0, -x_min*scale],
+                      [0, scale, -y_min*scale],
+                      [0, 0, 1]], dtype=np.float64)
+
+        logger.info("[stitch] blending tiles into global map")
+        canvas      = np.zeros((canvas_h, canvas_w, 3), dtype=np.float32)
+        canvas_mask = np.zeros((canvas_h, canvas_w),    dtype=np.float32)
+        weight_map  = np.zeros((canvas_h, canvas_w),    dtype=np.float32)
+
+        for i, ((gx, gy, frame, mask), H) in enumerate(zip(self.tiles, H_global)):
+            H_final = T @ H
+            warped_frame = cv2.warpPerspective(
+                frame.astype(np.float32), H_final, (canvas_w, canvas_h),
+                flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT, borderValue=0)
+            warped_mask = cv2.warpPerspective(
+                mask.astype(np.float32), H_final, (canvas_w, canvas_h),
+                flags=cv2.INTER_NEAREST, borderMode=cv2.BORDER_CONSTANT, borderValue=0)
+            mask_valid = (warped_mask > 0).astype(np.uint8)
+            dist_weight = cv2.distanceTransform(mask_valid, cv2.DIST_L2, 3).astype(np.float32)
+            dist_weight = np.clip(dist_weight / (dist_weight.max() + 1e-6), 0, 1)
+            canvas      += warped_frame * dist_weight[:, :, None]
+            canvas_mask += warped_mask  * dist_weight
+            weight_map  += dist_weight
+            if (i+1) % 10 == 0:
+                logger.info(f"  瀹歌尪鐎洪崥?{i+1}/{len(self.tiles)} tiles")
+
+        weight_map  = np.maximum(weight_map, 1e-6)
+        canvas      = canvas      / weight_map[:, :, None]
+        canvas_mask = canvas_mask / weight_map
+        canvas_bgr  = np.clip(canvas,      0, 255).astype(np.uint8)
+        canvas_mask = np.clip(canvas_mask, 0, 255).astype(np.uint8)
+        return self._finalize_global_map(canvas_bgr, canvas_mask)
+
+    def _build_simple(self):
+        min_x = min(t[0] for t in self.tiles)
+        min_y = min(t[1] for t in self.tiles)
+        max_x = max(t[0] + t[2].shape[1] for t in self.tiles)
+        max_y = max(t[1] + t[2].shape[0] for t in self.tiles)
+        W, H = max_x - min_x, max_y - min_y
+
+        canvas_bgr  = np.zeros((H, W, 3), dtype=np.float32)
+        canvas_mask = np.zeros((H, W),    dtype=np.float32)
+        weight_map  = np.zeros((H, W),    dtype=np.float32)
+
+        for gx, gy, frame, mask in self.tiles:
+            x, y = gx - min_x, gy - min_y
+            h, w = frame.shape[:2]
+            paste_h = min(h, H - y)
+            paste_w = min(w, W - x)
+            if paste_h <= 0 or paste_w <= 0:
+                continue
+            frame_float = frame[:paste_h, :paste_w].astype(np.float32)
+            mask_float  = mask[:paste_h,  :paste_w].astype(np.float32)
+            dist_x    = np.minimum(np.arange(paste_w), paste_w - 1 - np.arange(paste_w))
+            dist_y    = np.minimum(np.arange(paste_h), paste_h - 1 - np.arange(paste_h))
+            dist_grid = np.minimum.outer(dist_y, dist_x)
+            weight    = np.exp(-dist_grid / 50.0)
+            overlap   = (canvas_mask[y:y+paste_h, x:x+paste_w] > 0)
+            if np.any(overlap):
+                ew  = weight_map[y:y+paste_h, x:x+paste_w]
+                tw  = ew + weight
+                ne  = ew / (tw + 1e-6)
+                nn  = weight / (tw + 1e-6)
+                canvas_bgr [y:y+paste_h, x:x+paste_w] = (
+                    canvas_bgr[y:y+paste_h, x:x+paste_w] * ne[:, :, None] + frame_float * nn[:, :, None])
+                canvas_mask[y:y+paste_h, x:x+paste_w] = (
+                    canvas_mask[y:y+paste_h, x:x+paste_w] * ne + mask_float * nn)
+                weight_map [y:y+paste_h, x:x+paste_w] = tw
+            else:
+                canvas_bgr [y:y+paste_h, x:x+paste_w] = frame_float
+                canvas_mask[y:y+paste_h, x:x+paste_w] = mask_float
+                weight_map [y:y+paste_h, x:x+paste_w] = weight
+
+        canvas_bgr  = np.clip(canvas_bgr,  0, 255).astype(np.uint8)
+        canvas_mask = np.clip(canvas_mask, 0, 255).astype(np.uint8)
+        return self._finalize_global_map(canvas_bgr, canvas_mask)
+
+    def _finalize_global_map(self, canvas_bgr: np.ndarray, canvas_mask: np.ndarray):
+        """
+        鐎瑰本鍨氶崗銊ョ湰閸︽澘娴橀崥搴￠悶鍡礉閸氬本妞傞悽鐔稿灇楠炴彃鍣ｆ稉鏄忕熅瀵板嫸绱欓弮鐘靛箚閺冪姴鍨庨弨绱氶崪灞藉瀼閸撹尪鐭惧鍕┾偓?
+        鏉╂柨娲?10 閸忓啰绮嶉敍鍫熺槷閸樼喐娼垫径?cutting_path_mask閵嗕恭utting_path_points閵嗕恭utting_directions 娑撳銆嶉敍澶堚偓?
+        """
+        logger.info("  extracting full skeleton network...")
+        full_skeleton, longest_path_mask, longest_path_points = \
+            self.skeleton_extractor.extract_from_mask(canvas_mask)
+
+        # 閳?閹绘劕褰囬獮鎻掑櫍娑撴槒鐭惧?
+        logger.info("  extracting clean main path...")
+        clean_path_mask, clean_path_points = \
+            self.skeleton_extractor.extract_clean_main_path(
+                canvas_mask, precomputed_skel=full_skeleton)
+        logger.info(
+            f"  clean path: {len(clean_path_points)} px  "
+            f"(full skeleton: {int(np.sum(full_skeleton > 0))} px)"
+        )
+
+        # 閳?閹绘劕褰囬崚鍥у鐠虹窞閿涘牅绮犲锔跨瑐鐟欐帒绱戞慨瀣剁礆
+        logger.info("  extracting cutting path...")
+        cutting_path_mask, cutting_path_points, cutting_directions = \
+            self.skeleton_extractor.extract_cutting_path(
+                canvas_mask, precomputed_skel=full_skeleton)
+        logger.info(
+            f"  cutting path: {len(cutting_path_points)} px  "
+            f"(directions: {len(cutting_directions)})"
+        )
+
+        canvas_mask_color    = self.colorize_mask(canvas_mask)
+        skeleton_pixel_count = int(np.sum(full_skeleton > 0))
+
+        if skeleton_pixel_count > 0:
+            logger.info(
+                f"  full skeleton: {skeleton_pixel_count} px, "
+                f"longest path: {len(longest_path_points)} px"
+            )
+            # 閻忔媽澹婇敍姘暚閺佹挳閺?
+            global_map_with_skeleton = self.skeleton_extractor.draw_all_skeleton(
+                canvas_bgr, full_skeleton,
+                color=(128, 128, 128), radius=self.cfg.skeleton_path_radius)
+            # 缁俱垼澹婇敍姘付闂€鑳熅瀵板嫸绱欓崢鐔哥壉娣囨繄鏆€閿?
+            if len(longest_path_points) > 0:
+                global_map_with_skeleton = self.skeleton_extractor.draw_all_skeleton(
+                    global_map_with_skeleton, longest_path_mask,
+                    color=(0, 0, 255), radius=self.cfg.skeleton_highlight_radius)
+            # 姒涘嫯澹婇敍姘叡閸戔偓娑撴槒鐭惧?
+            if len(clean_path_points) > 0:
+                global_map_with_skeleton = self.skeleton_extractor.draw_all_skeleton(
+                    global_map_with_skeleton, clean_path_mask,
+                    color=(0, 255, 255), radius=self.cfg.skeleton_highlight_radius)
+            # 闂堟帟澹婇敍姘瀼閸撹尪鐭惧鍕剁礄鐢附鏌熼崥鎴犳径杈剧礆
+            if len(cutting_path_points) > 0:
+                global_map_with_skeleton = self.skeleton_extractor.draw_cutting_path_with_arrows(
+                    global_map_with_skeleton, cutting_path_mask, cutting_directions,
+                    path_color=(255, 0, 255), arrow_color=(0, 255, 0),
+                    arrow_spacing=30, arrow_size=15)
+
+            global_mask_color_with_skeleton = self.skeleton_extractor.draw_all_skeleton(
+                canvas_mask_color, full_skeleton,
+                color=(0, 255, 255), radius=self.cfg.skeleton_path_radius)
+        else:
+            logger.warning("  no valid skeleton found")
+            global_map_with_skeleton        = canvas_bgr.copy()
+            global_mask_color_with_skeleton = canvas_mask_color.copy()
+
+        return (global_map_with_skeleton, canvas_mask, global_mask_color_with_skeleton,
+                full_skeleton, longest_path_mask, longest_path_points,
+                clean_path_mask, clean_path_points,
+                cutting_path_mask, cutting_path_points, cutting_directions)
+
+    @staticmethod
+    def colorize_mask(mask: np.ndarray) -> np.ndarray:
+        vis = np.zeros((*mask.shape, 3), dtype=np.uint8)
+        for cls, color in SEG_PALETTE.items():
+            vis[mask == cls] = color
+        return vis
+
+
+# ============================================================
+# 6. 鏉╂劕濮╅弮銉ョ箶
+# ============================================================
+@dataclass
+class MotionRecord:
+    direction: str
+    steps: int
+    timestamp: float
+
+@dataclass
+class MotionLogger:
+    records: List[MotionRecord] = field(default_factory=list)
+
+    def log(self, direction: str, steps: int):
+        self.records.append(MotionRecord(direction, steps, time.time()))
+        logger.info(f"  {direction:>5s}  {steps:>6d} steps")
+
+    @property
+    def total_x_steps(self) -> int:
+        return sum(
+            r.steps if r.direction == "RIGHT" else (-r.steps if r.direction == "LEFT" else 0)
+            for r in self.records)
+
+    @property
+    def total_y_steps(self) -> int:
+        return sum(
+            r.steps if r.direction == "DOWN" else (-r.steps if r.direction == "UP" else 0)
+            for r in self.records)
+
+    def summary(self) -> str:
+        lines = ["=" * 60, "Motion Summary", "=" * 60]
+        for i, r in enumerate(self.records):
+            lines.append(f"  [{i+1:>3d}] {r.direction:>5s}  {r.steps:>6d} steps")
+        lines += [
+            "-" * 60,
+            f"  Net X: {self.total_x_steps:+d} steps",
+            f"  Net Y: {self.total_y_steps:+d} steps",
+            f"  Total moves: {len(self.records)}",
+            "=" * 60,
+        ]
+        return "\n".join(lines)
+
+
+# ============================================================
+# 7. 鏉╁洨鈻肩憴鍡涜ぐ鏇炲煑閸?
+# ============================================================
+class ScanVideoRecorder:
+    def __init__(self, cfg: ScanConfig):
+        self.cfg = cfg
+        Path(cfg.output_dir).mkdir(parents=True, exist_ok=True)
+
+        self.video_path = str(Path(cfg.output_dir) / "scan_process.mp4")
+        fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+        self.writer = cv2.VideoWriter(
+            self.video_path, fourcc, cfg.video_fps, (cfg.frame_w, cfg.frame_h))
+
+        self.video_path_clean = str(Path(cfg.output_dir) / "scan_process_clean.mp4")
+        self.writer_clean = cv2.VideoWriter(
+            self.video_path_clean, fourcc, cfg.video_fps, (cfg.frame_w, cfg.frame_h))
+
+        self.video_path_auto = str(Path(cfg.output_dir) / "Auto.mp4")
+        self.writer_auto = cv2.VideoWriter(
+            self.video_path_auto, fourcc, cfg.video_fps, (cfg.frame_w, cfg.frame_h))
+
+        self.frame_count = 0
+        self.debug_dir = Path(cfg.output_dir) / "debug_frames" if cfg.save_debug_frames else None
+        if self.debug_dir:
+            self.debug_dir.mkdir(parents=True, exist_ok=True)
+
+        s = cfg.corner_roi_size
+        w, h = cfg.frame_w, cfg.frame_h
+        self.corner_rects = [
+            (0, 0, s, s, "TL"), (w-s, 0, w, s, "TR"),
+            (0, h-s, s, h, "BL"), (w-s, h-s, w, h, "BR"),
+        ]
+        self.skeleton_extractor = PathSkeletonExtractor(cfg)
+
+    def write_frame(self, frame_bgr: np.ndarray, mask: np.ndarray,
+                    row: int, direction: str, step_x: int, step_y: int,
+                    boundary_info: str = "", draw_skeleton: bool = True,
+                    record_auto: bool = True):
+        if record_auto:
+            self.writer_auto.write(frame_bgr)
+        overlay = frame_bgr.copy()
+        for cls, color in SEG_PALETTE.items():
+            if cls == SegClass.BACKGROUND:
+                continue
+            overlay[mask == cls] = color
+        blended = cv2.addWeighted(frame_bgr, 0.6, overlay, 0.4, 0)
+
+        self.writer_clean.write(blended)
+
+        if draw_skeleton:
+            try:
+                full_skeleton, longest_path, _ = self.skeleton_extractor.extract_from_mask(mask)
+                skeleton_count = np.sum(full_skeleton > 0)
+                if skeleton_count > 0:
+                    blended = self.skeleton_extractor.draw_all_skeleton(
+                        blended, full_skeleton, color=(128, 128, 128), radius=1)
+                    blended = self.skeleton_extractor.draw_all_skeleton(
+                        blended, longest_path, color=(0, 0, 255), radius=2)
+                    cv2.putText(blended, f"Skeleton:{skeleton_count}", (10, 90),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 1)
+            except Exception as e:
+                logger.debug(f"鐎圭偞妞傛銊︾仸閹绘劕褰囨径杈Е: {e}")
+
+        for x1, y1, x2, y2, label in self.corner_rects:
+            color = (0, 255, 255)
+            cv2.rectangle(blended, (x1, y1), (x2, y2), color, 2)
+            label_pos = (x1 + 5, y1 + 20) if label in ["TL", "BL"] else (x1 - 45, y1 + 20)
+            cv2.putText(blended, label, label_pos, cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
+
+        line1 = f"Row:{row} Dir:{direction} X:{step_x} Y:{step_y}"
+        cv2.putText(blended, line1, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+        if boundary_info:
+            cv2.putText(blended, boundary_info, (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 1)
+
+        self.writer.write(blended)
+        if self.debug_dir and self.frame_count % 1 == 0:
+            cv2.imwrite(str(self.debug_dir / f"frame_{self.frame_count:05d}.jpg"), blended)
+        self.frame_count += 1
+
+    def release(self):
+        self.writer.release()
+        self.writer_clean.release()
+        self.writer_auto.release()
+        logger.info(f"Video saved: {self.video_path}  ({self.frame_count} frames)")
+        logger.info(f"Overlay video saved: {self.video_path_clean}  ({self.frame_count} frames)")
+        logger.info(f"Auto video saved: {self.video_path_auto}  ({self.frame_count} frames)")
+
+
+# ============================================================
+# 8. 閾斿洤鑸伴幍寮块幒褍鍩楅崳?
+# ============================================================
+class SnakeScanController:
+    def __init__(self, cfg: ScanConfig, hw: HardwareInterface):
+        self.cfg = cfg
+        self.hw = hw
+        self.seg = SegmentationInference()
+        self.bd = GeometricCornerDetector(cfg)
+        self.stitcher = GlobalMapStitcher(cfg)
+        self.motion = MotionLogger()
+        self.recorder = ScanVideoRecorder(cfg)
+        self.cur_x_steps = 0
+        self.cur_y_steps = 0
+        self.current_row = 0
+        self._auto_recording_enabled = False
+
+    def _capture_and_segment(self) -> Tuple[np.ndarray, np.ndarray]:
+        return self.hw.grab_frame_and_mask(self.seg)
+
+    def _record(self, frame, mask, direction, draw_skeleton=True):
+        bd_info = self.bd.status_str(mask)
+        self.stitcher.record_tile(frame, mask)
+        self.recorder.write_frame(
+            frame, mask, self.current_row, direction,
+            self.cur_x_steps, self.cur_y_steps, bd_info,
+            draw_skeleton=draw_skeleton,
+            record_auto=self._auto_recording_enabled)
+
+    def _move_right(self, steps: int):
+        self.hw.move_x(+steps)
+        self.cur_x_steps += steps
+        self.stitcher.update_position(int(steps * self.cfg.pixels_per_step), 0)
+        self.motion.log("RIGHT", steps)
+        self.bd.update_position(self.cur_x_steps, self.cur_y_steps)
+
+    def _move_left(self, steps: int):
+        self.hw.move_x(-steps)
+        self.cur_x_steps -= steps
+        self.stitcher.update_position(-int(steps * self.cfg.pixels_per_step), 0)
+        self.motion.log("LEFT", steps)
+        self.bd.update_position(self.cur_x_steps, self.cur_y_steps)
+
+    def _move_down(self, steps: int):
+        self.hw.move_y(+steps)
+        self.cur_y_steps += steps
+        self.stitcher.update_position(0, int(steps * self.cfg.pixels_per_step))
+        self.motion.log("DOWN", steps)
+        self.bd.update_position(self.cur_x_steps, self.cur_y_steps)
+
+    def _move_up(self, steps: int):
+        self.hw.move_y(-steps)
+        self.cur_y_steps -= steps
+        self.stitcher.update_position(0, -int(steps * self.cfg.pixels_per_step))
+        self.motion.log("UP", steps)
+        self.bd.update_position(self.cur_x_steps, self.cur_y_steps)
+
+    def _init_to_top_left(self):
+        logger.info(">>> Step 2: move to top-left corner")
+        step = self.cfg.move_speed_steps
+        self.bd.reset_direction("top")
+        for i in range(10000):
+            frame, mask = self._capture_and_segment()
+            self._record(frame, mask, "INIT_UP", draw_skeleton=False)
+            if i % 20 == 0:
+                logger.info(f"  searching top boundary... iter={i}  {self.bd.status_str(mask)}")
+            if self.bd.has_top_boundary(mask):
+                logger.info(f"  reached top boundary (iter {i})")
+                break
+            self._move_up(step)
+        else:
+            logger.warning("top boundary search exceeded max iterations")
+
+        self.bd.reset_direction("left")
+        for i in range(10000):
+            frame, mask = self._capture_and_segment()
+            self._record(frame, mask, "INIT_LEFT", draw_skeleton=False)
+            if i % 20 == 0:
+                logger.info(f"  searching left boundary... iter={i}  {self.bd.status_str(mask)}")
+            if self.bd.has_left_boundary(mask):
+                logger.info(f"  reached left boundary (iter {i})")
+                break
+            self._move_left(step)
+        else:
+            logger.warning("left boundary search exceeded max iterations")
+
+        self._record(frame, mask, "INIT_DONE", draw_skeleton=True)
+        logger.info(f"  initialized at top-left: x={self.cur_x_steps}, y={self.cur_y_steps}")
+
+    def _scan_right_until_boundary(self):
+        step = self.cfg.move_speed_steps
+        self.bd.reset_direction("right")
+        logger.info(f"  scan right (row {self.current_row})")
+        for i in range(100000):
+            frame, mask = self._capture_and_segment()
+            self._record(frame, mask, "RIGHT")
+            if self.bd.has_right_boundary(mask):
+                logger.info(f"    reached right boundary (iter {i})  x={self.cur_x_steps}")
+                return
+            self._move_right(step)
+        logger.warning("right scan exceeded max iterations")
+
+    def _scan_left_until_boundary(self):
+        step = self.cfg.move_speed_steps
+        self.bd.reset_direction("left")
+        logger.info(f"  scan left (row {self.current_row})")
+        for i in range(100000):
+            frame, mask = self._capture_and_segment()
+            self._record(frame, mask, "LEFT")
+            if self.bd.has_left_boundary(mask):
+                logger.info(f"    reached left boundary (iter {i})  x={self.cur_x_steps}")
+                return
+            self._move_left(step)
+        logger.warning("left scan exceeded max iterations")
+
+    def _move_down_one_frame(self) -> Tuple[bool, bool]:
+        total_steps = self.cfg.frame_h_steps
+        step_chunk  = self.cfg.move_speed_steps
+        remaining   = total_steps
+        logger.info(f"  move down {total_steps} steps (overlap {self.cfg.row_overlap_ratio:.0%})")
+        while remaining > 0:
+            move_now = min(step_chunk, remaining)
+            self._move_down(move_now)
+            remaining -= move_now
+            frame, mask = self._capture_and_segment()
+            self._record(frame, mask, "DOWN")
+        self.bd.reset_direction("bottom")
+        for _ in range(self.cfg.corner_confirm_count + 1):
+            frame, mask = self._capture_and_segment()
+            self._record(frame, mask, "DOWN_CHK")
+            if self.bd.has_bottom_boundary(mask):
+                logger.info(f"    reached bottom boundary y={self.cur_y_steps}")
+                return False, True
+        return True, False
+
+    def run(self):
+        logger.info("=" * 60)
+        logger.info("Snake scan start v6.5")
+        logger.info(f"  frame size: {self.cfg.frame_w} x {self.cfg.frame_h}")
+        logger.info("=" * 60)
+        self._init_to_top_left()
+        self._auto_recording_enabled = True
+        self._scan_right_until_boundary()
+        while True:
+            can_continue, reached_bottom = self._move_down_one_frame()
+            self.current_row += 1
+            if self.current_row % 2 == 1:
+                self._scan_left_until_boundary()
+            else:
+                self._scan_right_until_boundary()
+            if not can_continue:
+                if reached_bottom:
+                    logger.info("  final bottom row scanned before stopping")
+                break
+        logger.info("=" * 60)
+        logger.info(f"scan finished, total rows: {self.current_row + 1}")
+        logger.info("=" * 60)
+        self._save_results()
+
+    def _save_results(self):
+        out = Path(self.cfg.output_dir)
+        out.mkdir(parents=True, exist_ok=True)
+
+        summary = self.motion.summary()
+        print(summary)
+        (out / "motion_log.txt").write_text(summary, encoding="utf-8")
+
+        logger.info(">>> Building global map and extracting paths...")
+        # 瑙ｅ寘鍏ㄩ噺杩斿洖鍊硷紙鍚?clean/cutting 璺緞锛?
+        (global_map_with_skeleton, global_mask, global_mask_color_with_skeleton,
+         full_skeleton, longest_path_mask, longest_path_points,
+         clean_path_mask, clean_path_points,
+         cutting_path_mask, cutting_path_points, cutting_directions) = self.stitcher.build_global_map()
+
+        # 閳光偓閳光偓 閸樼喐婀佹潏鎾冲毉閿涘牅绻氶幐浣风瑝閸欐﹫绱氶埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧埞鈧?
+        cv2.imwrite(str(out / "global_map.png"), global_map_with_skeleton)
+        logger.info(f"  saved global_map.png ({global_map_with_skeleton.shape[1]}x{global_map_with_skeleton.shape[0]})")
+
+        cv2.imwrite(str(out / "global_mask.png"), global_mask)
+        logger.info("  saved global_mask.png")
+
+        cv2.imwrite(str(out / "global_mask_color.png"), global_mask_color_with_skeleton)
+        logger.info("  saved global_mask_color.png")
+
+        if np.sum(full_skeleton) > 0:
+            cv2.imwrite(str(out / "global_skeleton_all.png"),
+                        (full_skeleton * 255).astype(np.uint8))
+            logger.info("  saved global_skeleton_all.png")
+            cv2.imwrite(str(out / "global_skeleton_main.png"),
+                        (longest_path_mask * 255).astype(np.uint8))
+            logger.info("  saved global_skeleton_main.png")
+
+        if len(longest_path_points) > 0:
+            path_data = {
+                "full_skeleton_pixels": int(np.sum(full_skeleton > 0)),
+                "longest_path_length": len(longest_path_points),
+                "longest_path_points": [{"x": int(x), "y": int(y)} for (y, x) in longest_path_points]
+            }
+            (out / "global_path.json").write_text(
+                json.dumps(path_data, indent=2), encoding="utf-8")
+            logger.info("  saved global_path.json")
+
+        # 閳光偓閳光偓 閳?閺傛澘閿涙艾鍏遍崙鈧稉鏄忕熅瀵板嫯绶崙?閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓閳光偓
+        if np.sum(clean_path_mask) > 0:
+            cv2.imwrite(str(out / "global_clean_path.png"),
+                        (clean_path_mask * 255).astype(np.uint8))
+            logger.info("  saved global_clean_path.png")
+
+            clean_overlay = self.stitcher.skeleton_extractor.draw_all_skeleton(
+                global_map_with_skeleton.copy(), clean_path_mask,
+                color=(0, 255, 255), radius=self.cfg.skeleton_highlight_radius)
+            cv2.imwrite(str(out / "global_clean_path_overlay.png"), clean_overlay)
+            logger.info("  saved global_clean_path_overlay.png")
+
+            clean_data = {
+                "clean_path_pixel_count": len(clean_path_points),
+                "clean_path_points": [
+                    {"x": int(x), "y": int(y)} for (y, x) in clean_path_points
+                ],
+            }
+            (out / "global_clean_path.json").write_text(
+                json.dumps(clean_data, indent=2), encoding="utf-8")
+            logger.info("  saved global_clean_path.json")
+
+        if np.sum(cutting_path_mask) > 0:
+            cv2.imwrite(str(out / "global_cutting_path.png"),
+                        (cutting_path_mask * 255).astype(np.uint8))
+            logger.info("  saved global_cutting_path.png")
+
+            cutting_overlay = self.stitcher.skeleton_extractor.draw_cutting_path_with_arrows(
+                global_map_with_skeleton.copy(), cutting_path_mask, cutting_directions,
+                path_color=(255, 0, 255), arrow_color=(0, 255, 0),
+                arrow_spacing=30, arrow_size=15)
+            cv2.imwrite(str(out / "global_cutting_path_overlay.png"), cutting_overlay)
+            logger.info("  saved global_cutting_path_overlay.png")
+
+            cutting_data = {
+                "cutting_path_pixel_count": len(cutting_path_points),
+                "cutting_direction_count": len(cutting_directions),
+                "cutting_path_points": [
+                    {"x": int(x), "y": int(y)} for (y, x) in cutting_path_points
+                ],
+            }
+            (out / "global_cutting_path.json").write_text(
+                json.dumps(cutting_data, indent=2), encoding="utf-8")
+            logger.info("  saved global_cutting_path.json")
+
+        self.recorder.release()
+
+        steps_data = {
+            "scan_config": {
+                "frame_size": f"{self.cfg.frame_w}x{self.cfg.frame_h}",
+                "corner_roi_size": self.cfg.corner_roi_size,
+                "corner_threshold": self.cfg.corner_ratio_threshold,
+                "overlap_ratio": self.cfg.row_overlap_ratio,
+                "corner_confirm": self.cfg.corner_confirm_count,
+                "lock_margin": self.cfg.boundary_lock_margin_steps,
+                "skeleton_radius": self.cfg.skeleton_path_radius,
+                "skeleton_min_length": self.cfg.skeleton_min_length,
+                "cutting_branch_min_length": self.cfg.cutting_branch_min_length,
+            },
+            "physical_corners": self.bd.get_status()["physical_corners"],
+            "inferred_boundaries": self.bd.get_status()["inferred_boundaries"],
+            "skeleton_info": {
+                "total_pixels": int(np.sum(full_skeleton > 0)),
+                "longest_path_length": len(longest_path_points),
+                "clean_path_length": len(clean_path_points),
+                "cutting_path_length": len(cutting_path_points),
+                "cutting_direction_count": len(cutting_directions),
+            },
+            "records": [{"direction": r.direction, "steps": r.steps} for r in self.motion.records],
+            "net_x_steps": self.motion.total_x_steps,
+            "net_y_steps": self.motion.total_y_steps,
+            "total_rows": self.current_row + 1,
+        }
+        (out / "motion_steps.json").write_text(
+            json.dumps(steps_data, indent=2, ensure_ascii=False), encoding="utf-8")
+        logger.info(f"All results saved to: {out.resolve()}")
+
+
+# ============================================================
+# 9. 濡剝瀚欑涵娆?
+# ============================================================
+class SimulatedHardware(HardwareInterface):
+    def __init__(self, cfg: ScanConfig, full_map_path: str):
+        super().__init__(cfg)
+        self.full_map = cv2.imread(full_map_path)
+        if self.full_map is None:
+            raise FileNotFoundError(f"閹靛彞绗夐崚鐗埬侀幏鐔锋勾閸? {full_map_path}")
+        self.map_h, self.map_w = self.full_map.shape[:2]
+        self.pos_x = self.map_w // 2
+        self.pos_y = self.map_h // 2
+        logger.info(f"濡剝瀚欏Ο鈥崇础: 閸︽澘娴?{self.map_w}x{self.map_h}  閸掓繂娴ｅ秶鐤? ({self.pos_x}, {self.pos_y})")
+
+    def _compute_oob_mask(self) -> np.ndarray:
+        h, w = self.cfg.frame_h, self.cfg.frame_w
+        oob = np.zeros((h, w), dtype=bool)
+        vx1, vy1 = self.pos_x, self.pos_y
+        vx2, vy2 = self.pos_x + w, self.pos_y + h
+        if vy1 < 0: oob[:min(h, -vy1), :] = True
+        if vy2 > self.map_h: oob[max(0, h-(vy2-self.map_h)):, :] = True
+        if vx1 < 0: oob[:, :min(w, -vx1)] = True
+        if vx2 > self.map_w: oob[:, max(0, w-(vx2-self.map_w)):] = True
+        return oob
+
+    def grab_frame(self) -> np.ndarray:
+        h, w = self.cfg.frame_h, self.cfg.frame_w
+        canvas = np.zeros((h, w, 3), dtype=np.uint8)
+        sx1, sy1 = self.pos_x, self.pos_y
+        sx2, sy2 = self.pos_x + w, self.pos_y + h
+        vx1 = max(0, sx1); vy1 = max(0, sy1)
+        vx2 = min(self.map_w, sx2); vy2 = min(self.map_h, sy2)
+        if vx2 > vx1 and vy2 > vy1:
+            dx1, dy1 = vx1 - sx1, vy1 - sy1
+            canvas[dy1:dy1+(vy2-vy1), dx1:dx1+(vx2-vx1)] = \
+                self.full_map[vy1:vy2, vx1:vx2]
+        return canvas
+
+    def grab_frame_and_mask(self, seg_model: SegmentationInference) -> Tuple[np.ndarray, np.ndarray]:
+        frame, mask = super().grab_frame_and_mask(seg_model)
+        mask[self._compute_oob_mask()] = SegClass.BOUNDARY
+        return frame, mask
+
+    def move_x(self, steps: int):
+        self.pos_x += int(steps * self.cfg.pixels_per_step)
+
+    def move_y(self, steps: int):
+        self.pos_y += int(steps * self.cfg.pixels_per_step)
+
+
+# ============================================================
+# 娑撹崵鈻兼惔?
+# ============================================================
+def main():
+    cfg = ScanConfig(
+        frame_w=1028, frame_h=776,
+        um_per_pixel=1.0, um_per_step=1.0,
+        move_speed_steps=100, row_overlap_ratio=0.2,
+        corner_roi_size=80, corner_ratio_threshold=0.25,
+        corner_confirm_count=4, boundary_lock_margin_steps=10,
+        skeleton_path_radius=1, skeleton_highlight_radius=3,
+        skeleton_min_length=100000,
+        output_dir=r"F:/0_My_jupyter/0_Optical/scan_output/Small",
+        video_fps=10, save_debug_frames=True,
+    )
+
+    USE_SIMULATION = True
+
+    if USE_SIMULATION:
+        hw = SimulatedHardware(
+            cfg,
+            full_map_path=r"F:\0_My_jupyter\0_Optical\scan_output\Small\map_small2.jpg",
+        )
+    else:
+        hw = HardwareInterface(cfg)
+
+    scanner = SnakeScanController(cfg, hw)
+    scanner.run()
+
+
+if __name__ == "__main__":
+    main()
+
+

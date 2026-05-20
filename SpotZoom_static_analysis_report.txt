@@ -1,0 +1,735 @@
+================================================================================
+  SpotZoom 项目全面静态代码分析报告
+  生成日期: 2026-05-11
+  分析范围: 15 个源文件, 约 6,500 行代码
+================================================================================
+
+目录
+  A. 语法与导入问题
+  B. 代码质量问题
+  C. 架构问题
+  D. 潜在 Bug
+  E. 性能问题
+  F. 安全与健壮性
+  G. 各文件独立问题汇总
+  H. 总结与优先级排序
+
+================================================================================
+A. 语法与导入问题
+================================================================================
+
+[A-01] 严重程度: Medium | 文件: SpotZoom.py | 行: 36-42
+  问题: _import_ml_module() 使用 except Exception 捕获所有异常
+  描述: 延迟导入 ML 模块时，except Exception 会吞掉除 ImportError
+        以外的所有异常（如 SyntaxError、AttributeError、TypeError），
+        导致模块虽然存在但内部有语法错误时被静默忽略，返回 None。
+  建议: 改为 except (ImportError, ModuleNotFoundError)，
+        让其他异常正常传播以便调试。
+
+[A-02] 严重程度: Medium | 文件: SpotZoom.py | 行: 23-34
+  问题: 动态修改 sys.path 存在路径污染风险
+  描述: 在模块顶层将 project_root、core_segment_src、_ml_package.parent
+        插入 sys.path。这些路径在不同环境下可能指向意外位置，
+        且全局修改 sys.path 可能影响其他已导入模块的导入解析。
+  建议: 考虑使用 importlib.machinery 或 .pth 文件管理路径，
+        或在函数作用域内临时修改 sys.path。
+
+[A-03] 严重程度: Low | 文件: SpotZoom.py | 行: 17
+  问题: 导入了 Protocol 和 runtime_checkable 但 Protocol 仅用于
+        XYStageProtocol 和 ZStageProtocol 两个接口定义
+  描述: 导入本身没问题，但实际代码中并未使用 isinstance(obj, Protocol)
+        进行运行时检查，runtime_checkable 装饰器的价值有限。
+  建议: 保留 Protocol 定义（有助于文档和类型检查），
+        但可考虑移除 runtime_checkable 如果不需要运行时检查。
+
+[A-04] 严重程度: Low | 文件: SpotZoom.py | 行: 10, 12
+  问题: 导入了 signal 和 subprocess 模块
+  描述: signal 仅在 main() 中用于 SIGTERM 处理；subprocess 用于
+        YOLO worker 进程管理。导入合理，但 signal 在 Windows 上
+        功能受限（仅支持 SIGINT、SIGBREAK）。
+  建议: 无需修改，但需注意 Windows 平台 signal 的局限性。
+
+[A-05] 严重程度: Low | 文件: SpotZoom_Machine_Learning/zernike_analyzer.py | 行: 240-241
+  问题: 在 analyze() 方法内部延迟导入 cv2
+  描述: "import cv2" 出现在方法体内而非模块顶层。虽然功能正确，
+        但违反了 Python 的导入惯例，且每次调用 analyze() 都会执行
+        导入查找（尽管 Python 会缓存）。
+  建议: 将 import cv2 移到模块顶层。
+
+[A-06] 严重程度: Low | 文件: SpotZoom_Machine_Learning/active_learning_collector.py | 行: 225-226
+  问题: 在 collect() 方法内部延迟导入 cv2
+  描述: 同 [A-05]，在方法体内导入 cv2 用于图像保存。
+  建议: 将 import cv2 移到模块顶层。
+
+[A-07] 严重程度: Low | 文件: SpotZoom_Machine_Learning/__init__.py | 行: 24-35
+  问题: __init__.py 导入了所有子模块的公开符号
+  描述: 当 SpotZoom_Machine_Learning 包被导入时，所有 12 个子模块
+        都会被立即加载。如果某个子模块的依赖缺失（如缺少 numpy），
+        整个包将无法导入。
+  建议: 考虑使用延迟导入模式，或在 __init__.py 中添加 try/except
+        保护，使个别子模块的失败不影响整体。
+
+[A-08] 严重程度: Low | 文件: SpotZoom_Machine_Learning/adaptive_gain.py | 行: 24
+  问题: 导入了 numpy 但仅在类型标注中使用
+  描述: numpy 被导入但模块内没有任何实际使用 numpy 的代码。
+        仅用于类型标注的导入在 Python 3.9+ 可用 TYPE_CHECKING 守卫。
+  建议: 将 import numpy 移到 "if TYPE_CHECKING:" 块中，
+        或如果确实不需要则移除。
+
+[A-09] 严重程度: Low | 文件: correct_robot.py | 行: 1-21
+  问题: 文件已标记为 DEPRECATED 但仍保留在项目中
+  描述: correct_robot.py 已被标记为废弃（DeprecationWarning），
+        功能完全被 SpotZoom.py 取代。479 行代码仍存在于项目中。
+  建议: 如果确认不再使用，应从项目中删除该文件。
+
+================================================================================
+B. 代码质量问题
+================================================================================
+
+[B-01] 严重程度: Critical | 文件: SpotZoom.py | 行: 1479-2010
+  问题: SpotZoomController 类是"上帝类"（God Class），承担过多职责
+  描述: SpotZoomController 类（约 530 行）同时负责：
+        - 对准控制循环 (run, _align_to_target)
+        - 检测重试逻辑 (_detect_center_with_retry)
+        - 检测平滑 (_smooth_detection)
+        - 步长计算 (_calc_axis_steps)
+        - 恢复扫描 (_attempt_recovery_scan)
+        - 焦点评分 (_focus_score)
+        - 预览显示 (_show_preview)
+        - 收敛判断 (_is_converged)
+        - 资源清理 (close)
+        - 11 个创新模块的初始化和集成
+  建议: 拆分为多个类：
+        - AlignmentLoop: 对准主循环
+        - DetectionPipeline: 检测+平滑+质量评估
+        - RecoveryScanner: 恢复扫描
+        - PreviewRenderer: 预览渲染
+
+[B-02] 严重程度: Critical | 文件: SpotZoom.py | 行: 1-2490
+  问题: 单文件 2,490 行，包含 21 个类/函数定义
+  描述: SpotZoom.py 包含了所有核心逻辑：协议定义、PID 控制器、
+        日志配置、配置管理、数据类、运行报告、窗口管理、
+        YOLO 检测器、Worker 客户端、4 种硬件驱动、
+        主控制器、CLI 解析、环境检查、入口函数。
+  建议: 拆分为子模块：
+        - config.py: AlignmentConfig, load_config_file, save_default_config
+        - hardware/: XYStageProtocol, ZStageProtocol, 各驱动实现
+        - detection/: SpotYOLODetector, SpotYOLOWorkerClient
+        - control/: PIDController, SpotZoomController
+        - cli.py: parse_args, main
+        - reporting.py: RunReporter, RuntimeMetrics
+
+[B-03] 严重程度: High | 文件: SpotZoom.py | 行: 1668-1725
+  问题: _align_to_target() 方法过长（约 57 行）且职责复杂
+  描述: 该方法包含检测重试、偏差计算、安全检查、轨迹记录、
+        指标更新、X/Y 轴对称逻辑。X 轴和 Y 轴的处理代码
+        几乎完全对称，存在大量重复。
+  建议: 提取通用的 _move_axis(axis, pixel_error, target) 方法，
+        消除 X/Y 对称重复代码。
+
+[B-04] 严重程度: High | 文件: SpotZoom.py | 行: 1727-1785
+  问题: _detect_center_with_retry() 方法过长（约 58 行）
+  描述: 该方法混合了检测逻辑、焦点评分、质量过滤、
+        指标更新、事件记录、预览显示、恢复扫描触发。
+  建议: 拆分为更小的方法：_try_single_detection(),
+        _evaluate_detection_quality(), _handle_detection_miss()。
+
+[B-05] 严重程度: High | 文件: SpotZoom.py | 行: 1851-1914
+  问题: _attempt_recovery_scan() 方法过长（约 63 行）
+  描述: 恢复扫描方法内嵌套了完整的检测+评分+平滑+记录逻辑，
+        与 _detect_center_with_retry() 中存在大量重复代码。
+  建议: 提取通用的检测-评分-记录流程，两个方法共享。
+
+[B-06] 严重程度: High | 文件: SpotZoom.py | 行: 1689-1719
+  问题: X/Y 轴对齐代码高度重复
+  描述: X 轴和 Y 轴的对齐逻辑几乎完全相同（偏差计算、步长计算、
+        安全检查、移动、轨迹记录、指标更新），仅变量名不同。
+        这段模式在 _attempt_recovery_scan() 中也有重复。
+  建议: 提取 _align_single_axis(axis, pixel_error, target_pos) 方法，
+        统一处理单轴对齐。
+
+[B-07] 严重程度: High | 文件: SpotZoom.py | 行: 1625-1628
+  问题: _inc_metric() 方法存在但未被充分使用
+  描述: 定义了 _inc_metric() 辅助方法用于递增指标，但在
+        _align_to_target() 和 _attempt_recovery_scan() 中
+        仍有大量直接操作 reporter.metrics 的代码（约 21 处）。
+  建议: 将所有指标递增统一使用 _inc_metric() 方法。
+
+[B-08] 严重程度: Medium | 文件: SpotZoom.py | 行: 408-493
+  问题: AlignmentConfig 数据类有 40+ 字段，缺少验证
+  描述: AlignmentConfig 包含 40+ 个配置字段，但没有 __post_init__
+        验证。非法值（如负容差、零步长、负等待时间）会被静默接受。
+  建议: 添加 __post_init__ 方法验证关键字段：
+        - tolerance_px > 0
+        - detect_retry > 0
+        - settle_time_s > 0
+        - x_move_step > 0, y_move_step > 0
+        - max_iterations > 0
+        - pid_output_min < pid_output_max
+
+[B-09] 严重程度: Medium | 文件: SpotZoom.py | 行: 2229-2357
+  问题: parse_args() 函数过长（约 128 行）
+  描述: 参数定义、配置文件加载、默认配置保存全部在一个函数中。
+  建议: 拆分为 _build_arg_parser()、_apply_config_file()、
+        _handle_special_commands()。
+
+[B-10] 严重程度: Medium | 文件: SpotZoom.py | 行: 102, 685-693
+  问题: 魔法数字散布在代码中
+  描述: 多处硬编码的数值常量：
+        - WHEEL_DELTA = 120 (行 102) -- 已提取为常量，好
+        - JPEG quality 90 (行 1015)
+        - blockSize=31, C=5 (行 247-248, classic_spot_detector.py)
+        - bandwidth=30.0, max_iter=20, converge_thresh=0.5 (行 300-303)
+        - min_area=20, min_circularity=0.2 (行 99-101)
+        - 0.3 * peak_intensity (行 113, subpixel_centroid.py)
+        - bg_percentile=10 (多处)
+        - 0.2 * (gray.max() - bg_level) (行 174, spot_quality.py)
+  建议: 将这些值提取为类常量或配置参数。
+
+[B-11] 严重程度: Medium | 文件: SpotZoom.py | 行: 1479-1623
+  问题: SpotZoomController.__init__() 过长（约 144 行）
+  描述: 构造函数中初始化了 11 个可选的创新模块，每个模块都有
+        相同的 "if cfg.xxx_enabled and _ml_xxx is not None" 模式。
+  建议: 使用注册表模式或工厂方法统一管理模块初始化。
+
+[B-12] 严重程度: Low | 文件: SpotZoom.py | 行: 2368
+  问题: _shutdown_requested 变量被设置但从未被读取
+  描述: main() 函数中定义了 _shutdown_requested 和 _sigterm_handler，
+        但在主循环中从未检查该变量。SIGTERM 信号被捕获后
+        仅记录日志，不会实际触发关闭。
+  建议: 在 controller.run() 循环中检查 _shutdown_requested，
+        或使用 threading.Event 替代。
+
+[B-13] 严重程度: Low | 文件: SpotZoom_Machine_Learning/trajectory_recorder.py
+  问题: record_move_x() 和 record_move_y() 方法高度重复
+  描述: 两个方法仅 axis 名称不同，代码结构完全一致。
+  建议: 提取通用方法 record_move(axis, steps)。
+
+[B-14] 严重程度: Low | 文件: SpotZoom_Machine_Learning/safety_manager.py
+  问题: check_move_x() 和 check_move_y() 方法高度重复
+  描述: 两个方法逻辑完全对称，仅检查的字段名不同。
+  建议: 提取通用方法 _check_move(axis, steps, max_single, max_total, total_field)。
+
+[B-15] 严重程度: Low | 文件: 全局
+  问题: 缺少类型标注
+  描述: 大量方法缺少返回类型标注和参数类型标注，特别是：
+        - SpotZoom.py 中的 build_detector(), build_xy_stage(), build_z_stage()
+        - correct_robot.py 中的 connect_controller() 返回 Any
+        - generate_report.js 中所有函数均无 JSDoc
+  建议: 补充类型标注，考虑使用 mypy 进行静态类型检查。
+
+[B-16] 严重程度: Low | 文件: 全局
+  问题: 完全没有单元测试
+  描述: 项目中没有任何测试文件（无 test_*.py、无 tests/ 目录、
+        无 pytest/tox 配置）。对于涉及硬件控制的安全关键系统，
+        缺乏测试覆盖是重大风险。
+  建议: 优先为以下纯逻辑组件编写测试：
+        - PIDController
+        - AlignmentConfig 验证
+        - KalmanSpotTracker
+        - SubPixelCentroid
+        - SafetyManager
+        - DryRunStage
+
+================================================================================
+C. 架构问题
+================================================================================
+
+[C-01] 严重程度: Critical | 文件: SpotZoom.py | 行: 1-2490
+  问题: 单体架构 -- 所有组件耦合在一个文件中
+  描述: 硬件驱动（Thorlabs、Newport、XPS）、检测器（YOLO）、
+        控制器（PID、对准循环）、UI（窗口管理、预览）、
+        配置管理、报告生成全部在同一个文件中。
+        任何组件的修改都需要理解整个 2490 行文件。
+  建议: 按职责拆分为独立包/模块：
+        spotzoom/
+          __init__.py
+          config.py
+          hardware/
+            __init__.py
+            protocols.py
+            thorlabs.py
+            newport.py
+            xps.py
+            dryrun.py
+          detection/
+            __init__.py
+            yolo.py
+            worker_client.py
+          control/
+            __init__.py
+            pid.py
+            aligner.py
+          ui/
+            __init__.py
+            window.py
+            preview.py
+          reporting.py
+          cli.py
+
+[C-02] 严重程度: High | 文件: SpotZoom.py | 行: 56-78
+  问题: ML 模块通过条件导入暴露到全局命名空间
+  描述: 11 个 ML 模块的类通过 "if _ml_xxx is not None" 条件导入
+        到 SpotZoom.py 的全局命名空间。这意味着：
+        1. 这些类可能为 None，使用前必须检查
+        2. IDE 无法确定这些名称的类型
+        3. 增加了模块间的隐式耦合
+  建议: 使用统一的 ML 模块注册表或 facade 模式，
+        而非将 11 个可能为 None 的类暴露到全局。
+
+[C-03] 严重程度: High | 文件: SpotZoom.py | 行: 1479-1623
+  问题: SpotZoomController 直接依赖 11 个可选 ML 模块
+  描述: 控制器构造函数中包含 11 个条件初始化块，每个块检查
+        cfg.xxx_enabled 和 _ml_xxx is not None。这导致：
+        1. 控制器类无法独立测试
+        2. 添加新模块需要修改控制器代码（违反开闭原则）
+        3. 构造函数持续膨胀
+  建议: 使用插件/中间件模式：
+        - 定义 AlignmentMiddleware 协议
+        - 每个模块实现该协议
+        - 控制器接受 middleware 列表而非具体模块
+
+[C-04] 严重程度: Medium | 文件: SpotZoom.py | 行: 2229-2357
+  问题: 配置管理分散在 argparse 和 AlignmentConfig 之间
+  描述: 配置参数同时存在于：
+        1. argparse 定义（约 60 个参数）
+        2. AlignmentConfig 数据类（40+ 字段）
+        3. save_default_config() 中的默认值字典
+        三处需要手动保持同步，容易遗漏。
+  建议: 使用单一配置源（如 AlignmentConfig），
+        argparse 仅负责从命令行/文件收集值并填充到配置对象中。
+
+[C-05] 严重程度: Medium | 文件: SpotZoom.py | 行: 2334-2346
+  问题: 配置文件加载使用 setattr 动态覆盖 argparse 属性
+  描述: 从 YAML/JSON 加载配置后，通过 key.replace("-", "_") 和
+        setattr(args, dest, value) 动态设置属性。这存在风险：
+        1. 配置文件中的任意键可能覆盖 argparse 未定义的属性
+        2. 类型不匹配（如字符串覆盖 int 参数）不会被检测
+        3. 恶意配置文件可能注入意外属性
+  建议: 使用白名单机制，仅允许已定义的配置键被覆盖，
+        并添加类型验证。
+
+[C-06] 严重程度: Medium | 文件: SpotZoom.py | 行: 1419-1476
+  问题: XPSZAxis 在 __init__ 中修改 sys.path
+  描述: XPSZAxis 构造函数将 XPS 驱动目录追加到 sys.path，
+        然后导入 XPS_Q8_drivers。这是全局副作用，且：
+        1. 多次实例化会重复添加路径
+        2. 路径基于 project_root 推导，可能不正确
+        3. XPS 驱动模块名（XPS_Q8_drivers）不符合 PEP 8
+  建议: 在使用前检查路径是否已在 sys.path 中，
+        或使用 importlib 机制动态加载。
+
+[C-07] 严重程度: Low | 文件: SpotZoom.py | 行: 139-153
+  问题: Protocol 定义未被充分利用
+  描述: 定义了 XYStageProtocol 和 ZStageProtocol，
+        但 build_xy_stage() 和 build_z_stage() 的返回类型
+        注解为裸类型（无 Protocol 约束）。实际代码中
+        也没有 isinstance(obj, XYStageProtocol) 检查。
+  建议: 为 build_xy_stage() 和 build_z_stage() 添加
+        返回类型注解 -> XYStageProtocol。
+
+================================================================================
+D. 潜在 Bug
+================================================================================
+
+[D-01] 严重程度: Critical | 文件: SpotZoom.py | 行: 2368-2376
+  问题: SIGTERM handler 设置了 _shutdown_requested 但主循环不检查
+  描述: main() 中定义了 _shutdown_requested = False 和
+        _sigterm_handler()，但在 controller.run() 的循环中
+        没有任何机制检查该标志。这意味着：
+        1. 发送 SIGTERM 后程序不会优雅退出
+        2. 对准循环会继续运行直到自然结束
+        3. 在长时间运行的对准中，SIGTERM 无法中断
+  建议: 将 _shutdown_requested 作为 threading.Event 传递给
+        SpotZoomController.run()，在每次迭代中检查。
+
+[D-02] 严重程度: High | 文件: SpotZoom.py | 行: 980-1003
+  问题: SpotYOLOWorkerClient._read_worker_json() 可能死锁
+  描述: 该方法在持有 self._proc_lock 的情况下读取 stdout。
+        如果 worker 进程的 stdout 缓冲区满了（因为 stdin 也
+        在写），且 worker 同时在等待 stdin 读取，可能造成死锁。
+        虽然 detect() 方法在写 stdin 后释放了锁再读 stdout，
+        但 _read_worker_json() 本身是在无锁状态下被调用的，
+        如果其他线程同时调用 detect()，可能产生竞态。
+  建议: 确保 stdin 写入和 stdout 读取的原子性，
+        考虑使用单独的线程管理 stdout 读取。
+
+[D-03] 严重程度: High | 文件: SpotZoom.py | 行: 2085-2100
+  问题: worker_main() 中 image_path 参数存在路径遍历风险
+  描述: worker 进程接受 "image_path" 参数并直接传递给
+        cv2.imread()。如果攻击者能向 worker stdin 发送命令，
+        可以读取任意文件。
+  建议: 验证 image_path 在允许的目录范围内，
+        或移除 image_path 功能（仅保留 base64 传输）。
+
+[D-04] 严重程度: High | 文件: SpotZoom.py | 行: 1639, 1648
+  问题: Z 轴移动缺少安全检查和异常处理
+  描述: 在 run() 方法中，z_stage.move_up() 和 z_stage.move_down()
+        调用没有：
+        1. SafetyManager 的 check_z_move() 检查
+        2. try/except 异常保护
+        如果 Z 轴驱动出现异常（如 XPS 连接断开），
+        整个对准循环会崩溃。
+  建议: 添加安全检查和异常处理：
+        if self._safety and not self._safety.check_z_move("up"): ...
+        try: self.z_stage.move_up(...) except Exception: ...
+
+[D-05] 严重程度: High | 文件: SpotZoom.py | 行: 2377-2379
+  问题: signal.signal(signal.SIGINT, ...) 在 Windows 上可能失败
+  描述: 虽然 try/except 捕获了 OSError 和 ValueError，
+        但在 Windows 上，SIGINT 的默认行为是触发 KeyboardInterrupt，
+        重新注册 SIGINT handler 可能改变默认行为。
+  建议: 在 Windows 上仅依赖 KeyboardInterrupt 异常处理，
+        不重新注册 SIGINT handler。
+
+[D-06] 严重程度: Medium | 文件: SpotZoom.py | 行: 1692-1719
+  问题: _align_to_target() 中安全检查与实际移动之间存在竞态窗口
+  描述: 安全检查 (check_move_x) 和实际移动 (move_x) 之间
+        没有持有锁。虽然在当前单线程设计中不是问题，
+        但如果未来引入多线程，可能产生竞态条件。
+  建议: 当前风险低，但建议添加注释说明线程安全假设。
+
+[D-07] 严重程度: Medium | 文件: SpotZoom.py | 行: 1998-2010
+  问题: SpotZoomController.close() 的嵌套 try/finally 可能掩盖异常
+  描述: close() 使用三层嵌套 try/finally。如果 xy_stage.close()
+        和 z_stage.close() 都抛出异常，只有 xy_stage 的异常
+        会被传播，z_stage 的异常被静默忽略。
+  建议: 收集所有异常，最后统一报告或记录。
+
+[D-08] 严重程度: Medium | 文件: SpotZoom.py | 行: 86-95
+  问题: _configure_console_encoding() 使用 os.system() 设置代码页
+  描述: os.system("chcp 65001 > nul") 会创建子进程，
+        在某些受限环境下可能失败或产生意外行为。
+        且该函数在模块导入时自动执行。
+  建议: 使用 ctypes 直接调用 Windows API 设置控制台编码，
+        或将此功能移到 main() 中按需执行。
+
+[D-09] 严重程度: Medium | 文件: correct_robot.py | 行: 259-292
+  问题: detection_worker() 中 cv2.imshow 和 cv2.waitKey 在非主线程调用
+  描述: OpenCV 的 GUI 函数（imshow, waitKey）必须在主线程调用。
+        detection_worker() 运行在独立线程中，在 Windows 上
+        可能导致崩溃或无响应。
+  建议: 使用队列将帧传递到主线程进行显示，
+        或在主线程中使用定时器轮询显示队列。
+
+[D-10] 严重程度: Medium | 文件: SpotZoom_Machine_Learning/active_learning_collector.py | 行: 413-415
+  问题: generate_yolo_labels() 使用硬编码的图像尺寸 (640x480)
+  描述: YOLO 标注文件中的坐标归一化使用了固定的 img_w=640, img_h=480，
+        但实际采集的图像尺寸可能不同。这会导致标注坐标错误。
+  建议: 从实际图像文件读取尺寸，或保存图像时记录尺寸信息。
+
+[D-11] 严重程度: Medium | 文件: SpotZoom_Machine_Learning/focus_search.py | 行: 250-251
+  问题: _golden_section_search() 中可能重复调用 score_fn
+  描述: 行 250-251 对已评估过的 z 位置再次调用 score_fn()，
+        如果 score_fn 有副作用（如移动硬件），会导致
+        不必要的硬件操作和评分不一致。
+  建议: 缓存已评估位置的评分，避免重复调用。
+
+[D-12] 严重程度: Low | 文件: SpotZoom.py | 行: 1944
+  问题: _show_preview() 每次调用都复制帧
+  描述: canvas = frame.copy() 在每次预览更新时创建帧副本。
+        在高频调用时（每轮对准多次检测），这会产生
+        不必要的内存分配和复制开销。
+  建议: 如果预览不需要保留原始帧，可以直接在帧上绘制。
+
+[D-13] 严重程度: Low | 文件: SpotZoom_Machine_Learning/kalman_tracker.py | 行: 147
+  问题: 使用 np.linalg.inv() 计算矩阵逆
+  描述: 虽然对于 2x2 矩阵性能影响不大，但 np.linalg.inv()
+        在数值上不如 np.linalg.solve() 稳定。
+  建议: 改用 K = P_pred @ H.T @ np.linalg.solve(S, np.eye(2))。
+
+[D-14] 严重程度: Low | 文件: SpotZoom_Machine_Learning/classic_spot_detector.py | 行: 339
+  问题: _method_meanshift() 中背景区域计算可能越界
+  描述: bg_region = gray[max(0, by1 - 10):by1, bx1:bx2] 中，
+        如果 by1 < 10，则 bg_region 为 gray[0:by1, bx1:bx2]。
+        当 by1 = 0 时，bg_region 为空数组，bg_mean = 1.0。
+        这不是 bug 但可能导致置信度计算不准确。
+  建议: 添加对 bg_region 为空的特殊处理。
+
+================================================================================
+E. 性能问题
+================================================================================
+
+[E-01] 严重程度: High | 文件: SpotZoom.py | 行: 1015-1023
+  问题: YOLO Worker 使用 JPEG + base64 传输帧数据
+  描述: 每帧检测时：
+        1. cv2.imencode(".jpg", frame, [quality=90]) -- JPEG 编码
+        2. base64.b64encode() -- base64 编码（膨胀约 33%）
+        3. json.dumps() -- JSON 序列化
+        4. stdin.write() + flush() -- 进程间传输
+        对于高分辨率帧（如 1920x1080），每帧传输数据量约 200-500KB。
+        在对准循环中每秒可能传输多帧。
+  建议: 考虑使用共享内存（multiprocessing.shared_memory）
+        替代 stdin/stdout 管道传输帧数据，可减少编码/解码开销
+        和数据拷贝。
+
+[E-02] 严重程度: High | 文件: SpotZoom.py | 行: 662-676
+  问题: ToupViewWindow.grab_frame() 每次都进行完整截图
+  描述: 每次调用 grab_frame() 都执行：
+        1. pyautogui.screenshot() -- 全屏截图（实际是 region 截图）
+        2. np.array(screenshot) -- PIL Image 转 numpy 数组
+        3. cv2.cvtColor() -- RGB 转 BGR
+        在热循环中（detect_retry 次/轮 * max_align_rounds 轮 *
+        max_iterations 次迭代），这可能成为性能瓶颈。
+  建议: 考虑使用 Windows API（BitBlt）直接截取窗口，
+        或使用 pywin32 的 GetBitmapBits 避免 PIL 中间层。
+
+[E-03] 严重程度: Medium | 文件: SpotZoom.py | 行: 1916-1931
+  问题: _focus_score() 在同一帧上可能被重复调用
+  描述: _focus_score() 计算 Laplacian variance 并缓存结果到
+        self._last_focus_score。但在 _detect_center_with_retry() 中，
+        如果检测失败，focus_score 仍为 None（行 1733），
+        而 _show_preview() 中会回退到缓存值（行 1950），
+        可能显示过期的焦点评分。
+  建议: 在检测失败时显式重置 _last_focus_score = 0.0。
+
+[E-04] 严重程度: Medium | 文件: SpotZoom_Machine_Learning/zernike_analyzer.py | 行: 183-211
+  问题: _build_basis() 预计算了基矩阵但 analyze() 每次重新 resize
+  描述: 虽然 Zernike 基矩阵在 __init__ 中预计算了（好），
+        但 analyze() 每次调用时都将输入图像 resize 到 64x64。
+        对于频繁调用，resize 操作可以避免。
+  建议: 如果连续帧的 bbox 大小相近，可缓存 resize 后的图像。
+
+[E-05] 严重程度: Medium | 文件: SpotZoom_Machine_Learning/active_learning_collector.py | 行: 266-272
+  问题: get_stats() 每次调用都遍历所有样本计算统计
+  描述: get_stats() 使用列表推导遍历 _samples 列表计算
+        hard/easy/failed/low_conf 等统计。当样本数量大时
+        （max_samples=500），每次调用都会重新计算。
+  建议: 使用增量计数器维护统计值，避免每次全量遍历。
+
+[E-06] 严重程度: Medium | 文件: SpotZoom_Machine_Learning/classic_spot_detector.py | 行: 352-404
+  问题: _find_contour_spots() 对每个轮廓计算多个指标
+  描述: 对每个候选轮廓计算面积、周长、圆度、矩、质心、
+        ROI 提取、峰值、强度比。对于复杂图像可能有
+        数百个轮廓，计算量较大。
+  建议: 添加快速预过滤（如面积范围检查放在圆度计算之前），
+        减少不必要的计算。当前代码已部分实现（面积先于圆度）。
+
+[E-07] 严重程度: Low | 文件: SpotZoom_Machine_Learning/trajectory_recorder.py | 行: 175-216
+  问题: get_summary() 每次调用遍历所有点计算最大误差
+  描述: get_summary() 遍历 _points 列表查找最大误差，
+        时间复杂度 O(n)。可使用增量更新维护最大值。
+  建议: 在 record_detection() 中增量更新 max_error。
+
+[E-08] 严重程度: Low | 文件: SpotZoom_Machine_Learning/model_optimizer.py | 行: 230-248
+  问题: profile_inference() 中的预热和性能分析使用 time.perf_counter()
+  描述: 使用 time.perf_counter() 是正确的选择（高精度单调时钟），
+        但预热阶段的异常被静默忽略（行 234-235: except Exception: pass），
+        可能导致预热不充分影响后续性能数据准确性。
+  建议: 记录预热失败的次数，在报告中注明。
+
+================================================================================
+F. 安全与健壮性
+================================================================================
+
+[F-01] 严重程度: High | 文件: SpotZoom.py | 行: 2085-2100
+  问题: worker_main() 接受任意文件路径读取图像
+  描述: YOLO worker 进程通过 stdin 接受 "image_path" 参数，
+        直接传递给 cv2.imread()。如果 worker 进程的 stdin
+        可被外部控制（如通过管道），攻击者可读取服务器上
+        的任意图像文件。
+  建议: 1. 移除 image_path 功能，仅支持 base64 传输
+        2. 或添加路径白名单验证
+
+[F-02] 严重程度: High | 文件: SpotZoom.py | 行: 2334-2346
+  问题: 配置文件加载未限制键名空间
+  描述: load_config_file() 返回任意字典，parse_args() 中
+        通过 setattr(args, dest, value) 将所有键值对
+        设置到 argparse.Namespace 上。恶意配置文件可以：
+        1. 覆盖 Python 内置属性（如 __class__）
+        2. 注入意外配置导致行为异常
+  建议: 使用白名单过滤配置键，仅允许已定义的参数名。
+
+[F-03] 严重程度: Medium | 文件: SpotZoom.py | 行: 1425-1426
+  问题: XPSZAxis 硬编码了默认密码 "Administrator"
+  描述: XPS 控制器的默认用户名和密码都是 "Administrator"，
+        通过命令行参数传递。密码可能出现在：
+        1. 命令行历史
+        2. 进程列表（ps aux）
+        3. 日志文件
+  建议: 支持从环境变量或交互式输入读取密码，
+        避免在命令行中明文传递。
+
+[F-04] 严重程度: Medium | 文件: SpotZoom.py | 行: 292-293
+  问题: YAML 配置文件使用 yaml.safe_load() -- 正确
+  描述: 这是一个正面发现。load_config_file() 正确使用了
+        yaml.safe_load() 而非 yaml.load()，避免了
+        YAML 反序列化攻击。JSON 加载也使用了标准 json.load()。
+  建议: 无需修改，保持现有做法。
+
+[F-05] 严重程度: Medium | 文件: SpotZoom.py | 行: 740-753
+  问题: _module_available_in_python() 执行任意 Python 代码
+  描述: 该函数通过 subprocess.run() 执行
+        [python_exe, "-c", f"import {module_name}"]。
+        虽然 module_name 来自硬编码字符串，但如果未来
+        该函数接受用户输入，可能导致代码注入。
+  建议: 确保该函数仅接受可信的模块名输入。
+
+[F-06] 严重程度: Medium | 文件: SpotZoom_Machine_Learning/active_learning_collector.py | 行: 220-227
+  问题: collect() 方法将图像保存到可配置的输出目录
+  描述: 图像保存路径由 output_dir 参数控制。如果 output_dir
+        被设置为敏感目录（如 /etc、C:\Windows），可能
+        覆盖系统文件。
+  建议: 验证 output_dir 不在敏感路径范围内，
+        或限制为项目目录下的子目录。
+
+[F-07] 严重程度: Low | 文件: SpotZoom.py | 行: 86-95
+  问题: _configure_console_encoding() 在模块导入时执行副作用
+  描述: 该函数在模块顶层被调用（行 98），修改 stdout/stderr
+        的编码配置。当 SpotZoom.py 被作为库导入时，
+        这会意外修改导入者的控制台编码。
+  建议: 将编码配置移到 main() 函数中，或提供显式调用接口。
+
+[F-08] 严重程度: Low | 文件: generate_report.js | 行: 203
+  问题: 输出文件名硬编码为中文路径
+  描述: fs.writeFileSync("SpotZoom_检测报告_20260510_v3.docx", buffer)
+        文件名包含中文字符和固定日期。在某些文件系统或
+        区域设置下可能产生编码问题。
+  建议: 使用日期变量生成文件名，确保路径编码正确。
+
+================================================================================
+G. 各文件独立问题汇总
+================================================================================
+
+--- SpotZoom.py (2,490 行) ---
+  总体评价: 功能完整但架构需重构
+  关键问题:
+    - 单文件 2490 行，21 个类 [B-02]
+    - God Class: SpotZoomController [B-01]
+    - _shutdown_requested 死代码 [B-12, D-01]
+    - Z 轴移动缺少安全检查 [D-04]
+    - X/Y 轴代码重复 [B-06]
+    - 配置验证缺失 [B-08]
+    - 21 处 reporter 指标直接操作未使用 _inc_metric [B-07]
+
+--- SpotZoom_Machine_Learning/__init__.py (57 行) ---
+  总体评价: 良好，但缺少容错
+  关键问题:
+    - 所有子模块强制导入，一个失败则全部失败 [A-07]
+
+--- SpotZoom_Machine_Learning/classic_spot_detector.py (497 行) ---
+  总体评价: 代码质量高，文档完善
+  关键问题:
+    - 魔法数字: blockSize=31, C=5, bandwidth=30.0 [B-10]
+    - SpotDetection 类与 SpotZoom.py 中的同名类重复定义 [C-02]
+
+--- SpotZoom_Machine_Learning/kalman_tracker.py (200 行) ---
+  总体评价: 代码质量高，算法正确
+  关键问题:
+    - 使用 np.linalg.inv() 而非 np.linalg.solve() [D-13]
+
+--- SpotZoom_Machine_Learning/subpixel_centroid.py (209 行) ---
+  总体评价: 代码质量高
+  关键问题:
+    - 魔法数字: 0.3 * peak_intensity [B-10]
+
+--- SpotZoom_Machine_Learning/spot_quality.py (263 行) ---
+  总体评价: 代码质量高
+  关键问题:
+    - 魔法数字: 0.2 * (gray.max() - bg_level) [B-10]
+
+--- SpotZoom_Machine_Learning/adaptive_gain.py (205 行) ---
+  总体评价: 代码质量高
+  关键问题:
+    - 不必要的 numpy 导入 [A-08]
+    - 魔法数字: 50.0, 10.0, 0.5, 0.2, 3.0 [B-10]
+
+--- SpotZoom_Machine_Learning/trajectory_recorder.py (269 行) ---
+  总体评价: 良好
+  关键问题:
+    - record_move_x/y 高度重复 [B-13]
+    - get_summary() 全量遍历 [E-07]
+
+--- SpotZoom_Machine_Learning/safety_manager.py (243 行) ---
+  总体评价: 良好
+  关键问题:
+    - check_move_x/y 高度重复 [B-14]
+    - _violation() 中回调异常被静默忽略 [行 236-237]
+
+--- SpotZoom_Machine_Learning/zernike_analyzer.py (337 行) ---
+  总体评价: 良好
+  关键问题:
+    - 方法内延迟导入 cv2 [A-05]
+    - 仅支持 n<=4 的 Zernike 多项式 [行 124-125]
+
+--- SpotZoom_Machine_Learning/image_jacobian.py (238 行) ---
+  总体评价: 代码质量高
+  关键问题: 无严重问题
+
+--- SpotZoom_Machine_Learning/model_optimizer.py (306 行) ---
+  总体评价: 良好
+  关键问题:
+    - 预热异常被静默忽略 [E-08]
+    - memory_estimate_mb 始终为 0.0 [行 269]
+
+--- SpotZoom_Machine_Learning/active_learning_collector.py (427 行) ---
+  总体评价: 良好
+  关键问题:
+    - YOLO 标注使用硬编码图像尺寸 [D-10]
+    - 方法内延迟导入 cv2 [A-06]
+    - get_stats() 全量遍历 [E-05]
+
+--- SpotZoom_Machine_Learning/focus_search.py (339 行) ---
+  总体评价: 良好
+  关键问题:
+    - 可能重复调用 score_fn [D-11]
+
+--- correct_robot.py (479 行) ---
+  总体评价: 已废弃，应删除
+  关键问题:
+    - 整个文件已废弃 [A-09]
+    - cv2 GUI 在非主线程调用 [D-09]
+
+--- generate_report.js (205 行) ---
+  总体评价: 简单的报告生成脚本
+  关键问题:
+    - 输出文件名硬编码 [F-08]
+    - 无命令行参数支持
+    - 无错误处理
+
+================================================================================
+H. 总结与优先级排序
+================================================================================
+
+按严重程度统计:
+  Critical:  4 个 (B-01, B-02, C-01, D-01)
+  High:     14 个 (B-03, B-04, B-05, B-06, B-07, C-02, C-03,
+                   D-02, D-03, D-04, D-05, E-01, E-02, F-01, F-02)
+  Medium:   18 个 (A-01, A-02, B-08, B-09, B-10, B-11, C-04,
+                   C-05, C-06, D-06, D-07, D-08, D-09, D-10,
+                   D-11, E-03, E-04, E-05, E-06, F-03, F-05, F-06)
+  Low:      16 个 (A-03, A-04, A-05, A-06, A-07, A-08, A-09,
+                   B-12, B-13, B-14, B-15, B-16, C-07, D-12,
+                   D-13, D-14, E-07, E-08, F-07, F-08)
+
+建议修复优先级:
+
+  第一优先级 (P0) -- 立即修复:
+    1. [D-01] 修复 _shutdown_requested 死代码，使 SIGTERM 能实际触发关闭
+    2. [D-04] 为 Z 轴移动添加安全检查和异常处理
+    3. [B-08] 为 AlignmentConfig 添加 __post_init__ 验证
+    4. [A-01] 缩小 _import_ml_module 的异常捕获范围
+
+  第二优先级 (P1) -- 短期重构:
+    5. [B-02] 将 SpotZoom.py 拆分为多个子模块
+    6. [B-06] 提取 X/Y 轴通用对齐方法消除重复
+    7. [B-07] 统一使用 _inc_metric() 替代直接指标操作
+    8. [B-10] 提取魔法数字为命名常量
+    9. [C-04] 统一配置管理
+
+  第三优先级 (P2) -- 中期改进:
+    10. [B-16] 添加单元测试（至少覆盖 PIDController、SafetyManager）
+    11. [E-01] 优化帧传输机制
+    12. [C-03] 重构 ML 模块集成方式
+    13. [D-10] 修复 YOLO 标注硬编码图像尺寸
+    14. [A-09] 删除 correct_robot.py
+
+  第四优先级 (P3) -- 长期优化:
+    15. [B-15] 补充类型标注
+    16. [E-02] 优化截图机制
+    17. [F-02] 加强配置文件安全验证
+    18. [F-03] 改进密码管理
+
+================================================================================
+  报告结束
+================================================================================

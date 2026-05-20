@@ -1,0 +1,2 @@
+{"ts": "2026-05-17T13:11:16+00:00", "event": "run_started", "frame_source": "simulated", "xy_driver": "dryrun", "z_driver": "xps", "open_source_bundle": "none"}
+{"ts": "2026-05-17T13:11:18+00:00", "event": "run_finished", "status": "failed", "error": "XPS controller connection failed"}

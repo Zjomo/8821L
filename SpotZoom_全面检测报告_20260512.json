@@ -1,0 +1,161 @@
+{
+  "timestamp": "2026-05-12 01:01:56",
+  "total_checks": 11,
+  "passed": 8,
+  "warnings": 2,
+  "errors": 1,
+  "results": [
+    {
+      "category": "构建检查",
+      "check_name": "Python版本",
+      "status": "pass",
+      "message": "Python 3.10.11",
+      "details": {},
+      "priority": "high",
+      "affected_modules": [],
+      "suggestion": ""
+    },
+    {
+      "category": "构建检查",
+      "check_name": "依赖包",
+      "status": "error",
+      "message": "缺少依赖: ultralytics",
+      "details": {},
+      "priority": "high",
+      "affected_modules": [],
+      "suggestion": "pip install ultralytics"
+    },
+    {
+      "category": "构建检查",
+      "check_name": "ML包导入",
+      "status": "pass",
+      "message": "所有 19 个模块导入成功",
+      "details": {},
+      "priority": "high",
+      "affected_modules": [],
+      "suggestion": ""
+    },
+    {
+      "category": "代码质量",
+      "check_name": "语法检查",
+      "status": "pass",
+      "message": "所有 23 个 Python 文件语法正确",
+      "details": {},
+      "priority": "high",
+      "affected_modules": [],
+      "suggestion": ""
+    },
+    {
+      "category": "代码质量",
+      "check_name": "代码复杂度",
+      "status": "warning",
+      "message": "主文件过大 (2490 行)",
+      "details": {
+        "total_lines": 2490,
+        "code_lines": 2101,
+        "comment_lines": 63,
+        "blank_lines": 326,
+        "long_functions": [
+          "parse_args(129行)",
+          "main(127行)",
+          "__init__(144行)"
+        ]
+      },
+      "priority": "medium",
+      "affected_modules": [],
+      "suggestion": "考虑拆分为多个模块"
+    },
+    {
+      "category": "代码质量",
+      "check_name": "异常处理",
+      "status": "pass",
+      "message": "异常处理规范",
+      "details": {},
+      "priority": "medium",
+      "affected_modules": [],
+      "suggestion": ""
+    },
+    {
+      "category": "代码质量",
+      "check_name": "日志使用",
+      "status": "pass",
+      "message": "日志配置完善",
+      "details": {},
+      "priority": "low",
+      "affected_modules": [],
+      "suggestion": ""
+    },
+    {
+      "category": "模块结构",
+      "check_name": "模块组织",
+      "status": "pass",
+      "message": "模块结构良好 (20 个模块, 20 个有文档)",
+      "details": {
+        "total_modules": 20,
+        "test_modules": 0,
+        "documented_modules": 20,
+        "modules": [
+          "active_learning_collector",
+          "adaptive_gain",
+          "anomaly_detector",
+          "backend_accelerator",
+          "beam_stability_analyzer",
+          "classic_spot_detector",
+          "config_auto_tuner",
+          "focus_search",
+          "image_jacobian",
+          "kalman_tracker",
+          "model_optimizer",
+          "multi_spot_tracker",
+          "optical_flow_tracker",
+          "realtime_performance_monitor",
+          "rl_environment",
+          "safety_manager",
+          "spot_quality",
+          "subpixel_centroid",
+          "trajectory_recorder",
+          "zernike_analyzer"
+        ]
+      },
+      "priority": "medium",
+      "affected_modules": [],
+      "suggestion": ""
+    },
+    {
+      "category": "模块结构",
+      "check_name": "配置完整性",
+      "status": "pass",
+      "message": "所有关键配置项已定义",
+      "details": {},
+      "priority": "medium",
+      "affected_modules": [],
+      "suggestion": ""
+    },
+    {
+      "category": "性能检查",
+      "check_name": "性能问题",
+      "status": "warning",
+      "message": "发现 2 个潜在性能问题",
+      "details": {
+        "issues": [
+          "correct_robot.py: 可能有循环中的重复计算",
+          "SpotZoom.py: 可能有循环中的重复计算"
+        ]
+      },
+      "priority": "medium",
+      "affected_modules": [],
+      "suggestion": "优化循环和重复计算"
+    },
+    {
+      "category": "安全检查",
+      "check_name": "安全问题",
+      "status": "pass",
+      "message": "未发现明显安全问题",
+      "details": {},
+      "priority": "high",
+      "affected_modules": [],
+      "suggestion": ""
+    }
+  ],
+  "summary": "检测完成: 11 项检查\n通过: 8, 警告: 2, 错误: 1\n高优先级问题: 1 个\n  - 依赖包: 缺少依赖: ultralytics"
+}
