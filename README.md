@@ -270,15 +270,27 @@ python SpotZoom.py --xy-driver <thorlabs|newport> --z-driver <wheel|xps> --detec
 
 
 
-
-
-
-
 ### 🎯 TODO
+
+## 2026-5-21
 
 复现项目，完成各种bug，直至跑通
 
+找到控制驱动器位移移动的逻辑部分【方便后续调试】
 
+在文件内容补充一个虚拟环境文件，保证项目可以正常运行【当前使用的是cp11_torch22】
+
+将所有设备的通信协议封装成Python函数，即可随时随地进行模拟
+
+
+
+
+
+
+
+
+
+## 2026-5-20
 
 简单任务用trae，复杂优化任务用codex							✔
 
@@ -297,29 +309,6 @@ main(本地分支)  到 origin/main(github)，实现push与fetch			✔
 各版本优化模块，按类型统一进行函数封装，并对每个优化模块，用一个.md文件进行说明，将SpotZoom_Machine_Learning_v*中的模块进行统一封装【将项目各创新模块整合，合并各个重复功能的文件夹】	✔			
 
 统一各设备封装函数【XPS/8742CL/8743CL/XPS/信号发生器/脉冲激光器】	✔
-
-
-
-找到控制驱动器位移移动的逻辑部分【方便后续调试】
-
-在文件内容补充一个虚拟环境文件，保证项目可以正常运行【当前使用的是cp11_torch22】
-
-将所有设备的通信协议封装成Python函数，即可随时随地进行模拟
-
-
-
-
-
-
-
-
-
-
-
-```
-python SpotZoom.py --frame-source-image __tmp_spot.jpg --xy-driver dryrun --z-driver dryrun --detector-backend classic --skip-roi --disable-run-lock --max-iterations 1 --frontier-v6-diffusion-preprocess --frontier-v6-multiscale-fallback --frontier-v7-denoiser --frontier-v7-phase-refine --frontier-temporal-ensemble --cl-ao --fourier-psf --dip-enhancer --beam-propagator --dd-mpc --lqg --slm-generator-enabled --ao-pipeline-enabled --strehl-assessor-enabled --hal-enabled --laplacian-autofocus-enabled --synthetic-data-enabled --dm-calibrator-enabled --sys-identifier-enabled --frontier-v4-bundle
-
-```
 
 
 
