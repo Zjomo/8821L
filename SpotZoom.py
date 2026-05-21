@@ -28,7 +28,12 @@ core_segment_src = project_root / "CoreSegment" / "src"
 if core_segment_src.exists() and str(core_segment_src) not in sys.path:
     sys.path.insert(0, str(core_segment_src))
 
-# --- 鍒涙柊妯″潡寤惰繜瀵煎叆 (SpotZoom_Machine_Learning) ---
+try:
+    from SpotZoom_Machine_Learning_Unified import build_module_adapter as _build_unified_ml_adapter
+except (ImportError, ModuleNotFoundError, AttributeError, OSError):
+    _build_unified_ml_adapter = None
+
+# --- Lazy imports for optional ML modules (SpotZoom_Machine_Learning) ---
 _ml_package = script_dir / "SpotZoom_Machine_Learning"
 if _ml_package.exists() and str(_ml_package.parent) not in sys.path:
     sys.path.insert(0, str(_ml_package.parent))
@@ -69,10 +74,11 @@ _ml_file_import_fallback_modules = {
 }
 
 def _import_ml_module(module_name: str):
-    """寤惰繜瀵煎叆 SpotZoom_Machine_Learning 瀛愭ā鍧楋紝瀵煎叆澶辫触杩斿洖 None銆?
+    """Lazily import a SpotZoom_Machine_Learning submodule.
 
-    浠呮崟鑾?ImportError/ModuleNotFoundError/AttributeError 绛夎繍琛屾椂瀵煎叆閿欒锛?
-    璁?SyntaxError 绛夌紪绋嬮敊璇甯告姏鍑轰互渚垮強鏃跺彂鐜般€?
+    Return ``None`` for runtime import failures such as ImportError,
+    ModuleNotFoundError, AttributeError, or OSError. Leave SyntaxError and
+    similar source-code errors unmasked so they can be discovered promptly.
     """
     try:
         import importlib
@@ -103,6 +109,59 @@ def _import_ml_module(module_name: str):
                 pass
             return None
 
+
+def _import_unified_versioned_module(version: int, module_name: str):
+    """Prefer the unified versioned-module registry and fall back to legacy imports."""
+    if _build_unified_ml_adapter is None:
+        return None
+    try:
+        return _build_unified_ml_adapter(version, module_name).load_module()
+    except (ImportError, ModuleNotFoundError, AttributeError, OSError, KeyError, ValueError, TypeError):
+        return None
+
+
+def _get_unified_versioned_adapter(version: int, module_name: str):
+    """Return a unified adapter when the registry is available."""
+    if _build_unified_ml_adapter is None:
+        return None
+    try:
+        return _build_unified_ml_adapter(version, module_name)
+    except (ImportError, ModuleNotFoundError, AttributeError, OSError, KeyError, ValueError, TypeError):
+        return None
+
+
+def _build_unified_versioned_config(version: int, module_name: str, **overrides):
+    """Build a config object through the unified adapter, or return None on fallback."""
+    adapter = _get_unified_versioned_adapter(version, module_name)
+    if adapter is None:
+        return None
+    try:
+        return adapter.build_config(**overrides)
+    except (AttributeError, KeyError, TypeError, ValueError):
+        return None
+
+
+def _build_unified_versioned_instance(
+    version: int,
+    module_name: str,
+    *,
+    config=None,
+    config_overrides=None,
+    **kwargs,
+):
+    """Build a versioned module instance through the unified adapter, or return None."""
+    adapter = _get_unified_versioned_adapter(version, module_name)
+    if adapter is None:
+        return None
+    try:
+        return adapter.build_instance(
+            config=config,
+            config_overrides=config_overrides,
+            **kwargs,
+        )
+    except (ImportError, ModuleNotFoundError, AttributeError, OSError, KeyError, ValueError, TypeError):
+        return None
+
 _ml_kalman = _import_ml_module("kalman_tracker")
 _ml_subpixel = _import_ml_module("subpixel_centroid")
 _ml_quality = _import_ml_module("spot_quality")
@@ -120,35 +179,35 @@ _ml_gaussian = _import_ml_module("gaussian_fitter")
 _ml_eventbus = _import_ml_module("event_bus")
 _ml_classic_detector = _import_ml_module("classic_spot_detector")
 
-# --- v5.0 鏂板鍒涙柊妯″潡 ---
+# --- v5.0 additional modules ---
 _ml_temporal_fusion = _import_ml_module("temporal_fusion_predictor")
 _ml_self_tuning = _import_ml_module("self_tuning_controller")
 _ml_morphology = _import_ml_module("spot_morphology_analyzer")
 _ml_pipeline = _import_ml_module("data_pipeline_orchestrator")
 _ml_health_monitor = _import_ml_module("diagnostic_health_monitor")
 
-# --- v8.0 鏂板鍒涙柊妯″潡 (鍓嶆部寮€婧愯皟鐮旇ˉ鍏? ---
+# --- v8.0 additional modules (frontier open-source research integration) ---
 _ml_multi_layer_turb = _import_ml_module("multi_layer_turbulence_simulator")
 _ml_optical_pipeline = _import_ml_module("composable_optical_pipeline")
 _ml_auto_optimizer = _import_ml_module("auto_alignment_optimizer")
 _ml_deep_vibration = _import_ml_module("deep_vibration_predictor")
 _ml_domain_random = _import_ml_module("domain_randomizer")
 
-# --- v9.0 鏂板鍒涙柊妯″潡 (鍓嶆部寮€婧愯皟鐮旇ˉ鍏?- 绗簩杞? ---
+# --- v9.0 additional modules (frontier open-source research integration, batch 2) ---
 _ml_transfer_learning = _import_ml_module("transfer_learning_adapter")
 _ml_federated = _import_ml_module("federated_learning_coordinator")
 _ml_system_id = _import_ml_module("optical_system_identifier")
 _ml_robust_est = _import_ml_module("robust_estimator")
 _ml_spectral = _import_ml_module("spectral_analyzer")
 
-# --- v10.0 鏂板鍒涙柊妯″潡 (鍓嶆部寮€婧愯皟鐮旇ˉ鍏?- 绗笁杞? ---
+# --- v10.0 additional modules (frontier open-source research integration, batch 3) ---
 _ml_mpc = _import_ml_module("mpc_controller")
 _ml_diff_opt = _import_ml_module("differentiable_optical_optimizer")
 _ml_rt_pipeline = _import_ml_module("realtime_control_pipeline")
 _ml_auto_cal = _import_ml_module("auto_calibration")
 _ml_digital_twin = _import_ml_module("digital_twin_simulator")
 
-# --- v11.0 鏂板鍒涙柊妯″潡 (鍓嶆部寮€婧愯皟鐮旇ˉ鍏?- 绗洓杞? ---
+# --- v11.0 additional modules (frontier open-source research integration, batch 4) ---
 _ml_lodestar = _import_ml_module("lodestar_detector")
 _ml_sam2 = _import_ml_module("sam2_spot_segmenter")
 _ml_stardist = _import_ml_module("stardist_adapter")
@@ -157,32 +216,32 @@ _ml_pinn = _import_ml_module("pinn_beam_solver")
 _ml_continual = _import_ml_module("continual_learner")
 _ml_xai = _import_ml_module("xai_diagnostic")
 
-# --- v17.0 鏂板鍒涙柊妯″潡 (鍓嶆部寮€婧愯皟鐮旇ˉ鍏?- 绗簲杞? ---
+# --- v17.0 additional modules (frontier open-source research integration, batch 5) ---
 _ml_frontier_v17 = _import_ml_module("innovation_frontier_v17")
 
-# --- v18.0 鏂板鍒涙柊妯″潡 (鍓嶆部寮€婧愯皟鐮旇ˉ鍏?- 绗叚杞? ---
+# --- v18.0 additional modules (frontier open-source research integration, batch 6) ---
 _ml_frontier_v18 = _import_ml_module("innovation_frontier_v18")
 
-# --- v19.0 鏂板鍒涙柊妯″潡 (鍓嶆部寮€婧愯皟鐮旇ˉ鍏?- 绗竷杞? ---
+# --- v19.0 additional modules (frontier open-source research integration, batch 7) ---
 _ml_frontier_v19 = _import_ml_module("innovation_frontier_v19")
 
-# --- v20.0 鏂板鍒涙柊妯″潡 (鍓嶆部寮€婧愯皟鐮旇ˉ鍏?- 绗叓杞? ---
+# --- v20.0 additional modules (frontier open-source research integration, batch 8) ---
 _ml_frontier_v20 = _import_ml_module("innovation_frontier_v20")
 
-# --- v21.0 鏂板鍒涙柊妯″潡 (鍓嶆部寮€婧愯皟鐮旇ˉ鍏?- 绗節杞? ---
+# --- v21.0 additional modules (frontier open-source research integration, batch 9) ---
 _ml_frontier_v21 = _import_ml_module("innovation_frontier_v21")
 
-# --- v22.0 鏂板鍒涙柊妯″潡 (鍓嶆部寮€婧愯皟鐮旇ˉ鍏?- 绗崄杞? ---
+# --- v22.0 additional modules (frontier open-source research integration, batch 10) ---
 _ml_frontier_v22 = _import_ml_module("innovation_frontier_v22")
 
-# --- v23.0 鏂板鍒涙柊妯″潡 (鍓嶆部寮€婧愯皟鐮旇ˉ鍏?- 绗崄涓€杞? ---
+# --- v23.0 additional modules (frontier open-source research integration, batch 11) ---
 _ml_frontier_v23 = _import_ml_module("innovation_frontier_v23")
 _ml_frontier_v24 = _import_ml_module("innovation_frontier_v24")
 
-# --- v25.0 鏂板鍒涙柊妯″潡 (鍓嶆部寮€婧愯皟鐮旇ˉ鍏?- 绗崄涓夎疆) ---
+# --- v25.0 additional modules (frontier open-source research integration, batch 13) ---
 _ml_frontier_v25 = _import_ml_module("innovation_frontier_v25")
 
-# --- v26.0 鏂板鍒涙柊妯″潡 (鍓嶆部寮€婧愯皟鐮旇ˉ鍏?- 绗崄鍥涜疆) ---
+# --- v26.0 additional modules (frontier open-source research integration, batch 14) ---
 _ml_frontier_v26 = _import_ml_module("innovation_frontier_v26")
 _ml_frontier_v27 = _import_ml_module("innovation_frontier_v27")
 _ml_frontier_v28 = _import_ml_module("innovation_frontier_v28")
@@ -216,8 +275,8 @@ _ml_frontier_v57 = _import_ml_module("innovation_frontier_v57")
 _ml_otf_analyzer = _import_ml_module("optical_transfer_function_analyzer")
 _ml_phase_retrieval_analyzer = _import_ml_module("phase_retrieval_analyzer")
 
-# --- v26.0 鏂板鍒涙柊妯″潡 (寮€婧愰」鐩皟鐮?- SpotZoom_Machine_Learning_v2) ---
-# 鍙傝€? HCIPy, AOtools, Deep Image Prior, OpenCLAW, leap-c, python-control, acados
+# --- v26.0 additional modules (open-source project integration: SpotZoom_Machine_Learning_v2) ---
+# References: HCIPy, AOtools, Deep Image Prior, OpenCLAW, leap-c, python-control, acados
 _ml_v2_package = script_dir / "SpotZoom_Machine_Learning_v2"
 if _ml_v2_package.exists() and str(_ml_v2_package.parent) not in sys.path:
     sys.path.insert(0, str(_ml_v2_package.parent))
@@ -230,14 +289,14 @@ def _import_v2_module(module_name: str):
     except (ImportError, ModuleNotFoundError, AttributeError, OSError):
         return None
 
-_ml_v2_cl_ao = _import_v2_module("closed_loop_ao_controller")
-_ml_v2_fourier_psf = _import_v2_module("fourier_psf_analyzer")
-_ml_v2_dip = _import_v2_module("deep_image_prior_enhancer")
-_ml_v2_beam_prop = _import_v2_module("adaptive_beam_propagator")
-_ml_v2_dd_mpc = _import_v2_module("data_driven_mpc")
-_ml_v2_lqg = _import_v2_module("lqg_robust_controller")
+_ml_v2_cl_ao = _import_unified_versioned_module(2, "closed_loop_ao_controller") or _import_v2_module("closed_loop_ao_controller")
+_ml_v2_fourier_psf = _import_unified_versioned_module(2, "fourier_psf_analyzer") or _import_v2_module("fourier_psf_analyzer")
+_ml_v2_dip = _import_unified_versioned_module(2, "deep_image_prior_enhancer") or _import_v2_module("deep_image_prior_enhancer")
+_ml_v2_beam_prop = _import_unified_versioned_module(2, "adaptive_beam_propagator") or _import_v2_module("adaptive_beam_propagator")
+_ml_v2_dd_mpc = _import_unified_versioned_module(2, "data_driven_mpc") or _import_v2_module("data_driven_mpc")
+_ml_v2_lqg = _import_unified_versioned_module(2, "lqg_robust_controller") or _import_v2_module("lqg_robust_controller")
 
-# 鈹€鈹€ SpotZoom_Machine_Learning v3 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+# --- SpotZoom_Machine_Learning v3 ---
 _ml_v3_package = script_dir / "SpotZoom_Machine_Learning_v3"
 if _ml_v3_package.is_dir() and str(_ml_v3_package.parent) not in sys.path:
     sys.path.insert(0, str(_ml_v3_package.parent))
@@ -249,17 +308,17 @@ def _import_v3_module(module_name: str):
     except (ImportError, ModuleNotFoundError, AttributeError, OSError):
         return None
 
-_ml_v3_slm = _import_v3_module("slm_holographic_spot_generator")
-_ml_v3_ao = _import_v3_module("realtime_ao_pipeline")
-_ml_v3_strehl = _import_v3_module("strehl_quality_assessor")
-_ml_v3_hal = _import_v3_module("hardware_abstraction_layer")
-_ml_v3_autofocus = _import_v3_module("laplacian_autofocus")
-_ml_v3_synth = _import_v3_module("synthetic_data_generator")
-_ml_v3_dm = _import_v3_module("deformable_mirror_calibrator")
-_ml_v3_sysid = _import_v3_module("system_identifier")
+_ml_v3_slm = _import_unified_versioned_module(3, "slm_holographic_spot_generator") or _import_v3_module("slm_holographic_spot_generator")
+_ml_v3_ao = _import_unified_versioned_module(3, "realtime_ao_pipeline") or _import_v3_module("realtime_ao_pipeline")
+_ml_v3_strehl = _import_unified_versioned_module(3, "strehl_quality_assessor") or _import_v3_module("strehl_quality_assessor")
+_ml_v3_hal = _import_unified_versioned_module(3, "hardware_abstraction_layer") or _import_v3_module("hardware_abstraction_layer")
+_ml_v3_autofocus = _import_unified_versioned_module(3, "laplacian_autofocus") or _import_v3_module("laplacian_autofocus")
+_ml_v3_synth = _import_unified_versioned_module(3, "synthetic_data_generator") or _import_v3_module("synthetic_data_generator")
+_ml_v3_dm = _import_unified_versioned_module(3, "deformable_mirror_calibrator") or _import_v3_module("deformable_mirror_calibrator")
+_ml_v3_sysid = _import_unified_versioned_module(3, "system_identifier") or _import_v3_module("system_identifier")
 
-# 鈹€鈹€ SpotZoom_Machine_Learning v4 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
-# 鍙傝€? robot_localization, HCIPy/AOtools, Optiland, PyOD/sktime,
+# --- SpotZoom_Machine_Learning v4 ---
+# References: robot_localization, HCIPy/AOtools, Optiland, PyOD/sktime,
 #       BoTorch/Optuna, adaptive-sampling, NVIDIA Omniverse
 _ml_v4_package = script_dir / "SpotZoom_Machine_Learning_v4"
 if _ml_v4_package.is_dir() and str(_ml_v4_package.parent) not in sys.path:
@@ -272,13 +331,13 @@ def _import_v4_module(module_name: str):
     except (ImportError, ModuleNotFoundError, AttributeError, OSError):
         return None
 
-_ml_v4_sensor_fusion = _import_v4_module("multi_sensor_fusion")
-_ml_v4_ao_corrector = _import_v4_module("online_ao_corrector")
-_ml_v4_beam_engine = _import_v4_module("beam_propagation_engine")
-_ml_v4_anomaly_healer = _import_v4_module("intelligent_anomaly_healer")
-_ml_v4_bayesian_opt = _import_v4_module("multi_objective_bayesian_opt")
-_ml_v4_scheduler = _import_v4_module("adaptive_scheduler")
-_ml_v4_digital_twin = _import_v4_module("digital_twin_enhancer")
+_ml_v4_sensor_fusion = _import_unified_versioned_module(4, "multi_sensor_fusion") or _import_v4_module("multi_sensor_fusion")
+_ml_v4_ao_corrector = _import_unified_versioned_module(4, "online_ao_corrector") or _import_v4_module("online_ao_corrector")
+_ml_v4_beam_engine = _import_unified_versioned_module(4, "beam_propagation_engine") or _import_v4_module("beam_propagation_engine")
+_ml_v4_anomaly_healer = _import_unified_versioned_module(4, "intelligent_anomaly_healer") or _import_v4_module("intelligent_anomaly_healer")
+_ml_v4_bayesian_opt = _import_unified_versioned_module(4, "multi_objective_bayesian_opt") or _import_v4_module("multi_objective_bayesian_opt")
+_ml_v4_scheduler = _import_unified_versioned_module(4, "adaptive_scheduler") or _import_v4_module("adaptive_scheduler")
+_ml_v4_digital_twin = _import_unified_versioned_module(4, "digital_twin_enhancer") or _import_v4_module("digital_twin_enhancer")
 
 # ===== SpotZoom_Machine_Learning v6 =====
 # 参考: MicroSAM, DeepTrack2, slmsuite, prysm, CAREamics, Picasso,
@@ -294,16 +353,16 @@ def _import_v6_module(module_name: str):
     except (ImportError, ModuleNotFoundError, AttributeError, OSError):
         return None
 
-_ml_v6_multi_scale = _import_v6_module("multi_scale_spot_detector")
-_ml_v6_diffusion = _import_v6_module("diffusion_spot_enhancer")
-_ml_v6_bayesian_pid = _import_v6_module("bayesian_pid_optimizer")
-_ml_v6_feedforward = _import_v6_module("adaptive_feedforward_controller")
-_ml_v6_psf_fingerprint = _import_v6_module("psf_fingerprint_analyzer")
-_ml_v6_sensitivity = _import_v6_module("coherent_sensitivity_analyzer")
-_ml_v6_profiler = _import_v6_module("runtime_profiler")
-_ml_v6_convergence = _import_v6_module("convergence_guard")
-_ml_v6_synth_diff = _import_v6_module("synthetic_diffraction_generator")
-_ml_v6_temporal_ensemble = _import_v6_module("temporal_ensemble_tracker")
+_ml_v6_multi_scale = _import_unified_versioned_module(6, "multi_scale_spot_detector") or _import_v6_module("multi_scale_spot_detector")
+_ml_v6_diffusion = _import_unified_versioned_module(6, "diffusion_spot_enhancer") or _import_v6_module("diffusion_spot_enhancer")
+_ml_v6_bayesian_pid = _import_unified_versioned_module(6, "bayesian_pid_optimizer") or _import_v6_module("bayesian_pid_optimizer")
+_ml_v6_feedforward = _import_unified_versioned_module(6, "adaptive_feedforward_controller") or _import_v6_module("adaptive_feedforward_controller")
+_ml_v6_psf_fingerprint = _import_unified_versioned_module(6, "psf_fingerprint_analyzer") or _import_v6_module("psf_fingerprint_analyzer")
+_ml_v6_sensitivity = _import_unified_versioned_module(6, "coherent_sensitivity_analyzer") or _import_v6_module("coherent_sensitivity_analyzer")
+_ml_v6_profiler = _import_unified_versioned_module(6, "runtime_profiler") or _import_v6_module("runtime_profiler")
+_ml_v6_convergence = _import_unified_versioned_module(6, "convergence_guard") or _import_v6_module("convergence_guard")
+_ml_v6_synth_diff = _import_unified_versioned_module(6, "synthetic_diffraction_generator") or _import_v6_module("synthetic_diffraction_generator")
+_ml_v6_temporal_ensemble = _import_unified_versioned_module(6, "temporal_ensemble_tracker") or _import_v6_module("temporal_ensemble_tracker")
 
 # ===== SpotZoom_Machine_Learning v7 =====
 # 参考: Noise2Void, Trackastra/TrackFormer, mamba, pycma
@@ -320,9 +379,20 @@ def _import_v7_module(module_name: str):
         return None
 
 
-_ml_v7_denoiser = _import_v7_module("self_supervised_denoiser")
-_ml_v7_phase_corr = _import_v7_module("fourier_phase_correlator")
-_ml_v7_causal = _import_v7_module("causal_state_predictor")
+_ml_v7_denoiser = _import_unified_versioned_module(7, "self_supervised_denoiser") or _import_v7_module("self_supervised_denoiser")
+_ml_v7_phase_corr = _import_unified_versioned_module(7, "fourier_phase_correlator") or _import_v7_module("fourier_phase_correlator")
+_ml_v7_causal = _import_unified_versioned_module(7, "causal_state_predictor") or _import_v7_module("causal_state_predictor")
+
+# v2 模块类引用
+_V2ClosedLoopAOController = getattr(_ml_v2_cl_ao, "ClosedLoopAOController", None) if _ml_v2_cl_ao else None
+_V2ClosedLoopAOConfig = getattr(_ml_v2_cl_ao, "ClosedLoopAOConfig", None) if _ml_v2_cl_ao else None
+_V2FourierPSFAnalyzer = getattr(_ml_v2_fourier_psf, "FourierPSFAnalyzer", None) if _ml_v2_fourier_psf else None
+_V2AdaptiveBeamPropagator = getattr(_ml_v2_beam_prop, "AdaptiveBeamPropagator", None) if _ml_v2_beam_prop else None
+_V2PropagationConfig = getattr(_ml_v2_beam_prop, "PropagationConfig", None) if _ml_v2_beam_prop else None
+_V2DataDrivenMPC = getattr(_ml_v2_dd_mpc, "DataDrivenMPC", None) if _ml_v2_dd_mpc else None
+_V2DataDrivenMPCConfig = getattr(_ml_v2_dd_mpc, "DataDrivenMPCConfig", None) if _ml_v2_dd_mpc else None
+_V2LQGRobustController = getattr(_ml_v2_lqg, "LQGRobustController", None) if _ml_v2_lqg else None
+_V2LQGConfig = getattr(_ml_v2_lqg, "LQGConfig", None) if _ml_v2_lqg else None
 
 # v6 创新模块类引用
 _MultiScaleSpotDetector = getattr(_ml_v6_multi_scale, "MultiScaleSpotDetector", None) if _ml_v6_multi_scale else None
@@ -354,7 +424,41 @@ _V7PhaseCorrelatorConfig = getattr(_ml_v7_phase_corr, "PhaseCorrelatorConfig", N
 _V7CausalStatePredictor = getattr(_ml_v7_causal, "CausalStatePredictor", None) if _ml_v7_causal else None
 _V7CausalPredictorConfig = getattr(_ml_v7_causal, "CausalPredictorConfig", None) if _ml_v7_causal else None
 
-# 灏嗗垱鏂版ā鍧楃被鏆撮湶鍒板綋鍓嶅懡鍚嶇┖闂?
+
+def _build_multi_scale_spot_detector(config=None):
+    """Instantiate the multi-scale detector via unified adapter first, then legacy fallback."""
+    detector = _build_unified_versioned_instance(
+        6,
+        "multi_scale_spot_detector",
+        config=config,
+    )
+    if detector is not None:
+        return detector
+    if _MultiScaleSpotDetector is None:
+        return None
+    try:
+        return _MultiScaleSpotDetector() if config is None else _MultiScaleSpotDetector(config=config)
+    except TypeError:
+        return None
+
+
+def _build_diffusion_spot_enhancer(config=None):
+    """Instantiate the diffusion enhancer via unified adapter first, then legacy fallback."""
+    enhancer = _build_unified_versioned_instance(
+        6,
+        "diffusion_spot_enhancer",
+        config=config,
+    )
+    if enhancer is not None:
+        return enhancer
+    if _DiffusionSpotEnhancer is None:
+        return None
+    try:
+        return _DiffusionSpotEnhancer() if config is None else _DiffusionSpotEnhancer(config=config)
+    except TypeError:
+        return None
+
+# 将创新模块类暴露到当前命名空间
 if _ml_kalman is not None:
     KalmanSpotTracker = _ml_kalman.KalmanSpotTracker
 if _ml_subpixel is not None:
@@ -390,7 +494,7 @@ if _ml_classic_detector is not None:
     ClassicDetectionMethod = _ml_classic_detector.DetectionMethod
     ClassicSelectionStrategy = _ml_classic_detector.SelectionStrategy
 
-# --- v5.0 鏂板鍒涙柊妯″潡 ---
+# --- v5.0 新增创新模块 ---
 if _ml_temporal_fusion is not None:
     TemporalFusionPredictor = _ml_temporal_fusion.TemporalFusionPredictor
 if _ml_self_tuning is not None:
@@ -402,7 +506,7 @@ if _ml_pipeline is not None:
 if _ml_health_monitor is not None:
     DiagnosticHealthMonitor = _ml_health_monitor.DiagnosticHealthMonitor
 
-# --- v8.0 鏂板鍒涙柊妯″潡 (鍓嶆部寮€婧愯皟鐮旇ˉ鍏? ---
+# --- v8.0 新增创新模块（前沿开源调研补充） ---
 if _ml_multi_layer_turb is not None:
     MultiLayerTurbulenceSimulator = _ml_multi_layer_turb.MultiLayerTurbulenceSimulator
     TurbulenceLayer = _ml_multi_layer_turb.TurbulenceLayer
@@ -426,7 +530,7 @@ if _ml_domain_random is not None:
     DomainRandomizer = _ml_domain_random.DomainRandomizer
     RandomizationConfig = _ml_domain_random.RandomizationConfig
 
-# --- v9.0 鏂板鍒涙柊妯″潡 (鍓嶆部寮€婧愯皟鐮旇ˉ鍏?- 绗簩杞? ---
+# --- v9.0 新增创新模块（前沿开源调研补充 - 第二批） ---
 if _ml_transfer_learning is not None:
     TransferLearningAdapter = _ml_transfer_learning.TransferLearningAdapter
     DomainShiftMetric = _ml_transfer_learning.DomainShiftMetric
@@ -447,7 +551,7 @@ if _ml_spectral is not None:
     PSDResult = _ml_spectral.PSDResult
     AllanVarianceResult = _ml_spectral.AllanVarianceResult
 
-# --- v10.0 鏂板鍒涙柊妯″潡 (鍓嶆部寮€婧愯皟鐮旇ˉ鍏?- 绗笁杞? ---
+# --- v10.0 新增创新模块（前沿开源调研补充 - 第三批） ---
 if _ml_mpc is not None:
     MPCController = _ml_mpc.MPCController
     MPCConfig = _ml_mpc.MPCConfig
@@ -468,7 +572,7 @@ if _ml_digital_twin is not None:
     SimulationConfig = _ml_digital_twin.SimulationConfig
     SimulationResult = _ml_digital_twin.SimulationResult
 
-# --- v11.0 鏂板鍒涙柊妯″潡 (鍓嶆部寮€婧愯皟鐮旇ˉ鍏?- 绗洓杞? ---
+# --- v11.0 新增创新模块（前沿开源调研补充 - 第四批） ---
 if _ml_lodestar is not None:
     LodeSTARDetector = _ml_lodestar.LodeSTARDetector
     LodeSTARConfig = _ml_lodestar.LodeSTARConfig
@@ -492,7 +596,7 @@ if _ml_xai is not None:
     XAIDiagnostic = _ml_xai.XAIDiagnostic
     XAIConfig = _ml_xai.XAIConfig
 
-# --- v17.0 鏂板鍒涙柊妯″潡 (鍓嶆部寮€婧愯皟鐮旇ˉ鍏?- 绗簲杞? ---
+# --- v17.0 新增创新模块（前沿开源调研补充 - 第五批） ---
 if _ml_frontier_v17 is not None:
     DiffusionImageEnhancer = _ml_frontier_v17.DiffusionImageEnhancer
     ContrastiveRepresentationLearner = _ml_frontier_v17.ContrastiveRepresentationLearner
@@ -511,7 +615,7 @@ if _ml_frontier_v17 is not None:
     UncertaintyEstimate = _ml_frontier_v17.UncertaintyEstimate
     AutoMLResult = _ml_frontier_v17.AutoMLResult
 
-# --- v18.0 鏂板鍒涙柊妯″潡 (鍓嶆部寮€婧愯皟鐮旇ˉ鍏?- 绗叚杞? ---
+# --- v18.0 新增创新模块（前沿开源调研补充 - 第六批） ---
 if _ml_frontier_v18 is not None:
     FlowMatchingRestorer = _ml_frontier_v18.FlowMatchingRestorer
     FlowMatchingConfig = _ml_frontier_v18.FlowMatchingConfig
@@ -538,7 +642,7 @@ if _ml_frontier_v18 is not None:
     ExperimentResult = _ml_frontier_v18.ExperimentResult
     OptimizationSummary = _ml_frontier_v18.OptimizationSummary
 
-# --- v19.0 鏂板鍒涙柊妯″潡 (鍓嶆部寮€婧愯皟鐮旇ˉ鍏?- 绗竷杞? ---
+# --- v19.0 新增创新模块（前沿开源调研补充 - 第七批） ---
 if _ml_frontier_v19 is not None:
     NeuralFieldAOEstimator = _ml_frontier_v19.NeuralFieldAOEstimator
     NeuralFieldAOConfig = _ml_frontier_v19.NeuralFieldAOConfig
@@ -559,7 +663,7 @@ if _ml_frontier_v19 is not None:
     SelectiveSSMConfig = _ml_frontier_v19.SelectiveSSMConfig
     SelectiveSSMResult = _ml_frontier_v19.SelectiveSSMResult
 
-# --- v20.0 鏂板鍒涙柊妯″潡 (鍓嶆部寮€婧愯皟鐮旇ˉ鍏?- 绗叓杞? ---
+# --- v20.0 新增创新模块（前沿开源调研补充 - 第八批） ---
 if _ml_frontier_v20 is not None:
     TopologyOptimizedNeuralController = _ml_frontier_v20.TopologyOptimizedNeuralController
     TopologyOptConfig = _ml_frontier_v20.TopologyOptConfig
@@ -580,7 +684,7 @@ if _ml_frontier_v20 is not None:
     MultimodalFusionConfig = _ml_frontier_v20.MultimodalFusionConfig
     MultimodalFusionResult = _ml_frontier_v20.MultimodalFusionResult
 
-# --- v21.0 鏂板鍒涙柊妯″潡 (鍓嶆部寮€婧愯皟鐮旇ˉ鍏?- 绗節杞? ---
+# --- v21.0 新增创新模块（前沿开源调研补充 - 第九批） ---
 if _ml_frontier_v21 is not None:
     SensorlessAOConfig = _ml_frontier_v21.SensorlessAOConfig
     SensorlessAOResult = _ml_frontier_v21.SensorlessAOResult
@@ -601,7 +705,7 @@ if _ml_frontier_v21 is not None:
     NLLEngineResult = _ml_frontier_v21.NLLEngineResult
     NLLEngine = _ml_frontier_v21.NLLEngine
 
-# --- v22.0 鏂板鍒涙柊妯″潡 (鍓嶆部寮€婧愯皟鐮旇ˉ鍏?- 绗崄杞? ---
+# --- v22.0 新增创新模块（前沿开源调研补充 - 第十批） ---
 if _ml_frontier_v22 is not None:
     # Backward-compatible aliases across v22 naming revisions.
     DiffLensConfig = getattr(_ml_frontier_v22, "DiffLensConfig", getattr(_ml_frontier_v22, "DifferentiableLensConfig", None))
@@ -623,7 +727,7 @@ if _ml_frontier_v22 is not None:
     RTMatrixResult = getattr(_ml_frontier_v22, "RTMatrixResult", getattr(_ml_frontier_v22, "MatrixAccelResult", None))
     RealTimeMatrixAccelerator = getattr(_ml_frontier_v22, "RealTimeMatrixAccelerator", None)
 
-# --- v23.0 鏂板鍒涙柊妯″潡 (鍓嶆部寮€婧愯皟鐮旇ˉ鍏?- 绗崄涓€杞? ---
+# --- v23.0 新增创新模块（前沿开源调研补充 - 第十一批） ---
 if _ml_frontier_v23 is not None:
     UnsupervisedSpotConfig = getattr(_ml_frontier_v23, "UnsupervisedSpotConfig", None)
     UnsupervisedSpotResult = getattr(_ml_frontier_v23, "UnsupervisedSpotResult", None)
@@ -661,7 +765,7 @@ if _ml_frontier_v24 is not None:
     PhysicsStepGuardConfig = getattr(_ml_frontier_v24, "PhysicsStepGuardConfig", None)
     StepGuardResult = getattr(_ml_frontier_v24, "StepGuardResult", None)
 
-# --- v25.0 鏂板鍒涙柊妯″潡鏆撮湶 ---
+# --- v25.0 新增创新模块暴露 ---
 if _ml_frontier_v25 is not None:
     UncertaintyAwareLocalizer = getattr(_ml_frontier_v25, "UncertaintyAwareLocalizer", None)
     UncertaintyLocalizerConfig = getattr(_ml_frontier_v25, "UncertaintyLocalizerConfig", None)
@@ -944,17 +1048,21 @@ if _ml_phase_retrieval_analyzer is not None:
 
 # v3 module class references
 _SLMHolographicGenerator = getattr(_ml_v3_slm, "SLMHolographicGenerator", None) if _ml_v3_slm else None
+_SLMConfig = getattr(_ml_v3_slm, "SLMConfig", None) if _ml_v3_slm else None
 _AOPipelineConfig = getattr(_ml_v3_ao, "AOPipelineConfig", None) if _ml_v3_ao else None
 _RealtimeAOPipeline = getattr(_ml_v3_ao, "RealtimeAOPipeline", None) if _ml_v3_ao else None
 _StrehlQualityAssessor = getattr(_ml_v3_strehl, "StrehlQualityAssessor", None) if _ml_v3_strehl else None
 _StrehlConfig = getattr(_ml_v3_strehl, "StrehlConfig", None) if _ml_v3_strehl else None
 _HardwareAbstractionLayer = getattr(_ml_v3_hal, "HardwareAbstractionLayer", None) if _ml_v3_hal else None
 _LaplacianAutofocus = getattr(_ml_v3_autofocus, "LaplacianAutofocus", None) if _ml_v3_autofocus else None
+_AutofocusConfig = getattr(_ml_v3_autofocus, "AutofocusConfig", None) if _ml_v3_autofocus else None
 _SyntheticDataGenerator = getattr(_ml_v3_synth, "SyntheticDataGenerator", None) if _ml_v3_synth else None
+_SyntheticDataConfig = getattr(_ml_v3_synth, "SyntheticDataConfig", None) if _ml_v3_synth else None
 _DMCalibrator = getattr(_ml_v3_dm, "DMCalibrator", None) if _ml_v3_dm else None
 _SystemIdentifier = getattr(_ml_v3_sysid, "SystemIdentifier", None) if _ml_v3_sysid else None
+_SysIdConfig = getattr(_ml_v3_sysid, "SysIdConfig", None) if _ml_v3_sysid else None
 
-# 鈹€鈹€ v4 鍒涙柊妯″潡绫诲紩鐢?鈹€鈹€
+# ===== v4 创新模块类引用 =====
 _MultiSensorFusion = getattr(_ml_v4_sensor_fusion, "MultiSensorFusion", None) if _ml_v4_sensor_fusion else None
 _FusionConfig = getattr(_ml_v4_sensor_fusion, "FusionConfig", None) if _ml_v4_sensor_fusion else None
 _OnlineAOCorrector = getattr(_ml_v4_ao_corrector, "OnlineAOCorrector", None) if _ml_v4_ao_corrector else None
@@ -967,6 +1075,7 @@ _MultiObjectiveBayesianOpt = getattr(_ml_v4_bayesian_opt, "MultiObjectiveBayesia
 _BayesianOptConfig = getattr(_ml_v4_bayesian_opt, "BayesianOptConfig", None) if _ml_v4_bayesian_opt else None
 _AdaptiveScheduler = getattr(_ml_v4_scheduler, "AdaptiveScheduler", None) if _ml_v4_scheduler else None
 _SchedulerConfig = getattr(_ml_v4_scheduler, "SchedulerConfig", None) if _ml_v4_scheduler else None
+_V4TaskPriority = getattr(_ml_v4_scheduler, "TaskPriority", None) if _ml_v4_scheduler else None
 _DigitalTwinEnhancer = getattr(_ml_v4_digital_twin, "DigitalTwinEnhancer", None) if _ml_v4_digital_twin else None
 _TwinConfig = getattr(_ml_v4_digital_twin, "TwinConfig", None) if _ml_v4_digital_twin else None
 
@@ -992,6 +1101,65 @@ _configure_console_encoding()
 
 
 LOGGER = logging.getLogger("SpotZoom")
+
+
+_LOG_MESSAGE_REPLACEMENTS: Tuple[Tuple[str, str], ...] = (
+    ("Default configuration saved to:", "默认配置已保存到："),
+    ("Configuration loaded from:", "已从以下路径加载配置："),
+    ("Failed to load config file:", "加载配置文件失败："),
+    ("Failed to save default config:", "保存默认配置失败："),
+    ("Received signal %d, initiating graceful shutdown", "收到信号 %d，开始优雅关闭"),
+    ("Detector backend resolution failed:", "检测器后端解析失败："),
+    ("Detector backend resolved: requested=%s resolved=%s", "检测器后端已确定：请求=%s，实际=%s"),
+    ("YOLO backend prerequisites are not satisfied", "YOLO 后端前置条件不满足"),
+    ("Run lock acquired:", "已获取运行锁："),
+    ("Run lock released:", "已释放运行锁："),
+    ("Failed to release run lock", "释放运行锁失败"),
+    ("Removed stale run lock:", "已移除过期运行锁："),
+    ("Lock file not owned by current PID, skip release:", "锁文件不属于当前 PID，跳过释放："),
+    ("Failed to append event stream", "追加事件流失败"),
+    ("Connected window:", "已连接窗口："),
+    ("ROI set:", "ROI 已设置："),
+    ("ROI not set; using full capture area", "未设置 ROI，使用完整采集区域"),
+    ("Simulated ROI set:", "模拟 ROI 已设置："),
+    ("Simulated ROI not set; using full frame", "未设置模拟 ROI，使用完整图像"),
+    ("Simulated wheel ignored:", "已忽略模拟滚轮操作："),
+    ("YOLO model loaded:", "YOLO 模型已加载："),
+    ("Classic detector loaded:", "经典检测器已加载："),
+    ("YOLO worker failed to start:", "YOLO 工作进程启动失败："),
+    ("YOLO worker returned invalid JSON:", "YOLO 工作进程返回了无效 JSON："),
+    ("YOLO worker initialization failed", "YOLO 工作进程初始化失败"),
+    ("YOLO worker started:", "YOLO 工作进程已启动："),
+    ("YOLO worker stdout is unavailable", "YOLO 工作进程标准输出不可用"),
+    ("YOLO worker non-JSON output:", "YOLO 工作进程输出了非 JSON 内容："),
+    ("YOLO worker malformed JSON output:", "YOLO 工作进程输出了格式错误的 JSON："),
+    ("YOLO worker did not return valid JSON response", "YOLO 工作进程未返回有效的 JSON 响应"),
+    ("YOLO worker is not initialized", "YOLO 工作进程尚未初始化"),
+    ("YOLO worker already exited", "YOLO 工作进程已退出"),
+    ("YOLO worker I/O pipes are unavailable", "YOLO 工作进程 I/O 管道不可用"),
+    ("Failed to JPEG-encode frame for YOLO worker", "为 YOLO 工作进程编码 JPEG 图像失败"),
+    ("YOLO worker detection failed", "YOLO 工作进程检测失败"),
+    ("Simulated capture region:", "模拟采集区域："),
+    ("ToupView capture region:", "ToupView 采集区域："),
+    ("Interrupted by user", "用户中断运行"),
+    ("SpotZoom environment check passed", "SpotZoom 环境检查通过"),
+)
+
+
+class _LocalizedLogFormatter(logging.Formatter):
+    """将常见英文日志内容统一格式化为中文。"""
+
+    def format(self, record: logging.LogRecord) -> str:
+        message = record.getMessage()
+        for src, dst in _LOG_MESSAGE_REPLACEMENTS:
+            if src in message:
+                message = message.replace(src, dst)
+        original_msg, original_args = record.msg, record.args
+        record.msg, record.args = message, ()
+        try:
+            return super().format(record)
+        finally:
+            record.msg, record.args = original_msg, original_args
 WHEEL_DELTA = 120
 
 __all__ = [
@@ -1008,6 +1176,8 @@ __all__ = [
     "ThorlabsXYStage",
     "PicoMotor8742Controller",
     "NewportXYStage",
+    "NewportMRC4MirrorStage",
+    "NewportPicomotorZAxis",
     "XPSZAxis",
     "ToupViewWheelZAxis",
     "SpotZoomController",
@@ -1017,26 +1187,26 @@ __all__ = [
     "setup_logging",
     "load_config_file",
     "save_default_config",
-    # --- 鍒涙柊妯″潡 (SpotZoom_Machine_Learning) ---
+    # --- 创新模块 (SpotZoom_Machine_Learning) ---
     "KalmanSpotTracker",
     "SubPixelCentroid",
     "SpotQualityAnalyzer",
     "AdaptiveGainScheduler",
     "TrajectoryRecorder",
     "SafetyManager",
-    # v4.0 鏂板鍒涙柊妯″潡
+    # v4.0 新增创新模块
     "WavefrontPredictor",
     "VibrationCompensator",
     "GaussianBeamFitter",
     "EventBus",
     "ClassicSpotDetector",
-    # v5.0 鏂板鍒涙柊妯″潡
+    # v5.0 新增创新模块
     "TemporalFusionPredictor",
     "SelfTuningController",
     "SpotMorphologyAnalyzer",
     "DataPipelineOrchestrator",
     "DiagnosticHealthMonitor",
-    # v8.0 鏂板鍒涙柊妯″潡 (鍓嶆部寮€婧愯皟鐮旇ˉ鍏?
+    # v8.0 新增创新模块（前沿开源调研补充）
     "MultiLayerTurbulenceSimulator",
     "TurbulenceLayer",
     "TurbulenceLayerConfig",
@@ -1054,7 +1224,7 @@ __all__ = [
     "VibrationPrediction",
     "DomainRandomizer",
     "RandomizationConfig",
-    # v9.0 鏂板鍒涙柊妯″潡 (鍓嶆部寮€婧愯皟鐮旇ˉ鍏?- 绗簩杞?
+    # v9.0 新增创新模块（前沿开源调研补充 - 第二批）
     "TransferLearningAdapter",
     "DomainShiftMetric",
     "AdaptationResult",
@@ -1069,7 +1239,7 @@ __all__ = [
     "SpectralAnalyzer",
     "PSDResult",
     "AllanVarianceResult",
-    # v10.0 鏂板鍒涙柊妯″潡 (鍓嶆部寮€婧愯皟鐮旇ˉ鍏?- 绗笁杞?
+    # v10.0 新增创新模块（前沿开源调研补充 - 第三批）
     "MPCController",
     "MPCConfig",
     "MPCResult",
@@ -1084,7 +1254,7 @@ __all__ = [
     "DigitalTwinSimulator",
     "SimulationConfig",
     "SimulationResult",
-    # v11.0 鏂板鍒涙柊妯″潡 (鍓嶆部寮€婧愯皟鐮旇ˉ鍏?- 绗洓杞?
+    # v11.0 新增创新模块（前沿开源调研补充 - 第四批）
     "LodeSTARDetector",
     "LodeSTARConfig",
     "SAM2SpotSegmenter",
@@ -1098,7 +1268,7 @@ __all__ = [
     "ContinualConfig",
     "XAIDiagnostic",
     "XAIConfig",
-    # v17.0 鏂板鍒涙柊妯″潡 (鍓嶆部寮€婧愯皟鐮旇ˉ鍏?- 绗簲杞?
+    # v17.0 新增创新模块（前沿开源调研补充 - 第五批）
     "DiffusionImageEnhancer",
     "ContrastiveRepresentationLearner",
     "NeuralRadianceFieldTracker",
@@ -1115,7 +1285,7 @@ __all__ = [
     "CausalEffect",
     "UncertaintyEstimate",
     "AutoMLResult",
-    # v18.0 鏂板鍒涙柊妯″潡 (鍓嶆部寮€婧愯皟鐮旇ˉ鍏?- 绗叚杞?
+    # v18.0 新增创新模块（前沿开源调研补充 - 第六批）
     "FlowMatchingRestorer",
     "FlowMatchingConfig",
     "FlowMatchingResult",
@@ -1140,7 +1310,7 @@ __all__ = [
     "ExperimentProposal",
     "ExperimentResult",
     "OptimizationSummary",
-    # v19.0 鏂板鍒涙柊妯″潡 (鍓嶆部寮€婧愯皟鐮旇ˉ鍏?- 绗竷杞?
+    # v19.0 新增创新模块（前沿开源调研补充 - 第七批）
     "NeuralFieldAOEstimator",
     "NeuralFieldAOConfig",
     "NeuralFieldAOResult",
@@ -1159,7 +1329,7 @@ __all__ = [
     "SelectiveSSMPredictor",
     "SelectiveSSMConfig",
     "SelectiveSSMResult",
-    # v20.0 鏂板鍒涙柊妯″潡 (鍓嶆部寮€婧愯皟鐮旇ˉ鍏?- 绗叓杞?
+    # v20.0 新增创新模块（前沿开源调研补充 - 第八批）
     "TopologyOptimizedNeuralController",
     "TopologyOptConfig",
     "TopologyOptResult",
@@ -1178,7 +1348,7 @@ __all__ = [
     "MultimodalFusionTracker",
     "MultimodalFusionConfig",
     "MultimodalFusionResult",
-    # v21.0 鏂板鍒涙柊妯″潡 (鍓嶆部寮€婧愯皟鐮旇ˉ鍏?- 绗節杞?
+    # v21.0 新增创新模块（前沿开源调研补充 - 第九批）
     "SensorlessAOConfig",
     "SensorlessAOResult",
     "SensorlessAberrationEstimator",
@@ -1197,7 +1367,7 @@ __all__ = [
     "NLLEngineConfig",
     "NLLEngineResult",
     "NLLEngine",
-    # v22.0 鏂板鍒涙柊妯″潡 (鍓嶆部寮€婧愯皟鐮旇ˉ鍏?- 绗崄杞?
+    # v22.0 新增创新模块（前沿开源调研补充 - 第十批）
     "DiffLensConfig",
     "DiffLensResult",
     "DifferentiableLensSimulator",
@@ -1216,7 +1386,7 @@ __all__ = [
     "RTMatrixConfig",
     "RTMatrixResult",
     "RealTimeMatrixAccelerator",
-    # v23.0 鏂板鍒涙柊妯″潡 (鍓嶆部寮€婧愯皟鐮旇ˉ鍏?- 绗崄涓€杞?
+    # v23.0 新增创新模块（前沿开源调研补充 - 第十一批）
     "UnsupervisedSpotConfig",
     "UnsupervisedSpotResult",
     "UnsupervisedSpotDetector",
@@ -1392,7 +1562,7 @@ def setup_logging(
     root_logger = logging.getLogger("SpotZoom")
     root_logger.setLevel(log_level)
 
-    fmt = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+    fmt = _LocalizedLogFormatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 
     if not root_logger.handlers:
         console = logging.StreamHandler(sys.stdout)
@@ -1479,6 +1649,25 @@ def save_default_config(output_path: str) -> None:
         "y_channel": 3,
         "x_hw_sign": 1,
         "y_hw_sign": 1,
+        "newport_conn": 0,
+        "newport_x_axis": 1,
+        "newport_y_axis": 2,
+        "newport_backend": "auto",
+        "newport_timeout": 5.0,
+        "newport_multiaddr": False,
+        "newport_no_scan": False,
+        "newport_velocity": None,
+        "newport_acceleration": None,
+        "newport_no_wait": False,
+        "mrc_mirror1_x_axis": 1,
+        "mrc_mirror1_y_axis": 2,
+        "mrc_mirror2_x_axis": 3,
+        "mrc_mirror2_y_axis": 4,
+        "mrc_mirror1_x_sign": 1,
+        "mrc_mirror1_y_sign": 1,
+        "mrc_mirror2_x_sign": 1,
+        "mrc_mirror2_y_sign": 1,
+        "mrc_virtual_axis_mode": "shared",
         "tolerance_px": 6,
         "detect_retry": 6,
         "detect_retry_interval": 0.25,
@@ -1492,6 +1681,15 @@ def save_default_config(output_path: str) -> None:
         "z_driver": "wheel",
         "z_step": 1.0,
         "z_up_sign": 1,
+        "z_picomotor_conn": 1,
+        "z_picomotor_axis": 1,
+        "z_picomotor_sign": 1,
+        "z_picomotor_velocity": None,
+        "z_picomotor_acceleration": None,
+        "startup_motion_check_enabled": True,
+        "startup_motion_check_timeout": 1.0,
+        "startup_motion_check_xy_steps": 1,
+        "startup_motion_check_z_step": 1.0,
         "no_preview": False,
         "smooth_window": 1,
         "adaptive_step": False,
@@ -1631,7 +1829,7 @@ def save_default_config(output_path: str) -> None:
         "frontier_temporal_max_prediction_distance": 20.0,
         "frontier_temporal_association_distance": 30.0,
         "frontier_temporal_max_refine_shift_px": 24.0,
-        # --- v25.0 鏂板閰嶇疆 ---
+        # --- v25.0 新增配置 ---
         "frontier_uncertainty_localizer_enabled": False,
         "frontier_drift_corrector_enabled": False,
         "frontier_drift_search_radius": 30,
@@ -1642,7 +1840,7 @@ def save_default_config(output_path: str) -> None:
         "frontier_bayesian_gate_enabled": False,
         "frontier_artifact_assessor_enabled": False,
         "frontier_multiframe_denoiser_enabled": False,
-        # --- v26.0 鏂板閰嶇疆 ---
+        # --- v26.0 新增配置 ---
         "frontier_v26_foundation_enabled": False,
         "frontier_v26_foundation_strength": 0.55,
         "frontier_v26_aberration_enabled": False,
@@ -2104,6 +2302,13 @@ def save_default_config(output_path: str) -> None:
         "frontier_v78_confidence_penalty": 0.95,
         "frontier_v78_confidence_boost": 1.05,
         "frontier_v4_bundle_enabled": False,
+        # v6 lightweight unified detection/enhancement hooks
+        "frontier_v6_diffusion_preprocess_enabled": False,
+        "frontier_v6_diffusion_blend": 0.35,
+        "frontier_v6_diffusion_num_iterations": 5,
+        "frontier_v6_multiscale_fallback_enabled": False,
+        "frontier_v6_multiscale_confidence_scale": 0.85,
+        "frontier_v6_multiscale_min_confidence": 0.2,
         # v7 (Noise2Void/Trackastra-inspired lightweight integrations)
         "frontier_v7_denoiser_enabled": False,
         "frontier_v7_denoiser_blend": 0.45,
@@ -2451,7 +2656,7 @@ class AlignmentConfig:
     frontier_temporal_association_distance: float = 30.0
     frontier_temporal_max_refine_shift_px: float = 24.0
 
-    # --- v25.0 鏂板閰嶇疆 ---
+    # --- v25.0 新增配置 ---
     frontier_uncertainty_localizer_enabled: bool = False
     frontier_drift_corrector_enabled: bool = False
     frontier_drift_search_radius: int = 30
@@ -2923,40 +3128,46 @@ class AlignmentConfig:
     frontier_v78_confidence_penalty: float = 0.95
     frontier_v78_confidence_boost: float = 1.05
     frontier_v4_bundle_enabled: bool = False
+    frontier_v6_diffusion_preprocess_enabled: bool = False
+    frontier_v6_diffusion_blend: float = 0.35
+    frontier_v6_diffusion_num_iterations: int = 5
+    frontier_v6_multiscale_fallback_enabled: bool = False
+    frontier_v6_multiscale_confidence_scale: float = 0.85
+    frontier_v6_multiscale_min_confidence: float = 0.2
     frontier_v7_denoiser_enabled: bool = False
     frontier_v7_denoiser_blend: float = 0.45
     frontier_v7_phase_refine_enabled: bool = False
     frontier_v7_phase_max_shift_px: float = 48.0
     frontier_v7_phase_blend: float = 0.35
 
-    # --- v26.0 鏂板鍒涙柊妯″潡閰嶇疆 (SpotZoom_Machine_Learning_v2) ---
-    # 闂幆鑷€傚簲鍏夊鎺у埗鍣?(鈫?HCIPy/AOtools)
+    # --- v26.0 新增创新模块配置 (SpotZoom_Machine_Learning_v2) ---
+    # 闭环自适应光学控制器（HCIPy/AOtools）
     cl_ao_enabled: bool = False
     cl_ao_integral_gain: float = 0.4
     cl_ao_proportional_gain: float = 0.1
     cl_ao_derivative_gain: float = 0.05
     cl_ao_adaptive_gain: bool = True
     cl_ao_notch_filter: bool = True
-    # 鍌呴噷鍙?PSF 鍒嗘瀽鍣?(鈫?HCIPy)
+    # 傅里叶 PSF 分析器（HCIPy）
     fourier_psf_enabled: bool = False
     fourier_psf_max_zernike_order: int = 4
-    # 闆舵牱鏈厜鏂戝寮哄櫒 (鈫?Deep Image Prior)
+    # 零样本光斑增强器（Deep Image Prior）
     dip_enhancer_enabled: bool = False
     dip_enhancer_max_iterations: int = 80
-    # 鑷€傚簲鍏夋潫浼犳挱妯℃嫙鍣?(鈫?OpenCLAW)
+    # 自适应光束传播模拟器（OpenCLAW）
     beam_propagator_enabled: bool = False
     beam_propagator_wavelength_nm: float = 632.8
-    # 鏁版嵁椹卞姩 MPC (鈫?leap-c/acados)
+    # 数据驱动 MPC（leap-c/acados）
     dd_mpc_enabled: bool = False
     dd_mpc_prediction_horizon: int = 10
     dd_mpc_control_horizon: int = 5
-    # LQG 椴佹鎺у埗鍣?(鈫?python-control)
+    # LQG 鲁棒控制器（python-control）
     lqg_enabled: bool = False
     lqg_q_position: float = 100.0
     lqg_r_control: float = 0.1
     lqg_adaptive_noise: bool = True
 
-    # 鈹€鈹€ v3.0 鏂板妯″潡寮€鍏?鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+    # ===== v3.0 新增模块开关 =====
     slm_generator_enabled: bool = False
     ao_pipeline_enabled: bool = False
     strehl_assessor_enabled: bool = False
@@ -2994,125 +3205,141 @@ class AlignmentConfig:
     sysid_excitation_steps: int = 50
     sysid_model_order: int = 4
 
-    # --- 鍒涙柊妯″潡閰嶇疆 ---
-    # 鍗″皵鏇兼护娉㈣拷韪櫒
+    # --- 创新模块配置 ---
+    # 卡尔曼滤波追踪器
     kalman_enabled: bool = False
     kalman_process_noise: float = 0.1
     kalman_measurement_noise: float = 1.0
 
-    # 浜氬儚绱犺川蹇冨畾浣?    subpixel_enabled: bool = False
+    # 亚像素质心定位
+    subpixel_enabled: bool = False
     subpixel_method: str = "weighted"  # 'weighted', 'threshold', 'gaussian'
 
-    # 鍏夋枒璐ㄩ噺璇勪及鍣?    quality_analyzer_enabled: bool = False
+    # 光斑质量评估器
+    quality_analyzer_enabled: bool = False
     quality_min_score: float = 30.0
 
-    # 鑷€傚簲澧炵泭璋冨害
+    # 自适应增益调度
     adaptive_gain_enabled: bool = False
     adaptive_gain_strategy: str = "combined"  # 'deviation', 'confidence', 'convergence', 'combined'
 
-    # 杞ㄨ抗璁板綍鍣?    trajectory_enabled: bool = False
+    # 轨迹记录器
+    trajectory_enabled: bool = False
     trajectory_export_path: Optional[str] = None
 
-    # 瀹夊叏绠＄悊鍣?    safety_enabled: bool = False
+    # 安全管理器
+    safety_enabled: bool = False
     safety_max_total_x: int = 100000
     safety_max_total_y: int = 100000
     safety_max_run_time_s: float = 1800.0
 
-    # Zernike 鍍忓樊鍒嗘瀽鍣?    zernike_enabled: bool = False
+    # Zernike 像差分析器
+    zernike_enabled: bool = False
     zernike_max_order: int = 4
     zernike_alignment_threshold: float = 0.5
 
-    # 鍥惧儚闆呭彲姣旇瑙変己鏈嶆帶鍒跺櫒
+    # 图像雅可比视觉伺服控制器
     image_jacobian_enabled: bool = False
     image_jacobian_initial_step_per_px: float = 2.0
     image_jacobian_damping: float = 0.1
     image_jacobian_learning_rate: float = 0.3
 
-    # 妯″瀷鎺ㄧ悊浼樺寲鍣?    model_optimizer_enabled: bool = False
+    # 模型推理优化器
+    model_optimizer_enabled: bool = False
     model_optimizer_target_latency_ms: float = 50.0
 
-    # 涓诲姩瀛︿範鏁版嵁閲囬泦鍣?    active_learning_enabled: bool = False
+    # 主动学习数据采集器
+    active_learning_enabled: bool = False
     active_learning_output_dir: Optional[str] = None
     active_learning_max_samples: int = 500
     active_learning_conf_threshold: float = 0.5
 
-    # 鑷€傚簲鐒﹀钩闈㈡悳绱㈠櫒
+    # 自适应焦平面搜索器
     focus_search_enabled: bool = False
     focus_search_coarse_range: float = 10.0
     focus_search_coarse_step: float = 1.0
 
-    # --- v4.0 鏂板鍒涙柊妯″潡閰嶇疆 ---
-    # 娉㈠墠璇樊棰勬祴鍣?    wavefront_predictor_enabled: bool = False
+    # --- v4.0 新增创新模块配置 ---
+    # 波前误差预测器
+    wavefront_predictor_enabled: bool = False
     wavefront_predictor_history_length: int = 50
     wavefront_predictor_horizon: int = 5
     wavefront_predictor_model_order: int = 3
 
-    # 鎸姩妫€娴嬩笌琛ュ伩鍣?    vibration_compensator_enabled: bool = False
+    # 振动检测与补偿器
+    vibration_compensator_enabled: bool = False
     vibration_compensator_fft_size: int = 256
     vibration_compensator_threshold_hz: float = 1.0
     vibration_compensator_damping: float = 0.7
 
-    # 楂樻柉鍏夋潫鎷熷悎鍣?    gaussian_fitter_enabled: bool = False
+    # 高斯光束拟合器
+    gaussian_fitter_enabled: bool = False
     gaussian_fitter_roi_size: int = 64
     gaussian_fitter_max_iterations: int = 50
 
-    # 浜嬩欢鎬荤嚎
+    # 事件总线
     event_bus_enabled: bool = False
     event_bus_max_history: int = 1000
     event_bus_worker_threads: int = 1
 
-    # --- v5.0 鏂板鍒涙柊妯″潡閰嶇疆 ---
-    # 鏃跺簭铻嶅悎棰勬祴鍣?    temporal_fusion_enabled: bool = False
+    # --- v5.0 新增创新模块配置 ---
+    # 时序融合预测器
+    temporal_fusion_enabled: bool = False
     temporal_fusion_history_length: int = 100
     temporal_fusion_prediction_horizon: int = 10
     temporal_fusion_forgetting_factor: float = 0.95
 
-    # 鑷暣瀹氭帶鍒跺櫒
+    # 自整定控制器
     self_tuning_enabled: bool = False
     self_tuning_method: str = "relay_feedback"  # 'relay_feedback', 'ziegler_nichols', 'critical_damping'
     self_tuning_relay_amplitude: float = 50.0
     self_tuning_max_cycles: int = 10
 
-    # 鍏夋枒褰㈡€佸垎鏋愬櫒
+    # 光斑形态分析器
     morphology_analyzer_enabled: bool = False
     morphology_analyzer_min_spot_size: int = 8
     morphology_analyzer_max_ring_count: int = 5
 
-    # 鏁版嵁娴佹按绾跨紪鎺掑櫒
+    # 数据流水线编排器
     pipeline_orchestrator_enabled: bool = False
     pipeline_orchestrator_timeout_s: float = 300.0
 
-    # 璇婃柇鍋ュ悍鐩戞帶鍣?    health_monitor_enabled: bool = False
+    # 诊断健康监控器
+    health_monitor_enabled: bool = False
     health_monitor_retention_s: float = 600.0
     health_monitor_alert_threshold: float = 70.0
 
-    # --- v10.0 鏂板鍒涙柊妯″潡閰嶇疆 (鍓嶆部寮€婧愯皟鐮旇ˉ鍏?- 绗笁杞? ---
-    # MPC 妯″瀷棰勬祴鎺у埗鍣?    mpc_enabled: bool = False
+    # --- v10.0 新增创新模块配置（前沿开源调研补充 - 第三批） ---
+    # MPC 模型预测控制器
+    mpc_enabled: bool = False
     mpc_prediction_horizon: int = 15
     mpc_control_horizon: int = 8
     mpc_state_weight: float = 10.0
     mpc_control_weight: float = 0.1
 
-    # 鍙井鍏夊浼樺寲鍣?    diff_opt_enabled: bool = False
+    # 可微光学优化器
+    diff_opt_enabled: bool = False
     diff_opt_method: str = "adam"
     diff_opt_learning_rate: float = 0.01
     diff_opt_max_iterations: int = 100
 
-    # 瀹炴椂鎺у埗绠＄嚎
+    # 实时控制管线
     rt_pipeline_enabled: bool = False
     rt_pipeline_target_hz: float = 10.0
     rt_pipeline_mode: str = "soft"
 
-    # 鑷姩鍖栫郴缁熸爣瀹?    auto_calibration_enabled: bool = False
+    # 自动校准引擎
+    auto_calibration_enabled: bool = False
     auto_calibration_grid_points: int = 5
     auto_calibration_grid_step: int = 200
 
-    # 鏁板瓧瀛敓浠跨湡鍣?    digital_twin_enabled: bool = False
+    # 数字孪生仿真器
+    digital_twin_enabled: bool = False
     digital_twin_wavelength_nm: float = 632.8
     digital_twin_beam_waist_um: float = 50.0
 
-    # --- v11.0 鏂板鍒涙柊妯″潡閰嶇疆 (鍓嶆部寮€婧愯皟鐮旇ˉ鍏?- 绗洓杞? ---
-    # LodeSTAR 鏃犵洃鐫ｅ厜鏂戞娴嬪櫒
+    # --- v11.0 新增创新模块配置（前沿开源调研补充 - 第四批） ---
+    # LodeSTAR 无监督光斑检测器
     lodestar_enabled: bool = False
     lodestar_template_size: int = 64
     lodestar_num_scales: int = 5
@@ -3122,20 +3349,22 @@ class AlignmentConfig:
     sam2_refiner_min_area: int = 20
     sam2_refiner_confidence_gain: float = 1.1
 
-    # Mamba 鐘舵€佺┖闂存ā鍨嬫椂搴忛娴嬪櫒
+    # Mamba 状态空间模型时序预测器
     mamba_enabled: bool = False
     mamba_state_dim: int = 16
     mamba_prediction_horizon: int = 10
 
-    # PINN 鐗╃悊淇℃伅绁炵粡缃戠粶鍏夋潫姹傝В鍣?    pinn_enabled: bool = False
+    # PINN 物理信息神经网络光束求解器
+    pinn_enabled: bool = False
     pinn_wavelength_nm: float = 632.8
     pinn_max_iterations: int = 500
 
-    # 鎸佺画瀛︿範閫傞厤鍣?    continual_enabled: bool = False
+    # 持续学习适配器
+    continual_enabled: bool = False
     continual_buffer_size: int = 200
     continual_ewc_lambda: float = 1000.0
 
-    # 鍙В閲?AI 璇婃柇妯″潡
+    # 可解释 AI 诊断模块
     xai_enabled: bool = False
     xai_perturbation_count: int = 50
     xai_history_length: int = 100
@@ -3488,6 +3717,13 @@ class RuntimeMetrics:
     frontier_v78_triggered: int = 0
     frontier_v78_consensus_rejects: int = 0
     frontier_v78_shift_clamps: int = 0
+    frontier_v6_diffusion_calls: int = 0
+    frontier_v6_diffusion_failures: int = 0
+    frontier_v6_multiscale_attempts: int = 0
+    frontier_v6_multiscale_hits: int = 0
+    frontier_v6_multiscale_miss: int = 0
+    frontier_v6_multiscale_rejects: int = 0
+    frontier_v6_multiscale_failures: int = 0
     frontier_v7_denoise_calls: int = 0
     frontier_v7_denoise_failures: int = 0
     frontier_v7_phase_calls: int = 0
@@ -3606,9 +3842,9 @@ class RunLockFile:
                     holder_pid = payload.get("pid", "unknown")
                     holder_since = payload.get("created_at", "unknown")
                     raise RuntimeError(
-                        f"Another SpotZoom run holds lock: {self.lock_path} (pid={holder_pid}, created_at={holder_since})"
+                        f"已有其他 SpotZoom 进程持有运行锁：{self.lock_path} (pid={holder_pid}, created_at={holder_since})"
                     )
-        raise RuntimeError(f"Failed to acquire run lock after retries: {self.lock_path}")
+        raise RuntimeError(f"多次重试后仍无法获取运行锁：{self.lock_path}")
 
     def release(self) -> bool:
         if not self._acquired:
@@ -3619,7 +3855,7 @@ class RunLockFile:
             if holder_pid in (0, self._pid):
                 self.lock_path.unlink(missing_ok=True)
             else:
-                LOGGER.warning("Lock file not owned by current PID, skip release: %s", self.lock_path)
+                LOGGER.warning("锁文件不属于当前 PID，跳过释放：%s", self.lock_path)
         finally:
             self._acquired = False
         return True
@@ -3644,7 +3880,7 @@ class RunReporter:
                 with self.event_stream_path.open("a", encoding="utf-8") as fp:
                     fp.write(json.dumps(event, ensure_ascii=False) + "\n")
             except Exception as exc:
-                LOGGER.warning("Failed to append event stream %s: %s", self.event_stream_path, exc)
+                LOGGER.warning("追加事件流失败 %s：%s", self.event_stream_path, exc)
 
     def _detector_latency_percentiles(self) -> Dict[str, Optional[float]]:
         if not self._detector_latency_ms:
@@ -3785,7 +4021,7 @@ class ToupViewWindow:
 
             if time.time() >= deadline:
                 raise RuntimeError(
-                    f"Window containing '{self.title_keyword}' was not found within {self.wait_timeout_s:.1f}s"
+                    f"在 {self.wait_timeout_s:.1f}s 内未找到包含“{self.title_keyword}”的窗口"
                 )
             time.sleep(self.wait_poll_s)
 
@@ -3808,10 +4044,10 @@ class ToupViewWindow:
         if self.hwnd is None or not self.win32gui.IsWindow(self.hwnd):
             self.connect()
         if self.win32gui.IsIconic(self.hwnd):
-            raise RuntimeError("ToupView window is minimized. Restore the window before running.")
+            raise RuntimeError("ToupView 窗口已最小化，请先恢复窗口后再运行。")
         left, top, right, bottom = self.win32gui.GetWindowRect(self.hwnd)
         if left <= -30000 or top <= -30000:
-            raise RuntimeError("ToupView window is off-screen. Move it into a visible area before running.")
+            raise RuntimeError("ToupView 窗口位于屏幕可视区域之外，请先移动到可见区域后再运行。")
         return left, top, right, bottom
 
     def get_capture_region(self) -> Tuple[int, int, int, int]:
@@ -3827,7 +4063,7 @@ class ToupViewWindow:
             cap_left, cap_top, cap_width, cap_height = left, top, width, height
         if cap_width <= 0 or cap_height <= 0:
             raise RuntimeError(
-                f"Invalid ToupView capture region: ({cap_left}, {cap_top}, {cap_width}, {cap_height})"
+                f"ToupView 采集区域无效：({cap_left}, {cap_top}, {cap_width}, {cap_height})"
             )
         return cap_left, cap_top, cap_width, cap_height
 
@@ -3904,10 +4140,10 @@ class SimulatedFrameWindow:
     def __init__(self, image_path: str, jitter_px: int = 0, noise_std: float = 0.0):
         frame_path = Path(image_path).expanduser()
         if not frame_path.exists():
-            raise RuntimeError(f"Simulation image not found: {frame_path}")
+            raise RuntimeError(f"未找到模拟图像：{frame_path}")
         frame = cv2.imread(str(frame_path))
         if frame is None:
-            raise RuntimeError(f"Cannot decode simulation image: {frame_path}")
+            raise RuntimeError(f"无法解码模拟图像：{frame_path}")
         self.frame_path = frame_path
         self.base_frame = frame
         self.jitter_px = max(0, int(jitter_px))
@@ -4125,14 +4361,14 @@ class SpotClassicDetector:
         morph_kernel_size: int = 5,
     ):
         if _ml_classic_detector is None or not hasattr(_ml_classic_detector, "ClassicSpotDetector"):
-            raise RuntimeError("classic_spot_detector module is unavailable")
+            raise RuntimeError("classic_spot_detector 模块不可用")
 
         method_norm = str(method).strip().lower()
         selection_norm = str(selection).strip().lower()
         if method_norm not in self._METHOD_CHOICES:
-            raise ValueError(f"Unsupported classic detector method: {method_norm}")
+            raise ValueError(f"不支持的经典检测器方法：{method_norm}")
         if selection_norm not in self._SELECTION_CHOICES:
-            raise ValueError(f"Unsupported classic detector selection strategy: {selection_norm}")
+            raise ValueError(f"不支持的经典检测器候选选择策略：{selection_norm}")
 
         self.target_class_name = target_class_name
         self.target_class_id = target_class_id
@@ -4390,6 +4626,8 @@ class DryRunStage:
         return
 
     def __enter__(self):
+        if self.dev is None:
+            self.open()
         return self
 
     def __exit__(self, *args):
@@ -4430,23 +4668,23 @@ class ThorlabsXYStage:
 
         if not devices:
             raise RuntimeError(
-                "No Thorlabs Kinesis devices were enumerated. "
-                "Check USB connection, Kinesis driver installation, power state, and that no other process has the device open."
+                "未枚举到任何 Thorlabs Kinesis 设备。"
+                "请检查 USB 连接、Kinesis 驱动安装、电源状态，以及设备是否被其他进程占用。"
             )
 
         available_ids = [str(device[0]) for device in devices if device]
         LOGGER.info("Enumerated Thorlabs devices: %s", devices)
         if device_id and str(device_id) not in available_ids:
             raise RuntimeError(
-                f"Requested Thorlabs device '{device_id}' was not found. Available device ids: {available_ids}"
+                f"未找到请求的 Thorlabs 设备“{device_id}”。可用设备 ID：{available_ids}"
             )
 
         try:
             self.device = Thorlabs.KinesisPiezoMotor(device_id)
         except Exception as exc:
             raise RuntimeError(
-                f"Failed to open Thorlabs device '{device_id}'. "
-                f"Enumerated device ids: {available_ids}. Original error: {exc}"
+                f"打开 Thorlabs 设备“{device_id}”失败。"
+                f"已枚举设备 ID：{available_ids}。原始错误：{exc}"
             ) from exc
         self.device.open()
         self.x_channel = x_channel
@@ -4476,8 +4714,8 @@ class ThorlabsXYStage:
             self.device.move_by(distance=sign * steps, auto_enable=True, channel=channel)
         except Exception as exc:
             raise RuntimeError(
-                f"Thorlabs move failed on channel {channel} (steps={sign * steps}). "
-                f"Device may be disconnected 鈥?check USB connection. Original error: {exc}"
+                f"Thorlabs 通道 {channel} 移动失败（steps={sign * steps}）。"
+                f"设备可能已断开，请检查 USB 连接。原始错误：{exc}"
             ) from exc
 
     def move_x(self, steps: int) -> None:
@@ -4571,6 +4809,14 @@ class PicoMotor8742Controller:
         self._check()
         return list(self.dev.get_all_axes())
 
+    def require_axes(self, axes: List[int]) -> List[int]:
+        requested = [int(axis) for axis in axes]
+        available = self.axes()
+        missing = [axis for axis in requested if axis not in available]
+        if missing:
+            raise RuntimeError(f"请求的 Newport 轴不可用：{missing}。当前可用轴：{available}")
+        return available
+
     def get_pos(self, axis: int = 1) -> int:
         self._check()
         return int(self.dev.get_position(axis=axis))
@@ -4615,9 +4861,31 @@ class PicoMotor8742Controller:
         self._check()
         self.dev.jog(axis=axis, direction=(direction == "+"))
 
+    def jog_for(
+        self,
+        axis: int = 1,
+        direction: str = "+",
+        duration_s: float = 1.0,
+        *,
+        immediate: bool = False,
+    ) -> None:
+        self.jog(axis=axis, direction=direction)
+        try:
+            time.sleep(max(0.0, float(duration_s)))
+        finally:
+            self.stop(axis=axis, immediate=immediate)
+
     def raw_query(self, cmd: str, *, axis=None):
         self._check()
         return self.dev.query(cmd, axis=axis)
+
+
+def _normalize_motor_sign(value: int) -> int:
+    return 1 if int(value) >= 0 else -1
+
+
+def _quantize_picomotor_steps(step: float) -> int:
+    return max(1, int(round(abs(float(step)))))
 
 
 class NewportXYStage:
@@ -4638,7 +4906,7 @@ class NewportXYStage:
     ):
         device_count = PicoMotor8742Controller.usb_device_count()
         if device_count <= 0:
-            raise RuntimeError("No Newport Picomotor USB devices were found")
+            raise RuntimeError("未找到 Newport Picomotor USB 设备")
 
         self.controller = PicoMotor8742Controller(
             conn=conn,
@@ -4649,17 +4917,13 @@ class NewportXYStage:
         ).open()
         self.x_axis = x_axis
         self.y_axis = y_axis
-        self.x_hw_sign = 1 if x_hw_sign >= 0 else -1
-        self.y_hw_sign = 1 if y_hw_sign >= 0 else -1
+        self.x_hw_sign = _normalize_motor_sign(x_hw_sign)
+        self.y_hw_sign = _normalize_motor_sign(y_hw_sign)
         self.wait_each_move = bool(wait_each_move)
 
         controller_id = self.controller.get_id()
-        axes = self.controller.axes()
+        axes = self.controller.require_axes([self.x_axis, self.y_axis])
         LOGGER.info("Newport Picomotor connected: id=%s, usb_count=%d, axes=%s", controller_id, device_count, axes)
-        if self.x_axis not in axes or self.y_axis not in axes:
-            raise RuntimeError(
-                f"Requested Newport axes x={self.x_axis}, y={self.y_axis} are unavailable. Existing axes: {axes}"
-            )
 
         if velocity is not None or acceleration is not None:
             self.controller.set_vel(axis=self.x_axis, speed=velocity, accel=acceleration)
@@ -4682,6 +4946,14 @@ class NewportXYStage:
         if steps != 0:
             self.controller.move_rel(self.y_axis, steps=self.y_hw_sign * steps, wait=self.wait_each_move)
 
+    def wait_startup_axis(self, axis: Optional[str] = None) -> None:
+        if self.wait_each_move:
+            return
+        if axis == "x":
+            self.controller.wait(axis=self.x_axis)
+        elif axis == "y":
+            self.controller.wait(axis=self.y_axis)
+
     def close(self) -> None:
         try:
             self.controller.stop(axis=self.x_axis, immediate=False)
@@ -4691,6 +4963,177 @@ class NewportXYStage:
             self.controller.stop(axis=self.y_axis, immediate=False)
         except Exception:
             pass
+        self.controller.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.close()
+
+
+class NewportMRC4MirrorStage:
+    """Four-axis Newport mirror stage for dual-mirror MRC beam steering."""
+
+    _VALID_VIRTUAL_AXIS_MODES = {"mirror1", "mirror2", "shared"}
+
+    def __init__(
+        self,
+        conn: int = 0,
+        *,
+        mirror1_x_axis: int = 1,
+        mirror1_y_axis: int = 2,
+        mirror2_x_axis: int = 3,
+        mirror2_y_axis: int = 4,
+        mirror1_x_sign: int = 1,
+        mirror1_y_sign: int = 1,
+        mirror2_x_sign: int = 1,
+        mirror2_y_sign: int = 1,
+        backend: str = "auto",
+        timeout: float = 5.0,
+        multiaddr: bool = False,
+        scan: bool = True,
+        velocity: Optional[int] = None,
+        acceleration: Optional[int] = None,
+        wait_each_move: bool = True,
+        virtual_axis_mode: str = "shared",
+        controller: Optional[PicoMotor8742Controller] = None,
+    ):
+        if controller is None:
+            device_count = PicoMotor8742Controller.usb_device_count()
+            if device_count <= 0:
+                raise RuntimeError("未找到 Newport Picomotor USB 设备")
+            controller = PicoMotor8742Controller(
+                conn=conn,
+                backend=backend,
+                timeout=timeout,
+                multiaddr=multiaddr,
+                scan=scan,
+            ).open()
+        else:
+            device_count = -1
+
+        self.controller = controller
+        self.wait_each_move = bool(wait_each_move)
+        self.virtual_axis_mode = str(virtual_axis_mode).strip().lower()
+        if self.virtual_axis_mode not in self._VALID_VIRTUAL_AXIS_MODES:
+            raise ValueError(
+                f"Unsupported MRC virtual axis mode: {virtual_axis_mode}. "
+                f"Expected one of {sorted(self._VALID_VIRTUAL_AXIS_MODES)}"
+            )
+
+        self.axis_map = {
+            "mirror1_x": int(mirror1_x_axis),
+            "mirror1_y": int(mirror1_y_axis),
+            "mirror2_x": int(mirror2_x_axis),
+            "mirror2_y": int(mirror2_y_axis),
+        }
+        if len(set(self.axis_map.values())) != 4:
+            raise RuntimeError("MRC 4 轴映射必须使用 4 个不同的 Picomotor 轴")
+
+        self.sign_map = {
+            "mirror1_x": _normalize_motor_sign(mirror1_x_sign),
+            "mirror1_y": _normalize_motor_sign(mirror1_y_sign),
+            "mirror2_x": _normalize_motor_sign(mirror2_x_sign),
+            "mirror2_y": _normalize_motor_sign(mirror2_y_sign),
+        }
+
+        controller_id = self.controller.get_id()
+        axes = self.controller.require_axes(list(self.axis_map.values()))
+        LOGGER.info(
+            "Newport MRC 4-axis connected: id=%s, usb_count=%s, axes=%s, mode=%s",
+            controller_id,
+            device_count if device_count >= 0 else "injected",
+            axes,
+            self.virtual_axis_mode,
+        )
+
+        if velocity is not None or acceleration is not None:
+            for axis in sorted(set(self.axis_map.values())):
+                self.controller.set_vel(axis=axis, speed=velocity, accel=acceleration)
+            LOGGER.info(
+                "Newport MRC 4-axis velocity configured: axes=%s speed=%s accel=%s",
+                sorted(set(self.axis_map.values())),
+                velocity,
+                acceleration,
+            )
+
+    def _move_named_axis(self, axis_name: str, steps: int) -> None:
+        steps = int(steps)
+        if steps == 0:
+            return
+        axis = self.axis_map[axis_name]
+        signed_steps = self.sign_map[axis_name] * steps
+        self.controller.move_rel(axis=axis, steps=signed_steps, wait=self.wait_each_move)
+
+    def move_mirror1_x(self, steps: int) -> None:
+        self._move_named_axis("mirror1_x", steps)
+
+    def move_mirror1_y(self, steps: int) -> None:
+        self._move_named_axis("mirror1_y", steps)
+
+    def move_mirror2_x(self, steps: int) -> None:
+        self._move_named_axis("mirror2_x", steps)
+
+    def move_mirror2_y(self, steps: int) -> None:
+        self._move_named_axis("mirror2_y", steps)
+
+    def move_mirrors(
+        self,
+        *,
+        mirror1_x_steps: int = 0,
+        mirror1_y_steps: int = 0,
+        mirror2_x_steps: int = 0,
+        mirror2_y_steps: int = 0,
+    ) -> None:
+        self.move_mirror1_x(mirror1_x_steps)
+        self.move_mirror1_y(mirror1_y_steps)
+        self.move_mirror2_x(mirror2_x_steps)
+        self.move_mirror2_y(mirror2_y_steps)
+
+    def _virtual_axis_keys(self, axis: str) -> List[str]:
+        axis = str(axis).strip().lower()
+        if axis not in {"x", "y"}:
+            raise ValueError(f"Unsupported virtual axis: {axis}")
+        if self.virtual_axis_mode == "mirror1":
+            return [f"mirror1_{axis}"]
+        if self.virtual_axis_mode == "mirror2":
+            return [f"mirror2_{axis}"]
+        return [f"mirror1_{axis}", f"mirror2_{axis}"]
+
+    def move_x(self, steps: int) -> None:
+        axis_keys = self._virtual_axis_keys("x")
+        if axis_keys == ["mirror1_x"]:
+            self.move_mirror1_x(steps)
+            return
+        if axis_keys == ["mirror2_x"]:
+            self.move_mirror2_x(steps)
+            return
+        self.move_mirrors(mirror1_x_steps=steps, mirror2_x_steps=steps)
+
+    def move_y(self, steps: int) -> None:
+        axis_keys = self._virtual_axis_keys("y")
+        if axis_keys == ["mirror1_y"]:
+            self.move_mirror1_y(steps)
+            return
+        if axis_keys == ["mirror2_y"]:
+            self.move_mirror2_y(steps)
+            return
+        self.move_mirrors(mirror1_y_steps=steps, mirror2_y_steps=steps)
+
+    def wait_startup_axis(self, axis: Optional[str] = None) -> None:
+        if self.wait_each_move:
+            return
+        axis_names = list(self.axis_map.keys()) if axis is None else self._virtual_axis_keys(axis)
+        for axis_name in axis_names:
+            self.controller.wait(axis=self.axis_map[axis_name])
+
+    def close(self) -> None:
+        for axis in sorted(set(self.axis_map.values())):
+            try:
+                self.controller.stop(axis=axis, immediate=False)
+            except Exception:
+                pass
         self.controller.close()
 
     def __enter__(self):
@@ -4742,6 +5185,99 @@ class ToupViewWheelZAxis:
         self.close()
 
 
+class NewportPicomotorZAxis:
+    """Dedicated Picomotor Z axis driver for zoom/focus control."""
+
+    def __init__(
+        self,
+        conn: int = 1,
+        *,
+        axis: int = 1,
+        hw_sign: int = 1,
+        backend: str = "auto",
+        timeout: float = 5.0,
+        multiaddr: bool = False,
+        scan: bool = True,
+        velocity: Optional[int] = None,
+        acceleration: Optional[int] = None,
+        wait_each_move: bool = True,
+        controller: Optional[PicoMotor8742Controller] = None,
+    ):
+        if controller is None:
+            device_count = PicoMotor8742Controller.usb_device_count()
+            if device_count <= 0:
+                raise RuntimeError("未找到 Newport Picomotor USB 设备")
+            controller = PicoMotor8742Controller(
+                conn=conn,
+                backend=backend,
+                timeout=timeout,
+                multiaddr=multiaddr,
+                scan=scan,
+            ).open()
+        else:
+            device_count = -1
+
+        self.controller = controller
+        self.axis = int(axis)
+        self.hw_sign = _normalize_motor_sign(hw_sign)
+        self.wait_each_move = bool(wait_each_move)
+
+        controller_id = self.controller.get_id()
+        axes = self.controller.require_axes([self.axis])
+        LOGGER.info(
+            "Newport Picomotor Z connected: id=%s, usb_count=%s, axis=%s, axes=%s",
+            controller_id,
+            device_count if device_count >= 0 else "injected",
+            self.axis,
+            axes,
+        )
+
+        if velocity is not None or acceleration is not None:
+            self.controller.set_vel(axis=self.axis, speed=velocity, accel=acceleration)
+            LOGGER.info(
+                "Newport Picomotor Z velocity configured: axis=%s speed=%s accel=%s",
+                self.axis,
+                velocity,
+                acceleration,
+            )
+
+    def _move_signed_steps(self, signed_steps: int) -> None:
+        if signed_steps == 0:
+            return
+        self.controller.move_rel(
+            axis=self.axis,
+            steps=self.hw_sign * int(signed_steps),
+            wait=self.wait_each_move,
+        )
+
+    def move_up(self, step: float) -> None:
+        steps = _quantize_picomotor_steps(step)
+        self._move_signed_steps(steps)
+        LOGGER.info("8742 Z 轴上移：axis=%s steps=%s", self.axis, steps)
+
+    def move_down(self, step: float) -> None:
+        steps = _quantize_picomotor_steps(step)
+        self._move_signed_steps(-steps)
+        LOGGER.info("8742 Z 轴下移：axis=%s steps=%s", self.axis, steps)
+
+    def wait_startup_axis(self, axis: Optional[str] = None) -> None:
+        if not self.wait_each_move:
+            self.controller.wait(axis=self.axis)
+
+    def close(self) -> None:
+        try:
+            self.controller.stop(axis=self.axis, immediate=False)
+        except Exception:
+            pass
+        self.controller.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.close()
+
+
 class XPSZAxis:
     def __init__(
         self,
@@ -4760,34 +5296,34 @@ class XPSZAxis:
         self.group_name = group_name
         self.socket_id = self.xps.TCP_ConnectToServer(ip, port, 10)
         if self.socket_id == -1:
-            raise RuntimeError("XPS controller connection failed")
+            raise RuntimeError("XPS 控制器连接失败")
 
         error, message = self.xps.Login(self.socket_id, username, password)
         if error != 0:
-            raise RuntimeError(f"XPS login failed: {message}")
+            raise RuntimeError(f"XPS 登录失败：{message}")
 
         error, message = self.xps.GroupInitialize(self.socket_id, self.group_name)
         if error != 0:
-            LOGGER.warning("XPS GroupInitialize warning: %s", message)
+            LOGGER.warning("XPS GroupInitialize 警告：%s", message)
 
         error, message = self.xps.GroupMotionEnable(self.socket_id, self.group_name)
         if error != 0:
-            raise RuntimeError(f"XPS GroupMotionEnable failed: {message}")
+            raise RuntimeError(f"XPS GroupMotionEnable 失败：{message}")
 
-        LOGGER.info("XPS Z connected: %s:%s, group=%s", ip, port, group_name)
+        LOGGER.info("XPS Z 轴已连接：%s:%s, group=%s", ip, port, group_name)
 
     def _move(self, displacement_um: float) -> None:
         result = self.xps.GroupMoveRelative(self.socket_id, self.group_name, [0, 0, float(displacement_um)])
         if result[0] != 0:
-            raise RuntimeError(f"XPS Z move failed: {result[1]}")
+            raise RuntimeError(f"XPS Z 轴移动失败：{result[1]}")
 
     def move_up(self, step: float) -> None:
         self._move(abs(float(step)))
-        LOGGER.info("XPS Z move up: %.3f", abs(float(step)))
+        LOGGER.info("XPS Z 轴上移：%.3f", abs(float(step)))
 
     def move_down(self, step: float) -> None:
         self._move(-abs(float(step)))
-        LOGGER.info("XPS Z move down: %.3f", abs(float(step)))
+        LOGGER.info("XPS Z 轴下移：%.3f", abs(float(step)))
 
     def close(self) -> None:
         try:
@@ -5272,8 +5808,8 @@ class SpotZoomController:
             self._pid_x = None
             self._pid_y = None
 
-        # --- 鍒涙柊妯″潡鍒濆鍖?---
-        # 鍗″皵鏇兼护娉㈣拷韪櫒
+        # --- 创新模块初始化 ---
+        # 卡尔曼滤波追踪器
         self._kalman = None
         if self.cfg.kalman_enabled and _ml_kalman is not None:
             self._kalman = KalmanSpotTracker(
@@ -5304,19 +5840,19 @@ class SpotZoomController:
             else:
                 LOGGER.info("Frontier log-polar recovery enabled")
 
-        # 浜氬儚绱犺川蹇冨畾浣嶅櫒
+        # 亚像素质心定位器
         self._subpixel = None
         if self.cfg.subpixel_enabled and _ml_subpixel is not None:
             self._subpixel = SubPixelCentroid(method=self.cfg.subpixel_method)
             LOGGER.info("Sub-pixel centroid enabled: method=%s", self.cfg.subpixel_method)
 
-        # 鍏夋枒璐ㄩ噺璇勪及鍣?
+        # 光斑质量评估器
         self._quality = None
         if self.cfg.quality_analyzer_enabled and _ml_quality is not None:
             self._quality = SpotQualityAnalyzer(min_sharpness=self.cfg.quality_min_score)
             LOGGER.info("Spot quality analyzer enabled: min_score=%.1f", self.cfg.quality_min_score)
 
-        # 鑷€傚簲澧炵泭璋冨害鍣?
+        # 自适应增益调度器
         self._gain_scheduler = None
         if self.cfg.adaptive_gain_enabled and _ml_gain is not None:
             self._gain_scheduler = AdaptiveGainScheduler(
@@ -5327,13 +5863,13 @@ class SpotZoomController:
             )
             LOGGER.info("Adaptive gain scheduler enabled: strategy=%s", self.cfg.adaptive_gain_strategy)
 
-        # 杞ㄨ抗璁板綍鍣?
+        # 轨迹记录器
         self._trajectory = None
         if self.cfg.trajectory_enabled and _ml_trajectory is not None:
             self._trajectory = TrajectoryRecorder(auto_export_path=self.cfg.trajectory_export_path)
             LOGGER.info("Trajectory recorder enabled: export=%s", self.cfg.trajectory_export_path)
 
-        # 瀹夊叏绠＄悊鍣?
+        # 安全管理器
         self._safety = None
         if self.cfg.safety_enabled and _ml_safety is not None:
             from SpotZoom_Machine_Learning.safety_manager import SafetyLimits
@@ -5347,7 +5883,7 @@ class SpotZoomController:
             self._safety.start_run()
             LOGGER.info("Safety manager enabled")
 
-        # Zernike 鍍忓樊鍒嗘瀽鍣?
+        # Zernike 像差分析器
         self._zernike = None
         if self.cfg.zernike_enabled and _ml_zernike is not None:
             self._zernike = ZernikeAberrationAnalyzer(
@@ -5356,7 +5892,7 @@ class SpotZoomController:
             )
             LOGGER.info("Zernike aberration analyzer enabled: max_order=%d", self.cfg.zernike_max_order)
 
-        # 鍥惧儚闆呭彲姣旇瑙変己鏈嶆帶鍒跺櫒
+        # 图像雅可比视觉伺服控制器
         self._image_jacobian = None
         if self.cfg.image_jacobian_enabled and _ml_jacobian is not None:
             self._image_jacobian = ImageJacobianController(
@@ -5366,7 +5902,7 @@ class SpotZoomController:
             )
             LOGGER.info("Image Jacobian controller enabled")
 
-        # 妯″瀷鎺ㄧ悊浼樺寲鍣?
+        # 模型推理优化器
         self._model_optimizer = None
         if self.cfg.model_optimizer_enabled and _ml_optimizer is not None:
             self._model_optimizer = ModelInferenceOptimizer(
@@ -5374,7 +5910,8 @@ class SpotZoomController:
             )
             LOGGER.info("Model inference optimizer enabled: target=%.1fms", self.cfg.model_optimizer_target_latency_ms)
 
-        # 涓诲姩瀛︿範鏁版嵁閲囬泦鍣?
+        # 主动学习数据采集器
+        self._active_learning = None
         self._active_learning = None
         if self.cfg.active_learning_enabled and _ml_active_learning is not None:
             self._active_learning = ActiveLearningCollector(
@@ -5384,7 +5921,7 @@ class SpotZoomController:
             )
             LOGGER.info("Active learning collector enabled: dir=%s", self.cfg.active_learning_output_dir)
 
-        # 鑷€傚簲鐒﹀钩闈㈡悳绱㈠櫒
+        # 自适应焦平面搜索器
         self._focus_searcher = None
         if self.cfg.focus_search_enabled and _ml_focus_search is not None:
             self._focus_searcher = AdaptiveFocusSearcher(
@@ -5393,8 +5930,9 @@ class SpotZoomController:
             )
             LOGGER.info("Adaptive focus searcher enabled")
 
-        # --- v4.0 鏂板鍒涙柊妯″潡 ---
-        # 娉㈠墠璇樊棰勬祴鍣?        self._wavefront_predictor = None
+        # --- v4.0 新增创新模块 ---
+        # 波前误差预测器
+        self._wavefront_predictor = None
         if self.cfg.wavefront_predictor_enabled and _ml_wavefront is not None:
             self._wavefront_predictor = WavefrontPredictor(
                 history_length=self.cfg.wavefront_predictor_history_length,
@@ -5406,7 +5944,8 @@ class SpotZoomController:
                         self.cfg.wavefront_predictor_horizon,
                         self.cfg.wavefront_predictor_model_order)
 
-        # 鎸姩妫€娴嬩笌琛ュ伩鍣?        self._vibration_compensator = None
+        # 振动检测与补偿器
+        self._vibration_compensator = None
         if self.cfg.vibration_compensator_enabled and _ml_vibration is not None:
             self._vibration_compensator = VibrationCompensator(
                 fft_size=self.cfg.vibration_compensator_fft_size,
@@ -5417,7 +5956,8 @@ class SpotZoomController:
                         self.cfg.vibration_compensator_fft_size,
                         self.cfg.vibration_compensator_threshold_hz)
 
-        # 楂樻柉鍏夋潫鎷熷悎鍣?        self._gaussian_fitter = None
+        # 高斯光束拟合器
+        self._gaussian_fitter = None
         if self.cfg.gaussian_fitter_enabled and _ml_gaussian is not None:
             self._gaussian_fitter = GaussianBeamFitter(
                 roi_size=self.cfg.gaussian_fitter_roi_size,
@@ -5427,7 +5967,7 @@ class SpotZoomController:
                         self.cfg.gaussian_fitter_roi_size,
                         self.cfg.gaussian_fitter_max_iterations)
 
-        # 浜嬩欢鎬荤嚎
+        # 事件总线
         self._event_bus = None
         if self.cfg.event_bus_enabled and _ml_eventbus is not None:
             self._event_bus = EventBus(
@@ -5438,8 +5978,9 @@ class SpotZoomController:
                         self.cfg.event_bus_max_history,
                         self.cfg.event_bus_worker_threads)
 
-        # --- v5.0 鏂板鍒涙柊妯″潡 ---
-        # 鏃跺簭铻嶅悎棰勬祴鍣?        self._temporal_fusion = None
+        # --- v5.0 新增创新模块 ---
+        # 时序融合预测器
+        self._temporal_fusion = None
         if self.cfg.temporal_fusion_enabled and _ml_temporal_fusion is not None:
             self._temporal_fusion = TemporalFusionPredictor(
                 history_length=self.cfg.temporal_fusion_history_length,
@@ -5450,7 +5991,7 @@ class SpotZoomController:
                         self.cfg.temporal_fusion_history_length,
                         self.cfg.temporal_fusion_prediction_horizon)
 
-        # 鑷暣瀹氭帶鍒跺櫒
+        # 自整定控制器
         self._self_tuning = None
         if self.cfg.self_tuning_enabled and _ml_self_tuning is not None:
             self._self_tuning = SelfTuningController(
@@ -5460,7 +6001,7 @@ class SpotZoomController:
             )
             LOGGER.info("Self-tuning controller enabled: method=%s", self.cfg.self_tuning_method)
 
-        # 鍏夋枒褰㈡€佸垎鏋愬櫒
+        # 光斑形态分析器
         self._morphology_analyzer = None
         if self.cfg.morphology_analyzer_enabled and _ml_morphology is not None:
             self._morphology_analyzer = SpotMorphologyAnalyzer(
@@ -5469,7 +6010,7 @@ class SpotZoomController:
             )
             LOGGER.info("Spot morphology analyzer enabled: min_size=%d", self.cfg.morphology_analyzer_min_spot_size)
 
-        # 鏁版嵁娴佹按绾跨紪鎺掑櫒
+        # 数据流水线编排器
         self._pipeline_orchestrator = None
         if self.cfg.pipeline_orchestrator_enabled and _ml_pipeline is not None:
             self._pipeline_orchestrator = DataPipelineOrchestrator(
@@ -5477,7 +6018,8 @@ class SpotZoomController:
             )
             LOGGER.info("Data pipeline orchestrator enabled: timeout=%.1fs", self.cfg.pipeline_orchestrator_timeout_s)
 
-        # 璇婃柇鍋ュ悍鐩戞帶鍣?        self._health_monitor = None
+        # 诊断健康监控器
+        self._health_monitor = None
         if self.cfg.health_monitor_enabled and _ml_health_monitor is not None:
             self._health_monitor = DiagnosticHealthMonitor(
                 retention_s=self.cfg.health_monitor_retention_s,
@@ -5487,8 +6029,8 @@ class SpotZoomController:
                         self.cfg.health_monitor_retention_s,
                         self.cfg.health_monitor_alert_threshold)
 
-        # --- v11.0 鏂板鍒涙柊妯″潡 (鍓嶆部寮€婧愯皟鐮旇ˉ鍏?- 绗洓杞? ---
-        # LodeSTAR 鏃犵洃鐫ｅ厜鏂戞娴嬪櫒
+        # --- v11.0 新增创新模块（前沿开源调研补充 - 第四批） ---
+        # LodeSTAR 无监督光斑检测器
         self._lodestar = None
         if self.cfg.lodestar_enabled and _ml_lodestar is not None:
             lodestar_cfg_kwargs = {
@@ -5506,7 +6048,7 @@ class SpotZoomController:
             LOGGER.info("LodeSTAR unsupervised detector enabled: template=%d scales=%d",
                         self.cfg.lodestar_template_size, self.cfg.lodestar_num_scales)
 
-        # Mamba 鐘舵€佺┖闂存ā鍨嬫椂搴忛娴嬪櫒
+        # SAM2 风格掩膜细化器
         self._sam2_refiner = None
         if self.cfg.sam2_refiner_enabled and _ml_sam2 is not None:
             self._sam2_refiner = SAM2SpotSegmenter(
@@ -5533,7 +6075,8 @@ class SpotZoomController:
             LOGGER.info("Mamba predictor enabled: state_dim=%d horizon=%d",
                         self.cfg.mamba_state_dim, self.cfg.mamba_prediction_horizon)
 
-        # PINN 鐗╃悊淇℃伅绁炵粡缃戠粶鍏夋潫姹傝В鍣?        self._pinn = None
+        # PINN 物理信息神经网络光束求解器
+        self._pinn = None
         if self.cfg.pinn_enabled and _ml_pinn is not None:
             self._pinn = PINNBeamSolver(
                 config=PINNConfig(
@@ -5544,7 +6087,8 @@ class SpotZoomController:
             LOGGER.info("PINN beam solver enabled: wavelength=%.1fnm max_iter=%d",
                         self.cfg.pinn_wavelength_nm, self.cfg.pinn_max_iterations)
 
-        # 鎸佺画瀛︿範閫傞厤鍣?        self._continual = None
+        # 持续学习适配器
+        self._continual = None
         if self.cfg.continual_enabled and _ml_continual is not None:
             self._continual = ContinualLearner(
                 config=ContinualConfig(
@@ -5555,7 +6099,7 @@ class SpotZoomController:
             LOGGER.info("Continual learner enabled: buffer=%d ewc_lambda=%.1f",
                         self.cfg.continual_buffer_size, self.cfg.continual_ewc_lambda)
 
-        # 鍙В閲?AI 璇婃柇妯″潡
+        # 可解释 AI 诊断模块
         self._xai = None
         if self.cfg.xai_enabled and _ml_xai is not None:
             self._xai = XAIDiagnostic(
@@ -5645,9 +6189,10 @@ class SpotZoomController:
         if (
             self.cfg.frontier_temporal_ensemble_enabled
             and _TemporalEnsembleTracker is not None
-            and _TemporalEnsembleConfig is not None
         ):
-            temporal_cfg = _TemporalEnsembleConfig(
+            temporal_cfg = _build_unified_versioned_config(
+                6,
+                "temporal_ensemble_tracker",
                 history_length=max(2, int(self.cfg.frontier_temporal_history_length)),
                 low_conf_recovery_threshold=min(1.0, max(0.0, float(self.cfg.frontier_temporal_low_conf_threshold))),
                 confidence_decay=min(1.0, max(0.01, float(self.cfg.frontier_temporal_confidence_decay))),
@@ -5655,7 +6200,26 @@ class SpotZoomController:
                 max_prediction_distance=max(1.0, float(self.cfg.frontier_temporal_max_prediction_distance)),
                 association_distance=max(1.0, float(self.cfg.frontier_temporal_association_distance)),
             )
-            self._frontier_temporal_ensemble = _TemporalEnsembleTracker(config=temporal_cfg)
+            if temporal_cfg is None and _TemporalEnsembleConfig is not None:
+                temporal_cfg = _TemporalEnsembleConfig(
+                    history_length=max(2, int(self.cfg.frontier_temporal_history_length)),
+                    low_conf_recovery_threshold=min(1.0, max(0.0, float(self.cfg.frontier_temporal_low_conf_threshold))),
+                    confidence_decay=min(1.0, max(0.01, float(self.cfg.frontier_temporal_confidence_decay))),
+                    prediction_weight=min(1.0, max(0.0, float(self.cfg.frontier_temporal_prediction_weight))),
+                    max_prediction_distance=max(1.0, float(self.cfg.frontier_temporal_max_prediction_distance)),
+                    association_distance=max(1.0, float(self.cfg.frontier_temporal_association_distance)),
+                )
+            self._frontier_temporal_ensemble = _build_unified_versioned_instance(
+                6,
+                "temporal_ensemble_tracker",
+                config=temporal_cfg,
+            )
+            if self._frontier_temporal_ensemble is None:
+                self._frontier_temporal_ensemble = (
+                    _TemporalEnsembleTracker()
+                    if temporal_cfg is None
+                    else _TemporalEnsembleTracker(config=temporal_cfg)
+                )
             LOGGER.info(
                 "Frontier temporal ensemble enabled: history=%d low_conf>=%.3f decay=%.3f pred_w=%.3f pred_dist<=%.1f assoc<=%.1f refine_shift<=%.1f",
                 int(self.cfg.frontier_temporal_history_length),
@@ -5669,7 +6233,7 @@ class SpotZoomController:
         elif self.cfg.frontier_temporal_ensemble_enabled:
             LOGGER.warning("Frontier temporal ensemble requested but temporal_ensemble_tracker is unavailable")
 
-        # --- v25.0 鍒涙柊妯″潡鍒濆鍖?---
+        # --- v25.0 创新模块初始化 ---
         self._frontier_uncertainty_localizer = None
         if self.cfg.frontier_uncertainty_localizer_enabled and _ml_frontier_v25 is not None and UncertaintyAwareLocalizer is not None:
             self._frontier_uncertainty_localizer = UncertaintyAwareLocalizer()
@@ -6947,16 +7511,71 @@ class SpotZoomController:
 
         self._frontier_v7_prev_gray: Optional[np.ndarray] = None
         self._frontier_v7_prev_detection: Optional[SpotDetection] = None
+        self._frontier_v6_diffusion = None
+        if self.cfg.frontier_v6_diffusion_preprocess_enabled:
+            diffusion_cfg = _build_unified_versioned_config(
+                6,
+                "diffusion_spot_enhancer",
+                num_iterations=max(1, int(self.cfg.frontier_v6_diffusion_num_iterations)),
+            )
+            if diffusion_cfg is None and _DiffusionEnhancerConfig is not None:
+                diffusion_cfg = _DiffusionEnhancerConfig(
+                    num_iterations=max(1, int(self.cfg.frontier_v6_diffusion_num_iterations)),
+                )
+            self._frontier_v6_diffusion = _build_diffusion_spot_enhancer(diffusion_cfg)
+            if self._frontier_v6_diffusion is not None:
+                LOGGER.info(
+                    "Frontier v6 diffusion preprocess enabled: iterations=%d blend=%.3f",
+                    max(1, int(self.cfg.frontier_v6_diffusion_num_iterations)),
+                    float(self.cfg.frontier_v6_diffusion_blend),
+                )
+            else:
+                LOGGER.warning("Frontier v6 diffusion preprocess requested but diffusion_spot_enhancer is unavailable")
+
+        self._frontier_v6_multiscale = None
+        if self.cfg.frontier_v6_multiscale_fallback_enabled:
+            multiscale_conf_scale = float(np.clip(float(self.cfg.frontier_v6_multiscale_confidence_scale), 0.0, 1.0))
+            multiscale_min_conf = float(np.clip(float(self.cfg.frontier_v6_multiscale_min_confidence), 0.0, 1.0))
+            internal_threshold = min(
+                0.95,
+                max(0.05, multiscale_min_conf / max(multiscale_conf_scale, 1e-3)),
+            )
+            multiscale_cfg = _build_unified_versioned_config(
+                6,
+                "multi_scale_spot_detector",
+                confidence_threshold=internal_threshold,
+            )
+            if multiscale_cfg is None and _MultiScaleDetectorConfig is not None:
+                multiscale_cfg = _MultiScaleDetectorConfig(
+                    confidence_threshold=internal_threshold,
+                )
+            self._frontier_v6_multiscale = _build_multi_scale_spot_detector(multiscale_cfg)
+            if self._frontier_v6_multiscale is not None:
+                LOGGER.info(
+                    "Frontier v6 multi-scale fallback enabled: conf_scale=%.3f min_conf=%.3f internal_threshold=%.3f",
+                    multiscale_conf_scale,
+                    multiscale_min_conf,
+                    internal_threshold,
+                )
+            else:
+                LOGGER.warning("Frontier v6 multi-scale fallback requested but multi_scale_spot_detector is unavailable")
+
         self._frontier_v7_denoiser = None
         if self.cfg.frontier_v7_denoiser_enabled and _V7SelfSupervisedDenoiser is not None:
             denoiser_cfg = None
             if _V7DenoiserConfig is not None:
                 denoiser_cfg = _V7DenoiserConfig()
-            self._frontier_v7_denoiser = (
-                _V7SelfSupervisedDenoiser()
-                if denoiser_cfg is None
-                else _V7SelfSupervisedDenoiser(config=denoiser_cfg)
+            self._frontier_v7_denoiser = _build_unified_versioned_instance(
+                7,
+                "self_supervised_denoiser",
+                config=denoiser_cfg,
             )
+            if self._frontier_v7_denoiser is None:
+                self._frontier_v7_denoiser = (
+                    _V7SelfSupervisedDenoiser()
+                    if denoiser_cfg is None
+                    else _V7SelfSupervisedDenoiser(config=denoiser_cfg)
+                )
             LOGGER.info(
                 "Frontier v7 denoiser enabled: blend=%.3f",
                 float(self.cfg.frontier_v7_denoiser_blend),
@@ -6966,14 +7585,20 @@ class SpotZoomController:
 
         self._frontier_v7_phase = None
         if self.cfg.frontier_v7_phase_refine_enabled and _V7FourierPhaseCorrelator is not None:
-            phase_cfg = None
-            if _V7PhaseCorrelatorConfig is not None:
+            phase_cfg = _build_unified_versioned_config(7, "fourier_phase_correlator")
+            if phase_cfg is None and _V7PhaseCorrelatorConfig is not None:
                 phase_cfg = _V7PhaseCorrelatorConfig()
-            self._frontier_v7_phase = (
-                _V7FourierPhaseCorrelator()
-                if phase_cfg is None
-                else _V7FourierPhaseCorrelator(config=phase_cfg)
+            self._frontier_v7_phase = _build_unified_versioned_instance(
+                7,
+                "fourier_phase_correlator",
+                config=phase_cfg,
             )
+            if self._frontier_v7_phase is None:
+                self._frontier_v7_phase = (
+                    _V7FourierPhaseCorrelator()
+                    if phase_cfg is None
+                    else _V7FourierPhaseCorrelator(config=phase_cfg)
+                )
             LOGGER.info(
                 "Frontier v7 phase refinement enabled: max_shift<=%.2f blend=%.3f",
                 float(self.cfg.frontier_v7_phase_max_shift_px),
@@ -6984,174 +7609,391 @@ class SpotZoomController:
 
         self._frontier_v7_causal = None
         if self.cfg.frontier_v7_phase_refine_enabled and _V7CausalStatePredictor is not None:
-            causal_cfg = None
-            if _V7CausalPredictorConfig is not None:
+            causal_cfg = _build_unified_versioned_config(7, "causal_state_predictor")
+            if causal_cfg is None and _V7CausalPredictorConfig is not None:
                 causal_cfg = _V7CausalPredictorConfig()
-            self._frontier_v7_causal = (
-                _V7CausalStatePredictor()
-                if causal_cfg is None
-                else _V7CausalStatePredictor(config=causal_cfg)
+            self._frontier_v7_causal = _build_unified_versioned_instance(
+                7,
+                "causal_state_predictor",
+                config=causal_cfg,
             )
+            if self._frontier_v7_causal is None:
+                self._frontier_v7_causal = (
+                    _V7CausalStatePredictor()
+                    if causal_cfg is None
+                    else _V7CausalStatePredictor(config=causal_cfg)
+                )
 
-        # --- v26.0 鏂板鍒涙柊妯″潡鍒濆鍖?(SpotZoom_Machine_Learning_v2) ---
-        # 闂幆鑷€傚簲鍏夊鎺у埗鍣?(鈫?HCIPy/AOtools)
+        # --- Initialize v26.0 modules (SpotZoom_Machine_Learning_v2) ---
+        # Closed-loop adaptive optics controller (HCIPy/AOtools inspired)
         self._cl_ao = None
-        if self.cfg.cl_ao_enabled and _ml_v2_cl_ao is not None:
-            self._cl_ao = _ml_v2_cl_ao.ClosedLoopAOController(
-                config=_ml_v2_cl_ao.ClosedLoopAOConfig(
+        if self.cfg.cl_ao_enabled and _V2ClosedLoopAOController is not None:
+            cl_ao_cfg = _build_unified_versioned_config(
+                2,
+                "closed_loop_ao_controller",
+                integral_gain=self.cfg.cl_ao_integral_gain,
+                proportional_gain=self.cfg.cl_ao_proportional_gain,
+                derivative_gain=self.cfg.cl_ao_derivative_gain,
+                adaptive_gain_enabled=self.cfg.cl_ao_adaptive_gain,
+                notch_filter_enabled=self.cfg.cl_ao_notch_filter,
+            )
+            if cl_ao_cfg is None and _V2ClosedLoopAOConfig is not None:
+                cl_ao_cfg = _V2ClosedLoopAOConfig(
                     integral_gain=self.cfg.cl_ao_integral_gain,
                     proportional_gain=self.cfg.cl_ao_proportional_gain,
                     derivative_gain=self.cfg.cl_ao_derivative_gain,
                     adaptive_gain_enabled=self.cfg.cl_ao_adaptive_gain,
                     notch_filter_enabled=self.cfg.cl_ao_notch_filter,
-                ),
+                )
+            self._cl_ao = _build_unified_versioned_instance(
+                2,
+                "closed_loop_ao_controller",
+                config=cl_ao_cfg,
             )
-            LOGGER.info("v26 Closed-loop AO controller enabled (鈫?HCIPy/AOtools)")
+            if self._cl_ao is None:
+                self._cl_ao = (
+                    _V2ClosedLoopAOController()
+                    if cl_ao_cfg is None
+                    else _V2ClosedLoopAOController(config=cl_ao_cfg)
+                )
+            LOGGER.info("v26 Closed-loop AO controller enabled (HCIPy/AOtools inspired)")
 
-        # 鍌呴噷鍙?PSF 鍒嗘瀽鍣?(鈫?HCIPy)
+        # Fourier PSF analyzer (HCIPy inspired)
         self._fourier_psf = None
-        if self.cfg.fourier_psf_enabled and _ml_v2_fourier_psf is not None:
-            self._fourier_psf = _ml_v2_fourier_psf.FourierPSFAnalyzer(
+        if self.cfg.fourier_psf_enabled and _V2FourierPSFAnalyzer is not None:
+            self._fourier_psf = _build_unified_versioned_instance(
+                2,
+                "fourier_psf_analyzer",
                 max_zernike_order=self.cfg.fourier_psf_max_zernike_order,
             )
-            LOGGER.info("v26 Fourier PSF analyzer enabled (鈫?HCIPy)")
+            if self._fourier_psf is None:
+                self._fourier_psf = _V2FourierPSFAnalyzer(
+                    max_zernike_order=self.cfg.fourier_psf_max_zernike_order,
+                )
+            LOGGER.info("v26 Fourier PSF analyzer enabled (HCIPy inspired)")
 
-        # 闆舵牱鏈厜鏂戝寮哄櫒 (鈫?Deep Image Prior)
+        # Deep Image Prior enhancer
         self._dip_enhancer = None
         if self.cfg.dip_enhancer_enabled and _ml_v2_dip is not None:
-            self._dip_enhancer = _ml_v2_dip.DeepImagePriorEnhancer(
+            self._dip_enhancer = _build_unified_versioned_instance(
+                2,
+                "deep_image_prior_enhancer",
                 max_iterations=self.cfg.dip_enhancer_max_iterations,
             )
-            LOGGER.info("v26 Deep Image Prior enhancer enabled (鈫?DIP)")
+            if self._dip_enhancer is None:
+                self._dip_enhancer = _ml_v2_dip.DeepImagePriorEnhancer(
+                    max_iterations=self.cfg.dip_enhancer_max_iterations,
+                )
+            LOGGER.info("v26 Deep Image Prior enhancer enabled (DIP inspired)")
 
-        # 鑷€傚簲鍏夋潫浼犳挱妯℃嫙鍣?(鈫?OpenCLAW)
+        # Adaptive beam propagator (OpenCLAW inspired)
         self._beam_propagator = None
-        if self.cfg.beam_propagator_enabled and _ml_v2_beam_prop is not None:
-            self._beam_propagator = _ml_v2_beam_prop.AdaptiveBeamPropagator(
-                config=_ml_v2_beam_prop.PropagationConfig(
-                    wavelength_nm=self.cfg.beam_propagator_wavelength_nm,
-                ),
+        if self.cfg.beam_propagator_enabled and _V2AdaptiveBeamPropagator is not None:
+            beam_cfg = _build_unified_versioned_config(
+                2,
+                "adaptive_beam_propagator",
+                wavelength_nm=self.cfg.beam_propagator_wavelength_nm,
             )
-            LOGGER.info("v26 Adaptive beam propagator enabled (鈫?OpenCLAW)")
+            if beam_cfg is None and _V2PropagationConfig is not None:
+                beam_cfg = _V2PropagationConfig(
+                    wavelength_nm=self.cfg.beam_propagator_wavelength_nm,
+                )
+            self._beam_propagator = _build_unified_versioned_instance(
+                2,
+                "adaptive_beam_propagator",
+                config=beam_cfg,
+            )
+            if self._beam_propagator is None:
+                self._beam_propagator = (
+                    _V2AdaptiveBeamPropagator()
+                    if beam_cfg is None
+                    else _V2AdaptiveBeamPropagator(config=beam_cfg)
+                )
+            LOGGER.info("v26 Adaptive beam propagator enabled (OpenCLAW inspired)")
 
-        # 鏁版嵁椹卞姩 MPC 鎺у埗鍣?(鈫?leap-c/acados)
+        # Data-driven MPC controller (leap-c/acados inspired)
         self._dd_mpc = None
-        if self.cfg.dd_mpc_enabled and _ml_v2_dd_mpc is not None:
-            self._dd_mpc = _ml_v2_dd_mpc.DataDrivenMPC(
-                config=_ml_v2_dd_mpc.DataDrivenMPCConfig(
+        if self.cfg.dd_mpc_enabled and _V2DataDrivenMPC is not None:
+            dd_mpc_cfg = _build_unified_versioned_config(
+                2,
+                "data_driven_mpc",
+                prediction_horizon=self.cfg.dd_mpc_prediction_horizon,
+                control_horizon=self.cfg.dd_mpc_control_horizon,
+            )
+            if dd_mpc_cfg is None and _V2DataDrivenMPCConfig is not None:
+                dd_mpc_cfg = _V2DataDrivenMPCConfig(
                     prediction_horizon=self.cfg.dd_mpc_prediction_horizon,
                     control_horizon=self.cfg.dd_mpc_control_horizon,
-                ),
+                )
+            self._dd_mpc = _build_unified_versioned_instance(
+                2,
+                "data_driven_mpc",
+                config=dd_mpc_cfg,
             )
-            LOGGER.info("v26 Data-driven MPC enabled (鈫?leap-c/acados)")
+            if self._dd_mpc is None:
+                self._dd_mpc = (
+                    _V2DataDrivenMPC()
+                    if dd_mpc_cfg is None
+                    else _V2DataDrivenMPC(config=dd_mpc_cfg)
+                )
+            LOGGER.info("v26 Data-driven MPC enabled (leap-c/acados inspired)")
 
-        # LQG 椴佹鎺у埗鍣?(鈫?python-control)
+        # LQG robust controller (python-control inspired)
         self._lqg = None
-        if self.cfg.lqg_enabled and _ml_v2_lqg is not None:
-            self._lqg = _ml_v2_lqg.LQGRobustController(
-                config=_ml_v2_lqg.LQGConfig(
+        if self.cfg.lqg_enabled and _V2LQGRobustController is not None:
+            lqg_cfg = _build_unified_versioned_config(
+                2,
+                "lqg_robust_controller",
+                q_position=self.cfg.lqg_q_position,
+                r_control=self.cfg.lqg_r_control,
+                adaptive_noise=self.cfg.lqg_adaptive_noise,
+            )
+            if lqg_cfg is None and _V2LQGConfig is not None:
+                lqg_cfg = _V2LQGConfig(
                     q_position=self.cfg.lqg_q_position,
                     r_control=self.cfg.lqg_r_control,
                     adaptive_noise=self.cfg.lqg_adaptive_noise,
-                ),
+                )
+            self._lqg = _build_unified_versioned_instance(
+                2,
+                "lqg_robust_controller",
+                config=lqg_cfg,
             )
-            LOGGER.info("v26 LQG robust controller enabled (鈫?python-control)")
+            if self._lqg is None:
+                self._lqg = (
+                    _V2LQGRobustController()
+                    if lqg_cfg is None
+                    else _V2LQGRobustController(config=lqg_cfg)
+                )
+            LOGGER.info("v26 LQG robust controller enabled (python-control inspired)")
 
-        # 鈹€鈹€ v3.0 ML 妯″潡鍒濆鍖?鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+        # --- Initialize v3.0 ML modules ---
         self._slm_gen = None
         if self.cfg.slm_generator_enabled and _SLMHolographicGenerator is not None:
-            from SpotZoom_Machine_Learning_v3.slm_holographic_spot_generator import SLMConfig
-            self._slm_gen = _SLMHolographicGenerator(
-                config=SLMConfig(
-                    wavelength_nm=self.cfg.slm_wavelength_nm,
-                    pixel_size_um=self.cfg.slm_pixel_size_um,
-                    iterations=self.cfg.slm_iterations,
-                )
+            slm_wavelength_um = max(1e-6, float(self.cfg.slm_wavelength_nm) / 1000.0)
+            slm_cfg = _build_unified_versioned_config(
+                3,
+                "slm_holographic_spot_generator",
+                wavelength_um=slm_wavelength_um,
+                pixel_pitch_um=self.cfg.slm_pixel_size_um,
+                max_iterations=max(1, int(self.cfg.slm_iterations)),
             )
-            LOGGER.info("v3 SLM holographic generator enabled: 位=%.1fnm", self.cfg.slm_wavelength_nm)
+            if slm_cfg is None and _SLMConfig is not None:
+                slm_cfg = _SLMConfig(
+                    wavelength_um=slm_wavelength_um,
+                    pixel_pitch_um=self.cfg.slm_pixel_size_um,
+                    max_iterations=max(1, int(self.cfg.slm_iterations)),
+                )
+            self._slm_gen = _build_unified_versioned_instance(
+                3,
+                "slm_holographic_spot_generator",
+                config=slm_cfg,
+            )
+            if self._slm_gen is None:
+                self._slm_gen = (
+                    _SLMHolographicGenerator()
+                    if slm_cfg is None
+                    else _SLMHolographicGenerator(config=slm_cfg)
+                )
+            LOGGER.info("v3 SLM holographic generator enabled: wavelength=%.1f nm", self.cfg.slm_wavelength_nm)
 
         self._ao_pipeline = None
         if self.cfg.ao_pipeline_enabled and _RealtimeAOPipeline is not None:
-            from SpotZoom_Machine_Learning_v3.realtime_ao_pipeline import AOPipelineConfig
-            self._ao_pipeline = _RealtimeAOPipeline(
-                config=AOPipelineConfig(
-                    gain=self.cfg.ao_gain,
-                    leak_integrator=self.cfg.ao_leak_integrator,
-                    max_correction=self.cfg.ao_max_correction,
-                )
+            ao_max_correction = max(1e-6, float(self.cfg.ao_max_correction))
+            ao_cfg = _build_unified_versioned_config(
+                3,
+                "realtime_ao_pipeline",
+                integral_gain=self.cfg.ao_gain,
+                leak_factor=self.cfg.ao_leak_integrator,
+                max_voltage=ao_max_correction,
+                min_voltage=-ao_max_correction,
             )
+            if ao_cfg is None and _AOPipelineConfig is not None:
+                ao_cfg = _AOPipelineConfig(
+                    integral_gain=self.cfg.ao_gain,
+                    leak_factor=self.cfg.ao_leak_integrator,
+                    max_voltage=ao_max_correction,
+                    min_voltage=-ao_max_correction,
+                )
+            self._ao_pipeline = _build_unified_versioned_instance(
+                3,
+                "realtime_ao_pipeline",
+                config=ao_cfg,
+            )
+            if self._ao_pipeline is None:
+                self._ao_pipeline = (
+                    _RealtimeAOPipeline()
+                    if ao_cfg is None
+                    else _RealtimeAOPipeline(config=ao_cfg)
+                )
             LOGGER.info("v3 Realtime AO pipeline enabled: gain=%.2f", self.cfg.ao_gain)
 
         self._strehl = None
         if self.cfg.strehl_assessor_enabled and _StrehlQualityAssessor is not None:
-            from SpotZoom_Machine_Learning_v3.strehl_quality_assessor import StrehlConfig
-            self._strehl = _StrehlQualityAssessor(
-                config=StrehlConfig(
-                    pupil_radius=self.cfg.strehl_pupil_radius,
-                    zernike_terms=self.cfg.strehl_zernike_terms,
-                )
+            strehl_terms = max(1, int(self.cfg.strehl_zernike_terms))
+            strehl_zernike_order = max(
+                1,
+                int(math.ceil((math.sqrt(max(1, 8 * strehl_terms + 1)) - 3.0) / 2.0)),
             )
+            strehl_cfg = _build_unified_versioned_config(
+                3,
+                "strehl_quality_assessor",
+                zernike_max_order=strehl_zernike_order,
+            )
+            if strehl_cfg is None and _StrehlConfig is not None:
+                strehl_cfg = _StrehlConfig(
+                    zernike_max_order=strehl_zernike_order,
+                )
+            self._strehl = _build_unified_versioned_instance(
+                3,
+                "strehl_quality_assessor",
+                config=strehl_cfg,
+            )
+            if self._strehl is None:
+                self._strehl = (
+                    _StrehlQualityAssessor()
+                    if strehl_cfg is None
+                    else _StrehlQualityAssessor(config=strehl_cfg)
+                )
             LOGGER.info("v3 Strehl quality assessor enabled: Z%d", self.cfg.strehl_zernike_terms)
 
         self._hal = None
         if self.cfg.hal_enabled and _HardwareAbstractionLayer is not None:
-            self._hal = _HardwareAbstractionLayer()
+            self._hal = _build_unified_versioned_instance(3, "hardware_abstraction_layer")
+            if self._hal is None:
+                self._hal = _HardwareAbstractionLayer()
             LOGGER.info("v3 Hardware abstraction layer enabled")
 
         self._autofocus = None
         if self.cfg.laplacian_autofocus_enabled and _LaplacianAutofocus is not None:
-            from SpotZoom_Machine_Learning_v3.laplacian_autofocus import AutofocusConfig
-            self._autofocus = _LaplacianAutofocus(
-                config=AutofocusConfig(
-                    scan_range=self.cfg.autofocus_scan_range,
-                    scan_steps=self.cfg.autofocus_scan_steps,
+            autofocus_span = max(1.0, float(self.cfg.autofocus_scan_range))
+            autofocus_steps = max(2, int(self.cfg.autofocus_scan_steps))
+            autofocus_half_range = autofocus_span * 0.5
+            autofocus_coarse_step = max(1.0, autofocus_span / max(1, autofocus_steps - 1))
+            autofocus_fine_step = max(1.0, autofocus_coarse_step / 5.0)
+            autofocus_cfg = _build_unified_versioned_config(
+                3,
+                "laplacian_autofocus",
+                search_range=(-autofocus_half_range, autofocus_half_range),
+                coarse_step=autofocus_coarse_step,
+                fine_step=autofocus_fine_step,
+                stability_window=self.cfg.autofocus_stability_window,
+            )
+            if autofocus_cfg is None and _AutofocusConfig is not None:
+                autofocus_cfg = _AutofocusConfig(
+                    search_range=(-autofocus_half_range, autofocus_half_range),
+                    coarse_step=autofocus_coarse_step,
+                    fine_step=autofocus_fine_step,
                     stability_window=self.cfg.autofocus_stability_window,
                 )
+            self._autofocus = _build_unified_versioned_instance(
+                3,
+                "laplacian_autofocus",
+                config=autofocus_cfg,
             )
+            if self._autofocus is None:
+                self._autofocus = (
+                    _LaplacianAutofocus()
+                    if autofocus_cfg is None
+                    else _LaplacianAutofocus(config=autofocus_cfg)
+                )
             LOGGER.info("v3 Laplacian autofocus enabled: range=%d steps=%d",
                         self.cfg.autofocus_scan_range, self.cfg.autofocus_scan_steps)
 
         self._synth = None
         if self.cfg.synthetic_data_enabled and _SyntheticDataGenerator is not None:
-            from SpotZoom_Machine_Learning_v3.synthetic_data_generator import SyntheticDataConfig
-            self._synth = _SyntheticDataGenerator(
-                config=SyntheticDataConfig(
-                    aberration_levels=self.cfg.synth_aberration_levels,
-                    noise_levels=self.cfg.synth_noise_levels,
-                    images_per_config=self.cfg.synth_images_per_config,
-                )
+            synth_cfg = _build_unified_versioned_config(3, "synthetic_data_generator")
+            if synth_cfg is None and _SyntheticDataConfig is not None:
+                synth_cfg = _SyntheticDataConfig()
+            self._synth = _build_unified_versioned_instance(
+                3,
+                "synthetic_data_generator",
+                config=synth_cfg,
             )
+            if self._synth is None:
+                self._synth = (
+                    _SyntheticDataGenerator()
+                    if synth_cfg is None
+                    else _SyntheticDataGenerator(config=synth_cfg)
+                )
             LOGGER.info("v3 Synthetic data generator enabled")
 
         self._dm_cal = None
         if self.cfg.dm_calibrator_enabled and _DMCalibrator is not None:
-            self._dm_cal = _DMCalibrator()
+            self._dm_cal = _build_unified_versioned_instance(3, "deformable_mirror_calibrator")
+            if self._dm_cal is None:
+                self._dm_cal = _DMCalibrator()
             LOGGER.info("v3 Deformable mirror calibrator enabled")
 
         self._sys_id = None
         if self.cfg.sys_identifier_enabled and _SystemIdentifier is not None:
-            from SpotZoom_Machine_Learning_v3.system_identifier import SysIdConfig
-            self._sys_id = _SystemIdentifier(
-                config=SysIdConfig(
-                    excitation_steps=self.cfg.sysid_excitation_steps,
-                    model_order=self.cfg.sysid_model_order,
-                )
+            sysid_model_order = max(1, int(self.cfg.sysid_model_order))
+            sysid_excitation_steps = max(16, int(self.cfg.sysid_excitation_steps))
+            sysid_cfg = _build_unified_versioned_config(
+                3,
+                "system_identifier",
+                arx_order_na=sysid_model_order,
+                arx_order_nb=sysid_model_order,
+                simulation_steps=sysid_excitation_steps,
             )
+            if sysid_cfg is None and _SysIdConfig is not None:
+                sysid_cfg = _SysIdConfig(
+                    arx_order_na=sysid_model_order,
+                    arx_order_nb=sysid_model_order,
+                    simulation_steps=sysid_excitation_steps,
+                )
+            self._sys_id = _build_unified_versioned_instance(
+                3,
+                "system_identifier",
+                config=sysid_cfg,
+            )
+            if self._sys_id is None:
+                self._sys_id = (
+                    _SystemIdentifier()
+                    if sysid_cfg is None
+                    else _SystemIdentifier(config=sysid_cfg)
+                )
             LOGGER.info("v3 System identifier enabled: order=%d", self.cfg.sysid_model_order)
 
-        # 鈹€鈹€ v4 鍒涙柊妯″潡鍒濆鍖?鈹€鈹€
+        # ===== v4 创新模块初始化 =====
         self._sensor_fusion = None
-        if self.cfg.frontier_v4_bundle_enabled and _MultiSensorFusion is not None and _FusionConfig is not None:
+        if self.cfg.frontier_v4_bundle_enabled and _MultiSensorFusion is not None:
             try:
-                self._sensor_fusion = _MultiSensorFusion(_FusionConfig())
+                fusion_cfg = _build_unified_versioned_config(4, "multi_sensor_fusion")
+                if fusion_cfg is None and _FusionConfig is not None:
+                    fusion_cfg = _FusionConfig()
+                self._sensor_fusion = _build_unified_versioned_instance(
+                    4,
+                    "multi_sensor_fusion",
+                    config=fusion_cfg,
+                )
+                if self._sensor_fusion is None:
+                    self._sensor_fusion = (
+                        _MultiSensorFusion()
+                        if fusion_cfg is None
+                        else _MultiSensorFusion(fusion_cfg)
+                    )
                 LOGGER.info("v4 Multi-sensor fusion enabled")
             except Exception as exc:
                 LOGGER.debug("v4 MultiSensorFusion init skipped: %s", exc)
 
         self._ao_corrector = None
-        if self.cfg.frontier_v4_bundle_enabled and _OnlineAOCorrector is not None and _AOCorrectorConfig is not None:
+        if self.cfg.frontier_v4_bundle_enabled and _OnlineAOCorrector is not None:
             try:
-                self._ao_corrector = _OnlineAOCorrector(_AOCorrectorConfig())
+                ao_corrector_cfg = _build_unified_versioned_config(4, "online_ao_corrector")
+                if ao_corrector_cfg is None and _AOCorrectorConfig is not None:
+                    ao_corrector_cfg = _AOCorrectorConfig()
+                self._ao_corrector = _build_unified_versioned_instance(
+                    4,
+                    "online_ao_corrector",
+                    config=ao_corrector_cfg,
+                )
+                if self._ao_corrector is None:
+                    self._ao_corrector = (
+                        _OnlineAOCorrector()
+                        if ao_corrector_cfg is None
+                        else _OnlineAOCorrector(ao_corrector_cfg)
+                    )
                 LOGGER.info("v4 Online AO corrector enabled")
             except Exception as exc:
                 LOGGER.debug("v4 OnlineAOCorrector init skipped: %s", exc)
@@ -7159,48 +8001,104 @@ class SpotZoomController:
         self._beam_engine = None
         if self.cfg.frontier_v4_bundle_enabled and _BeamPropagationEngine is not None:
             try:
-                self._beam_engine = _BeamPropagationEngine()
+                self._beam_engine = _build_unified_versioned_instance(4, "beam_propagation_engine")
+                if self._beam_engine is None:
+                    self._beam_engine = _BeamPropagationEngine()
                 LOGGER.info("v4 Beam propagation engine enabled")
             except Exception as exc:
                 LOGGER.debug("v4 BeamPropagationEngine init skipped: %s", exc)
 
         self._anomaly_healer = None
-        if self.cfg.frontier_v4_bundle_enabled and _IntelligentAnomalyHealer is not None and _AnomalyHealerConfig is not None:
+        if self.cfg.frontier_v4_bundle_enabled and _IntelligentAnomalyHealer is not None:
             try:
-                self._anomaly_healer = _IntelligentAnomalyHealer(_AnomalyHealerConfig())
+                anomaly_cfg = _build_unified_versioned_config(4, "intelligent_anomaly_healer")
+                if anomaly_cfg is None and _AnomalyHealerConfig is not None:
+                    anomaly_cfg = _AnomalyHealerConfig()
+                self._anomaly_healer = _build_unified_versioned_instance(
+                    4,
+                    "intelligent_anomaly_healer",
+                    config=anomaly_cfg,
+                )
+                if self._anomaly_healer is None:
+                    self._anomaly_healer = (
+                        _IntelligentAnomalyHealer()
+                        if anomaly_cfg is None
+                        else _IntelligentAnomalyHealer(anomaly_cfg)
+                    )
                 LOGGER.info("v4 Intelligent anomaly healer enabled")
             except Exception as exc:
                 LOGGER.debug("v4 IntelligentAnomalyHealer init skipped: %s", exc)
 
         self._bayesian_opt = None
-        if self.cfg.frontier_v4_bundle_enabled and _MultiObjectiveBayesianOpt is not None and _BayesianOptConfig is not None:
+        if self.cfg.frontier_v4_bundle_enabled and _MultiObjectiveBayesianOpt is not None:
             try:
-                self._bayesian_opt = _MultiObjectiveBayesianOpt(_BayesianOptConfig())
+                bayes_cfg = _build_unified_versioned_config(4, "multi_objective_bayesian_opt")
+                if bayes_cfg is None and _BayesianOptConfig is not None:
+                    bayes_cfg = _BayesianOptConfig()
+                self._bayesian_opt = _build_unified_versioned_instance(
+                    4,
+                    "multi_objective_bayesian_opt",
+                    config=bayes_cfg,
+                )
+                if self._bayesian_opt is None:
+                    self._bayesian_opt = (
+                        _MultiObjectiveBayesianOpt()
+                        if bayes_cfg is None
+                        else _MultiObjectiveBayesianOpt(bayes_cfg)
+                    )
                 LOGGER.info("v4 Multi-objective Bayesian optimizer enabled")
             except Exception as exc:
                 LOGGER.debug("v4 MultiObjectiveBayesianOpt init skipped: %s", exc)
 
         self._adaptive_scheduler = None
-        if self.cfg.frontier_v4_bundle_enabled and _AdaptiveScheduler is not None and _SchedulerConfig is not None:
+        if self.cfg.frontier_v4_bundle_enabled and _AdaptiveScheduler is not None:
             try:
-                from SpotZoom_Machine_Learning_v4.adaptive_scheduler import TaskPriority as _v4TP
-                self._adaptive_scheduler = _AdaptiveScheduler(_SchedulerConfig())
+                scheduler_cfg = _build_unified_versioned_config(4, "adaptive_scheduler")
+                if scheduler_cfg is None and _SchedulerConfig is not None:
+                    scheduler_cfg = _SchedulerConfig()
+                self._adaptive_scheduler = _build_unified_versioned_instance(
+                    4,
+                    "adaptive_scheduler",
+                    config=scheduler_cfg,
+                )
+                if self._adaptive_scheduler is None:
+                    self._adaptive_scheduler = (
+                        _AdaptiveScheduler()
+                        if scheduler_cfg is None
+                        else _AdaptiveScheduler(scheduler_cfg)
+                    )
+                task_priority = _V4TaskPriority
+                if task_priority is None:
+                    raise RuntimeError("TaskPriority enum unavailable")
                 self._adaptive_scheduler.register_task(
-                    "detection", _v4TP.HIGH, period_ms=33, estimated_cost_ms=15)
+                    "detection", task_priority.HIGH, period_ms=33, estimated_cost_ms=15)
                 self._adaptive_scheduler.register_task(
-                    "kalman", _v4TP.NORMAL, period_ms=33, estimated_cost_ms=5)
+                    "kalman", task_priority.NORMAL, period_ms=33, estimated_cost_ms=5)
                 self._adaptive_scheduler.register_task(
-                    "quality", _v4TP.NORMAL, period_ms=100, estimated_cost_ms=8)
+                    "quality", task_priority.NORMAL, period_ms=100, estimated_cost_ms=8)
                 self._adaptive_scheduler.register_task(
-                    "logging", _v4TP.LOW, period_ms=1000, estimated_cost_ms=2)
+                    "logging", task_priority.LOW, period_ms=1000, estimated_cost_ms=2)
                 LOGGER.info("v4 Adaptive scheduler enabled")
             except Exception as exc:
                 LOGGER.debug("v4 AdaptiveScheduler init skipped: %s", exc)
 
         self._digital_twin = None
-        if self.cfg.frontier_v4_bundle_enabled and _DigitalTwinEnhancer is not None and _TwinConfig is not None:
+        if self.cfg.frontier_v4_bundle_enabled and _DigitalTwinEnhancer is not None:
             try:
-                self._digital_twin = _DigitalTwinEnhancer(_TwinConfig())
+                twin_cfg = _build_unified_versioned_config(4, "digital_twin_enhancer")
+                if twin_cfg is None and _TwinConfig is not None:
+                    twin_cfg = _TwinConfig()
+                self._digital_twin = _build_unified_versioned_instance(
+                    4,
+                    "digital_twin_enhancer",
+                    config=twin_cfg,
+                )
+                if self._digital_twin is None:
+                    self._digital_twin = (
+                        _DigitalTwinEnhancer()
+                        if twin_cfg is None
+                        else _DigitalTwinEnhancer(twin_cfg)
+                    )
                 LOGGER.info("v4 Digital twin enhancer enabled")
             except Exception as exc:
                 LOGGER.debug("v4 DigitalTwinEnhancer init skipped: %s", exc)
@@ -7301,13 +8199,13 @@ class SpotZoomController:
             if abs(dx) > self.cfg.tolerance_px:
                 x_step_mag = self._calc_axis_steps("x", dx)
                 x_steps = x_step_mag * self.cfg.x_error_to_stage_sign * (1 if dx > 0 else -1)
-                # --- 瀹夊叏妫€鏌?---
+                # --- 安全检查 ---
                 if self._safety is not None and not self._safety.check_move_x(x_steps):
                     raise RuntimeError(f"Safety: X move blocked. {self._safety.state.last_violation}")
                 self.xy_stage.move_x(x_steps)
                 if self._safety is not None:
                     self._safety.record_move_x(x_steps)
-                # --- 杞ㄨ抗璁板綍 ---
+                # --- 轨迹记录 ---
                 if self._trajectory is not None:
                     self._trajectory.record_move_x(x_steps)
                 if self.reporter is not None:
@@ -7315,13 +8213,13 @@ class SpotZoomController:
             if abs(dy) > self.cfg.tolerance_px:
                 y_step_mag = self._calc_axis_steps("y", dy)
                 y_steps = y_step_mag * self.cfg.y_error_to_stage_sign * (1 if dy > 0 else -1)
-                # --- 瀹夊叏妫€鏌?---
+                # --- 安全检查 ---
                 if self._safety is not None and not self._safety.check_move_y(y_steps):
                     raise RuntimeError(f"Safety: Y move blocked. {self._safety.state.last_violation}")
                 self.xy_stage.move_y(y_steps)
                 if self._safety is not None:
                     self._safety.record_move_y(y_steps)
-                # --- 杞ㄨ抗璁板綍 ---
+                # --- 轨迹记录 ---
                 if self._trajectory is not None:
                     self._trajectory.record_move_y(y_steps)
                 if self.reporter is not None:
@@ -7376,6 +8274,46 @@ class SpotZoomController:
                 if self.reporter is not None:
                     self.reporter.event("frontier_v7_denoise_failed", error=str(exc))
                 prepared = frame
+
+        if self._frontier_v6_diffusion is not None:
+            self._inc_metric("frontier_v6_diffusion_calls")
+            try:
+                diffusion_report = self._frontier_v6_diffusion.enhance(prepared)
+                enhanced = getattr(diffusion_report, "enhanced_image", None)
+                if not isinstance(enhanced, np.ndarray) or enhanced.size == 0:
+                    raise ValueError("v6 diffusion enhancer returned empty image")
+                enhanced_bgr = self._as_uint8_bgr(enhanced)
+                if enhanced_bgr.shape[:2] != prepared.shape[:2]:
+                    enhanced_bgr = cv2.resize(
+                        enhanced_bgr,
+                        (prepared.shape[1], prepared.shape[0]),
+                        interpolation=cv2.INTER_CUBIC,
+                    )
+                blend = float(np.clip(float(self.cfg.frontier_v6_diffusion_blend), 0.0, 1.0))
+                if blend >= 1.0:
+                    prepared = enhanced_bgr
+                elif blend > 0.0:
+                    prepared = cv2.addWeighted(
+                        self._as_uint8_bgr(prepared),
+                        1.0 - blend,
+                        enhanced_bgr,
+                        blend,
+                        0.0,
+                    )
+                if self.reporter is not None:
+                    self.reporter.event(
+                        "frontier_v6_diffusion_applied",
+                        blend=round(blend, 4),
+                        iterations=int(getattr(diffusion_report, "iterations_used", 0) or 0),
+                        snr_before=round(float(getattr(diffusion_report, "snr_before", 0.0) or 0.0), 6),
+                        snr_after=round(float(getattr(diffusion_report, "snr_after", 0.0) or 0.0), 6),
+                        enhancement=round(float(getattr(diffusion_report, "enhancement_factor", 0.0) or 0.0), 6),
+                    )
+            except Exception as exc:
+                self._inc_metric("frontier_v6_diffusion_failures")
+                LOGGER.warning("Frontier v6 diffusion preprocess failed; fallback to current frame: %s", exc)
+                if self.reporter is not None:
+                    self.reporter.event("frontier_v6_diffusion_failed", error=str(exc))
 
         if self._frontier_v26_foundation is not None:
             self._inc_metric("frontier_v26_foundation_calls")
@@ -9830,6 +10768,124 @@ class SpotZoomController:
             )
         return fallback
 
+    def _detect_with_multiscale_fallback(
+        self,
+        frame: np.ndarray,
+        *,
+        tag: str,
+        attempt: int,
+    ) -> Optional[SpotDetection]:
+        detector = self._frontier_v6_multiscale
+        if detector is None:
+            return None
+
+        self._inc_metric("frontier_v6_multiscale_attempts")
+        try:
+            result = detector.detect(frame)
+        except Exception as exc:
+            self._inc_metric("frontier_v6_multiscale_failures")
+            LOGGER.warning("Frontier v6 multi-scale fallback failed; bypassing: %s", exc)
+            if self.reporter is not None:
+                self.reporter.event(
+                    "frontier_v6_multiscale_failed",
+                    tag=tag,
+                    attempt=attempt,
+                    error=str(exc),
+                )
+            return None
+
+        center_raw = getattr(result, "center", None)
+        if not isinstance(center_raw, (tuple, list)) or len(center_raw) < 2:
+            self._inc_metric("frontier_v6_multiscale_miss")
+            if self.reporter is not None:
+                self.reporter.event("frontier_v6_multiscale_miss", tag=tag, attempt=attempt)
+            return None
+
+        cx = float(center_raw[0])
+        cy = float(center_raw[1])
+        if not np.isfinite(cx) or not np.isfinite(cy):
+            self._inc_metric("frontier_v6_multiscale_miss")
+            if self.reporter is not None:
+                self.reporter.event(
+                    "frontier_v6_multiscale_miss",
+                    tag=tag,
+                    attempt=attempt,
+                    reason="non_finite_center",
+                )
+            return None
+
+        h, w = frame.shape[:2]
+        center = self._clip_center((int(round(cx)), int(round(cy))), (h, w))
+        raw_scale_idx = getattr(result, "best_scale", -1)
+        try:
+            scale_idx = int(raw_scale_idx)
+        except (TypeError, ValueError):
+            scale_idx = -1
+        detector_scales = getattr(getattr(detector, "config", None), "scales", ())
+        scale_hint = 0
+        if isinstance(detector_scales, (tuple, list)) and 0 <= scale_idx < len(detector_scales):
+            try:
+                scale_hint = int(detector_scales[scale_idx])
+            except Exception:
+                scale_hint = 0
+
+        if self._last_detection is not None:
+            bbox = self._recenter_bbox(self._last_detection.bbox, center, (h, w))
+            class_id = int(self._last_detection.class_id)
+        elif self._klt_reference_detection is not None:
+            bbox = self._recenter_bbox(self._klt_reference_detection.bbox, center, (h, w))
+            class_id = int(self._klt_reference_detection.class_id)
+        else:
+            radius = max(6, int(round(max(3, scale_hint or 7) * 1.5)))
+            x1 = max(0, center[0] - radius)
+            y1 = max(0, center[1] - radius)
+            x2 = min(w, center[0] + radius + 1)
+            y2 = min(h, center[1] + radius + 1)
+            bbox = (x1, y1, x2, y2)
+            class_id = -4
+
+        base_confidence = float(getattr(result, "confidence", 0.0) or 0.0)
+        if not np.isfinite(base_confidence):
+            base_confidence = 0.0
+        confidence_scale = float(np.clip(float(self.cfg.frontier_v6_multiscale_confidence_scale), 0.0, 1.0))
+        confidence = float(np.clip(base_confidence * confidence_scale, 0.0, 0.95))
+        min_confidence = float(np.clip(float(self.cfg.frontier_v6_multiscale_min_confidence), 0.0, 1.0))
+        if confidence < min_confidence:
+            self._inc_metric("frontier_v6_multiscale_rejects")
+            if self.reporter is not None:
+                self.reporter.event(
+                    "frontier_v6_multiscale_rejected",
+                    tag=tag,
+                    attempt=attempt,
+                    reason="confidence_too_low",
+                    conf=round(confidence, 6),
+                    min_conf=round(min_confidence, 6),
+                    base_conf=round(base_confidence, 6),
+                )
+            return None
+
+        fallback = SpotDetection(
+            center=center,
+            bbox=bbox,
+            confidence=confidence,
+            label="multiscale_fallback",
+            class_id=class_id,
+        )
+        self._inc_metric("frontier_v6_multiscale_hits")
+        if self.reporter is not None:
+            self.reporter.event(
+                "frontier_v6_multiscale_hit",
+                tag=tag,
+                attempt=attempt,
+                center=list(fallback.center),
+                conf=round(float(fallback.confidence), 6),
+                base_conf=round(base_confidence, 6),
+                best_scale_index=scale_idx,
+                best_scale=scale_hint,
+                candidates=len(getattr(result, "all_detections", []) or []),
+            )
+        return fallback
+
     def _detect_with_stardist_fallback(
         self,
         frame: np.ndarray,
@@ -10092,7 +11148,7 @@ class SpotZoomController:
         target: Optional[Tuple[int, int]] = None,
     ) -> SpotDetection:
         last_frame: Optional[np.ndarray] = None
-        focus_score: Optional[float] = None  # [FIX] 鍒濆鍖栦负 None锛岄槻姝?UnboundLocalError
+        focus_score: Optional[float] = None  # [FIX] 初始化为 None，防止 UnboundLocalError
         for attempt in range(1, self.cfg.detect_retry + 1):
             if self.reporter is not None:
                 self.reporter.metrics.detect_attempts += 1
@@ -10185,6 +11241,43 @@ class SpotZoomController:
                                 conf=round(float(detection.confidence), 4),
                                 focus_score=round(float(focus_score), 3),
                             )
+
+            if detection is None:
+                detection = self._detect_with_multiscale_fallback(
+                    detect_frame,
+                    tag=tag,
+                    attempt=attempt,
+                )
+                if detection is not None:
+                    detection = self._refine_with_sam2_segmenter(
+                        frame,
+                        detection,
+                        tag=tag,
+                        attempt=attempt,
+                        source="multiscale_fallback",
+                    )
+                    detection = self._apply_frontier_v26_aberration_gate(
+                        frame,
+                        detection,
+                        tag=tag,
+                        attempt=attempt,
+                        source="multiscale_fallback",
+                    )
+                    if detection is not None:
+                        detection = self._apply_frontier_optics_quality_gate(
+                            frame,
+                            detection,
+                            tag=tag,
+                            attempt=attempt,
+                            source="multiscale_fallback",
+                        )
+                    if detection is not None:
+                        detection = self._smooth_detection(detection)
+                        self._last_detection = detection
+                        self._track_miss_streak = 0
+                        self._update_klt_reference(frame, detection)
+                        if self.reporter is not None:
+                            self.reporter.metrics.detect_success += 1
 
             if detection is None:
                 detection = self._detect_with_lodestar_fallback(
@@ -18282,7 +19375,7 @@ class SpotZoomController:
         detection = self._apply_frontier_v56_assoc(detection)
         detection = self._apply_frontier_v57_assoc(detection)
 
-        # --- 浜氬儚绱犺川蹇冨畾浣?---
+        # --- 亚像素质心定位 ---
         if self._subpixel is not None and self._last_frame is not None:
             sub_result = self._subpixel.compute(self._last_frame, detection.bbox)
             if sub_result is not None:
@@ -18294,7 +19387,7 @@ class SpotZoomController:
                     class_id=detection.class_id,
                 )
 
-        # --- 鍗″皵鏇兼护娉㈠钩婊?---
+        # --- 卡尔曼滤波平滑 ---
         if self._kalman is not None:
             smoothed = self._kalman.update(detection.center[0], detection.center[1])
             if smoothed != detection.center:
@@ -18306,7 +19399,7 @@ class SpotZoomController:
                     class_id=detection.class_id,
                 )
 
-        # --- 鍘熸湁婊戝姩绐楀彛骞虫粦 ---
+        # --- 原有滑动窗口平滑 ---
         self._det_history.append((int(detection.center[0]), int(detection.center[1])))
         if len(self._det_history) <= 1:
             return detection
@@ -19057,7 +20150,7 @@ class SpotZoomController:
         )
 
     def close(self) -> None:
-        # --- 閫氱敤鍒涙柊妯″潡娓呯悊 (v4~v22 鎵€鏈夋ā鍧? ---
+        # --- 通用创新模块清理（v4~v22 所有模块） ---
         _ml_attrs_to_close = [
             ("_health_monitor", "reset"), ("_pipeline_orchestrator", "abort"),
             ("_temporal_fusion", "reset"), ("_self_tuning", "reset"),
@@ -19098,6 +20191,7 @@ class SpotZoomController:
             ("_frontier_v26_aberration", "reset"),
             ("_frontier_otf_gate", "reset"),
             ("_frontier_phase_gate", "reset"),
+            ("_frontier_v6_multiscale", "reset"),
             ("_frontier_stardist", "reset"),
             ("_frontier_v27_mle_fitter", "reset"),
             ("_frontier_v27_wavelet", "reset"),
@@ -19187,6 +20281,10 @@ def _classic_backend_available() -> bool:
     return _ml_classic_detector is not None and hasattr(_ml_classic_detector, "ClassicSpotDetector")
 
 
+def _requested_detector_backend(args: argparse.Namespace) -> str:
+    return str(getattr(args, "detector_backend", "auto")).strip().lower()
+
+
 def _check_yolo_backend_prereqs(args: argparse.Namespace) -> Tuple[bool, Optional[str]]:
     if not args.model_path:
         return False, "YOLO model path is missing. Provide --model-path or SPOTZOOM_MODEL_PATH."
@@ -19208,7 +20306,7 @@ def _check_yolo_backend_prereqs(args: argparse.Namespace) -> Tuple[bool, Optiona
 
 
 def _resolve_detector_backend(args: argparse.Namespace) -> str:
-    backend = str(getattr(args, "detector_backend", "auto")).strip().lower()
+    backend = _requested_detector_backend(args)
     if backend == "classic":
         return "classic"
     if backend == "yolo":
@@ -19263,11 +20361,11 @@ def _build_yolo_detector(args: argparse.Namespace):
     )
 
 
-def build_detector(args):
+def build_detector(args, resolved_backend: Optional[str] = None):
     """Build and return the configured detector backend."""
-    backend = _resolve_detector_backend(args)
+    backend = resolved_backend or _resolve_detector_backend(args)
     if backend == "classic":
-        if str(getattr(args, "detector_backend", "auto")).strip().lower() == "auto":
+        if _requested_detector_backend(args) == "auto":
             LOGGER.warning("YOLO backend unavailable; falling back to classic detector")
         return _build_classic_detector(args)
     return _build_yolo_detector(args)
@@ -19335,7 +20433,7 @@ def worker_main(args: argparse.Namespace) -> int:
         "unsupported_commands": 0,
     }
     latency_samples_ms: List[float] = []
-    requested_backend = str(getattr(args, "detector_backend", "auto")).strip().lower()
+    requested_backend = _requested_detector_backend(args)
     resolved_backend = requested_backend
 
     def _emit(payload: Dict) -> None:
@@ -19363,8 +20461,8 @@ def worker_main(args: argparse.Namespace) -> int:
         return frame, None
 
     try:
-        detector = build_detector(args)
         resolved_backend = _resolve_detector_backend(args)
+        detector = build_detector(args, resolved_backend=resolved_backend)
     except Exception as exc:
         _emit({"ok": False, "error": str(exc)})
         return 1
@@ -19525,6 +20623,26 @@ def build_xy_stage(args):
             acceleration=args.newport_acceleration,
             wait_each_move=not args.newport_no_wait,
         )
+    if args.xy_driver == "newport-mrc4":
+        return NewportMRC4MirrorStage(
+            conn=args.newport_conn,
+            mirror1_x_axis=args.mrc_mirror1_x_axis,
+            mirror1_y_axis=args.mrc_mirror1_y_axis,
+            mirror2_x_axis=args.mrc_mirror2_x_axis,
+            mirror2_y_axis=args.mrc_mirror2_y_axis,
+            mirror1_x_sign=args.mrc_mirror1_x_sign,
+            mirror1_y_sign=args.mrc_mirror1_y_sign,
+            mirror2_x_sign=args.mrc_mirror2_x_sign,
+            mirror2_y_sign=args.mrc_mirror2_y_sign,
+            backend=args.newport_backend,
+            timeout=args.newport_timeout,
+            multiaddr=args.newport_multiaddr,
+            scan=not args.newport_no_scan,
+            velocity=args.newport_velocity,
+            acceleration=args.newport_acceleration,
+            wait_each_move=not args.newport_no_wait,
+            virtual_axis_mode=args.mrc_virtual_axis_mode,
+        )
     raise ValueError(f"Unsupported xy_driver: {args.xy_driver}")
 
 
@@ -19542,7 +20660,165 @@ def build_z_stage(args, window):
             password=args.xps_password,
             group_name=args.xps_group,
         )
+    if args.z_driver == "picomotor":
+        return NewportPicomotorZAxis(
+            conn=args.z_picomotor_conn,
+            axis=args.z_picomotor_axis,
+            hw_sign=args.z_picomotor_sign,
+            backend=args.newport_backend,
+            timeout=args.newport_timeout,
+            multiaddr=args.newport_multiaddr,
+            scan=not args.newport_no_scan,
+            velocity=args.z_picomotor_velocity,
+            acceleration=args.z_picomotor_acceleration,
+        )
     raise ValueError(f"Unsupported z_driver: {args.z_driver}")
+
+
+def _startup_uses_real_xy_driver(args: argparse.Namespace) -> bool:
+    return str(args.xy_driver).strip().lower() in {"thorlabs", "newport", "newport-mrc4"}
+
+
+def _startup_uses_real_z_motor_driver(args: argparse.Namespace) -> bool:
+    return str(args.z_driver).strip().lower() in {"xps", "picomotor"}
+
+
+def _wait_startup_motion_if_needed(stage, axis: Optional[str] = None) -> None:
+    wait_method = getattr(stage, "wait_startup_axis", None)
+    if callable(wait_method):
+        wait_method(axis=axis)
+
+
+def _run_startup_motion_probe(
+    *,
+    label: str,
+    forward,
+    backward,
+    timeout_s: float,
+    reporter: Optional["RunReporter"] = None,
+) -> None:
+    reporter_payload = {"label": str(label), "timeout_s": round(float(timeout_s), 6)}
+    if reporter is not None:
+        reporter.event("startup_motion_probe_started", **reporter_payload)
+
+    forward_started = time.perf_counter()
+    forward()
+    forward_elapsed = time.perf_counter() - forward_started
+    if forward_elapsed > timeout_s:
+        raise RuntimeError(
+            f"{label} 正向启动运动自检超时：{forward_elapsed:.3f}s > {timeout_s:.3f}s"
+        )
+
+    backward_started = time.perf_counter()
+    backward()
+    backward_elapsed = time.perf_counter() - backward_started
+    if backward_elapsed > timeout_s:
+        raise RuntimeError(
+            f"{label} 反向启动运动自检超时：{backward_elapsed:.3f}s > {timeout_s:.3f}s"
+        )
+
+    LOGGER.info(
+        "启动运动自检通过：%s forward=%.3fs backward=%.3fs threshold=%.3fs",
+        label,
+        forward_elapsed,
+        backward_elapsed,
+        timeout_s,
+    )
+    if reporter is not None:
+        reporter.event(
+            "startup_motion_probe_passed",
+            **reporter_payload,
+            forward_elapsed_ms=round(forward_elapsed * 1000.0, 4),
+            backward_elapsed_ms=round(backward_elapsed * 1000.0, 4),
+        )
+
+
+def run_startup_motion_check(
+    args: argparse.Namespace,
+    *,
+    xy_stage,
+    z_stage,
+    reporter: Optional["RunReporter"] = None,
+) -> None:
+    if not bool(args.startup_motion_check_enabled):
+        LOGGER.info("已禁用启动运动自检")
+        if reporter is not None:
+            reporter.event("startup_motion_check_skipped", reason="disabled")
+        return
+
+    xy_real = _startup_uses_real_xy_driver(args)
+    z_real = _startup_uses_real_z_motor_driver(args)
+    if not xy_real and not z_real:
+        if reporter is not None:
+            reporter.event("startup_motion_check_skipped", reason="no_real_motor_driver")
+        return
+
+    timeout_s = max(0.01, float(args.startup_motion_check_timeout))
+    xy_steps = max(1, int(args.startup_motion_check_xy_steps))
+    z_step = max(1e-6, float(args.startup_motion_check_z_step))
+
+    LOGGER.info(
+        "开始启动运动自检：xy_real=%s z_real=%s timeout=%.3fs xy_steps=%d z_step=%.6f",
+        xy_real,
+        z_real,
+        timeout_s,
+        xy_steps,
+        z_step,
+    )
+    if reporter is not None:
+        reporter.event(
+            "startup_motion_check_started",
+            xy_real=xy_real,
+            z_real=z_real,
+            timeout_s=round(timeout_s, 6),
+            xy_steps=xy_steps,
+            z_step=round(z_step, 6),
+        )
+
+    try:
+        if xy_real and xy_stage is not None:
+            _run_startup_motion_probe(
+                label=f"xy:{args.xy_driver}:x",
+                timeout_s=timeout_s,
+                reporter=reporter,
+                forward=lambda: (
+                    xy_stage.move_x(xy_steps),
+                    _wait_startup_motion_if_needed(xy_stage, "x"),
+                ),
+                backward=lambda: (
+                    xy_stage.move_x(-xy_steps),
+                    _wait_startup_motion_if_needed(xy_stage, "x"),
+                ),
+            )
+            _run_startup_motion_probe(
+                label=f"xy:{args.xy_driver}:y",
+                timeout_s=timeout_s,
+                reporter=reporter,
+                forward=lambda: (
+                    xy_stage.move_y(xy_steps),
+                    _wait_startup_motion_if_needed(xy_stage, "y"),
+                ),
+                backward=lambda: (
+                    xy_stage.move_y(-xy_steps),
+                    _wait_startup_motion_if_needed(xy_stage, "y"),
+                ),
+            )
+
+        if z_real and z_stage is not None:
+            _run_startup_motion_probe(
+                label=f"z:{args.z_driver}",
+                timeout_s=timeout_s,
+                reporter=reporter,
+                forward=lambda: (z_stage.move_up(z_step), _wait_startup_motion_if_needed(z_stage)),
+                backward=lambda: (z_stage.move_down(z_step), _wait_startup_motion_if_needed(z_stage)),
+            )
+    except Exception as exc:
+        if reporter is not None:
+            reporter.event("startup_motion_check_failed", error=str(exc))
+        raise
+
+    if reporter is not None:
+        reporter.event("startup_motion_check_passed")
 
 
 def check_environment(args: argparse.Namespace) -> int:
@@ -19550,7 +20826,7 @@ def check_environment(args: argparse.Namespace) -> int:
     errors = []
     warnings = []
 
-    backend = str(getattr(args, "detector_backend", "auto")).strip().lower()
+    backend = _requested_detector_backend(args)
     if backend not in ("auto", "yolo", "classic"):
         errors.append(f"Unsupported --detector-backend: {backend}")
 
@@ -19588,13 +20864,52 @@ def check_environment(args: argparse.Namespace) -> int:
             if not _module_available_in_current_python(module_name):
                 errors.append(f"Missing dependency: {module_name}")
 
-    if args.xy_driver in ("thorlabs", "newport") and not _module_available_in_current_python("pylablib"):
+    motor_uses_pylablib = (
+        args.xy_driver in ("thorlabs", "newport", "newport-mrc4")
+        or args.z_driver == "picomotor"
+    )
+    if motor_uses_pylablib and not _module_available_in_current_python("pylablib"):
         errors.append("Missing dependency for motor control: pylablib")
 
     if args.z_driver == "xps":
         xps_dir = project_root / "XPS" / "__analysis_tmp" / "XPS-Q-Drivers" / "XPS-Q_Drivers" / "XPS-Q_Python_Drivers"
         if not xps_dir.exists():
             errors.append(f"XPS Python driver path not found: {xps_dir}")
+    if args.newport_timeout <= 0:
+        errors.append("--newport-timeout must be > 0")
+    if args.newport_velocity is not None and args.newport_velocity <= 0:
+        errors.append("--newport-velocity must be > 0 when provided")
+    if args.newport_acceleration is not None and args.newport_acceleration <= 0:
+        errors.append("--newport-acceleration must be > 0 when provided")
+    if args.xy_driver == "newport":
+        if args.newport_x_axis <= 0 or args.newport_y_axis <= 0:
+            errors.append("--newport-x-axis and --newport-y-axis must be > 0")
+        if args.newport_x_axis == args.newport_y_axis:
+            errors.append("--newport-x-axis and --newport-y-axis must be different")
+    if args.xy_driver == "newport-mrc4":
+        mrc_axes = [
+            args.mrc_mirror1_x_axis,
+            args.mrc_mirror1_y_axis,
+            args.mrc_mirror2_x_axis,
+            args.mrc_mirror2_y_axis,
+        ]
+        if any(axis <= 0 for axis in mrc_axes):
+            errors.append("All MRC mirror axes must be > 0")
+        if len(set(mrc_axes)) != 4:
+            errors.append("MRC 4-axis mapping requires four distinct Picomotor axes")
+        if str(args.mrc_virtual_axis_mode).strip().lower() not in {"mirror1", "mirror2", "shared"}:
+            errors.append("--mrc-virtual-axis-mode must be one of: mirror1, mirror2, shared")
+    if args.z_driver == "picomotor":
+        if args.z_picomotor_axis <= 0:
+            errors.append("--z-picomotor-axis must be > 0")
+        if args.z_picomotor_velocity is not None and args.z_picomotor_velocity <= 0:
+            errors.append("--z-picomotor-velocity must be > 0 when provided")
+        if args.z_picomotor_acceleration is not None and args.z_picomotor_acceleration <= 0:
+            errors.append("--z-picomotor-acceleration must be > 0 when provided")
+        if args.xy_driver == "newport-mrc4" and args.z_picomotor_conn == args.newport_conn:
+            errors.append(
+                "--z-picomotor-conn must point to a dedicated 8742 controller when --xy-driver=newport-mrc4"
+            )
 
     if args.enable_recovery_scan and args.recovery_scan_step <= 0:
         errors.append("--recovery-scan-step must be > 0 when recovery scan is enabled")
@@ -19844,12 +21159,32 @@ def check_environment(args: argparse.Namespace) -> int:
         errors.append("--frontier-temporal-association-distance must be > 0")
     if args.frontier_temporal_max_refine_shift_px < 0:
         errors.append("--frontier-temporal-max-refine-shift-px must be >= 0")
+    if args.frontier_v6_diffusion_blend < 0 or args.frontier_v6_diffusion_blend > 1:
+        errors.append("--frontier-v6-diffusion-blend must be in [0, 1]")
+    if args.frontier_v6_diffusion_num_iterations < 1:
+        errors.append("--frontier-v6-diffusion-num-iterations must be >= 1")
+    if args.frontier_v6_multiscale_confidence_scale < 0 or args.frontier_v6_multiscale_confidence_scale > 1:
+        errors.append("--frontier-v6-multiscale-confidence-scale must be in [0, 1]")
+    if args.frontier_v6_multiscale_min_confidence < 0 or args.frontier_v6_multiscale_min_confidence > 1:
+        errors.append("--frontier-v6-multiscale-min-confidence must be in [0, 1]")
     if args.frontier_v7_denoiser_blend < 0 or args.frontier_v7_denoiser_blend > 1:
         errors.append("--frontier-v7-denoiser-blend must be in [0, 1]")
     if args.frontier_v7_phase_max_shift_px < 0:
         errors.append("--frontier-v7-phase-max-shift-px must be >= 0")
     if args.frontier_v7_phase_blend < 0 or args.frontier_v7_phase_blend > 1:
         errors.append("--frontier-v7-phase-blend must be in [0, 1]")
+    if (
+        args.frontier_v6_diffusion_preprocess_enabled
+        and _get_unified_versioned_adapter(6, "diffusion_spot_enhancer") is None
+        and _DiffusionSpotEnhancer is None
+    ):
+        warnings.append("frontier v6 diffusion preprocess requested but diffusion_spot_enhancer is unavailable")
+    if (
+        args.frontier_v6_multiscale_fallback_enabled
+        and _get_unified_versioned_adapter(6, "multi_scale_spot_detector") is None
+        and _MultiScaleSpotDetector is None
+    ):
+        warnings.append("frontier v6 multi-scale fallback requested but multi_scale_spot_detector is unavailable")
     if args.frontier_flow_enabled and _ml_frontier_v18 is None:
         warnings.append("frontier flow requested but innovation_frontier_v18 is unavailable")
     if args.frontier_uncertainty_enabled and _ml_frontier_v17 is None:
@@ -20912,6 +22247,12 @@ def check_environment(args: argparse.Namespace) -> int:
         errors.append("--sim-jitter-px must be >= 0")
     if args.sim_noise_std < 0:
         errors.append("--sim-noise-std must be >= 0")
+    if args.startup_motion_check_timeout <= 0:
+        errors.append("--startup-motion-check-timeout must be > 0")
+    if args.startup_motion_check_xy_steps < 1:
+        errors.append("--startup-motion-check-xy-steps must be >= 1")
+    if args.startup_motion_check_z_step <= 0:
+        errors.append("--startup-motion-check-z-step must be > 0")
     if args.smooth_window > 8:
         warnings.append(f"--smooth-window={args.smooth_window} may add control lag")
     if args.adaptive_step and args.adaptive_step_min > args.adaptive_step_max:
@@ -20987,7 +22328,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--select-roi", dest="select_roi", action="store_true", default=True, help="Select ROI before alignment")
     parser.add_argument("--skip-roi", dest="select_roi", action="store_false", help="Skip ROI selection and use full capture area")
 
-    parser.add_argument("--xy-driver", choices=("thorlabs", "newport", "dryrun"), default="newport")
+    parser.add_argument("--xy-driver", choices=("thorlabs", "newport", "newport-mrc4", "dryrun"), default="newport")
     parser.add_argument("--device-id", default="97101208", help="Thorlabs device id")
     parser.add_argument("--thorlabs-dll-dir", default=None, help="Optional directory containing ftd2xx.dll")
     parser.add_argument("--x-channel", type=int, default=4, help="Thorlabs X channel")
@@ -21010,15 +22351,59 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--newport-velocity", type=int, default=None)
     parser.add_argument("--newport-acceleration", type=int, default=None)
     parser.add_argument("--newport-no-wait", action="store_true", help="Do not wait for each Newport move to finish")
+    parser.add_argument("--mrc-mirror1-x-axis", type=int, default=1, help="MRC mirror 1 X axis on the 8742 controller")
+    parser.add_argument("--mrc-mirror1-y-axis", type=int, default=2, help="MRC mirror 1 Y axis on the 8742 controller")
+    parser.add_argument("--mrc-mirror2-x-axis", type=int, default=3, help="MRC mirror 2 X axis on the 8742 controller")
+    parser.add_argument("--mrc-mirror2-y-axis", type=int, default=4, help="MRC mirror 2 Y axis on the 8742 controller")
+    parser.add_argument("--mrc-mirror1-x-sign", type=int, default=1, help="Hardware sign for MRC mirror 1 X axis")
+    parser.add_argument("--mrc-mirror1-y-sign", type=int, default=1, help="Hardware sign for MRC mirror 1 Y axis")
+    parser.add_argument("--mrc-mirror2-x-sign", type=int, default=1, help="Hardware sign for MRC mirror 2 X axis")
+    parser.add_argument("--mrc-mirror2-y-sign", type=int, default=1, help="Hardware sign for MRC mirror 2 Y axis")
+    parser.add_argument(
+        "--mrc-virtual-axis-mode",
+        choices=("mirror1", "mirror2", "shared"),
+        default="shared",
+        help="How the current XY loop maps virtual X/Y corrections onto the 4-axis dual-mirror stage",
+    )
 
-    parser.add_argument("--z-driver", choices=("wheel", "xps", "dryrun"), default="wheel")
+    parser.add_argument("--z-driver", choices=("wheel", "xps", "picomotor", "dryrun"), default="wheel")
     parser.add_argument("--z-step", type=float, default=1.0, help="Z step size")
     parser.add_argument("--z-up-sign", type=int, default=1, help="Wheel mode positive direction sign")
+    parser.add_argument("--z-picomotor-conn", type=int, default=1, help="Dedicated Picomotor controller index for the zoom axis")
+    parser.add_argument("--z-picomotor-axis", type=int, default=1, help="Axis number on the dedicated Picomotor Z controller")
+    parser.add_argument("--z-picomotor-sign", type=int, default=1, help="Positive direction sign for the Picomotor Z axis")
+    parser.add_argument("--z-picomotor-velocity", type=int, default=None, help="Optional velocity for the Picomotor Z axis")
+    parser.add_argument("--z-picomotor-acceleration", type=int, default=None, help="Optional acceleration for the Picomotor Z axis")
     parser.add_argument("--xps-ip", default="192.168.1.100")
     parser.add_argument("--xps-port", type=int, default=5001)
     parser.add_argument("--xps-user", default="Administrator")
     parser.add_argument("--xps-password", default="Administrator")
     parser.add_argument("--xps-group", default="ILS300LM")
+    parser.add_argument(
+        "--disable-startup-motion-check",
+        dest="startup_motion_check_enabled",
+        action="store_false",
+        default=True,
+        help="Disable real-motor startup motion self-check",
+    )
+    parser.add_argument(
+        "--startup-motion-check-timeout",
+        type=float,
+        default=1.0,
+        help="Maximum allowed elapsed time (s) for each startup probe move",
+    )
+    parser.add_argument(
+        "--startup-motion-check-xy-steps",
+        type=int,
+        default=1,
+        help="Probe distance in stage steps for each XY startup self-check move",
+    )
+    parser.add_argument(
+        "--startup-motion-check-z-step",
+        type=float,
+        default=1.0,
+        help="Probe distance for each Z startup self-check move",
+    )
 
     parser.add_argument("--tolerance-px", type=int, default=6, help="Pixel tolerance")
     parser.add_argument("--detect-retry", type=int, default=6)
@@ -21562,6 +22947,42 @@ def parse_args() -> argparse.Namespace:
         help="Maximum shift (px) allowed when temporal ensemble refines a detected center",
     )
     parser.add_argument(
+        "--frontier-v6-diffusion-preprocess",
+        dest="frontier_v6_diffusion_preprocess_enabled",
+        action="store_true",
+        help="Enable v6 diffusion-style spot enhancement before detection",
+    )
+    parser.add_argument(
+        "--frontier-v6-diffusion-blend",
+        type=float,
+        default=0.35,
+        help="Blend ratio in [0,1] for v6 diffusion-enhanced frame and current frame",
+    )
+    parser.add_argument(
+        "--frontier-v6-diffusion-num-iterations",
+        type=int,
+        default=5,
+        help="Number of diffusion denoising iterations used by v6 preprocessing",
+    )
+    parser.add_argument(
+        "--frontier-v6-multiscale-fallback",
+        dest="frontier_v6_multiscale_fallback_enabled",
+        action="store_true",
+        help="Enable v6 multi-scale detector as a fallback after primary detection misses",
+    )
+    parser.add_argument(
+        "--frontier-v6-multiscale-confidence-scale",
+        type=float,
+        default=0.85,
+        help="Confidence scaling factor in [0,1] applied to v6 multi-scale fallback detections",
+    )
+    parser.add_argument(
+        "--frontier-v6-multiscale-min-confidence",
+        type=float,
+        default=0.2,
+        help="Minimum confidence in [0,1] required to accept a v6 multi-scale fallback detection",
+    )
+    parser.add_argument(
         "--frontier-v7-denoiser",
         dest="frontier_v7_denoiser_enabled",
         action="store_true",
@@ -21758,7 +23179,7 @@ def parse_args() -> argparse.Namespace:
         help="Jitter sensitivity for frontier v24 step guard",
     )
 
-    # --- v25.0 鏂板 CLI 鍙傛暟 ---
+    # --- v25.0 新增 CLI 参数 ---
     parser.add_argument(
         "--frontier-uncertainty-localizer",
         dest="frontier_uncertainty_localizer_enabled",
@@ -24586,7 +26007,7 @@ def parse_args() -> argparse.Namespace:
         help="Enable legacy v4 auxiliary bundle (sensor fusion/AO/beam/anomaly/Bayes/scheduler/twin)",
     )
 
-    # --- v26.0 鏂板鍙傛暟 (SpotZoom_Machine_Learning_v2) ---
+    # --- v26.0 新增参数 (SpotZoom_Machine_Learning_v2) ---
     parser.add_argument(
         "--lodestar",
         dest="lodestar_enabled",
@@ -24636,19 +26057,19 @@ def parse_args() -> argparse.Namespace:
         help="Confidence gain multiplier applied to SAM2-style segmentation confidence",
     )
     parser.add_argument("--cl-ao", dest="cl_ao_enabled", action="store_true",
-                        help="Enable v26 closed-loop AO controller (鈫?HCIPy/AOtools)")
+                        help="Enable v26 closed-loop AO controller (HCIPy/AOtools inspired)")
     parser.add_argument("--fourier-psf", dest="fourier_psf_enabled", action="store_true",
-                        help="Enable v26 Fourier PSF analyzer (鈫?HCIPy)")
+                        help="Enable v26 Fourier PSF analyzer (HCIPy inspired)")
     parser.add_argument("--dip-enhancer", dest="dip_enhancer_enabled", action="store_true",
-                        help="Enable v26 Deep Image Prior enhancer (鈫?DIP)")
+                        help="Enable v26 Deep Image Prior enhancer (DIP inspired)")
     parser.add_argument("--beam-propagator", dest="beam_propagator_enabled", action="store_true",
-                        help="Enable v26 adaptive beam propagator (鈫?OpenCLAW)")
+                        help="Enable v26 adaptive beam propagator (OpenCLAW inspired)")
     parser.add_argument("--dd-mpc", dest="dd_mpc_enabled", action="store_true",
-                        help="Enable v26 data-driven MPC (鈫?leap-c/acados)")
+                        help="Enable v26 data-driven MPC (leap-c/acados inspired)")
     parser.add_argument("--lqg", dest="lqg_enabled", action="store_true",
-                        help="Enable v26 LQG robust controller (鈫?python-control)")
+                        help="Enable v26 LQG robust controller (python-control inspired)")
 
-    # 鈹€鈹€ v3.0 鏂板妯″潡鍙傛暟 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+    # --- v3.0 module arguments ---
     g_v3 = parser.add_argument_group("v3 ML Modules (SpotZoom_Machine_Learning_v3)")
     g_v3.add_argument("--slm-generator-enabled", action="store_true", default=False)
     g_v3.add_argument("--ao-pipeline-enabled", action="store_true", default=False)
@@ -24685,9 +26106,9 @@ def parse_args() -> argparse.Namespace:
                 dest = key.replace("-", "_")
                 if hasattr(args, dest):
                     setattr(args, dest, value)
-            LOGGER.info("Configuration loaded from: %s", args.config)
+            LOGGER.info("已从以下路径加载配置：%s", args.config)
         except Exception as exc:
-            LOGGER.error("Failed to load config file: %s", exc)
+            LOGGER.error("加载配置文件失败：%s", exc)
             raise SystemExit(1) from exc
 
     # Save default config and exit if requested
@@ -24696,7 +26117,7 @@ def parse_args() -> argparse.Namespace:
             save_default_config(args.save_default_config)
             raise SystemExit(0)
         except Exception as exc:
-            LOGGER.error("Failed to save default config: %s", exc)
+            LOGGER.error("保存默认配置失败：%s", exc)
             raise SystemExit(1) from exc
 
     try:
@@ -24721,7 +26142,7 @@ def main() -> int:
     def _sigterm_handler(signum, frame):
         nonlocal _shutdown_requested
         _shutdown_requested = True
-        LOGGER.warning("Received signal %d, initiating graceful shutdown", signum)
+        LOGGER.warning("收到信号 %d，开始优雅关闭", signum)
 
     if os.name != "nt":
         signal.signal(signal.SIGTERM, _sigterm_handler)
@@ -24739,19 +26160,13 @@ def main() -> int:
     try:
         resolved_backend = _resolve_detector_backend(args)
     except RuntimeError as exc:
-        LOGGER.error("Detector backend resolution failed: %s", exc)
+        LOGGER.error("检测器后端解析失败：%s", exc)
         return 2
     LOGGER.info(
-        "Detector backend resolved: requested=%s resolved=%s",
+        "检测器后端已确定：请求=%s，实际=%s",
         str(args.detector_backend),
         resolved_backend,
     )
-    if resolved_backend == "yolo":
-        yolo_ok, yolo_error = _check_yolo_backend_prereqs(args)
-        if not yolo_ok:
-            LOGGER.error(yolo_error or "YOLO backend prerequisites are not satisfied")
-            return 2
-
     window = None
     controller = None
     xy_stage = None
@@ -24763,7 +26178,7 @@ def main() -> int:
         if not args.disable_run_lock and args.run_lock_file:
             run_lock = RunLockFile(args.run_lock_file, stale_seconds=args.lock_stale_seconds)
             run_lock.acquire()
-            LOGGER.info("Run lock acquired: %s", run_lock.lock_path)
+            LOGGER.info("已获取运行锁：%s", run_lock.lock_path)
             reporter.event("run_lock_acquired", lock_file=str(run_lock.lock_path))
         reporter.event(
             "run_started",
@@ -24773,26 +26188,27 @@ def main() -> int:
             open_source_bundle=args.frontier_open_source_bundle,
         )
 
-        detector = build_detector(args)
+        detector = build_detector(args, resolved_backend=resolved_backend)
         if args.frame_source_image:
             window = SimulatedFrameWindow(
                 image_path=args.frame_source_image,
                 jitter_px=args.sim_jitter_px,
                 noise_std=args.sim_noise_std,
             )
-            LOGGER.info("Simulated capture region: %s", window.get_capture_region())
+            LOGGER.info("模拟采集区域：%s", window.get_capture_region())
         else:
             window = ToupViewWindow(
                 title_keyword=args.window_title,
                 wait_timeout_s=args.window_wait_seconds,
             )
-            LOGGER.info("ToupView capture region: %s", window.get_capture_region())
+            LOGGER.info("ToupView 采集区域：%s", window.get_capture_region())
 
         if args.select_roi:
             window.select_roi()
 
         xy_stage = build_xy_stage(args)
         z_stage = build_z_stage(args, window)
+        run_startup_motion_check(args, xy_stage=xy_stage, z_stage=z_stage, reporter=reporter)
 
         cfg = AlignmentConfig(
             tolerance_px=args.tolerance_px,
@@ -25478,6 +26894,18 @@ def main() -> int:
             frontier_v78_confidence_penalty=min(1.0, max(0.0, float(args.frontier_v78_confidence_penalty))),
             frontier_v78_confidence_boost=max(0.0, float(args.frontier_v78_confidence_boost)),
             frontier_v4_bundle_enabled=args.frontier_v4_bundle_enabled,
+            frontier_v6_diffusion_preprocess_enabled=args.frontier_v6_diffusion_preprocess_enabled,
+            frontier_v6_diffusion_blend=min(1.0, max(0.0, float(args.frontier_v6_diffusion_blend))),
+            frontier_v6_diffusion_num_iterations=max(1, int(args.frontier_v6_diffusion_num_iterations)),
+            frontier_v6_multiscale_fallback_enabled=args.frontier_v6_multiscale_fallback_enabled,
+            frontier_v6_multiscale_confidence_scale=min(
+                1.0,
+                max(0.0, float(args.frontier_v6_multiscale_confidence_scale)),
+            ),
+            frontier_v6_multiscale_min_confidence=min(
+                1.0,
+                max(0.0, float(args.frontier_v6_multiscale_min_confidence)),
+            ),
             frontier_v7_denoiser_enabled=args.frontier_v7_denoiser_enabled,
             frontier_v7_denoiser_blend=min(1.0, max(0.0, float(args.frontier_v7_denoiser_blend))),
             frontier_v7_phase_refine_enabled=args.frontier_v7_phase_refine_enabled,
@@ -25537,7 +26965,7 @@ def main() -> int:
         reporter.flush("success" if ok else "not_converged")
         return 0 if ok else 1
     except KeyboardInterrupt:
-        LOGGER.warning("Interrupted by user")
+        LOGGER.warning("用户中断运行")
         reporter.event("run_finished", status="interrupted", reason="KeyboardInterrupt")
         reporter.flush("interrupted", error="KeyboardInterrupt")
         return 130
@@ -25571,9 +26999,9 @@ def main() -> int:
         if run_lock is not None:
             try:
                 if run_lock.release():
-                    LOGGER.info("Run lock released: %s", run_lock.lock_path)
+                    LOGGER.info("已释放运行锁：%s", run_lock.lock_path)
             except Exception as exc:
-                LOGGER.warning("Failed to release run lock %s: %s", run_lock.lock_path, exc)
+                LOGGER.warning("释放运行锁失败 %s：%s", run_lock.lock_path, exc)
 
 
 if __name__ == "__main__":

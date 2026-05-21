@@ -1,2 +1,0 @@
-{"ts": "2026-05-13T17:10:13+00:00", "event": "run_started", "frame_source": "simulated", "xy_driver": "dryrun", "z_driver": "dryrun"}
-{"ts": "2026-05-13T17:10:13+00:00", "event": "run_finished", "status": "failed", "error": "Initial P1: detection failed after 2 attempts"}

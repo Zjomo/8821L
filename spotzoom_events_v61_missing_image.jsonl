@@ -1,3 +1,0 @@
-{"ts": "2026-05-17T14:31:22+00:00", "event": "run_lock_acquired", "lock_file": "artifacts\\spotzoom_v61_missing.lock"}
-{"ts": "2026-05-17T14:31:22+00:00", "event": "run_started", "frame_source": "simulated", "xy_driver": "dryrun", "z_driver": "dryrun", "open_source_bundle": "frontier_2026_tracking_stack"}
-{"ts": "2026-05-17T14:31:22+00:00", "event": "run_finished", "status": "failed", "error": "Simulation image not found: __missing_image__.jpg"}

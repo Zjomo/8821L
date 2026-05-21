@@ -1,3 +1,0 @@
-{"ts": "2026-05-18T06:19:54+00:00", "event": "run_lock_acquired", "lock_file": "E:\\jupyter file\\2_Optics\\8821L\\artifacts\\spotzoom.lock.json"}
-{"ts": "2026-05-18T06:19:54+00:00", "event": "run_started", "frame_source": "simulated", "xy_driver": "dryrun", "z_driver": "xps", "open_source_bundle": "none"}
-{"ts": "2026-05-18T06:19:56+00:00", "event": "run_finished", "status": "failed", "error": "XPS controller connection failed"}

@@ -1,0 +1,23 @@
+{"ts": "2026-05-20T22:08:02+00:00", "event": "run_lock_acquired", "lock_file": "E:\\jupyter file\\2_Optics\\8821L\\artifacts\\spotzoom.lock.json"}
+{"ts": "2026-05-20T22:08:02+00:00", "event": "run_started", "frame_source": "toupview", "xy_driver": "dryrun", "z_driver": "dryrun", "open_source_bundle": "none"}
+{"ts": "2026-05-20T22:08:03+00:00", "event": "run_finished", "status": "failed", "error": "ToupView 窗口已最小化，请先恢复窗口后再运行。"}
+{"ts": "2026-05-20T22:08:22+00:00", "event": "run_lock_acquired", "lock_file": "E:\\jupyter file\\2_Optics\\8821L\\artifacts\\spotzoom.lock.json"}
+{"ts": "2026-05-20T22:08:22+00:00", "event": "run_started", "frame_source": "toupview", "xy_driver": "dryrun", "z_driver": "dryrun", "open_source_bundle": "none"}
+{"ts": "2026-05-20T22:08:27+00:00", "event": "detection_ok", "tag": "Initial P1", "attempt": 1, "center": [256, 257], "conf": 0.9606, "focus_score": 291.981}
+{"ts": "2026-05-20T22:08:27+00:00", "event": "target_initialized", "target": [256, 257]}
+{"ts": "2026-05-20T22:08:28+00:00", "event": "detection_ok", "tag": "Iter 1 after Z up (P2 before)", "attempt": 1, "center": [256, 257], "conf": 0.9606, "focus_score": 291.981}
+{"ts": "2026-05-20T22:08:28+00:00", "event": "detection_ok", "tag": "Iter 1 align P2 round 1", "attempt": 1, "center": [256, 257], "conf": 0.9606, "focus_score": 291.981}
+{"ts": "2026-05-20T22:08:28+00:00", "event": "detection_ok", "tag": "Iter 1 after Z down (P3 before)", "attempt": 1, "center": [256, 257], "conf": 0.9606, "focus_score": 291.981}
+{"ts": "2026-05-20T22:08:28+00:00", "event": "detection_ok", "tag": "Iter 1 align P3 round 1", "attempt": 1, "center": [256, 257], "conf": 0.9606, "focus_score": 291.981}
+{"ts": "2026-05-20T22:08:28+00:00", "event": "converged", "p1": [256, 257], "p2": [256, 257], "p3": [256, 257]}
+{"ts": "2026-05-20T22:08:28+00:00", "event": "run_finished", "status": "success"}
+{"ts": "2026-05-20T22:08:41+00:00", "event": "run_lock_acquired", "lock_file": "E:\\jupyter file\\2_Optics\\8821L\\artifacts\\spotzoom.lock.json"}
+{"ts": "2026-05-20T22:08:41+00:00", "event": "run_started", "frame_source": "toupview", "xy_driver": "dryrun", "z_driver": "dryrun", "open_source_bundle": "none"}
+{"ts": "2026-05-20T22:08:45+00:00", "event": "detection_ok", "tag": "Initial P1", "attempt": 1, "center": [540, 181], "conf": 0.9752, "focus_score": 190.63}
+{"ts": "2026-05-20T22:08:45+00:00", "event": "target_initialized", "target": [540, 181]}
+{"ts": "2026-05-20T22:08:45+00:00", "event": "detection_ok", "tag": "Iter 1 after Z up (P2 before)", "attempt": 1, "center": [540, 181], "conf": 0.9752, "focus_score": 190.63}
+{"ts": "2026-05-20T22:08:46+00:00", "event": "detection_ok", "tag": "Iter 1 align P2 round 1", "attempt": 1, "center": [540, 181], "conf": 0.9752, "focus_score": 190.63}
+{"ts": "2026-05-20T22:08:46+00:00", "event": "detection_ok", "tag": "Iter 1 after Z down (P3 before)", "attempt": 1, "center": [540, 181], "conf": 0.9752, "focus_score": 190.63}
+{"ts": "2026-05-20T22:08:46+00:00", "event": "detection_ok", "tag": "Iter 1 align P3 round 1", "attempt": 1, "center": [540, 181], "conf": 0.9752, "focus_score": 190.63}
+{"ts": "2026-05-20T22:08:46+00:00", "event": "converged", "p1": [540, 181], "p2": [540, 181], "p3": [540, 181]}
+{"ts": "2026-05-20T22:08:46+00:00", "event": "run_finished", "status": "success"}

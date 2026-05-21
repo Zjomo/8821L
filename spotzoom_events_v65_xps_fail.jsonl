@@ -1,3 +1,0 @@
-{"ts": "2026-05-17T17:17:02+00:00", "event": "run_lock_acquired", "lock_file": "artifacts\\spotzoom_v65_xps.lock"}
-{"ts": "2026-05-17T17:17:02+00:00", "event": "run_started", "frame_source": "simulated", "xy_driver": "dryrun", "z_driver": "xps", "open_source_bundle": "frontier_2026_tracking_stack"}
-{"ts": "2026-05-17T17:17:23+00:00", "event": "run_finished", "status": "failed", "error": "XPS controller connection failed"}

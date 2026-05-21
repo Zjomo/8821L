@@ -1,0 +1,1194 @@
+{
+  "module_count": 50,
+  "groups": {
+    "image_enhancement": [
+      {
+        "version": 2,
+        "package": "SpotZoom_Machine_Learning_v2",
+        "module_name": "deep_image_prior_enhancer",
+        "optimization_type": "image_enhancement",
+        "type_label": "图像增强",
+        "source_path": "SpotZoom_Machine_Learning_v2/deep_image_prior_enhancer.py",
+        "import_path": "SpotZoom_Machine_Learning_v2.deep_image_prior_enhancer",
+        "title": "零样本光斑图像增强器 (Deep Image Prior-inspired Spot Enhancer)",
+        "summary": "Deep Image Prior (https://github.com/DmitryUlyanov/deep-image-prior)",
+        "primary_symbol": "DeepImagePriorEnhancer",
+        "config_symbol": null,
+        "result_symbols": [
+          "DIPEnhancementResult"
+        ],
+        "public_classes": [
+          "DIPEnhancementResult",
+          "DeepImagePriorEnhancer"
+        ],
+        "public_functions": []
+      },
+      {
+        "version": 5,
+        "package": "SpotZoom_Machine_Learning_v5",
+        "module_name": "careamics_adapter",
+        "optimization_type": "image_enhancement",
+        "type_label": "图像增强",
+        "source_path": "SpotZoom_Machine_Learning_v5/careamics_adapter.py",
+        "import_path": "SpotZoom_Machine_Learning_v5.careamics_adapter",
+        "title": "CAREamics 自监督去噪适配器 (v5.0)",
+        "summary": "基于 CAREamics (https://github.com/CAREamics/careamics) 的统一 PyTorch 去噪管线，",
+        "primary_symbol": "CAREamicsAdapter",
+        "config_symbol": "CAREamicsConfig",
+        "result_symbols": [
+          "CAREamicsReport"
+        ],
+        "public_classes": [
+          "DenoiseAlgorithm",
+          "BackendType",
+          "CAREamicsConfig",
+          "CAREamicsReport",
+          "CAREamicsAdapter"
+        ],
+        "public_functions": []
+      },
+      {
+        "version": 5,
+        "package": "SpotZoom_Machine_Learning_v5",
+        "module_name": "self_supervised_denoiser_v2",
+        "optimization_type": "image_enhancement",
+        "type_label": "图像增强",
+        "source_path": "SpotZoom_Machine_Learning_v5/self_supervised_denoiser_v2.py",
+        "import_path": "SpotZoom_Machine_Learning_v5.self_supervised_denoiser_v2",
+        "title": "自监督去噪器 v2 (SelfSupervisedDenoiserV2)",
+        "summary": "增强版自监督去噪器，整合 CAREamics 的 N2V2 算法与",
+        "primary_symbol": "SelfSupervisedDenoiserV2",
+        "config_symbol": "DenoiserV2Config",
+        "result_symbols": [
+          "DenoiserV2Report"
+        ],
+        "public_classes": [
+          "DenoiseMode",
+          "DenoiserV2Config",
+          "DenoiserV2Report",
+          "SelfSupervisedDenoiserV2"
+        ],
+        "public_functions": []
+      },
+      {
+        "version": 6,
+        "package": "SpotZoom_Machine_Learning_v6",
+        "module_name": "diffusion_spot_enhancer",
+        "optimization_type": "image_enhancement",
+        "type_label": "图像增强",
+        "source_path": "SpotZoom_Machine_Learning_v6/diffusion_spot_enhancer.py",
+        "import_path": "SpotZoom_Machine_Learning_v6.diffusion_spot_enhancer",
+        "title": "Diffusion Spot Enhancer - 扩散模型光斑增强器",
+        "summary": "Inspired by:",
+        "primary_symbol": "DiffusionSpotEnhancer",
+        "config_symbol": "DiffusionEnhancerConfig",
+        "result_symbols": [
+          "DiffusionEnhanceResult"
+        ],
+        "public_classes": [
+          "DiffusionEnhancerConfig",
+          "DiffusionEnhanceResult",
+          "DiffusionSpotEnhancer"
+        ],
+        "public_functions": []
+      },
+      {
+        "version": 7,
+        "package": "SpotZoom_Machine_Learning_v7",
+        "module_name": "self_supervised_denoiser",
+        "optimization_type": "image_enhancement",
+        "type_label": "图像增强",
+        "source_path": "SpotZoom_Machine_Learning_v7/self_supervised_denoiser.py",
+        "import_path": "SpotZoom_Machine_Learning_v7.self_supervised_denoiser",
+        "title": "自监督图像降噪器 (Self-Supervised Denoiser)",
+        "summary": "无需干净参考数据的自监督图像降噪模块。基于盲点网络 (Blind-Spot Network)",
+        "primary_symbol": "SelfSupervisedDenoiser",
+        "config_symbol": "DenoiserConfig",
+        "result_symbols": [
+          "DenoiseReport"
+        ],
+        "public_classes": [
+          "NoiseEstimationMethod",
+          "DenoiseReport",
+          "DenoiserConfig",
+          "SelfSupervisedDenoiser"
+        ],
+        "public_functions": []
+      }
+    ],
+    "detection_localization": [
+      {
+        "version": 4,
+        "package": "SpotZoom_Machine_Learning_v4",
+        "module_name": "multi_sensor_fusion",
+        "optimization_type": "detection_localization",
+        "type_label": "检测与定位",
+        "source_path": "SpotZoom_Machine_Learning_v4/multi_sensor_fusion.py",
+        "import_path": "SpotZoom_Machine_Learning_v4.multi_sensor_fusion",
+        "title": "多模态传感器融合定位器 (Multi-Sensor Fusion Localizer)",
+        "summary": "扩展卡尔曼滤波 (EKF) 传感器融合框架",
+        "primary_symbol": "MultiSensorFusion",
+        "config_symbol": "FusionConfig",
+        "result_symbols": [
+          "FusionResult"
+        ],
+        "public_classes": [
+          "SensorType",
+          "SensorReading",
+          "FusionConfig",
+          "FusionResult",
+          "MultiSensorFusion"
+        ],
+        "public_functions": []
+      },
+      {
+        "version": 5,
+        "package": "SpotZoom_Machine_Learning_v5",
+        "module_name": "context_aware_detector",
+        "optimization_type": "detection_localization",
+        "type_label": "检测与定位",
+        "source_path": "SpotZoom_Machine_Learning_v5/context_aware_detector.py",
+        "import_path": "SpotZoom_Machine_Learning_v5.context_aware_detector",
+        "title": "上下文感知光斑检测器 (ContextAwareDetector)",
+        "summary": "基于 DECODE (https://github.com/TuragaLab/DECODE) 的深度上下文依赖检测框架，",
+        "primary_symbol": "ContextAwareDetector",
+        "config_symbol": "ContextDetectorConfig",
+        "result_symbols": [
+          "ContextDetectorResult"
+        ],
+        "public_classes": [
+          "ContextDetectorConfig",
+          "ContextDetectorResult",
+          "ContextAwareDetector"
+        ],
+        "public_functions": []
+      },
+      {
+        "version": 5,
+        "package": "SpotZoom_Machine_Learning_v5",
+        "module_name": "uncertainty_aware_localizer_v2",
+        "optimization_type": "detection_localization",
+        "type_label": "检测与定位",
+        "source_path": "SpotZoom_Machine_Learning_v5/uncertainty_aware_localizer_v2.py",
+        "import_path": "SpotZoom_Machine_Learning_v5.uncertainty_aware_localizer_v2",
+        "title": "不确定性感知定位器 v2 (UncertaintyAwareLocalizerV2)",
+        "summary": "基于 DECODE (https://github.com/TuragaLab/DECODE) 的深度上下文依赖定位框架，",
+        "primary_symbol": "UncertaintyAwareLocalizerV2",
+        "config_symbol": "LocalizerV2Config",
+        "result_symbols": [
+          "LocalizerV2Result"
+        ],
+        "public_classes": [
+          "LocalizationMode",
+          "LocalizerV2Config",
+          "LocalizerV2Result",
+          "UncertaintyAwareLocalizerV2"
+        ],
+        "public_functions": []
+      },
+      {
+        "version": 6,
+        "package": "SpotZoom_Machine_Learning_v6",
+        "module_name": "multi_scale_spot_detector",
+        "optimization_type": "detection_localization",
+        "type_label": "检测与定位",
+        "source_path": "SpotZoom_Machine_Learning_v6/multi_scale_spot_detector.py",
+        "import_path": "SpotZoom_Machine_Learning_v6.multi_scale_spot_detector",
+        "title": "Multi-Scale Spot Detector - 多尺度光斑检测器",
+        "summary": "Inspired by:",
+        "primary_symbol": "MultiScaleSpotDetector",
+        "config_symbol": "MultiScaleDetectorConfig",
+        "result_symbols": [
+          "MultiScaleDetectionResult"
+        ],
+        "public_classes": [
+          "MultiScaleDetectorConfig",
+          "MultiScaleDetectionResult",
+          "MultiScaleSpotDetector"
+        ],
+        "public_functions": []
+      }
+    ],
+    "tracking_prediction": [
+      {
+        "version": 6,
+        "package": "SpotZoom_Machine_Learning_v6",
+        "module_name": "temporal_ensemble_tracker",
+        "optimization_type": "tracking_prediction",
+        "type_label": "跟踪与预测",
+        "source_path": "SpotZoom_Machine_Learning_v6/temporal_ensemble_tracker.py",
+        "import_path": "SpotZoom_Machine_Learning_v6.temporal_ensemble_tracker",
+        "title": "Temporal Ensemble Tracker - 时序集成追踪器",
+        "summary": "Inspired by:",
+        "primary_symbol": "TemporalEnsembleTracker",
+        "config_symbol": "TemporalEnsembleConfig",
+        "result_symbols": [
+          "TemporalEnsembleResult"
+        ],
+        "public_classes": [
+          "TemporalEnsembleConfig",
+          "Track",
+          "TemporalEnsembleResult",
+          "TemporalEnsembleTracker"
+        ],
+        "public_functions": []
+      },
+      {
+        "version": 7,
+        "package": "SpotZoom_Machine_Learning_v7",
+        "module_name": "attention_spot_tracker",
+        "optimization_type": "tracking_prediction",
+        "type_label": "跟踪与预测",
+        "source_path": "SpotZoom_Machine_Learning_v7/attention_spot_tracker.py",
+        "import_path": "SpotZoom_Machine_Learning_v7.attention_spot_tracker",
+        "title": "注意力光斑跟踪器 (Attention Spot Tracker)",
+        "summary": "基于 Transformer 注意力机制的多帧光斑跟踪模块。",
+        "primary_symbol": "AttentionSpotTracker",
+        "config_symbol": "AttentionTrackerConfig",
+        "result_symbols": [
+          "AttentionTrackResult"
+        ],
+        "public_classes": [
+          "PositionalEncodingType",
+          "Track",
+          "AttentionTrackResult",
+          "AttentionTrackerConfig",
+          "AttentionSpotTracker"
+        ],
+        "public_functions": []
+      },
+      {
+        "version": 7,
+        "package": "SpotZoom_Machine_Learning_v7",
+        "module_name": "causal_state_predictor",
+        "optimization_type": "tracking_prediction",
+        "type_label": "跟踪与预测",
+        "source_path": "SpotZoom_Machine_Learning_v7/causal_state_predictor.py",
+        "import_path": "SpotZoom_Machine_Learning_v7.causal_state_predictor",
+        "title": "因果状态预测器 (Causal State Predictor)",
+        "summary": "基于因果 (单向) 建模的实时光斑状态预测模块。使用因果 1D 卷积和",
+        "primary_symbol": "CausalStatePredictor",
+        "config_symbol": "CausalPredictorConfig",
+        "result_symbols": [
+          "CausalPredictionResult"
+        ],
+        "public_classes": [
+          "ODESolverType",
+          "CausalPredictionResult",
+          "CausalPredictorConfig",
+          "CausalStatePredictor"
+        ],
+        "public_functions": []
+      }
+    ],
+    "alignment_registration": [
+      {
+        "version": 7,
+        "package": "SpotZoom_Machine_Learning_v7",
+        "module_name": "fourier_phase_correlator",
+        "optimization_type": "alignment_registration",
+        "type_label": "配准与对齐",
+        "source_path": "SpotZoom_Machine_Learning_v7/fourier_phase_correlator.py",
+        "import_path": "SpotZoom_Machine_Learning_v7.fourier_phase_correlator",
+        "title": "傅里叶相位相关器 (Fourier Phase Correlator)",
+        "summary": "基于傅里叶相位相关的高精度亚像素图像配准模块。",
+        "primary_symbol": "FourierPhaseCorrelator",
+        "config_symbol": "PhaseCorrelatorConfig",
+        "result_symbols": [
+          "PhaseCorrelationResult"
+        ],
+        "public_classes": [
+          "WindowType",
+          "PhaseCorrelationResult",
+          "PhaseCorrelatorConfig",
+          "FourierPhaseCorrelator"
+        ],
+        "public_functions": []
+      },
+      {
+        "version": 7,
+        "package": "SpotZoom_Machine_Learning_v7",
+        "module_name": "optimal_transport_aligner",
+        "optimization_type": "alignment_registration",
+        "type_label": "配准与对齐",
+        "source_path": "SpotZoom_Machine_Learning_v7/optimal_transport_aligner.py",
+        "import_path": "SpotZoom_Machine_Learning_v7.optimal_transport_aligner",
+        "title": "最优传输对齐器 (Optimal Transport Aligner)",
+        "summary": "基于最优传输理论的光斑分布对齐质量评估与最优步长计算模块。",
+        "primary_symbol": "OptimalTransportAligner",
+        "config_symbol": "OTAlignerConfig",
+        "result_symbols": [
+          "OTAlignmentResult"
+        ],
+        "public_classes": [
+          "TransportCostMetric",
+          "OTAlignmentResult",
+          "OTAlignerConfig",
+          "OptimalTransportAligner"
+        ],
+        "public_functions": []
+      }
+    ],
+    "adaptive_optics_control": [
+      {
+        "version": 2,
+        "package": "SpotZoom_Machine_Learning_v2",
+        "module_name": "closed_loop_ao_controller",
+        "optimization_type": "adaptive_optics_control",
+        "type_label": "自适应光学与控制",
+        "source_path": "SpotZoom_Machine_Learning_v2/closed_loop_ao_controller.py",
+        "import_path": "SpotZoom_Machine_Learning_v2.closed_loop_ao_controller",
+        "title": "闭环自适应光学控制器 (Closed-Loop Adaptive Optics Controller)",
+        "summary": "HCIPy (https://github.com/ehpor/hcipy): 自适应光学仿真框架",
+        "primary_symbol": "ClosedLoopAOController",
+        "config_symbol": "ClosedLoopAOConfig",
+        "result_symbols": [
+          "WFSMeasurement",
+          "ClosedLoopAOState"
+        ],
+        "public_classes": [
+          "ClosedLoopAOConfig",
+          "WFSMeasurement",
+          "ClosedLoopAOState",
+          "ClosedLoopAOController"
+        ],
+        "public_functions": []
+      },
+      {
+        "version": 2,
+        "package": "SpotZoom_Machine_Learning_v2",
+        "module_name": "data_driven_mpc",
+        "optimization_type": "adaptive_optics_control",
+        "type_label": "自适应光学与控制",
+        "source_path": "SpotZoom_Machine_Learning_v2/data_driven_mpc.py",
+        "import_path": "SpotZoom_Machine_Learning_v2.data_driven_mpc",
+        "title": "数据驱动模型预测控制器 (Data-Driven Model Predictive Controller)",
+        "summary": "leap-c (https://github.com/leap-c/leap-c): 学习型预测控制",
+        "primary_symbol": "DataDrivenMPC",
+        "config_symbol": "DataDrivenMPCConfig",
+        "result_symbols": [
+          "DataDrivenMPCResult"
+        ],
+        "public_classes": [
+          "DataDrivenMPCConfig",
+          "DataDrivenMPCResult",
+          "DataDrivenMPC"
+        ],
+        "public_functions": []
+      },
+      {
+        "version": 2,
+        "package": "SpotZoom_Machine_Learning_v2",
+        "module_name": "lqg_robust_controller",
+        "optimization_type": "adaptive_optics_control",
+        "type_label": "自适应光学与控制",
+        "source_path": "SpotZoom_Machine_Learning_v2/lqg_robust_controller.py",
+        "import_path": "SpotZoom_Machine_Learning_v2.lqg_robust_controller",
+        "title": "LQG 鲁棒控制器 (Linear-Quadratic-Gaussian Robust Controller)",
+        "summary": "python-control (https://github.com/python-control/python-control)",
+        "primary_symbol": "LQGRobustController",
+        "config_symbol": "LQGConfig",
+        "result_symbols": [
+          "LQGState"
+        ],
+        "public_classes": [
+          "LQGConfig",
+          "LQGState",
+          "LQGRobustController"
+        ],
+        "public_functions": []
+      },
+      {
+        "version": 3,
+        "package": "SpotZoom_Machine_Learning_v3",
+        "module_name": "deformable_mirror_calibrator",
+        "optimization_type": "adaptive_optics_control",
+        "type_label": "自适应光学与控制",
+        "source_path": "SpotZoom_Machine_Learning_v3/deformable_mirror_calibrator.py",
+        "import_path": "SpotZoom_Machine_Learning_v3.deformable_mirror_calibrator",
+        "title": "变形镜校准器 (Deformable Mirror Calibrator)",
+        "summary": "dmlib (https://github.com/spacetelescope/dmlib): 变形镜校准库",
+        "primary_symbol": "DMCalibrator",
+        "config_symbol": "DMCalibConfig",
+        "result_symbols": [
+          "DMCalibResult"
+        ],
+        "public_classes": [
+          "DMCalibConfig",
+          "DMCalibResult",
+          "DMCalibrator"
+        ],
+        "public_functions": []
+      },
+      {
+        "version": 3,
+        "package": "SpotZoom_Machine_Learning_v3",
+        "module_name": "laplacian_autofocus",
+        "optimization_type": "adaptive_optics_control",
+        "type_label": "自适应光学与控制",
+        "source_path": "SpotZoom_Machine_Learning_v3/laplacian_autofocus.py",
+        "import_path": "SpotZoom_Machine_Learning_v3.laplacian_autofocus",
+        "title": "拉普拉斯自动对焦 (Laplacian Autofocus)",
+        "summary": "IRIS Autofocus by bunnie studios (https://github.com/bunnie/iris-audio):",
+        "primary_symbol": "LaplacianAutofocus",
+        "config_symbol": "AutofocusConfig",
+        "result_symbols": [
+          "FocusResult"
+        ],
+        "public_classes": [
+          "AutofocusConfig",
+          "FocusResult",
+          "LaplacianAutofocus"
+        ],
+        "public_functions": []
+      },
+      {
+        "version": 3,
+        "package": "SpotZoom_Machine_Learning_v3",
+        "module_name": "realtime_ao_pipeline",
+        "optimization_type": "adaptive_optics_control",
+        "type_label": "自适应光学与控制",
+        "source_path": "SpotZoom_Machine_Learning_v3/realtime_ao_pipeline.py",
+        "import_path": "SpotZoom_Machine_Learning_v3.realtime_ao_pipeline",
+        "title": "实时 AO 流水线 (Realtime Adaptive Optics Pipeline)",
+        "summary": "pyRTC (https://github.com/aodtech/pyRTC): Python 实时自适应光学控制框架",
+        "primary_symbol": "RealtimeAOPipeline",
+        "config_symbol": "AOPipelineConfig",
+        "result_symbols": [
+          "AOPipelineState"
+        ],
+        "public_classes": [
+          "AOPipelineConfig",
+          "AOPipelineState",
+          "RealtimeAOPipeline"
+        ],
+        "public_functions": []
+      },
+      {
+        "version": 4,
+        "package": "SpotZoom_Machine_Learning_v4",
+        "module_name": "adaptive_scheduler",
+        "optimization_type": "adaptive_optics_control",
+        "type_label": "自适应光学与控制",
+        "source_path": "SpotZoom_Machine_Learning_v4/adaptive_scheduler.py",
+        "import_path": "SpotZoom_Machine_Learning_v4.adaptive_scheduler",
+        "title": "实时性能自适应调度器 (Real-time Performance Adaptive Scheduler)",
+        "summary": "实时系统的反馈调度 (Feedback Scheduling)",
+        "primary_symbol": "AdaptiveScheduler",
+        "config_symbol": "SchedulerConfig",
+        "result_symbols": [
+          "TaskState"
+        ],
+        "public_classes": [
+          "TaskPriority",
+          "TaskState",
+          "DegradationLevel",
+          "ScheduledTask",
+          "SchedulerConfig",
+          "ScheduleDecision",
+          "AdaptiveScheduler"
+        ],
+        "public_functions": []
+      },
+      {
+        "version": 4,
+        "package": "SpotZoom_Machine_Learning_v4",
+        "module_name": "online_ao_corrector",
+        "optimization_type": "adaptive_optics_control",
+        "type_label": "自适应光学与控制",
+        "source_path": "SpotZoom_Machine_Learning_v4/online_ao_corrector.py",
+        "import_path": "SpotZoom_Machine_Learning_v4.online_ao_corrector",
+        "title": "在线自适应光学校正器 (Online Adaptive Optics Corrector)",
+        "summary": "AOtools (https://github.com/AOtools/aotools)",
+        "primary_symbol": "OnlineAOCorrector",
+        "config_symbol": "AOCorrectorConfig",
+        "result_symbols": [
+          "AOCorrectionResult"
+        ],
+        "public_classes": [
+          "CorrectionMode",
+          "ZernikeMode",
+          "AOCorrectorConfig",
+          "AOCorrectionResult",
+          "OnlineAOCorrector"
+        ],
+        "public_functions": []
+      },
+      {
+        "version": 5,
+        "package": "SpotZoom_Machine_Learning_v5",
+        "module_name": "dm_calibrator_v2",
+        "optimization_type": "adaptive_optics_control",
+        "type_label": "自适应光学与控制",
+        "source_path": "SpotZoom_Machine_Learning_v5/dm_calibrator_v2.py",
+        "import_path": "SpotZoom_Machine_Learning_v5.dm_calibrator_v2",
+        "title": "变形镜校准器 v2 (DMCalibratorV2)",
+        "summary": "基于 dmlib (https://github.com/jacopoantonello/dmlib) 的变形镜校准方法，",
+        "primary_symbol": "DMCalibratorV2",
+        "config_symbol": "DMCalibratorV2Config",
+        "result_symbols": [
+          "CalibrationState",
+          "DMCalibratorV2Report"
+        ],
+        "public_classes": [
+          "CalibrationState",
+          "DMCalibratorV2Config",
+          "DMCalibratorV2Report",
+          "DMCalibratorV2"
+        ],
+        "public_functions": []
+      },
+      {
+        "version": 5,
+        "package": "SpotZoom_Machine_Learning_v5",
+        "module_name": "realtime_pipeline_v2",
+        "optimization_type": "adaptive_optics_control",
+        "type_label": "自适应光学与控制",
+        "source_path": "SpotZoom_Machine_Learning_v5/realtime_pipeline_v2.py",
+        "import_path": "SpotZoom_Machine_Learning_v5.realtime_pipeline_v2",
+        "title": "实时控制管线 v2 (RealtimePipelineV2)",
+        "summary": "基于 pyRTC (https://github.com/jacotay7/pyRTC) 的模块化实时 AO 控制架构，",
+        "primary_symbol": "RealtimePipelineV2",
+        "config_symbol": "PipelineV2Config",
+        "result_symbols": [
+          "PipelineState",
+          "TelemetryPoint",
+          "PipelineV2Report"
+        ],
+        "public_classes": [
+          "PipelineState",
+          "StageType",
+          "PipelineV2Config",
+          "TelemetryPoint",
+          "PipelineV2Report",
+          "PipelineStage",
+          "SensorStage",
+          "ProcessorStage",
+          "ControllerStage",
+          "CorrectorStage",
+          "RealtimePipelineV2"
+        ],
+        "public_functions": []
+      },
+      {
+        "version": 5,
+        "package": "SpotZoom_Machine_Learning_v5",
+        "module_name": "sensorless_ao_v2",
+        "optimization_type": "adaptive_optics_control",
+        "type_label": "自适应光学与控制",
+        "source_path": "SpotZoom_Machine_Learning_v5/sensorless_ao_v2.py",
+        "import_path": "SpotZoom_Machine_Learning_v5.sensorless_ao_v2",
+        "title": "无传感器自适应光学 v2 (SensorlessAOV2)",
+        "summary": "基于 REALM (https://github.com/MSiemons/REALM) 的无波前传感器 Zernike 模态校正，",
+        "primary_symbol": "SensorlessAOV2",
+        "config_symbol": "SensorlessAOV2Config",
+        "result_symbols": [
+          "SensorlessAOV2Report"
+        ],
+        "public_classes": [
+          "QualityMetric",
+          "SearchStrategy",
+          "SensorlessAOV2Config",
+          "SensorlessAOV2Report",
+          "SensorlessAOV2"
+        ],
+        "public_functions": []
+      },
+      {
+        "version": 6,
+        "package": "SpotZoom_Machine_Learning_v6",
+        "module_name": "adaptive_feedforward_controller",
+        "optimization_type": "adaptive_optics_control",
+        "type_label": "自适应光学与控制",
+        "source_path": "SpotZoom_Machine_Learning_v6/adaptive_feedforward_controller.py",
+        "import_path": "SpotZoom_Machine_Learning_v6.adaptive_feedforward_controller",
+        "title": "Adaptive Feedforward Controller - 自适应前馈控制器",
+        "summary": "Inspired by:",
+        "primary_symbol": "AdaptiveFeedforwardController",
+        "config_symbol": "FeedforwardConfig",
+        "result_symbols": [],
+        "public_classes": [
+          "FeedforwardConfig",
+          "FeedforwardOutput",
+          "AdaptiveFeedforwardController"
+        ],
+        "public_functions": []
+      },
+      {
+        "version": 7,
+        "package": "SpotZoom_Machine_Learning_v7",
+        "module_name": "neural_ode_controller",
+        "optimization_type": "adaptive_optics_control",
+        "type_label": "自适应光学与控制",
+        "source_path": "SpotZoom_Machine_Learning_v7/neural_ode_controller.py",
+        "import_path": "SpotZoom_Machine_Learning_v7.neural_ode_controller",
+        "title": "神经 ODE 控制器 (Neural ODE Controller)",
+        "summary": "基于神经常微分方程的连续时间控制信号生成模块。",
+        "primary_symbol": "NeuralODEController",
+        "config_symbol": "NeuralODEConfig",
+        "result_symbols": [
+          "NeuralODEResult"
+        ],
+        "public_classes": [
+          "ODESolver",
+          "NeuralODEResult",
+          "NeuralODEConfig",
+          "NeuralODEController"
+        ],
+        "public_functions": []
+      }
+    ],
+    "beam_optical_simulation": [
+      {
+        "version": 2,
+        "package": "SpotZoom_Machine_Learning_v2",
+        "module_name": "adaptive_beam_propagator",
+        "optimization_type": "beam_optical_simulation",
+        "type_label": "光束与光学仿真",
+        "source_path": "SpotZoom_Machine_Learning_v2/adaptive_beam_propagator.py",
+        "import_path": "SpotZoom_Machine_Learning_v2.adaptive_beam_propagator",
+        "title": "自适应光束传播模拟器 (Adaptive Beam Propagator)",
+        "summary": "OpenCLAW (https://github.com/openclaw): 自适应波模拟计算库",
+        "primary_symbol": "AdaptiveBeamPropagator",
+        "config_symbol": "PropagationConfig",
+        "result_symbols": [
+          "BeamPropagationResult"
+        ],
+        "public_classes": [
+          "PropagationConfig",
+          "BeamPropagationResult",
+          "AdaptiveBeamPropagator"
+        ],
+        "public_functions": []
+      },
+      {
+        "version": 3,
+        "package": "SpotZoom_Machine_Learning_v3",
+        "module_name": "slm_holographic_spot_generator",
+        "optimization_type": "beam_optical_simulation",
+        "type_label": "光束与光学仿真",
+        "source_path": "SpotZoom_Machine_Learning_v3/slm_holographic_spot_generator.py",
+        "import_path": "SpotZoom_Machine_Learning_v3.slm_holographic_spot_generator",
+        "title": "SLM 全息光斑生成器 (SLM Holographic Spot Generator)",
+        "summary": "slmsuite (https://github.com/wavefrontshaping/slm_suite): SLM 控制与全息图生成框架",
+        "primary_symbol": "SLMHolographicGenerator",
+        "config_symbol": "SLMConfig",
+        "result_symbols": [
+          "HologramResult"
+        ],
+        "public_classes": [
+          "SLMConfig",
+          "HologramResult",
+          "SLMHolographicGenerator"
+        ],
+        "public_functions": []
+      },
+      {
+        "version": 3,
+        "package": "SpotZoom_Machine_Learning_v3",
+        "module_name": "synthetic_data_generator",
+        "optimization_type": "beam_optical_simulation",
+        "type_label": "光束与光学仿真",
+        "source_path": "SpotZoom_Machine_Learning_v3/synthetic_data_generator.py",
+        "import_path": "SpotZoom_Machine_Learning_v3.synthetic_data_generator",
+        "title": "合成数据生成器 (Synthetic Data Generator)",
+        "summary": "DeepTrack2 (https://github.com/DeepTrack/DeepTrack2): 深度学习光学粒子追踪",
+        "primary_symbol": "SyntheticDataGenerator",
+        "config_symbol": "SyntheticDataConfig",
+        "result_symbols": [
+          "SyntheticSample"
+        ],
+        "public_classes": [
+          "SyntheticDataConfig",
+          "SyntheticSample",
+          "SyntheticDataGenerator"
+        ],
+        "public_functions": []
+      },
+      {
+        "version": 4,
+        "package": "SpotZoom_Machine_Learning_v4",
+        "module_name": "beam_propagation_engine",
+        "optimization_type": "beam_optical_simulation",
+        "type_label": "光束与光学仿真",
+        "source_path": "SpotZoom_Machine_Learning_v4/beam_propagation_engine.py",
+        "import_path": "SpotZoom_Machine_Learning_v4.beam_propagation_engine",
+        "title": "光束传播物理仿真引擎 (Beam Propagation Physics Engine)",
+        "summary": "HCIPy (https://github.com/ehpor/hcipy)",
+        "primary_symbol": "BeamPropagationEngine",
+        "config_symbol": null,
+        "result_symbols": [
+          "PropagationResult"
+        ],
+        "public_classes": [
+          "PropagationMethod",
+          "BeamType",
+          "OpticalElement",
+          "ThinLens",
+          "CircularAperture",
+          "ZernikeAberration",
+          "PropagationScene",
+          "PropagationResult",
+          "BeamPropagationEngine"
+        ],
+        "public_functions": []
+      },
+      {
+        "version": 4,
+        "package": "SpotZoom_Machine_Learning_v4",
+        "module_name": "digital_twin_enhancer",
+        "optimization_type": "beam_optical_simulation",
+        "type_label": "光束与光学仿真",
+        "source_path": "SpotZoom_Machine_Learning_v4/digital_twin_enhancer.py",
+        "import_path": "SpotZoom_Machine_Learning_v4.digital_twin_enhancer",
+        "title": "光学系统数字孪生增强器 (Optical System Digital Twin Enhancer)",
+        "summary": "Azure Digital Twins",
+        "primary_symbol": "DigitalTwinEnhancer",
+        "config_symbol": "TwinConfig",
+        "result_symbols": [
+          "TwinState",
+          "PredictionResult"
+        ],
+        "public_classes": [
+          "TwinComponent",
+          "PredictionHorizon",
+          "TwinConfig",
+          "TwinState",
+          "PredictionResult",
+          "DigitalTwinEnhancer"
+        ],
+        "public_functions": []
+      },
+      {
+        "version": 6,
+        "package": "SpotZoom_Machine_Learning_v6",
+        "module_name": "synthetic_diffraction_generator",
+        "optimization_type": "beam_optical_simulation",
+        "type_label": "光束与光学仿真",
+        "source_path": "SpotZoom_Machine_Learning_v6/synthetic_diffraction_generator.py",
+        "import_path": "SpotZoom_Machine_Learning_v6.synthetic_diffraction_generator",
+        "title": "Synthetic Diffraction Generator - 合成衍射数据生成器",
+        "summary": "Inspired by:",
+        "primary_symbol": "SyntheticDiffractionGenerator",
+        "config_symbol": "DiffractionGeneratorConfig",
+        "result_symbols": [
+          "DiffractionSample"
+        ],
+        "public_classes": [
+          "DiffractionGeneratorConfig",
+          "DiffractionSample",
+          "SyntheticDiffractionGenerator"
+        ],
+        "public_functions": [
+          "cv2_rotation_matrix",
+          "cv2_scale_matrix"
+        ]
+      }
+    ],
+    "system_analysis": [
+      {
+        "version": 2,
+        "package": "SpotZoom_Machine_Learning_v2",
+        "module_name": "fourier_psf_analyzer",
+        "optimization_type": "system_analysis",
+        "type_label": "系统分析",
+        "source_path": "SpotZoom_Machine_Learning_v2/fourier_psf_analyzer.py",
+        "import_path": "SpotZoom_Machine_Learning_v2.fourier_psf_analyzer",
+        "title": "傅里叶 PSF 分析与波前重建器 (Fourier PSF Analyzer & Wavefront Reconstructor)",
+        "summary": "HCIPy (https://github.com/ehpor/hcipy): 高对比度成像仿真框架",
+        "primary_symbol": "FourierPSFAnalyzer",
+        "config_symbol": null,
+        "result_symbols": [
+          "PSFAnalysisResult"
+        ],
+        "public_classes": [
+          "PSFAnalysisResult",
+          "WavefrontReconstruction",
+          "FourierPSFAnalyzer"
+        ],
+        "public_functions": []
+      },
+      {
+        "version": 3,
+        "package": "SpotZoom_Machine_Learning_v3",
+        "module_name": "strehl_quality_assessor",
+        "optimization_type": "system_analysis",
+        "type_label": "系统分析",
+        "source_path": "SpotZoom_Machine_Learning_v3/strehl_quality_assessor.py",
+        "import_path": "SpotZoom_Machine_Learning_v3.strehl_quality_assessor",
+        "title": "Strehl 质量评估器 (Strehl Quality Assessor)",
+        "summary": "prysm (https://github.com/brandondube/prysm): 光学衍射与像差分析库",
+        "primary_symbol": "StrehlQualityAssessor",
+        "config_symbol": "StrehlConfig",
+        "result_symbols": [],
+        "public_classes": [
+          "StrehlConfig",
+          "StrehlAssessment",
+          "StrehlQualityAssessor"
+        ],
+        "public_functions": []
+      },
+      {
+        "version": 5,
+        "package": "SpotZoom_Machine_Learning_v5",
+        "module_name": "gpu_phase_retrieval",
+        "optimization_type": "system_analysis",
+        "type_label": "系统分析",
+        "source_path": "SpotZoom_Machine_Learning_v5/gpu_phase_retrieval.py",
+        "import_path": "SpotZoom_Machine_Learning_v5.gpu_phase_retrieval",
+        "title": "GPU 加速相位恢复引擎 (GPUPhaseRetrieval)",
+        "summary": "基于 slmsuite (https://github.com/holodyne/slmsuite) 的 GPU 加速迭代相位恢复算法，",
+        "primary_symbol": "GPUPhaseRetrieval",
+        "config_symbol": "PhaseRetrievalConfig",
+        "result_symbols": [
+          "PhaseRetrievalResult"
+        ],
+        "public_classes": [
+          "PhaseAlgorithm",
+          "DeviceType",
+          "PhaseRetrievalConfig",
+          "PhaseRetrievalResult",
+          "GPUPhaseRetrieval"
+        ],
+        "public_functions": []
+      },
+      {
+        "version": 5,
+        "package": "SpotZoom_Machine_Learning_v5",
+        "module_name": "nena_precision_assessor",
+        "optimization_type": "system_analysis",
+        "type_label": "系统分析",
+        "source_path": "SpotZoom_Machine_Learning_v5/nena_precision_assessor.py",
+        "import_path": "SpotZoom_Machine_Learning_v5.nena_precision_assessor",
+        "title": "NeNA 精度评估器 (NeNAPrecisionAssessor)",
+        "summary": "基于 Picasso (https://github.com/jungmannlab/picasso) 的 NeNA 方法，",
+        "primary_symbol": "NeNAPrecisionAssessor",
+        "config_symbol": "NeNAConfig",
+        "result_symbols": [
+          "NeNAReport"
+        ],
+        "public_classes": [
+          "PrecisionMethod",
+          "NeNAConfig",
+          "NeNAReport",
+          "NeNAPrecisionAssessor"
+        ],
+        "public_functions": []
+      },
+      {
+        "version": 6,
+        "package": "SpotZoom_Machine_Learning_v6",
+        "module_name": "coherent_sensitivity_analyzer",
+        "optimization_type": "system_analysis",
+        "type_label": "系统分析",
+        "source_path": "SpotZoom_Machine_Learning_v6/coherent_sensitivity_analyzer.py",
+        "import_path": "SpotZoom_Machine_Learning_v6.coherent_sensitivity_analyzer",
+        "title": "Coherent Sensitivity Analyzer - 相干灵敏度分析器",
+        "summary": "Inspired by:",
+        "primary_symbol": "CoherentSensitivityAnalyzer",
+        "config_symbol": "SensitivityConfig",
+        "result_symbols": [
+          "SensitivityReport"
+        ],
+        "public_classes": [
+          "SensitivityConfig",
+          "SensitivityReport",
+          "CoherentSensitivityAnalyzer"
+        ],
+        "public_functions": []
+      },
+      {
+        "version": 6,
+        "package": "SpotZoom_Machine_Learning_v6",
+        "module_name": "psf_fingerprint_analyzer",
+        "optimization_type": "system_analysis",
+        "type_label": "系统分析",
+        "source_path": "SpotZoom_Machine_Learning_v6/psf_fingerprint_analyzer.py",
+        "import_path": "SpotZoom_Machine_Learning_v6.psf_fingerprint_analyzer",
+        "title": "PSF Fingerprint Analyzer - PSF 指纹分析器",
+        "summary": "Inspired by:",
+        "primary_symbol": "PSFFingerprintAnalyzer",
+        "config_symbol": "PSFFingerprintConfig",
+        "result_symbols": [
+          "PSFFingerprintReport"
+        ],
+        "public_classes": [
+          "PSFFingerprintConfig",
+          "PSFFingerprintReport",
+          "PSFFingerprintAnalyzer"
+        ],
+        "public_functions": []
+      }
+    ],
+    "system_diagnostics": [
+      {
+        "version": 4,
+        "package": "SpotZoom_Machine_Learning_v4",
+        "module_name": "intelligent_anomaly_healer",
+        "optimization_type": "system_diagnostics",
+        "type_label": "系统诊断",
+        "source_path": "SpotZoom_Machine_Learning_v4/intelligent_anomaly_healer.py",
+        "import_path": "SpotZoom_Machine_Learning_v4.intelligent_anomaly_healer",
+        "title": "智能异常诊断与自愈系统 (Intelligent Anomaly Diagnosis & Self-Healing System)",
+        "summary": "sktime (https://github.com/sktime/sktime)",
+        "primary_symbol": "IntelligentAnomalyHealer",
+        "config_symbol": "AnomalyHealerConfig",
+        "result_symbols": [
+          "HealingAction",
+          "AnomalyReport"
+        ],
+        "public_classes": [
+          "AnomalyType",
+          "SeverityLevel",
+          "HealingActionType",
+          "HealingAction",
+          "AnomalyReport",
+          "AnomalyHealerConfig",
+          "IntelligentAnomalyHealer"
+        ],
+        "public_functions": []
+      },
+      {
+        "version": 5,
+        "package": "SpotZoom_Machine_Learning_v5",
+        "module_name": "predictive_health_monitor",
+        "optimization_type": "system_diagnostics",
+        "type_label": "系统诊断",
+        "source_path": "SpotZoom_Machine_Learning_v5/predictive_health_monitor.py",
+        "import_path": "SpotZoom_Machine_Learning_v5.predictive_health_monitor",
+        "title": "预测性健康监控器 (PredictiveHealthMonitor)",
+        "summary": "基于 OOPAO (https://github.com/cheritier/OOPAO) 和 python-microscope",
+        "primary_symbol": "PredictiveHealthMonitor",
+        "config_symbol": "PredictiveHealthConfig",
+        "result_symbols": [
+          "PredictiveHealthReport"
+        ],
+        "public_classes": [
+          "HealthDimension",
+          "HealthStatus",
+          "AlertSeverity",
+          "PredictiveHealthConfig",
+          "HealthMetric",
+          "PredictiveHealthReport",
+          "PredictiveHealthMonitor"
+        ],
+        "public_functions": []
+      },
+      {
+        "version": 5,
+        "package": "SpotZoom_Machine_Learning_v5",
+        "module_name": "regression_guard",
+        "optimization_type": "system_diagnostics",
+        "type_label": "系统诊断",
+        "source_path": "SpotZoom_Machine_Learning_v5/regression_guard.py",
+        "import_path": "SpotZoom_Machine_Learning_v5.regression_guard",
+        "title": "回归防护器 (RegressionGuard)",
+        "summary": "为 SpotZoom 提供自动化的回归检测与防护机制，确保代码变更不会",
+        "primary_symbol": "RegressionGuard",
+        "config_symbol": "RegressionGuardConfig",
+        "result_symbols": [
+          "RegressionGuardReport"
+        ],
+        "public_classes": [
+          "CheckCategory",
+          "Severity",
+          "RegressionGuardConfig",
+          "RegressionIssue",
+          "RegressionGuardReport",
+          "RegressionGuard"
+        ],
+        "public_functions": []
+      },
+      {
+        "version": 6,
+        "package": "SpotZoom_Machine_Learning_v6",
+        "module_name": "convergence_guard",
+        "optimization_type": "system_diagnostics",
+        "type_label": "系统诊断",
+        "source_path": "SpotZoom_Machine_Learning_v6/convergence_guard.py",
+        "import_path": "SpotZoom_Machine_Learning_v6.convergence_guard",
+        "title": "Convergence Guard - 收敛保护器",
+        "summary": "Inspired by:",
+        "primary_symbol": "ConvergenceGuard",
+        "config_symbol": "ConvergenceGuardConfig",
+        "result_symbols": [
+          "ConvergenceReport"
+        ],
+        "public_classes": [
+          "ConvergenceGuardConfig",
+          "ConvergenceReport",
+          "ConvergenceGuard"
+        ],
+        "public_functions": []
+      },
+      {
+        "version": 6,
+        "package": "SpotZoom_Machine_Learning_v6",
+        "module_name": "runtime_profiler",
+        "optimization_type": "system_diagnostics",
+        "type_label": "系统诊断",
+        "source_path": "SpotZoom_Machine_Learning_v6/runtime_profiler.py",
+        "import_path": "SpotZoom_Machine_Learning_v6.runtime_profiler",
+        "title": "Runtime Profiler - 运行时性能分析器",
+        "summary": "Inspired by:",
+        "primary_symbol": "RuntimeProfiler",
+        "config_symbol": "ProfilerConfig",
+        "result_symbols": [
+          "ProfilerReport"
+        ],
+        "public_classes": [
+          "ProfilerConfig",
+          "StageTiming",
+          "ProfilerReport",
+          "RuntimeProfiler"
+        ],
+        "public_functions": []
+      }
+    ],
+    "system_identification": [
+      {
+        "version": 3,
+        "package": "SpotZoom_Machine_Learning_v3",
+        "module_name": "system_identifier",
+        "optimization_type": "system_identification",
+        "type_label": "系统辨识",
+        "source_path": "SpotZoom_Machine_Learning_v3/system_identifier.py",
+        "import_path": "SpotZoom_Machine_Learning_v3.system_identifier",
+        "title": "系统辨识器 (System Identifier)",
+        "summary": "ML for AO System Identification: 机器学习驱动的自适应光学系统辨识",
+        "primary_symbol": "SystemIdentifier",
+        "config_symbol": "SysIdConfig",
+        "result_symbols": [
+          "SysIdResult"
+        ],
+        "public_classes": [
+          "SysIdConfig",
+          "SysIdResult",
+          "SystemIdentifier"
+        ],
+        "public_functions": []
+      },
+      {
+        "version": 5,
+        "package": "SpotZoom_Machine_Learning_v5",
+        "module_name": "subspace_system_identifier",
+        "optimization_type": "system_identification",
+        "type_label": "系统辨识",
+        "source_path": "SpotZoom_Machine_Learning_v5/subspace_system_identifier.py",
+        "import_path": "SpotZoom_Machine_Learning_v5.subspace_system_identifier",
+        "title": "子空间系统辨识器 (SubspaceSystemIdentifier)",
+        "summary": "基于 ML for AO (https://github.com/AleksandarHaber/Machine-Learning-and-System-Identification-for-Adaptive-Optics)",
+        "primary_symbol": "SubspaceSystemIdentifier",
+        "config_symbol": "SubspaceConfig",
+        "result_symbols": [
+          "SubspaceReport"
+        ],
+        "public_classes": [
+          "SubspaceConfig",
+          "SubspaceReport",
+          "SubspaceSystemIdentifier"
+        ],
+        "public_functions": []
+      }
+    ],
+    "hardware_abstraction": [
+      {
+        "version": 3,
+        "package": "SpotZoom_Machine_Learning_v3",
+        "module_name": "hardware_abstraction_layer",
+        "optimization_type": "hardware_abstraction",
+        "type_label": "硬件抽象",
+        "source_path": "SpotZoom_Machine_Learning_v3/hardware_abstraction_layer.py",
+        "import_path": "SpotZoom_Machine_Learning_v3.hardware_abstraction_layer",
+        "title": "硬件抽象层 (Hardware Abstraction Layer)",
+        "summary": "python-microscope (https://github.com/python-microscope/microscope): 显微镜硬件抽象层",
+        "primary_symbol": "HardwareAbstractionLayer",
+        "config_symbol": "HALConfig",
+        "result_symbols": [],
+        "public_classes": [
+          "DeviceType",
+          "DeviceStatus",
+          "DeviceInfo",
+          "HALConfig",
+          "HardwareAbstractionLayer"
+        ],
+        "public_functions": []
+      }
+    ],
+    "global_optimization": [
+      {
+        "version": 4,
+        "package": "SpotZoom_Machine_Learning_v4",
+        "module_name": "multi_objective_bayesian_opt",
+        "optimization_type": "global_optimization",
+        "type_label": "全局优化",
+        "source_path": "SpotZoom_Machine_Learning_v4/multi_objective_bayesian_opt.py",
+        "import_path": "SpotZoom_Machine_Learning_v4.multi_objective_bayesian_opt",
+        "title": "多目标贝叶斯优化器 (Multi-Objective Bayesian Optimizer)",
+        "summary": "Optuna (https://github.com/optuna/optuna)",
+        "primary_symbol": "MultiObjectiveBayesianOpt",
+        "config_symbol": "BayesianOptConfig",
+        "result_symbols": [
+          "OptimizationResult"
+        ],
+        "public_classes": [
+          "AcquisitionFunction",
+          "KernelType",
+          "BayesianOptConfig",
+          "OptimizationResult",
+          "ParetoFront",
+          "MultiObjectiveBayesianOpt"
+        ],
+        "public_functions": []
+      },
+      {
+        "version": 6,
+        "package": "SpotZoom_Machine_Learning_v6",
+        "module_name": "bayesian_pid_optimizer",
+        "optimization_type": "global_optimization",
+        "type_label": "全局优化",
+        "source_path": "SpotZoom_Machine_Learning_v6/bayesian_pid_optimizer.py",
+        "import_path": "SpotZoom_Machine_Learning_v6.bayesian_pid_optimizer",
+        "title": "Bayesian PID Optimizer - 贝叶斯 PID 参数优化器",
+        "summary": "Inspired by:",
+        "primary_symbol": "BayesianPIDOptimizer",
+        "config_symbol": "BayesianPIDConfig",
+        "result_symbols": [
+          "BayesianPIDResult"
+        ],
+        "public_classes": [
+          "BayesianPIDConfig",
+          "BayesianPIDResult",
+          "BayesianPIDOptimizer"
+        ],
+        "public_functions": []
+      },
+      {
+        "version": 7,
+        "package": "SpotZoom_Machine_Learning_v7",
+        "module_name": "topology_aware_optimizer",
+        "optimization_type": "global_optimization",
+        "type_label": "全局优化",
+        "source_path": "SpotZoom_Machine_Learning_v7/topology_aware_optimizer.py",
+        "import_path": "SpotZoom_Machine_Learning_v7.topology_aware_optimizer",
+        "title": "拓扑感知优化器 (Topology Aware Optimizer)",
+        "summary": "基于 CMA-ES (协方差矩阵自适应进化策略) 的全局优化模块。",
+        "primary_symbol": "TopologyAwareOptimizer",
+        "config_symbol": "TopologyOptimizerConfig",
+        "result_symbols": [
+          "ParetoPoint",
+          "TopologyOptResult"
+        ],
+        "public_classes": [
+          "RestartStrategy",
+          "ConstraintMethod",
+          "ParetoPoint",
+          "TopologyOptResult",
+          "TopologyOptimizerConfig",
+          "TopologyAwareOptimizer"
+        ],
+        "public_functions": []
+      }
+    ]
+  }
+}
