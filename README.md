@@ -261,7 +261,6 @@ python SpotZoom.py --xy-driver <thorlabs|newport> --z-driver <wheel|xps> --detec
 参考"8742控制器封装函数.txt"，进行驱动函数的更新，并保证代码通过测试，进行一遍系统处理流程。
 
 
-今天去工位继续优化
 
 ```
 
