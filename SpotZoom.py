@@ -11,6 +11,7 @@ import subprocess
 import sys
 import threading
 import time
+import tempfile
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -22404,6 +22405,11 @@ def parse_args() -> argparse.Namespace:
         default=1.0,
         help="Probe distance for each Z startup self-check move",
     )
+    parser.add_argument(
+        "--startup-motion-check-only",
+        action="store_true",
+        help="Run only the startup motion self-check and exit",
+    )
 
     parser.add_argument("--tolerance-px", type=int, default=6, help="Pixel tolerance")
     parser.add_argument("--detect-retry", type=int, default=6)
@@ -26156,6 +26162,49 @@ def main() -> int:
 
     if args.check_env:
         return check_environment(args)
+
+    if args.startup_motion_check_only:
+        window = None
+        xy_stage = None
+        z_stage = None
+        try:
+            if args.frame_source_image:
+                window = SimulatedFrameWindow(
+                    image_path=args.frame_source_image,
+                    jitter_px=args.sim_jitter_px,
+                    noise_std=args.sim_noise_std,
+                )
+            else:
+                with tempfile.NamedTemporaryFile(prefix="spotzoom_startup_", suffix=".png", delete=False) as tmp:
+                    tmp_path = Path(tmp.name)
+                blank = np.zeros((32, 32, 3), dtype=np.uint8)
+                cv2.imwrite(str(tmp_path), blank)
+                window = SimulatedFrameWindow(image_path=str(tmp_path))
+
+            xy_stage = build_xy_stage(args)
+            z_stage = build_z_stage(args, window)
+            run_startup_motion_check(args, xy_stage=xy_stage, z_stage=z_stage, reporter=RunReporter(None))
+            return 0
+        finally:
+            for obj in (z_stage, xy_stage):
+                close = getattr(obj, "close", None)
+                if callable(close):
+                    try:
+                        close()
+                    except Exception:
+                        pass
+            if window is not None:
+                close = getattr(window, "close", None)
+                if callable(close):
+                    try:
+                        close()
+                    except Exception:
+                        pass
+            if "tmp_path" in locals():
+                try:
+                    tmp_path.unlink(missing_ok=True)
+                except Exception:
+                    pass
 
     try:
         resolved_backend = _resolve_detector_backend(args)
