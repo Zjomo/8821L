@@ -1638,7 +1638,7 @@ def save_default_config(output_path: str) -> None:
         "classic_min_circularity": 0.2,
         "classic_min_intensity_ratio": 1.5,
         "classic_morph_kernel_size": 5,
-        "window_title": "ToupView",
+        "window_title": "NIS",     # 默认为toupview
         "window_wait_seconds": 10.0,
         "target_class_name": "lightspot",
         "target_class_id": 0,
@@ -3967,7 +3967,7 @@ def _utc_iso_now() -> str:
 class ToupViewWindow:
     def __init__(
         self,
-        title_keyword: str = "ToupView",
+        title_keyword: str = "NIS",            # 默认为toupview
         margins: Optional[CaptureMargins] = None,
         wait_timeout_s: float = 10.0,
         wait_poll_s: float = 0.5,
@@ -4242,8 +4242,8 @@ def _format_ultralytics_install_hint(python_exe: str) -> str:
     return " ".join(hint)
 
 
-def _candidate_thorlabs_dll_dirs(extra_dir: Optional[str] = None) -> list[Path]:
-    candidates: list[Path] = []
+def _candidate_thorlabs_dll_dirs(extra_dir: Optional[str] = None) -> List[Path]:
+    candidates: List[Path] = []
     for value in (extra_dir, os.environ.get("THORLABS_KINESIS_DIR")):
         if value:
             candidates.append(Path(value))
@@ -4258,7 +4258,7 @@ def _candidate_thorlabs_dll_dirs(extra_dir: Optional[str] = None) -> list[Path]:
     )
 
     seen = set()
-    deduped: list[Path] = []
+    deduped: List[Path] = []
     for path in candidates:
         key = str(path).lower()
         if key in seen:
@@ -22297,7 +22297,7 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Optional Python executable used to run ultralytics in a worker process",
     )
-    parser.add_argument("--window-title", default="ToupView", help="Window title keyword for ToupView")
+    parser.add_argument("--window-title", default="NIS", help="Window title keyword for ToupView")             # 默认为 toupview
     parser.add_argument("--window-wait-seconds", type=float, default=10.0, help="How long to wait for ToupView")
     parser.add_argument(
         "--frame-source-image",
