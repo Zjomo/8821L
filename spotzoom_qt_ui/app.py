@@ -32,6 +32,7 @@ from PySide6.QtWidgets import (
     QStackedWidget,
     QTableWidget,
     QTableWidgetItem,
+    QTabWidget,
     QTextEdit,
     QTreeWidget,
     QTreeWidgetItem,
@@ -39,6 +40,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from .picomotor_driver_panel import PicomotorDriverPanel
 from .models import EventRecord, RunMode, RuntimeProfile, TestCaseSpec, UiStatus
 from .services import (
     DeviceRegistryService,
@@ -557,6 +559,17 @@ class SpotZoomQtMainWindow(QMainWindow):
         return page
 
     def _build_device_test_page(self) -> QWidget:
+        page = QWidget()
+        layout = QVBoxLayout(page)
+
+        tabs = QTabWidget()
+        tabs.addTab(self._build_device_test_automated_tab(), "自动化测试")
+        self.picomotor_driver_panel = PicomotorDriverPanel(log_callback=self._append_log, parent=tabs)
+        tabs.addTab(self.picomotor_driver_panel, "Picomotor 8742/8743 驱动调试")
+        layout.addWidget(tabs, 1)
+        return page
+
+    def _build_device_test_automated_tab(self) -> QWidget:
         page = QWidget()
         layout = QHBoxLayout(page)
 
@@ -1117,8 +1130,12 @@ class SpotZoomQtMainWindow(QMainWindow):
         self.run_mode_snapshot.setPlainText(json.dumps(report, ensure_ascii=False, indent=2) if report else "{}")
 
     def _append_log(self, text: str) -> None:
-        self.logs_text.appendPlainText(text)
-        self.runtime_status_text.append(text)
+        logs = getattr(self, "logs_text", None)
+        if isinstance(logs, QPlainTextEdit):
+            logs.appendPlainText(text)
+        runtime_text = getattr(self, "runtime_status_text", None)
+        if isinstance(runtime_text, QTextEdit):
+            runtime_text.append(text)
 
     def _decode_bytes(self, raw: bytes) -> str:
         if not raw:
@@ -1353,6 +1370,15 @@ class SpotZoomQtMainWindow(QMainWindow):
         super().showEvent(event)
         self._load_test_tree()
         self._refresh_all_panels()
+
+    def closeEvent(self, event) -> None:
+        panel = getattr(self, "picomotor_driver_panel", None)
+        if panel is not None:
+            try:
+                panel.shutdown()
+            except Exception:
+                pass
+        super().closeEvent(event)
 
 
 def run_qt_ui(repo_root: Optional[Path] = None) -> int:

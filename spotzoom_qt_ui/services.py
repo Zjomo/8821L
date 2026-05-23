@@ -513,7 +513,7 @@ class DeviceTestService:
                     wait_timeout_s=profile.window_wait_seconds,
                 )
                 try:
-                    frame = window.capture_frame()
+                    frame = self._capture_frame(window)
                 finally:
                     close = getattr(window, "close", None)
                     if callable(close):
@@ -532,7 +532,7 @@ class DeviceTestService:
                     jitter_px=profile.sim_jitter_px,
                     noise_std=profile.sim_noise_std,
                 )
-                frame = window.capture_frame()
+                frame = self._capture_frame(window)
                 return self._success(
                     test_id,
                     "测试模拟图像源",
@@ -561,6 +561,15 @@ class DeviceTestService:
             return self._failure(test_id, test_id, started, "未知测试项")
         except Exception as exc:
             return self._failure(test_id, test_id, started, str(exc))
+
+    def _capture_frame(self, window) -> np.ndarray:
+        grab = getattr(window, "grab_frame", None)
+        if callable(grab):
+            return grab()
+        capture = getattr(window, "capture_frame", None)
+        if callable(capture):
+            return capture()
+        raise RuntimeError(f"{window.__class__.__name__} 缺少 grab_frame/capture_frame 接口")
 
     def _run_mrc_motion(
         self,

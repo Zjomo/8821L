@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 
 from spotzoom_qt_ui.models import RunMode
-from spotzoom_qt_ui.services import DeviceRegistryService, ModuleCatalogService, RuntimeControlService
+from spotzoom_qt_ui.services import DeviceRegistryService, DeviceTestService, ModuleCatalogService, RuntimeControlService
 
 
 class SpotZoomQtUiServicesTests(unittest.TestCase):
@@ -51,6 +51,17 @@ class SpotZoomQtUiServicesTests(unittest.TestCase):
         profile.run_mode = RunMode.REAL
         snapshot = self.runtime.build_snapshot(profile)
         self.assertEqual(snapshot.mode_label, "真实设备")
+
+    def test_device_test_capture_frame_prefers_grab_frame(self) -> None:
+        class FakeWindow:
+            def grab_frame(self):
+                import numpy as np
+
+                return np.zeros((10, 20, 3), dtype=np.uint8)
+
+        svc = DeviceTestService(self.runtime)
+        frame = svc._capture_frame(FakeWindow())
+        self.assertEqual(frame.shape, (10, 20, 3))
 
 
 if __name__ == "__main__":
