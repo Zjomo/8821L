@@ -272,6 +272,88 @@ python SpotZoom.py --xy-driver <thorlabs|newport> --z-driver <wheel|xps> --detec
 
 ### 🎯 TODO
 
+#### 2026-5-24
+
+休息
+
+
+
+#### 2026-5-23
+
+0、光路搭建：显微镜、驱动电机、探测器、光路、两块镜子闭环		✔
+
+1、驱动电机 -- 可以将电机控制系统补充到现有的UI系统内			  ✔
+
+2、将控制器安装电机至光路内									 ✔
+
+3、总结当前涉及的"光斑检测算法"								✔
+
+```    
+0、相关算法
+        YOLO、otsu、adaptive、tophat、gmm、meanshift、brightest、largest、central，还结合一些图片形态学的约束，
+        然后找了一些文献，来优化每个模块的算子，保证尽可能的优化图片检测、电机驱动的效果
+
+1. 主检测后端
+    YOLO 检测（`SpotYOLODetector`）
+    经典机器学习算法 
+        二值化：otsu/adaptive/tophat/gmm/meanshift；
+        候选筛选：brightest / largest / central；
+        还会结合面积、圆度、强度比、形态学核等约束，并启用亚像素定位。
+    YOLO Worker 子进程检测（SpotYOLOWorkerClient）
+    【当前默认架构：classic后端+ otsu + brightest】
+
+2. 丢检后的 fallback / recovery（按开关启用）
+    - 多尺度 fallback
+    - LodeSTAR fallback
+    - StarDist fallback
+    - Wavelet fallback
+    - 模板类恢复（memory/pyramid/log-polar）
+    - KLT 光流恢复
+    - 相位相关（phase correlation）恢复
+    - ECC 运动补偿恢复
+    - CMC 仿射恢复
+    - ORB+RANSAC 单应恢复
+    - Kalman+模板恢复
+    - temporal ensemble 恢复
+    - recovery scan（XY 交叉扫描）
+
+3. 检测后的时序稳态/关联门控（Frontier）
+    一系列时间连续性、一致性、应力/滞回门控与相位修正，用于“检测结果修正与防抖”
+
+```
+
+4、下一步程序的测试目标规划	✔
+
+```    
+启动程序，基于UI内容界面/toupview 选定ROI区域，基于classic机器学习算法，检测光斑位置，确定中心坐标P0
+    并将光斑范围进行框定，通过上下循环移动Z轴（如何解决两个电机的问题？）：
+    (1) Z轴上升50单位：检测光斑位置，确定中心坐标P1，计算P0与P1的距离，基于曼哈顿距离（x1-x2）+（y1-y2），移动至P0位置
+    (2) Z轴下降50单位：检测光斑位置，确定中心坐标P2，计算P0与P2的距离，基于曼哈顿距离（x1-x2）+（y1-y2），移动至P0位置
+    (3) 循环(1)、(2)，直到满足结束条件：P0、P1、P2坐标的误差<0.01
+    【上述思路，由于涉及了Z轴 引入了原有系统的多余轴，由此，需要被优化掉，具体的思路可以参照市面上的设备进行参考】
+
+    0、数据集问题，光斑问题每次都采集数据不太通用，所以采用机器视觉来解决
+    1、解决两个电机的问题，相互完成通讯【多个电机之间完成通信】
+    2、如何基于规律控制两个轴？-- 找到一个稳定控制的逻辑 -- 由于是4轴系统，所以需要控制变量【多个轴之间完成逻辑闭环】
+    3、研究是否能够通过usb，对CCD探测器完成通信控制的逻辑闭环
+    4、github实现项目的版本控制，晚点直接删除slave的8821L项目，再从github上 pull下来【安装不了一点】
+    5、优化逻辑，将原有的"5轴系统"中"Z轴"的部分去除，即上述的"准直思路需要进行修改" > 查询资料进行解决
+
+```
+
+5、程序补充通过测试		✔
+
+```
+1、完成libuse.dll 的环境配置
+2、完成list > List 的 python 3.8语法习惯优化
+3、完成toupview > NIS 窗口的优化
+
+```
+
+6、完成每台设备的github最新项目更新	✔
+
+
+
 #### 2026-5-22
 
 网卡设置与正常联网	✔
