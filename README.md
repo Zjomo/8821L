@@ -274,7 +274,7 @@ python SpotZoom.py --xy-driver <thorlabs|newport> --z-driver <wheel|xps> --detec
 
 #### 2026-5-26
 
-
+网购了另一个光束分析仪，准备2个探测器 -- 咨询发票、质保、测试不行可退货、400-800nm波长、光斑大小<5mm	✔
 
 
 
