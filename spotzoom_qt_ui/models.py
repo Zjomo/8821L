@@ -22,14 +22,21 @@ class RunMode(str, Enum):
     REAL = "real"
 
 
+class AlignmentStrategy(str, Enum):
+    Z_SCAN_LEGACY = "z_scan_legacy"
+    DUAL_DETECTOR_4AXIS = "dual_detector_4axis"
+
+
 @dataclass
 class RuntimeProfile:
     run_mode: RunMode = RunMode.SIMULATION
     detector_backend: str = "classic"
     frame_source_image: Optional[str] = None
+    frame_source_image_2: Optional[str] = None
     sim_jitter_px: int = 0
     sim_noise_std: float = 0.0
     select_roi: bool = False
+    select_roi_2: bool = False
     xy_driver: str = "dryrun"
     z_driver: str = "dryrun"
     x_move_step: int = 500
@@ -55,6 +62,7 @@ class RuntimeProfile:
     log_level: str = "INFO"
     no_preview: bool = True
     window_title: str = "ToupView"
+    window_title_2: Optional[str] = None
     window_wait_seconds: float = 10.0
     yolo_python: Optional[str] = None
     model_path: Optional[str] = None
@@ -96,6 +104,37 @@ class RuntimeProfile:
     xps_password: str = "Administrator"
     xps_group: str = "ILS300LM"
     experimental_module_filters: List[str] = field(default_factory=list)
+    # 4轴双镜闭环参数
+    alignment_strategy: AlignmentStrategy = AlignmentStrategy.Z_SCAN_LEGACY
+    stage1_kp: float = 1.0
+    stage1_ki: float = 0.1
+    stage2_kp: float = 1.0
+    stage2_ki: float = 0.1
+    coupling_c12: float = 0.0
+    coupling_c21: float = 0.0
+    tolerance_pos_px: int = 4
+    tolerance_ang_px: int = 4
+    converge_stable_frames: int = 5
+    detector2_focal_length: float = 200.0
+    detector_mode: str = "single_detector"
+    stage1_gain_factor: float = 2.0
+    sequential_stage1_iterations: int = 3
+    # 探测器效果对比参数
+    comparison_mode: str = "detector_primary"
+    detector_weight: float = 0.7
+    touview_weight: float = 0.3
+    disagreement_threshold_px: float = 10.0
+    comparison_log_interval: int = 1
+    # UCC CCD相机参数
+    ucc_device: Optional[int] = None
+    ucc_resolution: str = "PAL"
+    ucc_exposure: Optional[float] = None
+    ucc_gain: Optional[float] = None
+    ucc_brightness: Optional[float] = None
+    ucc_contrast: Optional[float] = None
+    ucc_device_2: Optional[int] = None
+    ucc_resolution_2: str = "PAL"
+    preview: bool = True
 
 
 @dataclass

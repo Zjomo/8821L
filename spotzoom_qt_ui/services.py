@@ -17,6 +17,7 @@ from SpotZoom_Machine_Learning_Unified.registry import OptimizationType
 
 from .models import (
     ActionResult,
+    AlignmentStrategy,
     DevicePanelState,
     EventRecord,
     ModuleViewItem,
@@ -126,6 +127,51 @@ class RuntimeControlService:
             args.append("--select-roi")
         else:
             args.append("--skip-roi")
+
+        # 4轴双镜闭环参数
+        args.extend(["--alignment-strategy", profile.alignment_strategy.value])
+        if profile.window_title_2:
+            args.extend(["--window-title-2", profile.window_title_2])
+        if profile.frame_source_image_2:
+            args.extend(["--frame-source-image-2", profile.frame_source_image_2])
+        if profile.select_roi_2:
+            args.append("--select-roi-2")
+        else:
+            args.append("--skip-roi-2")
+        args.extend(["--stage1-kp", str(profile.stage1_kp)])
+        args.extend(["--stage1-ki", str(profile.stage1_ki)])
+        args.extend(["--stage2-kp", str(profile.stage2_kp)])
+        args.extend(["--stage2-ki", str(profile.stage2_ki)])
+        args.extend(["--coupling-c12", str(profile.coupling_c12)])
+        args.extend(["--coupling-c21", str(profile.coupling_c21)])
+        args.extend(["--tolerance-pos-px", str(profile.tolerance_pos_px)])
+        args.extend(["--tolerance-ang-px", str(profile.tolerance_ang_px)])
+        args.extend(["--converge-stable-frames", str(profile.converge_stable_frames)])
+        args.extend(["--detector2-focal-length", str(profile.detector2_focal_length)])
+        args.extend(["--detector-mode", profile.detector_mode])
+        args.extend(["--stage1-gain-factor", str(profile.stage1_gain_factor)])
+        args.extend(["--sequential-stage1-iterations", str(profile.sequential_stage1_iterations)])
+        args.extend(["--comparison-mode", profile.comparison_mode])
+        args.extend(["--detector-weight", str(profile.detector_weight)])
+        args.extend(["--touview-weight", str(profile.touview_weight)])
+        args.extend(["--disagreement-threshold-px", str(profile.disagreement_threshold_px)])
+        args.extend(["--comparison-log-interval", str(profile.comparison_log_interval)])
+
+        # UCC CCD相机参数
+        if profile.ucc_device is not None:
+            args.extend(["--ucc-device", str(profile.ucc_device)])
+            args.extend(["--ucc-resolution", profile.ucc_resolution])
+            if profile.ucc_exposure is not None:
+                args.extend(["--ucc-exposure", str(profile.ucc_exposure)])
+            if profile.ucc_gain is not None:
+                args.extend(["--ucc-gain", str(profile.ucc_gain)])
+            if profile.ucc_brightness is not None:
+                args.extend(["--ucc-brightness", str(profile.ucc_brightness)])
+            if profile.ucc_contrast is not None:
+                args.extend(["--ucc-contrast", str(profile.ucc_contrast)])
+        if profile.ucc_device_2 is not None:
+            args.extend(["--ucc-device-2", str(profile.ucc_device_2)])
+            args.extend(["--ucc-resolution-2", profile.ucc_resolution_2])
 
         args.extend(["--tolerance-px", str(profile.tolerance_px)])
         args.extend(["--detect-retry", str(profile.detect_retry)])

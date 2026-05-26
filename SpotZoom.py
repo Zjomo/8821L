@@ -1,4 +1,4 @@
-﻿import argparse
+import argparse
 import base64
 from collections import deque
 import json
@@ -2519,6 +2519,7 @@ class CaptureMargins:
 
 @dataclass
 class AlignmentConfig:
+    alignment_strategy: str = "z_scan_legacy"
     tolerance_px: int = 6
     detect_retry: int = 6
     detect_retry_interval_s: float = 0.25
@@ -2530,6 +2531,26 @@ class AlignmentConfig:
     y_error_to_stage_sign: int = -1
     z_move_step: float = 1.0
     max_iterations: int = 8
+    # 4轴双镜闭环参数
+    stage1_kp: float = 1.0
+    stage1_ki: float = 0.1
+    stage2_kp: float = 1.0
+    stage2_ki: float = 0.1
+    coupling_c12: float = 0.0
+    coupling_c21: float = 0.0
+    tolerance_pos_px: int = 4
+    tolerance_ang_px: int = 4
+    converge_stable_frames: int = 5
+    detector2_focal_length: float = 200.0
+    detector_mode: str = "single_detector"
+    stage1_gain_factor: float = 2.0
+    sequential_stage1_iterations: int = 3
+    # 探测器效果对比参数
+    comparison_mode: str = "detector_primary"
+    detector_weight: float = 0.7
+    touview_weight: float = 0.3
+    disagreement_threshold_px: float = 10.0
+    comparison_log_interval: int = 1
     preview: bool = True
     detection_smooth_window: int = 1
     adaptive_step: bool = False
@@ -4205,6 +4226,456 @@ class SimulatedFrameWindow:
         LOGGER.debug("Simulated wheel ignored: clicks=%d", clicks)
 
 
+class UCCFrameSource:
+    """UCC CCD相机帧源，通过OpenCV直接访问USB视频设备（UVC协议）。
+    
+    硬件信息：
+    - 芯片型号：Nextchip 2040E + SONY 639CCD
+    - 传感器：1/3 Sony 960H CCD Sensor
+    - 像素：PAL: 976(H)×582(V), NTSC: 976(H)×494(V)
+    - 分辨率：600 TVL
+    - 信号制式：PAL/NTSC
+    - 视频输出：1.0Vp-p/75Ω
+    - 工作电压：DC 12V
+    
+    使用示例：
+        ucc = UCCFrameSource(device_index=0, resolution="PAL")
+        frame = ucc.grab_frame()
+    """
+    
+    # 预定义分辨率配置
+    RESOLUTIONS = {
+        "PAL": {"width": 976, "height": 582, "fps": 25},
+        "NTSC": {"width": 976, "height": 494, "fps": 30},
+        "AUTO": {"width": 0, "height": 0, "fps": 0},  # 使用设备默认
+    }
+    
+    def __init__(
+        self,
+        device_index: int = 0,
+        resolution: str = "PAL",
+        exposure: Optional[float] = None,
+        gain: Optional[float] = None,
+        brightness: Optional[float] = None,
+        contrast: Optional[float] = None,
+    ):
+        self.device_index = device_index
+        self.resolution = resolution.upper()
+        self.cap = None
+        self.roi = None
+        
+        # 相机参数
+        self.exposure = exposure
+        self.gain = gain
+        self.brightness = brightness
+        self.contrast = contrast
+        
+        # 验证分辨率
+        if self.resolution not in self.RESOLUTIONS:
+            raise ValueError(f"不支持的分辨率: {resolution}，支持: {list(self.RESOLUTIONS.keys())}")
+        
+        # 连接相机
+        self._connect()
+        
+        LOGGER.info("UCCFrameSource initialized: device=%d, resolution=%s, region=%s",
+                   device_index, self.resolution, self.get_capture_region())
+    
+    def _connect(self):
+        """连接UCC相机并配置参数。"""
+        self.cap = cv2.VideoCapture(self.device_index)
+        
+        if not self.cap.isOpened():
+            raise RuntimeError(f"无法打开UCC相机设备 {self.device_index}，请检查：\n"
+                             f"1. 相机是否已连接\n"
+                             f"2. 驱动是否已安装\n"
+                             f"3. 设备索引是否正确（可用cv2.VideoCapture(index)测试）")
+        
+        # 配置分辨率
+        res_config = self.RESOLUTIONS[self.resolution]
+        if res_config["width"] > 0:
+            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, res_config["width"])
+            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, res_config["height"])
+        if res_config["fps"] > 0:
+            self.cap.set(cv2.CAP_PROP_FPS, res_config["fps"])
+        
+        # 配置相机参数
+        if self.exposure is not None:
+            self.cap.set(cv2.CAP_PROP_EXPOSURE, self.exposure)
+        if self.gain is not None:
+            self.cap.set(cv2.CAP_PROP_GAIN, self.gain)
+        if self.brightness is not None:
+            self.cap.set(cv2.CAP_PROP_BRIGHTNESS, self.brightness)
+        if self.contrast is not None:
+            self.cap.set(cv2.CAP_PROP_CONTRAST, self.contrast)
+        
+        # 读取实际参数
+        actual_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        actual_height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        actual_fps = self.cap.get(cv2.CAP_PROP_FPS)
+        
+        LOGGER.info("UCC相机已连接: device=%d, 实际分辨率=%dx%d, FPS=%.1f",
+                   self.device_index, actual_width, actual_height, actual_fps)
+    
+    def grab_frame(self) -> np.ndarray:
+        """采集单帧图像。"""
+        if self.cap is None or not self.cap.isOpened():
+            raise RuntimeError("UCC相机未连接或已断开")
+        
+        ret, frame = self.cap.read()
+        if not ret or frame is None:
+            raise RuntimeError("UCC相机帧采集失败，请检查设备连接")
+        
+        # ROI裁剪
+        if self.roi is not None:
+            x, y, w, h = self.roi
+            h0, w0 = frame.shape[:2]
+            x = max(0, min(x, w0 - 1))
+            y = max(0, min(y, h0 - 1))
+            w = min(w, w0 - x)
+            h = min(h, h0 - y)
+            frame = frame[y:y + h, x:x + w]
+        
+        return frame
+    
+    def get_capture_region(self):
+        """获取采集区域信息。"""
+        if self.cap is not None and self.cap.isOpened():
+            width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+            height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+            return (0, 0, width, height)
+        return (0, 0, 0, 0)
+    
+    def select_roi(self) -> None:
+        """交互式选择ROI区域。"""
+        frame = self.grab_frame()
+        win_name = "UCC Camera ROI Selection"
+        cv2.namedWindow(win_name, cv2.WINDOW_NORMAL)
+        cv2.resizeWindow(win_name, min(frame.shape[1], 1400), min(frame.shape[0], 900))
+        roi = cv2.selectROI(win_name, frame, showCrosshair=True, fromCenter=False)
+        cv2.destroyWindow(win_name)
+        x, y, w, h = roi
+        if w > 10 and h > 10:
+            self.roi = (int(x), int(y), int(w), int(h))
+            LOGGER.info("UCC ROI set: x=%d, y=%d, w=%d, h=%d", x, y, w, h)
+        else:
+            self.roi = None
+            LOGGER.info("UCC ROI not set; using full frame")
+    
+    def set_camera_param(self, param: str, value: float):
+        """动态设置相机参数。
+        
+        Args:
+            param: 参数名 (exposure, gain, brightness, contrast)
+            value: 参数值
+        """
+        if self.cap is None:
+            raise RuntimeError("UCC相机未连接")
+        
+        param_map = {
+            "exposure": cv2.CAP_PROP_EXPOSURE,
+            "gain": cv2.CAP_PROP_GAIN,
+            "brightness": cv2.CAP_PROP_BRIGHTNESS,
+            "contrast": cv2.CAP_PROP_CONTRAST,
+        }
+        
+        if param not in param_map:
+            raise ValueError(f"不支持的参数: {param}，支持: {list(param_map.keys())}")
+        
+        self.cap.set(param_map[param], value)
+        actual = self.cap.get(param_map[param])
+        LOGGER.info("UCC相机参数设置: %s=%.2f (实际=%.2f)", param, value, actual)
+    
+    def get_camera_info(self) -> dict:
+        """获取相机信息。"""
+        if self.cap is None:
+            return {}
+        
+        return {
+            "device_index": self.device_index,
+            "resolution": self.resolution,
+            "width": int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
+            "height": int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)),
+            "fps": self.cap.get(cv2.CAP_PROP_FPS),
+            "exposure": self.cap.get(cv2.CAP_PROP_EXPOSURE),
+            "gain": self.cap.get(cv2.CAP_PROP_GAIN),
+            "brightness": self.cap.get(cv2.CAP_PROP_BRIGHTNESS),
+            "contrast": self.cap.get(cv2.CAP_PROP_CONTRAST),
+        }
+    
+    def release(self):
+        """释放相机资源。"""
+        if self.cap is not None:
+            self.cap.release()
+            self.cap = None
+            LOGGER.info("UCC相机已断开: device=%d", self.device_index)
+    
+    def __del__(self):
+        """析构时自动释放资源。"""
+        self.release()
+    
+    def wheel(self, clicks: int) -> None:
+        """UCC相机不支持滚轮操作。"""
+        LOGGER.debug("UCC camera wheel ignored: clicks=%d", clicks)
+
+
+class FrameSourcePair:
+    def __init__(self, source_pos, source_ang=None):
+        self.source_pos = source_pos
+        self.source_ang = source_ang
+        LOGGER.info("FrameSourcePair initialized: pos_source=%s, ang_source=%s",
+                    source_pos.__class__.__name__,
+                    source_ang.__class__.__name__ if source_ang else "None")
+
+    def grab_frames(self) -> Tuple[np.ndarray, Optional[np.ndarray]]:
+        frame_pos = self.source_pos.grab_frame()
+        frame_ang = self.source_ang.grab_frame() if self.source_ang else None
+        return frame_pos, frame_ang
+
+    def select_rois(self) -> None:
+        LOGGER.info("Selecting ROI for position detector...")
+        self.source_pos.select_roi()
+        if self.source_ang:
+            LOGGER.info("Selecting ROI for angle detector...")
+            self.source_ang.select_roi()
+
+    def wheel(self, clicks: int) -> None:
+        self.source_pos.wheel(clicks)
+        if self.source_ang:
+            self.source_ang.wheel(clicks)
+
+    def get_capture_regions(self) -> Tuple[Tuple[int, int, int, int], Optional[Tuple[int, int, int, int]]]:
+        pos_region = self.source_pos.get_capture_region()
+        ang_region = self.source_ang.get_capture_region() if self.source_ang else None
+        return pos_region, ang_region
+
+
+class FourAxisController:
+    """4轴双镜闭环控制器，支持双探测器和单探测器两种模式。
+    
+    双探测器模式（dual_detector）：
+        - Detector1测量位置误差（近端镜子后）
+        - Detector2测量角度误差（远端镜子后+透镜）
+        - 两个镜子同时控制
+    
+    单探测器模式（single_detector）：
+        - 仅在远端镜子后有一个探测器
+        - 采用顺序控制：先调镜子1（粗调），再调镜子2（细调）
+        - 保留双探测器接口，后续可扩展
+    """
+    
+    def __init__(
+        self,
+        stage1_kp: float = 1.0,
+        stage1_ki: float = 0.1,
+        stage2_kp: float = 1.0,
+        stage2_ki: float = 0.1,
+        coupling_c12: float = 0.0,
+        coupling_c21: float = 0.0,
+        tolerance_pos_px: int = 4,
+        tolerance_ang_px: int = 4,
+        converge_stable_frames: int = 5,
+        detector2_focal_length: float = 200.0,
+        detector_mode: str = "single_detector",  # "single_detector" 或 "dual_detector"
+        stage1_gain_factor: float = 2.0,  # 单探测器模式下镜子1的增益系数（杠杆效应）
+        sequential_stage1_iterations: int = 3,  # 单探测器模式下先调镜子1的迭代次数
+    ):
+        self.stage1_kp = stage1_kp
+        self.stage1_ki = stage1_ki
+        self.stage2_kp = stage2_kp
+        self.stage2_ki = stage2_ki
+        self.coupling_c12 = coupling_c12
+        self.coupling_c21 = coupling_c21
+        self.tolerance_pos_px = tolerance_pos_px
+        self.tolerance_ang_px = tolerance_ang_px
+        self.converge_stable_frames = converge_stable_frames
+        self.detector2_focal_length = detector2_focal_length
+        self.detector_mode = detector_mode
+        self.stage1_gain_factor = stage1_gain_factor
+        self.sequential_stage1_iterations = sequential_stage1_iterations
+
+        self.integral_pos_x = 0.0
+        self.integral_pos_y = 0.0
+        self.integral_ang_x = 0.0
+        self.integral_ang_y = 0.0
+
+        self.stable_frame_count = 0
+        self.jacobian_matrix = None
+        self._current_stage = 1  # 单探测器模式下当前控制阶段
+        LOGGER.info("FourAxisController initialized: mode=%s stage1_kp=%.2f stage1_ki=%.2f stage2_kp=%.2f stage2_ki=%.2f coupling=(%.2f,%.2f)",
+                    detector_mode, stage1_kp, stage1_ki, stage2_kp, stage2_ki, coupling_c12, coupling_c21)
+
+    def reset_integrators(self) -> None:
+        self.integral_pos_x = 0.0
+        self.integral_pos_y = 0.0
+        self.integral_ang_x = 0.0
+        self.integral_ang_y = 0.0
+        self.stable_frame_count = 0
+
+    def set_jacobian(self, J: np.ndarray) -> None:
+        if J.shape != (4, 4):
+            raise ValueError(f"Jacobian must be 4x4 matrix, got {J.shape}")
+        self.jacobian_matrix = J
+        LOGGER.info("Jacobian matrix set:\n%s", J)
+
+    def estimate_jacobian(self, xy_stage, frame_source_pair, calibration_steps: int = 5) -> np.ndarray:
+        LOGGER.info("Starting 4x4 Jacobian calibration with %d steps per axis", calibration_steps)
+        J = np.zeros((4, 4))
+        reference_pos = self._capture_reference(frame_source_pair)
+        if reference_pos is None:
+            raise RuntimeError("Failed to capture reference positions for calibration")
+
+        axes = [('stage1_x', 'move_x1'), ('stage1_y', 'move_y1'),
+                ('stage2_x', 'move_x2'), ('stage2_y', 'move_y2')]
+
+        for i, (axis_name, move_method) in enumerate(axes):
+            for sign in [1, -1]:
+                step = sign * calibration_steps
+                getattr(xy_stage, move_method)(step)
+                time.sleep(0.2)
+                pos, ang = self._capture_reference(frame_source_pair)
+                if pos is None or ang is None:
+                    LOGGER.warning("Skipping calibration point for %s", axis_name)
+                    continue
+
+                dx_pos = pos[0] - reference_pos[0]
+                dy_pos = pos[1] - reference_pos[1]
+                dx_ang = ang[0] - reference_pos[2]
+                dy_ang = ang[1] - reference_pos[3]
+
+                J[0, i] += dx_pos / step
+                J[1, i] += dy_pos / step
+                J[2, i] += dx_ang / step
+                J[3, i] += dy_ang / step
+
+                getattr(xy_stage, move_method)(-step)
+                time.sleep(0.2)
+
+            J[:, i] /= 2.0
+
+        self.jacobian_matrix = J
+        LOGGER.info("Jacobian calibration completed:\n%s", J)
+        return J
+
+    def _capture_reference(self, frame_source_pair) -> Optional[Tuple[int, int, int, int]]:
+        frame_pos, frame_ang = frame_source_pair.grab_frames()
+        if frame_pos is None:
+            return None
+        h_pos, w_pos = frame_pos.shape[:2]
+        center_pos = (w_pos // 2, h_pos // 2)
+
+        if frame_ang is None:
+            return (center_pos[0], center_pos[1], center_pos[0], center_pos[1])
+
+        h_ang, w_ang = frame_ang.shape[:2]
+        center_ang = (w_ang // 2, h_ang // 2)
+        return (center_pos[0], center_pos[1], center_ang[0], center_ang[1])
+
+    def compute_control(self, e_pos: Tuple[int, int], e_ang: Tuple[int, int]) -> Tuple[int, int, int, int]:
+        """计算控制量，支持双探测器和单探测器两种模式。"""
+        e_pos_x, e_pos_y = e_pos
+        e_ang_x, e_ang_y = e_ang
+
+        if self.detector_mode == "single_detector":
+            return self._compute_control_single_detector(e_pos_x, e_pos_y)
+        else:
+            return self._compute_control_dual_detector(e_pos_x, e_pos_y, e_ang_x, e_ang_y)
+
+    def _compute_control_dual_detector(self, e_pos_x, e_pos_y, e_ang_x, e_ang_y) -> Tuple[int, int, int, int]:
+        """双探测器模式：同时控制两个镜子。"""
+        self.integral_pos_x = max(-1000.0, min(1000.0, self.integral_pos_x + e_pos_x))
+        self.integral_pos_y = max(-1000.0, min(1000.0, self.integral_pos_y + e_pos_y))
+        self.integral_ang_x = max(-1000.0, min(1000.0, self.integral_ang_x + e_ang_x))
+        self.integral_ang_y = max(-1000.0, min(1000.0, self.integral_ang_y + e_ang_y))
+
+        u1_x = int(round(self.stage1_kp * e_pos_x + self.stage1_ki * self.integral_pos_x + self.coupling_c12 * e_ang_x))
+        u1_y = int(round(self.stage1_kp * e_pos_y + self.stage1_ki * self.integral_pos_y + self.coupling_c12 * e_ang_y))
+        u2_x = int(round(self.stage2_kp * e_ang_x + self.stage2_ki * self.integral_ang_x + self.coupling_c21 * e_pos_x))
+        u2_y = int(round(self.stage2_kp * e_ang_y + self.stage2_ki * self.integral_ang_y + self.coupling_c21 * e_pos_y))
+
+        u1_x = max(-2000, min(2000, u1_x))
+        u1_y = max(-2000, min(2000, u1_y))
+        u2_x = max(-2000, min(2000, u2_x))
+        u2_y = max(-2000, min(2000, u2_y))
+
+        return (u1_x, u1_y, u2_x, u2_y)
+
+    def _compute_control_single_detector(self, e_pos_x, e_pos_y) -> Tuple[int, int, int, int]:
+        """单探测器模式：顺序控制。
+        
+        阶段1：用镜子1进行粗调（增益较大，因为镜子1离探测器远，杠杆效应大）
+        阶段2：用镜子2进行细调（增益较小，因为镜子2离探测器近，调节更精细）
+        """
+        self.integral_pos_x = max(-1000.0, min(1000.0, self.integral_pos_x + e_pos_x))
+        self.integral_pos_y = max(-1000.0, min(1000.0, self.integral_pos_y + e_pos_y))
+
+        error_norm = math.hypot(e_pos_x, e_pos_y)
+        
+        # 阶段1：粗调 - 使用镜子1（近端镜子）
+        if self._current_stage == 1:
+            # 镜子1的增益乘以杠杆系数（离探测器远，影响大）
+            u1_x = int(round(self.stage1_kp * self.stage1_gain_factor * e_pos_x + 
+                           self.stage1_ki * self.integral_pos_x))
+            u1_y = int(round(self.stage1_kp * self.stage1_gain_factor * e_pos_y + 
+                           self.stage1_ki * self.integral_pos_y))
+            u2_x, u2_y = 0, 0  # 阶段1不动镜子2
+            
+            LOGGER.debug("Single-detector Stage 1: error_norm=%.2f, u1=(%d, %d)", 
+                        error_norm, u1_x, u1_y)
+        
+        # 阶段2：细调 - 使用镜子2（远端镜子）
+        else:
+            # 镜子2的增益较小（离探测器近，调节精细）
+            u2_x = int(round(self.stage2_kp * e_pos_x + self.stage2_ki * self.integral_pos_x))
+            u2_y = int(round(self.stage2_kp * e_pos_y + self.stage2_ki * self.integral_pos_y))
+            u1_x, u1_y = 0, 0  # 阶段2不动镜子1
+            
+            LOGGER.debug("Single-detector Stage 2: error_norm=%.2f, u2=(%d, %d)", 
+                        error_norm, u2_x, u2_y)
+
+        u1_x = max(-2000, min(2000, u1_x))
+        u1_y = max(-2000, min(2000, u1_y))
+        u2_x = max(-2000, min(2000, u2_x))
+        u2_y = max(-2000, min(2000, u2_y))
+
+        return (u1_x, u1_y, u2_x, u2_y)
+
+    def update_stage(self, iteration: int) -> None:
+        """单探测器模式下更新控制阶段。"""
+        if self.detector_mode == "single_detector":
+            if iteration <= self.sequential_stage1_iterations:
+                self._current_stage = 1
+                LOGGER.info("Single-detector mode: Stage 1 (coarse adjustment with mirror 1)")
+            else:
+                self._current_stage = 2
+                LOGGER.info("Single-detector mode: Stage 2 (fine adjustment with mirror 2)")
+
+    def is_converged(self, e_pos: Tuple[int, int], e_ang: Tuple[int, int]) -> bool:
+        """收敛判据，单探测器模式下只检查位置误差。"""
+        pos_norm = math.hypot(e_pos[0], e_pos[1])
+        
+        if self.detector_mode == "dual_detector":
+            ang_norm = math.hypot(e_ang[0], e_ang[1])
+            if pos_norm <= self.tolerance_pos_px and ang_norm <= self.tolerance_ang_px:
+                self.stable_frame_count += 1
+                if self.stable_frame_count >= self.converge_stable_frames:
+                    return True
+            else:
+                self.stable_frame_count = 0
+        else:
+            # 单探测器模式：只检查位置误差
+            if pos_norm <= self.tolerance_pos_px:
+                self.stable_frame_count += 1
+                if self.stable_frame_count >= self.converge_stable_frames:
+                    return True
+            else:
+                self.stable_frame_count = 0
+
+        return False
+
+    def angle_to_pixels(self, angle_rad: float) -> float:
+        return angle_rad * self.detector2_focal_length * 1000.0
+
+
 def _module_available_in_current_python(module_name: str) -> bool:
     try:
         __import__(module_name)
@@ -5348,6 +5819,8 @@ class SpotZoomController:
         z_stage,
         cfg: AlignmentConfig,
         reporter: Optional[RunReporter] = None,
+        four_axis_controller=None,
+        frame_source_pair=None,
     ):
         self.window = window
         self.detector = detector
@@ -5355,6 +5828,8 @@ class SpotZoomController:
         self.z_stage = z_stage
         self.cfg = cfg
         self.reporter = reporter
+        self.four_axis_controller = four_axis_controller
+        self.frame_source_pair = frame_source_pair
         smooth_win = max(1, int(self.cfg.detection_smooth_window))
         self._det_history: Deque[Tuple[int, int]] = deque(maxlen=smooth_win)
         self.preview_window_name = "SpotZoom Preview"
@@ -8136,6 +8611,17 @@ class SpotZoomController:
                 )
 
     def run(self) -> bool:
+        strategy = getattr(self.cfg, "alignment_strategy", "z_scan_legacy")
+        LOGGER.info("Selected alignment strategy: %s", strategy)
+
+        if strategy == "dual_detector_4axis":
+            return self._run_4axis()
+        elif strategy == "detector_comparison":
+            return self._run_detector_comparison()
+        else:
+            return self._run_z_scan_legacy()
+
+    def _run_z_scan_legacy(self) -> bool:
         target = self._detect_center_with_retry(tag="Initial P1")
         LOGGER.info("Initial target P1 = %s", target.center)
         if self.reporter is not None:
@@ -8172,6 +8658,379 @@ class SpotZoomController:
         if self.reporter is not None:
             self.reporter.event("not_converged", max_iterations=self.cfg.max_iterations)
         return False
+
+    def _run_4axis(self) -> bool:
+        """4轴闭环对准，支持单探测器和双探测器两种模式。"""
+        LOGGER.info("Starting 4-axis closed-loop alignment")
+        if not hasattr(self, 'four_axis_controller') or self.four_axis_controller is None:
+            raise RuntimeError("FourAxisController not initialized for 4-axis strategy")
+        if not hasattr(self, 'frame_source_pair') or self.frame_source_pair is None:
+            raise RuntimeError("FrameSourcePair not initialized for 4-axis strategy")
+
+        # 判断探测器模式
+        is_dual_detector = (self.frame_source_pair.source_ang is not None and 
+                           self.four_axis_controller.detector_mode == "dual_detector")
+        
+        if is_dual_detector:
+            LOGGER.info("Dual-detector mode: using separate position and angle detectors")
+            return self._run_4axis_dual_detector()
+        else:
+            LOGGER.info("Single-detector mode: using sequential control with one detector")
+            return self._run_4axis_single_detector()
+
+    def _run_4axis_dual_detector(self) -> bool:
+        """双探测器模式：两个探测器分别测量位置和角度。"""
+        target_pos = self._detect_center_with_retry(tag="Initial position target")
+        target_ang = self._detect_center_with_retry(tag="Initial angle target", frame_source_idx=1)
+        LOGGER.info("Initial targets: pos=%s, ang=%s", target_pos.center, target_ang.center)
+
+        if self.reporter is not None:
+            self.reporter.event("target_initialized_4axis", pos_target=list(target_pos.center), ang_target=list(target_ang.center))
+
+        self.four_axis_controller.reset_integrators()
+
+        for iteration in range(1, self.cfg.max_iterations + 1):
+            LOGGER.info("========== 4-Axis Iteration %d/%d ==========", iteration, self.cfg.max_iterations)
+
+            frame_pos, frame_ang = self.frame_source_pair.grab_frames()
+
+            det_pos = self._detect_on_frame(frame_pos, tag=f"Iter {iteration} position detection")
+            det_ang = self._detect_on_frame(frame_ang, tag=f"Iter {iteration} angle detection") if frame_ang is not None else det_pos
+
+            if det_pos is None or det_ang is None:
+                LOGGER.warning("Detection failed on iteration %d", iteration)
+                time.sleep(self.cfg.settle_time_s)
+                continue
+
+            e_pos = (target_pos.center[0] - det_pos.center[0], target_pos.center[1] - det_pos.center[1])
+            e_ang = (target_ang.center[0] - det_ang.center[0], target_ang.center[1] - det_ang.center[1])
+
+            LOGGER.info("Error: pos=(%d, %d), ang=(%d, %d)", e_pos[0], e_pos[1], e_ang[0], e_ang[1])
+
+            if self.reporter is not None:
+                self.reporter.event("4axis_error", e_pos=list(e_pos), e_ang=list(e_ang), iteration=iteration)
+
+            if self.four_axis_controller.is_converged(e_pos, e_ang):
+                LOGGER.info("4-axis converged: e_pos=%s, e_ang=%s", e_pos, e_ang)
+                if self.reporter is not None:
+                    self.reporter.event("converged_4axis", e_pos=list(e_pos), e_ang=list(e_ang))
+                return True
+
+            u1_x, u1_y, u2_x, u2_y = self.four_axis_controller.compute_control(e_pos, e_ang)
+            LOGGER.info("Control output: stage1=(%d, %d), stage2=(%d, %d)", u1_x, u1_y, u2_x, u2_y)
+
+            if hasattr(self.xy_stage, 'move_x1') and hasattr(self.xy_stage, 'move_y1'):
+                self.xy_stage.move_x1(u1_x)
+                self.xy_stage.move_y1(u1_y)
+            else:
+                self.xy_stage.move_x(u1_x)
+                self.xy_stage.move_y(u1_y)
+
+            if hasattr(self.xy_stage, 'move_x2') and hasattr(self.xy_stage, 'move_y2'):
+                self.xy_stage.move_x2(u2_x)
+                self.xy_stage.move_y2(u2_y)
+
+            if self.reporter is not None:
+                self.reporter.metrics.x_move_commands += 1
+                self.reporter.metrics.y_move_commands += 1
+
+            time.sleep(self.cfg.settle_time_s)
+
+        LOGGER.warning("4-axis alignment reached max iterations without convergence")
+        if self.reporter is not None:
+            self.reporter.event("not_converged_4axis", max_iterations=self.cfg.max_iterations)
+        return False
+
+    def _run_4axis_single_detector(self) -> bool:
+        """单探测器模式：顺序控制策略。
+        
+        阶段1：用镜子1（近端）进行粗调
+        - 镜子1离探测器远，转动时光斑移动大（杠杆效应）
+        - 适合快速将光斑拉到目标附近
+        
+        阶段2：用镜子2（远端）进行细调
+        - 镜子2离探测器近，转动时光斑移动小
+        - 适合精细调整，提高精度
+        """
+        target = self._detect_center_with_retry(tag="Initial target")
+        LOGGER.info("Initial target: %s", target.center)
+
+        if self.reporter is not None:
+            self.reporter.event("target_initialized_4axis_single", target=list(target.center))
+
+        self.four_axis_controller.reset_integrators()
+
+        for iteration in range(1, self.cfg.max_iterations + 1):
+            LOGGER.info("========== Single-Detector Iteration %d/%d ==========", iteration, self.cfg.max_iterations)
+            
+            # 更新控制阶段
+            self.four_axis_controller.update_stage(iteration)
+            stage = self.four_axis_controller._current_stage
+
+            # 采集帧（只有一个探测器）
+            frame = self.window.grab_frame()
+            det = self._detect_on_frame(frame, tag=f"Iter {iteration} detection")
+
+            if det is None:
+                LOGGER.warning("Detection failed on iteration %d", iteration)
+                time.sleep(self.cfg.settle_time_s)
+                continue
+
+            # 计算误差
+            e_pos = (target.center[0] - det.center[0], target.center[1] - det.center[1])
+            e_ang = (0, 0)  # 单探测器模式没有角度测量
+            
+            LOGGER.info("Error: pos=(%d, %d), Stage=%d", e_pos[0], e_pos[1], stage)
+
+            if self.reporter is not None:
+                self.reporter.event("4axis_single_error", e_pos=list(e_pos), stage=stage, iteration=iteration)
+
+            # 收敛检查
+            if self.four_axis_controller.is_converged(e_pos, e_ang):
+                LOGGER.info("Single-detector converged: e_pos=%s", e_pos)
+                if self.reporter is not None:
+                    self.reporter.event("converged_4axis_single", e_pos=list(e_pos), stage=stage)
+                return True
+
+            # 计算控制量
+            u1_x, u1_y, u2_x, u2_y = self.four_axis_controller.compute_control(e_pos, e_ang)
+            
+            if stage == 1:
+                LOGGER.info("Stage 1 (coarse): mirror1=(%d, %d)", u1_x, u1_y)
+            else:
+                LOGGER.info("Stage 2 (fine): mirror2=(%d, %d)", u2_x, u2_y)
+
+            # 执行控制
+            if hasattr(self.xy_stage, 'move_x1') and hasattr(self.xy_stage, 'move_y1'):
+                if u1_x != 0 or u1_y != 0:
+                    self.xy_stage.move_x1(u1_x)
+                    self.xy_stage.move_y1(u1_y)
+                if u2_x != 0 or u2_y != 0:
+                    self.xy_stage.move_x2(u2_x)
+                    self.xy_stage.move_y2(u2_y)
+            else:
+                # 如果没有独立控制接口，使用虚拟轴模式
+                if u1_x != 0 or u1_y != 0:
+                    self.xy_stage.move_x(u1_x)
+                    self.xy_stage.move_y(u1_y)
+
+            if self.reporter is not None:
+                self.reporter.metrics.x_move_commands += 1
+                self.reporter.metrics.y_move_commands += 1
+
+            time.sleep(self.cfg.settle_time_s)
+
+        LOGGER.warning("Single-detector alignment reached max iterations without convergence")
+        if self.reporter is not None:
+            self.reporter.event("not_converged_4axis_single", max_iterations=self.cfg.max_iterations)
+        return False
+
+    def _run_detector_comparison(self) -> bool:
+        """探测器效果对比策略：同时使用ToupView和探测器进行对比校准。
+        
+        三种模式：
+        1. detector_primary: 以探测器为主，ToupView辅助验证
+        2. touview_verify: 以ToupView为主，探测器辅助验证  
+        3. auto_switch: 根据误差自动切换主源
+        
+        核心思想：
+        - 同时采集ToupView和探测器的图像
+        - 分别计算光斑位置误差
+        - 加权融合误差或根据模式选择主源
+        - 当两者差异大时发出警告（可能表示光路问题）
+        """
+        LOGGER.info("Starting detector comparison alignment (mode=%s)", self.cfg.comparison_mode)
+        
+        # 初始化两个目标（ToupView和探测器）
+        target_touview = self._detect_center_with_retry(tag="Initial ToupView target")
+        LOGGER.info("Initial ToupView target: %s", target_touview.center)
+        
+        # 检查是否有探测器帧源
+        has_detector_source = (hasattr(self, 'frame_source_pair') and 
+                              self.frame_source_pair is not None and
+                              self.frame_source_pair.source_ang is not None)
+        
+        if not has_detector_source:
+            LOGGER.warning("No detector source available, falling back to ToupView only")
+            target_detector = target_touview
+        else:
+            target_detector = self._detect_center_with_retry(tag="Initial detector target", frame_source_idx=1)
+            LOGGER.info("Initial detector target: %s", target_detector.center)
+
+        if self.reporter is not None:
+            self.reporter.event("target_initialized_comparison", 
+                              touview_target=list(target_touview.center),
+                              detector_target=list(target_detector.center) if has_detector_source else None)
+
+        # 初始化4轴控制器（用于单探测器模式）
+        if hasattr(self, 'four_axis_controller') and self.four_axis_controller is not None:
+            self.four_axis_controller.reset_integrators()
+
+        # 初始化稳定帧计数器
+        stable_frame_count = 0
+
+        for iteration in range(1, self.cfg.max_iterations + 1):
+            LOGGER.info("========== Comparison Iteration %d/%d ==========", iteration, self.cfg.max_iterations)
+
+            # 采集ToupView帧
+            frame_touview = self.window.grab_frame()
+            det_touview = self._detect_on_frame(frame_touview, tag=f"Iter {iteration} ToupView detection")
+
+            # 采集探测器帧（如果有）
+            det_detector = None
+            if has_detector_source:
+                frame_detector = self.frame_source_pair.source_ang.grab_frame()
+                det_detector = self._detect_on_frame(frame_detector, tag=f"Iter {iteration} detector detection")
+
+            if det_touview is None:
+                LOGGER.warning("ToupView detection failed on iteration %d", iteration)
+                time.sleep(self.cfg.settle_time_s)
+                continue
+
+            # 计算误差
+            e_touview = (target_touview.center[0] - det_touview.center[0], 
+                        target_touview.center[1] - det_touview.center[1])
+            
+            if det_detector is not None:
+                e_detector = (target_detector.center[0] - det_detector.center[0],
+                             target_detector.center[1] - det_detector.center[1])
+            else:
+                e_detector = e_touview  # 如果没有探测器，使用ToupView误差
+
+            # 计算差异（用于监控和警告）
+            disagreement = math.hypot(e_touview[0] - e_detector[0], e_touview[1] - e_detector[1])
+            
+            # 根据模式选择或融合误差
+            if self.cfg.comparison_mode == "detector_primary":
+                # 以探测器为主
+                e_pos = e_detector
+                primary_source = "detector"
+                if det_detector is None:
+                    e_pos = e_touview
+                    primary_source = "touview (fallback)"
+            elif self.cfg.comparison_mode == "touview_verify":
+                # 以ToupView为主
+                e_pos = e_touview
+                primary_source = "touview"
+            else:  # auto_switch
+                # 自动切换：选择误差较小的源
+                if det_detector is not None:
+                    norm_touview = math.hypot(e_touview[0], e_touview[1])
+                    norm_detector = math.hypot(e_detector[0], e_detector[1])
+                    if norm_detector < norm_touview:
+                        e_pos = e_detector
+                        primary_source = "detector"
+                    else:
+                        e_pos = e_touview
+                        primary_source = "touview"
+                else:
+                    e_pos = e_touview
+                    primary_source = "touview"
+
+            # 加权融合（可选，用于日志和监控）
+            e_fused = (self.cfg.detector_weight * e_detector[0] + self.cfg.touview_weight * e_touview[0],
+                      self.cfg.detector_weight * e_detector[1] + self.cfg.touview_weight * e_touview[1])
+
+            # 日志输出
+            if iteration % self.cfg.comparison_log_interval == 0:
+                LOGGER.info("Comparison results:")
+                LOGGER.info("  ToupView error: (%d, %d), norm=%.2f", e_touview[0], e_touview[1], math.hypot(*e_touview))
+                if det_detector is not None:
+                    LOGGER.info("  Detector error: (%d, %d), norm=%.2f", e_detector[0], e_detector[1], math.hypot(*e_detector))
+                LOGGER.info("  Disagreement: %.2f px (threshold=%.2f)", disagreement, self.cfg.disagreement_threshold_px)
+                LOGGER.info("  Primary source: %s, Fused error: (%.1f, %.1f)", primary_source, e_fused[0], e_fused[1])
+
+            # 差异警告
+            if disagreement > self.cfg.disagreement_threshold_px:
+                LOGGER.warning("Large disagreement between ToupView and detector: %.2f px", disagreement)
+                if self.reporter is not None:
+                    self.reporter.event("disagreement_warning", 
+                                      disagreement=disagreement,
+                                      threshold=self.cfg.disagreement_threshold_px,
+                                      e_touview=list(e_touview),
+                                      e_detector=list(e_detector))
+
+            # 收敛检查（使用主源误差）
+            error_norm = math.hypot(e_pos[0], e_pos[1])
+            if error_norm <= self.cfg.tolerance_pos_px:
+                stable_frame_count += 1
+                LOGGER.info("Error within tolerance (%.2f <= %d), stable_count=%d/%d", 
+                           error_norm, self.cfg.tolerance_pos_px, stable_frame_count, self.cfg.converge_stable_frames)
+                if stable_frame_count >= self.cfg.converge_stable_frames:
+                    LOGGER.info("Comparison alignment converged: error=%s, source=%s", e_pos, primary_source)
+                    if self.reporter is not None:
+                        self.reporter.event("converged_comparison", 
+                                          error=list(e_pos),
+                                          primary_source=primary_source,
+                                          disagreement=disagreement)
+                    return True
+            else:
+                if stable_frame_count > 0:
+                    LOGGER.info("Error outside tolerance (%.2f > %d), reset stable_count", 
+                               error_norm, self.cfg.tolerance_pos_px)
+                stable_frame_count = 0
+
+            # 计算控制量
+            if hasattr(self, 'four_axis_controller') and self.four_axis_controller is not None:
+                u1_x, u1_y, u2_x, u2_y = self.four_axis_controller.compute_control(e_pos, (0, 0))
+            else:
+                # 简化的PI控制
+                u1_x = int(round(self.cfg.stage1_kp * e_pos[0]))
+                u1_y = int(round(self.cfg.stage1_kp * e_pos[1]))
+                u2_x, u2_y = 0, 0
+
+            LOGGER.info("Control output: stage1=(%d, %d), stage2=(%d, %d), source=%s", 
+                       u1_x, u1_y, u2_x, u2_y, primary_source)
+
+            # 执行控制
+            if hasattr(self.xy_stage, 'move_x1') and hasattr(self.xy_stage, 'move_y1'):
+                if u1_x != 0 or u1_y != 0:
+                    self.xy_stage.move_x1(u1_x)
+                    self.xy_stage.move_y1(u1_y)
+                if u2_x != 0 or u2_y != 0:
+                    self.xy_stage.move_x2(u2_x)
+                    self.xy_stage.move_y2(u2_y)
+            else:
+                if u1_x != 0 or u1_y != 0:
+                    self.xy_stage.move_x(u1_x)
+                    self.xy_stage.move_y(u1_y)
+
+            if self.reporter is not None:
+                self.reporter.metrics.x_move_commands += 1
+                self.reporter.metrics.y_move_commands += 1
+                self.reporter.event("comparison_control", 
+                                  iteration=iteration,
+                                  primary_source=primary_source,
+                                  e_pos=list(e_pos),
+                                  u1=(u1_x, u1_y),
+                                  u2=(u2_x, u2_y),
+                                  disagreement=disagreement)
+
+            time.sleep(self.cfg.settle_time_s)
+
+        LOGGER.warning("Comparison alignment reached max iterations without convergence")
+        if self.reporter is not None:
+            self.reporter.event("not_converged_comparison", max_iterations=self.cfg.max_iterations)
+        return False
+
+    def _detect_on_frame(self, frame: np.ndarray, tag: str) -> Optional[SpotDetection]:
+        if frame is None:
+            return None
+        try:
+            prepared = self._prepare_detection_frame(frame)
+            det = self.detector.detect(prepared)
+            if det is not None:
+                return det
+            for attempt in range(1, self.cfg.detect_retry + 1):
+                time.sleep(self.cfg.detect_retry_interval)
+                prepared = self._prepare_detection_frame(frame)
+                det = self.detector.detect(prepared)
+                if det is not None:
+                    return det
+            return None
+        except Exception as exc:
+            LOGGER.warning("Detection failed: %s", exc)
+            return None
 
     def _align_to_target(self, target: Tuple[int, int], tag: str) -> SpotDetection:
         last_detection: Optional[SpotDetection] = None
@@ -11147,13 +12006,17 @@ class SpotZoomController:
         self,
         tag: str,
         target: Optional[Tuple[int, int]] = None,
+        frame_source_idx: int = 0,
     ) -> SpotDetection:
         last_frame: Optional[np.ndarray] = None
         focus_score: Optional[float] = None  # [FIX] 初始化为 None，防止 UnboundLocalError
         for attempt in range(1, self.cfg.detect_retry + 1):
             if self.reporter is not None:
                 self.reporter.metrics.detect_attempts += 1
-            frame = self.window.grab_frame()
+            if frame_source_idx == 1 and self.frame_source_pair is not None and self.frame_source_pair.source_ang is not None:
+                frame = self.frame_source_pair.source_ang.grab_frame()
+            else:
+                frame = self.window.grab_frame()
             last_frame = frame
             self._last_frame = frame  # 缂撳瓨甯х敤浜庝簹鍍忕礌璐ㄥ績
             detect_frame = self._prepare_detection_frame(frame)
@@ -22329,6 +23192,61 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--select-roi", dest="select_roi", action="store_true", default=True, help="Select ROI before alignment")
     parser.add_argument("--skip-roi", dest="select_roi", action="store_false", help="Skip ROI selection and use full capture area")
 
+    # --- 4轴双镜闭环策略 ---
+    parser.add_argument(
+        "--alignment-strategy",
+        choices=("z_scan_legacy", "dual_detector_4axis", "detector_comparison"),
+        default="z_scan_legacy",
+        help="Alignment strategy: z_scan_legacy (P1-P2-P3 Z-scan), dual_detector_4axis (4-axis dual-mirror closed-loop), or detector_comparison (ToupView + detector comparison)",
+    )
+    # 双探测器配置
+    parser.add_argument("--window-title-2", default=None, help="Window title keyword for second detector (for dual_detector_4axis strategy)")
+    parser.add_argument("--frame-source-image-2", default=None, help="Optional second image path for simulation (dual_detector_4axis)")
+    parser.add_argument("--select-roi-2", dest="select_roi_2", action="store_true", default=True, help="Select ROI for second detector")
+    parser.add_argument("--skip-roi-2", dest="select_roi_2", action="store_false", help="Skip ROI selection for second detector")
+
+    # UCC CCD相机配置
+    parser.add_argument("--ucc-device", type=int, default=None, help="UCC CCD camera device index (e.g., 0 for /dev/video0)")
+    parser.add_argument("--ucc-resolution", choices=("PAL", "NTSC", "AUTO"), default="PAL", help="UCC camera resolution mode")
+    parser.add_argument("--ucc-exposure", type=float, default=None, help="UCC camera exposure value")
+    parser.add_argument("--ucc-gain", type=float, default=None, help="UCC camera gain value")
+    parser.add_argument("--ucc-brightness", type=float, default=None, help="UCC camera brightness value")
+    parser.add_argument("--ucc-contrast", type=float, default=None, help="UCC camera contrast value")
+    parser.add_argument("--ucc-device-2", type=int, default=None, help="Second UCC CCD camera device index (for dual detector)")
+    parser.add_argument("--ucc-resolution-2", choices=("PAL", "NTSC", "AUTO"), default="PAL", help="Second UCC camera resolution mode")
+
+    # 4轴控制参数
+    parser.add_argument("--stage1-kp", type=float, default=1.0, help="Stage 1 (position) proportional gain")
+    parser.add_argument("--stage1-ki", type=float, default=0.1, help="Stage 1 (position) integral gain")
+    parser.add_argument("--stage2-kp", type=float, default=1.0, help="Stage 2 (angle) proportional gain")
+    parser.add_argument("--stage2-ki", type=float, default=0.1, help="Stage 2 (angle) integral gain")
+    parser.add_argument("--coupling-c12", type=float, default=0.0, help="Coupling gain from angle error to stage 1")
+    parser.add_argument("--coupling-c21", type=float, default=0.0, help="Coupling gain from position error to stage 2")
+    parser.add_argument("--tolerance-pos-px", type=int, default=4, help="Position error tolerance (px) for 4-axis convergence")
+    parser.add_argument("--tolerance-ang-px", type=int, default=4, help="Angle error tolerance (px) for 4-axis convergence")
+    parser.add_argument("--converge-stable-frames", type=int, default=5, help="Number of consecutive stable frames to declare convergence")
+    parser.add_argument("--detector2-focal-length", type=float, default=200.0, help="Focal length (mm) of lens in front of Detector 2 for angle estimation")
+    parser.add_argument(
+        "--detector-mode",
+        choices=("single_detector", "dual_detector"),
+        default="single_detector",
+        help="Detector configuration: single_detector (one detector after mirror 2) or dual_detector (separate position and angle detectors)",
+    )
+    parser.add_argument("--stage1-gain-factor", type=float, default=2.0, help="Gain factor for mirror 1 in single-detector mode (lever effect)")
+    parser.add_argument("--sequential-stage1-iterations", type=int, default=3, help="Number of iterations for stage 1 (mirror 1) in single-detector mode")
+
+    # --- 探测器效果对比策略参数 ---
+    parser.add_argument(
+        "--comparison-mode",
+        choices=("detector_primary", "touview_verify", "auto_switch"),
+        default="detector_primary",
+        help="Detector comparison mode: detector_primary (use detector as primary), touview_verify (use ToupView to verify), auto_switch (auto switch between sources)",
+    )
+    parser.add_argument("--detector-weight", type=float, default=0.7, help="Weight for detector error in comparison mode (0-1)")
+    parser.add_argument("--touview-weight", type=float, default=0.3, help="Weight for ToupView error in comparison mode (0-1)")
+    parser.add_argument("--disagreement-threshold-px", type=float, default=10.0, help="Threshold for detector/ToupView disagreement warning (px)")
+    parser.add_argument("--comparison-log-interval", type=int, default=1, help="Interval (iterations) for logging comparison results")
+
     parser.add_argument("--xy-driver", choices=("thorlabs", "newport", "newport-mrc4", "dryrun"), default="newport")
     parser.add_argument("--device-id", default="97101208", help="Thorlabs device id")
     parser.add_argument("--thorlabs-dll-dir", default=None, help="Optional directory containing ftd2xx.dll")
@@ -26238,7 +27156,20 @@ def main() -> int:
         )
 
         detector = build_detector(args, resolved_backend=resolved_backend)
-        if args.frame_source_image:
+        
+        # 初始化主帧源（ToupView、模拟或UCC相机）
+        if args.ucc_device is not None:
+            # 使用UCC CCD相机作为主帧源
+            window = UCCFrameSource(
+                device_index=args.ucc_device,
+                resolution=args.ucc_resolution,
+                exposure=args.ucc_exposure,
+                gain=args.ucc_gain,
+                brightness=args.ucc_brightness,
+                contrast=args.ucc_contrast,
+            )
+            LOGGER.info("UCC相机采集区域：%s", window.get_capture_region())
+        elif args.frame_source_image:
             window = SimulatedFrameWindow(
                 image_path=args.frame_source_image,
                 jitter_px=args.sim_jitter_px,
@@ -26260,6 +27191,7 @@ def main() -> int:
         run_startup_motion_check(args, xy_stage=xy_stage, z_stage=z_stage, reporter=reporter)
 
         cfg = AlignmentConfig(
+            alignment_strategy=args.alignment_strategy,
             tolerance_px=args.tolerance_px,
             detect_retry=args.detect_retry,
             detect_retry_interval_s=args.detect_retry_interval,
@@ -26271,6 +27203,24 @@ def main() -> int:
             y_error_to_stage_sign=args.y_error_to_stage_sign,
             z_move_step=args.z_step,
             max_iterations=args.max_iterations,
+            stage1_kp=args.stage1_kp,
+            stage1_ki=args.stage1_ki,
+            stage2_kp=args.stage2_kp,
+            stage2_ki=args.stage2_ki,
+            coupling_c12=args.coupling_c12,
+            coupling_c21=args.coupling_c21,
+            tolerance_pos_px=args.tolerance_pos_px,
+            tolerance_ang_px=args.tolerance_ang_px,
+            converge_stable_frames=args.converge_stable_frames,
+            detector2_focal_length=args.detector2_focal_length,
+            detector_mode=args.detector_mode,
+            stage1_gain_factor=args.stage1_gain_factor,
+            sequential_stage1_iterations=args.sequential_stage1_iterations,
+            comparison_mode=args.comparison_mode,
+            detector_weight=args.detector_weight,
+            touview_weight=args.touview_weight,
+            disagreement_threshold_px=args.disagreement_threshold_px,
+            comparison_log_interval=args.comparison_log_interval,
             preview=not args.no_preview,
             detection_smooth_window=max(1, args.smooth_window),
             adaptive_step=args.adaptive_step,
@@ -27001,6 +27951,54 @@ def main() -> int:
             sysid_model_order=args.sysid_model_order,
         )
 
+        four_axis_controller = None
+        frame_source_pair = None
+        if args.alignment_strategy in ("dual_detector_4axis", "detector_comparison"):
+            LOGGER.info("Initializing 4-axis components (mode=%s)", args.detector_mode)
+            four_axis_controller = FourAxisController(
+                stage1_kp=args.stage1_kp,
+                stage1_ki=args.stage1_ki,
+                stage2_kp=args.stage2_kp,
+                stage2_ki=args.stage2_ki,
+                coupling_c12=args.coupling_c12,
+                coupling_c21=args.coupling_c21,
+                tolerance_pos_px=args.tolerance_pos_px,
+                tolerance_ang_px=args.tolerance_ang_px,
+                converge_stable_frames=args.converge_stable_frames,
+                detector2_focal_length=args.detector2_focal_length,
+                detector_mode=args.detector_mode,
+                stage1_gain_factor=args.stage1_gain_factor,
+                sequential_stage1_iterations=args.sequential_stage1_iterations,
+            )
+            window_ang = None
+            if args.ucc_device_2 is not None:
+                # 使用第二个UCC相机作为探测器
+                window_ang = UCCFrameSource(
+                    device_index=args.ucc_device_2,
+                    resolution=args.ucc_resolution_2,
+                    exposure=args.ucc_exposure,
+                    gain=args.ucc_gain,
+                    brightness=args.ucc_brightness,
+                    contrast=args.ucc_contrast,
+                )
+                LOGGER.info("Second detector UCC camera capture region: %s", window_ang.get_capture_region())
+            elif args.frame_source_image_2:
+                window_ang = SimulatedFrameWindow(
+                    image_path=args.frame_source_image_2,
+                    jitter_px=args.sim_jitter_px,
+                    noise_std=args.sim_noise_std,
+                )
+                LOGGER.info("Second detector simulated frame source: %s", window_ang.get_capture_region())
+            elif args.window_title_2:
+                window_ang = ToupViewWindow(
+                    title_keyword=args.window_title_2,
+                    wait_timeout_s=args.window_wait_seconds,
+                )
+                LOGGER.info("Second detector ToupView capture region: %s", window_ang.get_capture_region())
+            frame_source_pair = FrameSourcePair(source_pos=window, source_ang=window_ang)
+            if args.select_roi_2 and window_ang is not None:
+                window_ang.select_roi()
+
         controller = SpotZoomController(
             window=window,
             detector=detector,
@@ -27008,6 +28006,8 @@ def main() -> int:
             z_stage=z_stage,
             cfg=cfg,
             reporter=reporter,
+            four_axis_controller=four_axis_controller,
+            frame_source_pair=frame_source_pair,
         )
         ok = controller.run()
         reporter.event("run_finished", status="success" if ok else "not_converged")

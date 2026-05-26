@@ -272,30 +272,31 @@ python SpotZoom.py --xy-driver <thorlabs|newport> --z-driver <wheel|xps> --detec
 
 ### 🎯 TODO
 
+#### 2026-5-26
+
+
+
+
+
+
+
 #### 2026-5-25
 
-在305设备，部署git，随时push 8821L项目的最新版本，指定：	✔
+1、在305设备，部署git，随时push 8821L项目的最新版本，指定：	✔
 
 ```
-git_email:	1411xxxxxx@qq.com
-git_name:	jomxx
+实现 github实现项目的版本控制，晚点直接删除slave的8821L项目，再从github上 pull下来：
+    git_email:	1411xxxxxx@qq.com
+    git_name:	jomxx
 ```
 
-在现有的8742控制器基础上，再补充一个8742控制器，两者实现协同控制【Z轴优化掉】		✔
+2、在现有的8742控制器基础上，再补充一个8742控制器，两者实现协同控制【Z轴优化掉】		✔
 
-每次都需要进行数据集采集的问题，解决光斑数据不通用的问题 -- 用classic算法应对			✔
+3、解决两个电机的问题，相互完成通讯【多个电机之间完成通信，同理，将Z轴优化掉】			✔
 
-```
-1、解决两个电机的问题，相互完成通讯【多个电机之间完成通信】
-2、如何基于规律控制两个轴？-- 找到一个稳定控制的逻辑 -- 由于是4轴系统，所以需要控制变量【多个轴之间完成逻辑闭环】
-3、研究是否能够通过usb，对CCD探测器完成通信控制的逻辑闭环
-4、github实现项目的版本控制，晚点直接删除slave的8821L项目，再从github上 pull下来【安装不了一点】
-5、优化逻辑，将原有的"5轴系统"中"Z轴"的部分去除，即上述的"准直思路需要进行修改" > 查询资料进行解决
+4、每次都需要进行数据集采集的问题，解决光斑数据不通用的问题 -- 用classic算法应对			✔
 
-将spotZoom.py 按照标准化项目逻辑，封装成各功能对应的模块（规划好文件与文件夹）
-```
-
-otsu、adaptive、tophat、gmm、meanshift、brightest、largest、central算法复习		✔
+5、otsu、adaptive、tophat、gmm、meanshift、brightest、largest、central算法复习			✔
 
 ```
 光斑二值化：
@@ -315,9 +316,93 @@ classic(区别与DP-YOLO) + otsu + brightest
 
 ```
 
+6、备份V2版本（2026-5-25版本）	✔
+
+7、基于官方网站系统架构，基于PLAN.MD优化5轴 至 4轴	✔
+
+（1）优化1：保留 原来"5轴系统"("Z轴"的部分去除)，新增"4轴系统"，本质上就是两点确定一条直线【稳定控制逻辑闭环】
+
+```
+# 环境测试
+	python SpotZoom.py --check-env
 
 
+# 4轴双镜闭环策略测试
+	python SpotZoom.py --alignment-strategy dual_detector_4axis --xy-driver dryrun --z-driver dryrun --detector-backend classic --frame-source-image artifacts/spotzoom_qt_sample.png --skip-roi --no-preview --max-iterations 5 --disable-startup-motion-check --disable-run-lock
+	
+	
+# 传统Z扫描策略测试
+	python SpotZoom.py --alignment-strategy z_scan_legacy --xy-driver dryrun --z-driver dryrun --detector-backend classic --frame-source-image artifacts/spotzoom_qt_sample.png --skip-roi --no-preview --max-iterations 3 --disable-startup-motion-check --disable-run-lock
 
+
+# 4轴策略带耦合补偿测试
+	python SpotZoom.py --alignment-strategy dual_detector_4axis --xy-driver dryrun --z-driver dryrun --detector-backend classic --frame-source-image artifacts/spotzoom_qt_sample.png --skip-roi --no-preview --max-iterations 5 --coupling-c12 0.1 --coupling-c21 0.1 --disable-startup-motion-check --disable-run-lock
+	
+	
+# UI界面测试
+	python -m spotzoom_qt_ui
+	
+	
+# UI启动并加载4轴配置
+	python -m spotzoom_qt_ui --alignment-strategy dual_detector_4axis --xy-driver dryrun --z-driver dryrun --detector-backend classic --frame-source-image artifacts/spotzoom_qt_sample.png --skip-roi --no-preview
+	
+	
+# 4轴逐轴扰动响应测试（dryrun模式）
+	python SpotZoom.py --alignment-strategy dual_detector_4axis --xy-driver dryrun --z-driver dryrun --detector-backend classic --frame-source-image artifacts/spotzoom_qt_sample.png --skip-roi --no-preview --max-iterations 1 --disable-startup-motion-check --disable-run-lock --stage1-kp 2.0 --stage2-kp 1.5
+   
+```
+
+（2）优化2：保留 原来toupview 显微镜成效的自动准直，新增基于"探测器"效果对比的自动准直
+
+```
+# 传统ToupView显微镜成像自动准直
+	python SpotZoom.py --alignment-strategy z_scan_legacy --xy-driver dryrun --z-driver dryrun --detector-backend classic --frame-source-image sample.png --skip-roi --no-preview --max-iterations 5 --disable-startup-motion-check --disable-run-lock
+
+
+#  4轴双镜闭环（单探测器模式）
+	python SpotZoom.py --alignment-strategy dual_detector_4axis --detector-mode single_detector --xy-driver dryrun --z-driver dryrun --detector-backend classic --frame-source-image sample.png --skip-roi --no-preview --max-iterations 5 --sequential-stage1-iterations 2 --stage1-gain-factor 2.5 --disable-startup-motion-check --disable-run-lock
+
+
+# 探测器效果对比（探测器优先模式）
+	python SpotZoom.py --alignment-strategy detector_comparison --comparison-mode detector_primary --detector-weight 0.7 --touview-weight 0.3 --xy-driver dryrun --z-driver dryrun --detector-backend classic --frame-source-image sample.png --skip-roi --no-preview --max-iterations 5 --disagreement-threshold-px 10.0 --disable-startup-motion-check --disable-run-lock
+  
+  
+# 探测器效果对比（ToupView验证模式）
+  	python SpotZoom.py --alignment-strategy detector_comparison --comparison-mode touview_verify --detector-weight 0.3 --touview-weight 0.7 --xy-driver dryrun --z-driver dryrun --detector-backend classic --frame-source-image sample.png --skip-roi --no-preview --max-iterations 5 --disable-startup-motion-check --disable-run-lock
+  
+  
+# 探测器效果对比（自动切换模式）
+  	python SpotZoom.py --alignment-strategy detector_comparison --comparison-mode auto_switch --xy-driver dryrun --z-driver dryrun --detector-backend classic --frame-source-image sample.png --skip-roi --no-preview --max-iterations 5 --disable-startup-motion-check --disable-run-lock
+  
+# 双探测器模式（后续扩展）
+  	python SpotZoom.py --alignment-strategy dual_detector_4axis --detector-mode dual_detector --frame-source-image touview.png --frame-source-image-2 detector.png --xy-driver dryrun --z-driver dryrun --detector-backend classic --skip-roi --no-preview --max-iterations 5 --disable-startup-motion-check --disable-run-lock
+
+```
+
+8、通过usb，对CCD探测器完成通信控制的逻辑闭环	✔
+
+```	
+1、思路
+	CCD相机 → USB采集卡 → UVC驱动 → OpenCV VideoCapture → Python
+
+2、核心功能
+    自动连接UCC相机（cv2.VideoCapture）
+    支持PAL/NTSC/AUTO三种分辨率模式
+    可配置曝光、增益、亮度、对比度
+    ROI区域选择
+    相机参数动态调整
+    自动资源释放
+
+
+3、单UCC相机（作为主帧源）
+    python SpotZoom.py --ucc-device 0 --ucc-resolution PAL --ucc-exposure -5 --ucc-gain 10 --xy-driver dryrun --z-driver dryrun --detector-backend classic --skip-roi --no-preview --max-iterations 5 --disable-startup-motion-check --disable-run-lock
+  
+  
+4、双UCC相机（4轴双镜闭环）
+    python SpotZoom.py --alignment-strategy dual_detector_4axis --detector-mode single_detector --ucc-device 0 --ucc-resolution PAL --ucc-device-2 1 --ucc-resolution-2 PAL --xy-driver dryrun --z-driver dryrun --detector-backend classic --skip-roi --no-preview --max-iterations 5 --disable-startup-motion-check --disable-run-lock
+  
+  
+```
 
 
 
