@@ -1,4 +1,5 @@
 artifacts/
+Tmp_Frames/
 __pycache__/
 *.pyc
 *.pyo
