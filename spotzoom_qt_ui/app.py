@@ -1024,7 +1024,7 @@ class SpotZoomQtMainWindow(QMainWindow):
     def _refresh_device_center(self) -> None:
         self.device_topology_tree.clear()
         root_specs = [
-            ("图像源", ["ToupView", "Simulated Frame Source"]),
+            ("图像源", ["NIS", "Simulated Frame Source"]),             # 默认为ToupView
             ("XY 子系统", ["Thorlabs", "Newport", "Newport MRC 4-axis"]),
             ("Z 子系统", ["Wheel", "XPS", "Picomotor Z"]),
             ("检测后端", ["YOLO", "Classic"]),

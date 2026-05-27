@@ -61,7 +61,7 @@ class RuntimeProfile:
     run_report_json: str = str(Path("artifacts") / "spotzoom_ui_report.json")
     log_level: str = "INFO"
     no_preview: bool = True
-    window_title: str = "ToupView"
+    window_title: str = "NIS"                              # 默认为ToupView
     window_title_2: Optional[str] = None
     window_wait_seconds: float = 10.0
     yolo_python: Optional[str] = None
