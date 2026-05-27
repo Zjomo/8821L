@@ -135,6 +135,8 @@ class RuntimeProfile:
     ucc_device_2: Optional[int] = None
     ucc_resolution_2: str = "PAL"
     preview: bool = True
+    frame_cache_enabled: bool = False
+    frame_cache_dir: str = "Tmp_Frames"
 
 
 @dataclass

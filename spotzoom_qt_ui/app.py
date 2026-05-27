@@ -117,15 +117,15 @@ class RunEventStreamModel(QAbstractTableModel):
 
 class SpotZoomQtMainWindow(QMainWindow):
     NAV_ITEMS = [
-        "Dashboard",
-        "Alignment Workspace",
-        "Module Center",
-        "Device Center",
-        "Device Test",
-        "Run Modes",
-        "Simulation Lab",
-        "Logs & Reports",
-        "Settings",
+        "仪表盘",
+        "准直工作台",
+        "模块中心",
+        "设备中心",
+        "设备测试",
+        "运行模式",
+        "仿真实验室",
+        "日志与报告",
+        "设置",
     ]
 
     def __init__(self, repo_root: Optional[Path] = None):
@@ -329,7 +329,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         self.image_mode_combo = QComboBox()
         self.image_mode_combo.addItems(["原图", "检测叠加", "阈值图", "候选点图", "轨迹图"])
         image_layout.addWidget(self.image_mode_combo)
-        self.image_label = QLabel("No Frame")
+        self.image_label = QLabel("无图像")
         self.image_label.setAlignment(Qt.AlignCenter)
         self.image_label.setMinimumSize(760, 540)
         self.image_label.setStyleSheet("background:#060A10; border:1px solid #2B3642;")
@@ -391,23 +391,25 @@ class SpotZoomQtMainWindow(QMainWindow):
         self.controls["startup_motion_check_timeout"] = self._dspin(0.1, 20.0, 1.0, 2)
         self.controls["startup_motion_check_xy_steps"] = self._spin(1, 50, 1)
         self.controls["startup_motion_check_z_step"] = self._dspin(0.1, 20.0, 1.0, 2)
+        self.controls["frame_cache_enabled"] = QCheckBox()
         pairs = [
-            ("tolerance_px", "tolerance_px"),
-            ("detect_retry", "detect_retry"),
-            ("detect_retry_interval", "detect_retry_interval"),
-            ("settle_time", "settle_time"),
-            ("max_align_rounds", "max_align_rounds"),
-            ("max_iterations", "max_iterations"),
-            ("x_move_step", "x_move_step"),
-            ("y_move_step", "y_move_step"),
-            ("z_step", "z_step"),
-            ("min_focus_score", "min_focus_score"),
-            ("adaptive_step", "启用 adaptive step"),
-            ("enable_recovery_scan", "启用 recovery scan"),
-            ("startup_motion_check_enabled", "启用 startup check"),
-            ("startup_motion_check_timeout", "startup timeout"),
-            ("startup_motion_check_xy_steps", "startup xy steps"),
-            ("startup_motion_check_z_step", "startup z step"),
+            ("tolerance_px", "容差 (px)"),
+            ("detect_retry", "检测重试次数"),
+            ("detect_retry_interval", "检测重试间隔 (s)"),
+            ("settle_time", "稳定时间 (s)"),
+            ("max_align_rounds", "最大对准轮次"),
+            ("max_iterations", "最大迭代次数"),
+            ("x_move_step", "X 移动步长"),
+            ("y_move_step", "Y 移动步长"),
+            ("z_step", "Z 步长"),
+            ("min_focus_score", "最小焦点评分"),
+            ("adaptive_step", "启用自适应步长"),
+            ("enable_recovery_scan", "启用恢复扫描"),
+            ("startup_motion_check_enabled", "启用启动自检"),
+            ("startup_motion_check_timeout", "启动自检超时 (s)"),
+            ("startup_motion_check_xy_steps", "启动自检 XY 步数"),
+            ("startup_motion_check_z_step", "启动自检 Z 步长"),
+            ("frame_cache_enabled", "启用帧缓存 (./Tmp_Frames)"),
         ]
         for key, label in pairs:
             widget = self.controls[key]
@@ -508,7 +510,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         layout.addLayout(top, 2)
 
         cards = QHBoxLayout()
-        mrc_card = QGroupBox("Newport MRC 4-axis")
+        mrc_card = QGroupBox("Newport MRC 4轴")
         mrc_form = QFormLayout(mrc_card)
         self.controls["newport_conn"] = self._spin(0, 16, 0)
         self.controls["mrc_mirror1_x_axis"] = self._spin(1, 8, 1)
@@ -519,19 +521,19 @@ class SpotZoomQtMainWindow(QMainWindow):
         self.controls["mrc_mirror1_y_sign"] = self._combo(["1", "-1"])
         self.controls["mrc_mirror2_x_sign"] = self._combo(["1", "-1"])
         self.controls["mrc_mirror2_y_sign"] = self._combo(["1", "-1"])
-        self.controls["mrc_virtual_axis_mode"] = self._combo(["shared", "mirror1", "mirror2"])
-        mrc_form.addRow("8742 conn", self.controls["newport_conn"])
-        mrc_form.addRow("mirror1_x_axis", self.controls["mrc_mirror1_x_axis"])
-        mrc_form.addRow("mirror1_y_axis", self.controls["mrc_mirror1_y_axis"])
-        mrc_form.addRow("mirror2_x_axis", self.controls["mrc_mirror2_x_axis"])
-        mrc_form.addRow("mirror2_y_axis", self.controls["mrc_mirror2_y_axis"])
-        mrc_form.addRow("mirror1_x_sign", self.controls["mrc_mirror1_x_sign"])
-        mrc_form.addRow("mirror1_y_sign", self.controls["mrc_mirror1_y_sign"])
-        mrc_form.addRow("mirror2_x_sign", self.controls["mrc_mirror2_x_sign"])
-        mrc_form.addRow("mirror2_y_sign", self.controls["mrc_mirror2_y_sign"])
-        mrc_form.addRow("virtual_axis_mode", self.controls["mrc_virtual_axis_mode"])
+        self.controls["mrc_virtual_axis_mode"] = self._combo(["共享", "反射镜1", "反射镜2"])
+        mrc_form.addRow("8742 连接", self.controls["newport_conn"])
+        mrc_form.addRow("反射镜1 X 轴", self.controls["mrc_mirror1_x_axis"])
+        mrc_form.addRow("反射镜1 Y 轴", self.controls["mrc_mirror1_y_axis"])
+        mrc_form.addRow("反射镜2 X 轴", self.controls["mrc_mirror2_x_axis"])
+        mrc_form.addRow("反射镜2 Y 轴", self.controls["mrc_mirror2_y_axis"])
+        mrc_form.addRow("反射镜1 X 方向", self.controls["mrc_mirror1_x_sign"])
+        mrc_form.addRow("反射镜1 Y 方向", self.controls["mrc_mirror1_y_sign"])
+        mrc_form.addRow("反射镜2 X 方向", self.controls["mrc_mirror2_x_sign"])
+        mrc_form.addRow("反射镜2 Y 方向", self.controls["mrc_mirror2_y_sign"])
+        mrc_form.addRow("虚拟轴模式", self.controls["mrc_virtual_axis_mode"])
         self.mrc_alloc_label = QLabel("-")
-        mrc_form.addRow("allocation preview", self.mrc_alloc_label)
+        mrc_form.addRow("分配预览", self.mrc_alloc_label)
         mrc_refresh = QPushButton("刷新分配预览")
         mrc_refresh.clicked.connect(self._refresh_mrc_allocation)
         mrc_form.addRow(mrc_refresh)
@@ -544,11 +546,11 @@ class SpotZoomQtMainWindow(QMainWindow):
         self.controls["z_picomotor_sign"] = self._combo(["1", "-1"])
         self.controls["z_picomotor_velocity"] = self._spin(0, 50000, 0)
         self.controls["z_picomotor_acceleration"] = self._spin(0, 50000, 0)
-        z_form.addRow("z_picomotor_conn", self.controls["z_picomotor_conn"])
-        z_form.addRow("z_picomotor_axis", self.controls["z_picomotor_axis"])
-        z_form.addRow("z_picomotor_sign", self.controls["z_picomotor_sign"])
-        z_form.addRow("velocity", self.controls["z_picomotor_velocity"])
-        z_form.addRow("acceleration", self.controls["z_picomotor_acceleration"])
+        z_form.addRow("Z 连接", self.controls["z_picomotor_conn"])
+        z_form.addRow("Z 轴", self.controls["z_picomotor_axis"])
+        z_form.addRow("Z 方向", self.controls["z_picomotor_sign"])
+        z_form.addRow("速度", self.controls["z_picomotor_velocity"])
+        z_form.addRow("加速度", self.controls["z_picomotor_acceleration"])
         z_btn_row = QHBoxLayout()
         z_test_btn = QPushButton("方向测试")
         z_up_btn = QPushButton("单步上移")
@@ -594,7 +596,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         btn_row = QHBoxLayout()
         btn_selected = QPushButton("执行选中测试")
         btn_selected.clicked.connect(self._run_selected_test)
-        btn_startup = QPushButton("手动触发 startup check")
+        btn_startup = QPushButton("手动触发启动自检")
         btn_startup.clicked.connect(lambda: self._run_device_test_by_id("startup_check"))
         btn_row.addWidget(btn_selected)
         btn_row.addWidget(btn_startup)
@@ -628,11 +630,11 @@ class SpotZoomQtMainWindow(QMainWindow):
         browse_row.addWidget(btn_browse)
         browse_wrap = QWidget()
         browse_wrap.setLayout(browse_row)
-        sim_layout.addRow("frame_source_image", browse_wrap)
+        sim_layout.addRow("帧源图像", browse_wrap)
         self.controls["sim_jitter_px"] = self._spin(0, 200, 0)
         self.controls["sim_noise_std"] = self._dspin(0.0, 100.0, 0.0, 2)
-        sim_layout.addRow("sim_jitter_px", self.controls["sim_jitter_px"])
-        sim_layout.addRow("sim_noise_std", self.controls["sim_noise_std"])
+        sim_layout.addRow("模拟抖动 (px)", self.controls["sim_jitter_px"])
+        sim_layout.addRow("模拟噪声标准差", self.controls["sim_noise_std"])
         sim_layout.addRow(QLabel("提示：不会驱动真实设备"))
         mode_row.addWidget(sim_card, 1)
 
@@ -662,9 +664,9 @@ class SpotZoomQtMainWindow(QMainWindow):
         self.controls["xy_driver"] = self._combo(["dryrun", "thorlabs", "newport", "newport-mrc4"])
         self.controls["z_driver"] = self._combo(["dryrun", "wheel", "xps", "picomotor"])
         self.controls["select_roi"] = QCheckBox()
-        cfg_form.addRow("detector backend", self.controls["detector_backend"])
-        cfg_form.addRow("xy driver", self.controls["xy_driver"])
-        cfg_form.addRow("z driver", self.controls["z_driver"])
+        cfg_form.addRow("检测后端", self.controls["detector_backend"])
+        cfg_form.addRow("XY 驱动", self.controls["xy_driver"])
+        cfg_form.addRow("Z 驱动", self.controls["z_driver"])
         cfg_form.addRow("启用 ROI", self.controls["select_roi"])
         layout.addWidget(cfg_group, 1)
 
@@ -690,7 +692,7 @@ class SpotZoomQtMainWindow(QMainWindow):
             top.addWidget(btn)
         top.addStretch(1)
         layout.addLayout(top)
-        self.sim_preview = QLabel("Simulation Preview")
+        self.sim_preview = QLabel("仿真预览")
         self.sim_preview.setMinimumSize(760, 500)
         self.sim_preview.setAlignment(Qt.AlignCenter)
         self.sim_preview.setStyleSheet("background:#060A10; border:1px solid #2B3642;")
@@ -731,9 +733,9 @@ class SpotZoomQtMainWindow(QMainWindow):
 
         for title, rows in [
             ("基础参数", [("window_title", "窗口标题"), ("window_wait_seconds", "窗口等待秒数"), ("log_level", "日志级别")]),
-            ("运动参数", [("newport_timeout", "newport timeout"), ("z_step", "z_step"), ("disable_run_lock", "禁用运行锁")]),
-            ("ROI / 图像参数", [("sim_jitter_px", "sim_jitter_px"), ("sim_noise_std", "sim_noise_std"), ("select_roi", "启用 ROI")]),
-            ("安全参数", [("startup_motion_check_timeout", "startup timeout"), ("startup_motion_check_xy_steps", "startup xy steps")]),
+            ("运动参数", [("newport_timeout", "Newport 超时"), ("z_step", "Z 步长"), ("disable_run_lock", "禁用运行锁")]),
+            ("ROI / 图像参数", [("sim_jitter_px", "模拟抖动"), ("sim_noise_std", "模拟噪声"), ("select_roi", "启用 ROI")]),
+            ("安全参数", [("startup_motion_check_timeout", "启动自检超时"), ("startup_motion_check_xy_steps", "启动自检 XY 步数")]),
         ]:
             group = QGroupBox(title)
             form = QFormLayout(group)
@@ -825,6 +827,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         self._set_check("adaptive_step", p.adaptive_step)
         self._set_check("enable_recovery_scan", p.enable_recovery_scan)
         self._set_check("startup_motion_check_enabled", p.startup_motion_check_enabled)
+        self._set_check("frame_cache_enabled", p.frame_cache_enabled)
         self._set_dspin("startup_motion_check_timeout", p.startup_motion_check_timeout)
         self._set_spin("startup_motion_check_xy_steps", p.startup_motion_check_xy_steps)
         self._set_dspin("startup_motion_check_z_step", p.startup_motion_check_z_step)
@@ -872,6 +875,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         p.adaptive_step = self._check_value("adaptive_step", p.adaptive_step)
         p.enable_recovery_scan = self._check_value("enable_recovery_scan", p.enable_recovery_scan)
         p.startup_motion_check_enabled = self._check_value("startup_motion_check_enabled", p.startup_motion_check_enabled)
+        p.frame_cache_enabled = self._check_value("frame_cache_enabled", p.frame_cache_enabled)
         p.startup_motion_check_timeout = self._dspin_value("startup_motion_check_timeout", p.startup_motion_check_timeout)
         p.startup_motion_check_xy_steps = self._spin_value("startup_motion_check_xy_steps", p.startup_motion_check_xy_steps)
         p.startup_motion_check_z_step = self._dspin_value("startup_motion_check_z_step", p.startup_motion_check_z_step)

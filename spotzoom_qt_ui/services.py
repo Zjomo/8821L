@@ -196,6 +196,9 @@ class RuntimeControlService:
         args.extend(["--startup-motion-check-xy-steps", str(profile.startup_motion_check_xy_steps)])
         args.extend(["--startup-motion-check-z-step", str(profile.startup_motion_check_z_step)])
 
+        if profile.frame_cache_enabled:
+            args.append("--frame-cache")
+
         args.extend(["--newport-conn", str(profile.newport_conn)])
         args.extend(["--newport-x-axis", str(profile.newport_x_axis)])
         args.extend(["--newport-y-axis", str(profile.newport_y_axis)])
@@ -220,7 +223,9 @@ class RuntimeControlService:
         args.extend(["--mrc-mirror1-y-sign", str(profile.mrc_mirror1_y_sign)])
         args.extend(["--mrc-mirror2-x-sign", str(profile.mrc_mirror2_x_sign)])
         args.extend(["--mrc-mirror2-y-sign", str(profile.mrc_mirror2_y_sign)])
-        args.extend(["--mrc-virtual-axis-mode", profile.mrc_virtual_axis_mode])
+        virtual_axis_mode_map = {"共享": "shared", "反射镜1": "mirror1", "反射镜2": "mirror2"}
+        cli_mode = virtual_axis_mode_map.get(profile.mrc_virtual_axis_mode, profile.mrc_virtual_axis_mode)
+        args.extend(["--mrc-virtual-axis-mode", cli_mode])
 
         args.extend(["--z-picomotor-conn", str(profile.z_picomotor_conn)])
         args.extend(["--z-picomotor-axis", str(profile.z_picomotor_axis)])
@@ -390,7 +395,7 @@ class RuntimeControlService:
 
 class DeviceRegistryService:
     def build_panels(self, profile: RuntimeProfile, runtime: RuntimeControlService) -> List[DevicePanelState]:
-        mode_label = "Simulated Frame Source" if profile.run_mode == RunMode.SIMULATION else "ToupView"
+        mode_label = "仿真帧源" if profile.run_mode == RunMode.SIMULATION else "ToupView"
         image_summary = profile.frame_source_image if profile.run_mode == RunMode.SIMULATION else profile.window_title
         return [
             DevicePanelState(
@@ -453,16 +458,16 @@ class DeviceRegistryService:
 
     def mrc_allocation_preview(self, profile: RuntimeProfile) -> str:
         if profile.xy_driver != "newport-mrc4":
-            return "当前未启用 MRC 4-axis"
+            return "当前未启用 MRC 4轴"
         mode = profile.mrc_virtual_axis_mode
-        if mode == "mirror1":
-            return f"virtual X/Y -> ({profile.mrc_mirror1_x_axis}, {profile.mrc_mirror1_y_axis})"
-        if mode == "mirror2":
-            return f"virtual X/Y -> ({profile.mrc_mirror2_x_axis}, {profile.mrc_mirror2_y_axis})"
+        if mode in ("mirror1", "反射镜1"):
+            return f"虚拟 X/Y -> ({profile.mrc_mirror1_x_axis}, {profile.mrc_mirror1_y_axis})"
+        if mode in ("mirror2", "反射镜2"):
+            return f"虚拟 X/Y -> ({profile.mrc_mirror2_x_axis}, {profile.mrc_mirror2_y_axis})"
         return (
-            "virtual X -> "
+            "虚拟 X -> "
             f"({profile.mrc_mirror1_x_axis}, {profile.mrc_mirror2_x_axis}), "
-            "virtual Y -> "
+            "虚拟 Y -> "
             f"({profile.mrc_mirror1_y_axis}, {profile.mrc_mirror2_y_axis})"
         )
 

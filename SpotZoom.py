@@ -3383,6 +3383,10 @@ class AlignmentConfig:
 
     # 持续学习适配器
     continual_enabled: bool = False
+
+    # 帧缓存配置
+    frame_cache_enabled: bool = False
+    frame_cache_dir: str = "Tmp_Frames"
     continual_buffer_size: int = 200
     continual_ewc_lambda: float = 1000.0
 
@@ -8579,6 +8583,16 @@ class SpotZoomController:
             except Exception as exc:
                 LOGGER.debug("v4 DigitalTwinEnhancer init skipped: %s", exc)
 
+        # 帧缓存初始化
+        self._frame_cache_dir: Optional[Path] = None
+        self._frame_cache_counter: int = 0
+        if getattr(self.cfg, "frame_cache_enabled", False):
+            cache_dir = Path(getattr(self.cfg, "frame_cache_dir", "Tmp_Frames"))
+            cache_dir.mkdir(parents=True, exist_ok=True)
+            self._frame_cache_dir = cache_dir
+            self._frame_cache_counter = 0
+            LOGGER.info("Frame cache enabled: directory=%s", cache_dir)
+
     def _inc_metric(self, name: str, delta: int = 1) -> None:
         """Increment a reporter metric if reporter is available."""
         if self.reporter is not None:
@@ -12019,6 +12033,16 @@ class SpotZoomController:
                 frame = self.window.grab_frame()
             last_frame = frame
             self._last_frame = frame  # 缂撳瓨甯х敤浜庝簹鍍忕礌璐ㄥ績
+            
+            # 帧缓存保存
+            if self._frame_cache_dir is not None:
+                try:
+                    frame_path = self._frame_cache_dir / f"frame_{self._frame_cache_counter:06d}.png"
+                    cv2.imwrite(str(frame_path), frame)
+                    self._frame_cache_counter += 1
+                except Exception as exc:
+                    LOGGER.debug("Frame cache save failed: %s", exc)
+            
             detect_frame = self._prepare_detection_frame(frame)
             detection = self._detect_with_runtime_metrics(
                 detect_frame,
@@ -23350,6 +23374,7 @@ def parse_args() -> argparse.Namespace:
         help="Sign mapping from pixel dy to Y stage motion",
     )
     parser.add_argument("--no-preview", action="store_true", help="Disable OpenCV preview window")
+    parser.add_argument("--frame-cache", action="store_true", help="Enable frame caching during alignment to ./Tmp_Frames")
     parser.add_argument("--check-env", action="store_true", help="Only check dependencies and model path")
     parser.add_argument("--smooth-window", type=int, default=1, help="Temporal smoothing window for detected center")
     parser.add_argument("--adaptive-step", action="store_true", help="Scale XY move size with pixel error")
@@ -27222,6 +27247,8 @@ def main() -> int:
             disagreement_threshold_px=args.disagreement_threshold_px,
             comparison_log_interval=args.comparison_log_interval,
             preview=not args.no_preview,
+            frame_cache_enabled=args.frame_cache,
+            frame_cache_dir="Tmp_Frames",
             detection_smooth_window=max(1, args.smooth_window),
             adaptive_step=args.adaptive_step,
             adaptive_px_to_step=args.adaptive_px_to_step,
