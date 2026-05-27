@@ -1253,10 +1253,11 @@ class SpotZoomQtMainWindow(QMainWindow):
         item = self.test_tree.currentItem()
         if item is None:
             return
-        test_id = item.data(0, Qt.UserRole)
-        if not test_id:
-            return
-        self._run_device_test_by_id(str(test_id))
+        spec = item.data(0, Qt.UserRole)
+        if isinstance(spec, TestCaseSpec):
+            self._run_device_test_by_id(spec.test_id)
+        elif isinstance(spec, str):
+            self._run_device_test_by_id(spec)
 
     def _run_device_test_by_id(self, test_id: str) -> None:
         self.profile = self._collect_profile_from_controls()
