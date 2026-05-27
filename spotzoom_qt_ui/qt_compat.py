@@ -65,8 +65,9 @@ except ImportError:
         Signal,
         Slot,
     )
-    from PySide2.QtGui import QAction, QImage, QPixmap
+    from PySide2.QtGui import QImage, QPixmap
     from PySide2.QtWidgets import (
+        QAction,
         QApplication,
         QCheckBox,
         QComboBox,
