@@ -137,6 +137,7 @@ class RuntimeProfile:
     preview: bool = True
     frame_cache_enabled: bool = False
     frame_cache_dir: str = "Tmp_Frames"
+    disable_z_axis: bool = False
 
 
 @dataclass

@@ -392,6 +392,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         self.controls["startup_motion_check_xy_steps"] = self._spin(1, 50, 1)
         self.controls["startup_motion_check_z_step"] = self._dspin(0.1, 20.0, 1.0, 2)
         self.controls["frame_cache_enabled"] = QCheckBox()
+        self.controls["disable_z_axis"] = QCheckBox()
         pairs = [
             ("tolerance_px", "容差 (px)"),
             ("detect_retry", "检测重试次数"),
@@ -410,6 +411,7 @@ class SpotZoomQtMainWindow(QMainWindow):
             ("startup_motion_check_xy_steps", "启动自检 XY 步数"),
             ("startup_motion_check_z_step", "启动自检 Z 步长"),
             ("frame_cache_enabled", "启用帧缓存 (./Tmp_Frames)"),
+            ("disable_z_axis", "不启用 Z 轴 (4轴模式)"),
         ]
         for key, label in pairs:
             widget = self.controls[key]
@@ -828,6 +830,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         self._set_check("enable_recovery_scan", p.enable_recovery_scan)
         self._set_check("startup_motion_check_enabled", p.startup_motion_check_enabled)
         self._set_check("frame_cache_enabled", p.frame_cache_enabled)
+        self._set_check("disable_z_axis", p.disable_z_axis)
         self._set_dspin("startup_motion_check_timeout", p.startup_motion_check_timeout)
         self._set_spin("startup_motion_check_xy_steps", p.startup_motion_check_xy_steps)
         self._set_dspin("startup_motion_check_z_step", p.startup_motion_check_z_step)
@@ -876,6 +879,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         p.enable_recovery_scan = self._check_value("enable_recovery_scan", p.enable_recovery_scan)
         p.startup_motion_check_enabled = self._check_value("startup_motion_check_enabled", p.startup_motion_check_enabled)
         p.frame_cache_enabled = self._check_value("frame_cache_enabled", p.frame_cache_enabled)
+        p.disable_z_axis = self._check_value("disable_z_axis", p.disable_z_axis)
         p.startup_motion_check_timeout = self._dspin_value("startup_motion_check_timeout", p.startup_motion_check_timeout)
         p.startup_motion_check_xy_steps = self._spin_value("startup_motion_check_xy_steps", p.startup_motion_check_xy_steps)
         p.startup_motion_check_z_step = self._dspin_value("startup_motion_check_z_step", p.startup_motion_check_z_step)

@@ -198,6 +198,8 @@ class RuntimeControlService:
 
         if profile.frame_cache_enabled:
             args.append("--frame-cache")
+        if profile.disable_z_axis:
+            args.append("--disable-z-axis")
 
         args.extend(["--newport-conn", str(profile.newport_conn)])
         args.extend(["--newport-x-axis", str(profile.newport_x_axis)])
@@ -341,6 +343,8 @@ class RuntimeControlService:
                 cwd=self.repo_root,
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 timeout=timeout,
             )
         except Exception as exc:

@@ -21536,7 +21536,7 @@ def build_xy_stage(args):
 
 def build_z_stage(args, window):
     """Build and return the Z axis driver based on command-line arguments."""
-    if args.z_driver == "dryrun":
+    if args.disable_z_axis or args.z_driver == "dryrun":
         return DryRunZAxis()
     if args.z_driver == "wheel":
         return ToupViewWheelZAxis(window=window, up_click_sign=args.z_up_sign)
@@ -23310,6 +23310,7 @@ def parse_args() -> argparse.Namespace:
     )
 
     parser.add_argument("--z-driver", choices=("wheel", "xps", "picomotor", "dryrun"), default="wheel")
+    parser.add_argument("--disable-z-axis", action="store_true", help="Disable Z-axis movement (for 4-axis MRC mode)")
     parser.add_argument("--z-step", type=float, default=1.0, help="Z step size")
     parser.add_argument("--z-up-sign", type=int, default=1, help="Wheel mode positive direction sign")
     parser.add_argument("--z-picomotor-conn", type=int, default=1, help="Dedicated Picomotor controller index for the zoom axis")
