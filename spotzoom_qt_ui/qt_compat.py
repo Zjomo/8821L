@@ -110,3 +110,16 @@ def qt_info() -> str:
         f"Python: {platform.python_version()}\n"
         f"System: {platform.platform()}"
     )
+
+
+def app_exec(app: QApplication) -> int:
+    """
+    跨版本兼容的 QApplication.exec() 调用
+    
+    PySide6: app.exec()
+    PySide2: app.exec_()
+    """
+    if QT_VERSION == "PySide6":
+        return app.exec()
+    else:
+        return app.exec_()
