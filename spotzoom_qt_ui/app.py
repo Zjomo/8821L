@@ -269,7 +269,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         self.quick_event_table = QTableWidget(0, 3)
         self.quick_event_table.setHorizontalHeaderLabels(["时间", "事件", "摘要"])
         self.quick_event_table.horizontalHeader().setStretchLastSection(True)
-        layout.addWidget(QLabel("最近关键事件")
+        layout.addWidget(QLabel("最近关键事件"))
         layout.addWidget(self.quick_event_table, 3)
         return panel
 
@@ -315,7 +315,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         self.dashboard_event_table = QTableWidget(0, 3)
         self.dashboard_event_table.setHorizontalHeaderLabels(["时间", "事件", "摘要"])
         self.dashboard_event_table.horizontalHeader().setStretchLastSection(True)
-        layout.addWidget(QLabel("最近20 条关键事件")
+        layout.addWidget(QLabel("最近20 条关键事件"))
         layout.addWidget(self.dashboard_event_table, 1)
         return page
 
@@ -343,12 +343,12 @@ class SpotZoomQtMainWindow(QMainWindow):
 
         ctrl = QGroupBox("准直控制区")
         ctrl_layout = QGridLayout(ctrl)
-        self.btn_run = QPushButton("开始)
+        self.btn_run = QPushButton("开始")
         self.btn_pause = QPushButton("暂停")
         self.btn_stop = QPushButton("停止")
-        self.btn_step = QPushButton("单步一轮)
+        self.btn_step = QPushButton("单步一轮")
         self.btn_roi = QPushButton("重新选择 ROI")
-        self.btn_env = QPushButton("环境检查)
+        self.btn_env = QPushButton("环境检查")
         self.btn_startup = QPushButton("启动自检")
         self.btn_export = QPushButton("导出报告")
         actions = [
@@ -447,7 +447,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         self.module_type_filter = QListWidget()
         self.module_type_filter.addItem("全部类型")
         self.module_type_filter.currentRowChanged.connect(self._refresh_module_table)
-        left_layout.addWidget(QLabel("类型筛选))
+        left_layout.addWidget(QLabel("类型筛选"))
         left_layout.addWidget(self.module_type_filter)
         layout.addWidget(left, 1)
 
@@ -460,7 +460,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         self.module_version_filter = QComboBox()
         self.module_version_filter.addItems(["全部版本", "v2", "v3", "v4", "v5", "v6", "v7"])
         self.module_version_filter.currentIndexChanged.connect(self._refresh_module_table)
-        self.module_integrated_only = QCheckBox("只看已接入)
+        self.module_integrated_only = QCheckBox("只看已接入")
         self.module_integrated_only.stateChanged.connect(self._refresh_module_table)
         btn_reload = QPushButton("刷新目录")
         btn_reload.clicked.connect(self._refresh_module_catalog)
@@ -537,7 +537,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         mrc_form.addRow(mrc_refresh)
         cards.addWidget(mrc_card, 3)
 
-        z_card = QGroupBox("Picomotor Z 子系统)
+        z_card = QGroupBox("Picomotor Z 子系统")
         z_form = QFormLayout(z_card)
         self.controls["z_picomotor_conn"] = self._spin(0, 16, 1)
         self.controls["z_picomotor_axis"] = self._spin(1, 8, 1)
@@ -633,7 +633,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         self.controls["sim_noise_std"] = self._dspin(0.0, 100.0, 0.0, 2)
         sim_layout.addRow("sim_jitter_px", self.controls["sim_jitter_px"])
         sim_layout.addRow("sim_noise_std", self.controls["sim_noise_std"])
-        sim_layout.addRow(QLabel("提示：不会驱动真实设备))
+        sim_layout.addRow(QLabel("提示：不会驱动真实设备"))
         mode_row.addWidget(sim_card, 1)
 
         real_card = QGroupBox("真实设备模式")
@@ -651,7 +651,7 @@ class SpotZoomQtMainWindow(QMainWindow):
             "已确认运行锁配置",
         ]:
             self.preflight_list.addItem(item)
-        real_layout.addWidget(QLabel("运行前检查清单))
+        real_layout.addWidget(QLabel("运行前检查清单"))
         real_layout.addWidget(self.preflight_list, 1)
         mode_row.addWidget(real_card, 1)
         layout.addLayout(mode_row, 2)
@@ -670,7 +670,7 @@ class SpotZoomQtMainWindow(QMainWindow):
 
         self.run_mode_snapshot = QPlainTextEdit()
         self.run_mode_snapshot.setReadOnly(True)
-        layout.addWidget(QLabel("配置快照 / 最近一次真实运行记录))
+        layout.addWidget(QLabel("配置快照 / 最近一次真实运行记录"))
         layout.addWidget(self.run_mode_snapshot, 1)
         return page
 
@@ -682,9 +682,9 @@ class SpotZoomQtMainWindow(QMainWindow):
         btn_sample.clicked.connect(self._use_sample_frame)
         btn_sim_test = QPushButton("运行模拟图像测试")
         btn_sim_test.clicked.connect(lambda: self._run_device_test_by_id("simulated_frame"))
-        btn_classic = QPushButton("Classic 检测测试)
+        btn_classic = QPushButton("Classic 检测测试")
         btn_classic.clicked.connect(lambda: self._run_device_test_by_id("classic_backend"))
-        btn_yolo = QPushButton("YOLO 检测测试)
+        btn_yolo = QPushButton("YOLO 检测测试")
         btn_yolo.clicked.connect(lambda: self._run_device_test_by_id("yolo_backend"))
         for btn in [btn_sample, btn_sim_test, btn_classic, btn_yolo]:
             top.addWidget(btn)
@@ -712,7 +712,7 @@ class SpotZoomQtMainWindow(QMainWindow):
 
         self.logs_text = QPlainTextEdit()
         self.logs_text.setReadOnly(True)
-        layout.addWidget(QLabel("实时日志), 0)
+        layout.addWidget(QLabel("实时日志"), 0)
         layout.addWidget(self.logs_text, 2)
 
         self.report_text = QPlainTextEdit()
@@ -760,7 +760,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         btn_export_cfg.clicked.connect(self._export_config_json)
         btn_import_cfg = QPushButton("导入配置")
         btn_import_cfg.clicked.connect(self._import_config_json)
-        btn_default = QPushButton("恢复默认值)
+        btn_default = QPushButton("恢复默认值")
         btn_default.clicked.connect(self._reset_to_default_profile)
         io_layout.addWidget(btn_export_cfg)
         io_layout.addWidget(btn_import_cfg)
@@ -1104,10 +1104,10 @@ class SpotZoomQtMainWindow(QMainWindow):
         if module is None:
             return
         detail = {
-            "模块名: module.name,
+            "模块名": module.name,
             "版本": f"v{module.version}",
             "类型": module.type_label,
-            "状态: status_text(module.status),
+            "状态": status_text(module.status),
             "接入位置": module.placement,
             "import_path": module.import_path,
             "source_path": module.source_path,
@@ -1228,12 +1228,13 @@ class SpotZoomQtMainWindow(QMainWindow):
         self._refresh_all_panels()
 
     def _pause_alignment(self) -> None:
-        # 目前 SpotZoom 主流程没有原生pause 命令，v1 用“温和停止”替代。        self._stop_alignment(tag="pause")
+        # 目前 SpotZoom 主流程没有原生pause 命令，v1 用"温和停止"替代。
+        self._stop_alignment(tag="pause")
 
     def _stop_alignment(self, tag: str = "stop") -> None:
         if not self.run_process or self.run_process.state() == QProcess.NotRunning:
             return
-        self._append_log(f"请求{tag}运行流程。
+        self._append_log(f"请求{tag}运行流程。")
         self.run_process.terminate()
         if not self.run_process.waitForFinished(2000):
             self.run_process.kill()
