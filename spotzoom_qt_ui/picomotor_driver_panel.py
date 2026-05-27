@@ -3,8 +3,9 @@ from __future__ import annotations
 import time
 from typing import Callable, List, Optional
 
-from PySide6.QtCore import Qt, QTimer
-from PySide6.QtWidgets import (
+from .qt_compat import (
+    Qt,
+    QTimer,
     QCheckBox,
     QComboBox,
     QDoubleSpinBox,

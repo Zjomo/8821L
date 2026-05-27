@@ -5,9 +5,16 @@ import sys
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional
 
-from PySide6.QtCore import QAbstractTableModel, QModelIndex, QObject, Qt, QProcess, QTimer
-from PySide6.QtGui import QAction, QImage, QPixmap
-from PySide6.QtWidgets import (
+from .qt_compat import (
+    QAbstractTableModel,
+    QModelIndex,
+    QObject,
+    Qt,
+    QProcess,
+    QTimer,
+    QAction,
+    QImage,
+    QPixmap,
     QApplication,
     QCheckBox,
     QComboBox,
