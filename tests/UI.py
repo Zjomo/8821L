@@ -140,84 +140,6 @@ class PicoMotor8742Controller:
         return self.dev.query(cmd, axis=axis, addr=addr)
   
 
-# 基于"命令"控制 -- 取消了限位的设置
-with PicoMotor8742Controller(conn=0) as pm:
-    ID = pm.dev.query(comm='*IDN?')    # 型号
-    print("ID:", ID)
-
-    axis = 1
-    zh0 = int(pm.dev.query(comm='ZH?', axis=axis))   # 硬件配置位域
-    print("ZH before:", zh0, bin(zh0))
-
-    # 只清 bit3（软件限位检查）
-    zh1 = zh0 & ~(1 << 3)
-    pm.dev.query(comm=f'ZH{zh1}', axis=axis)    # 轴1 取消限位
-
-    zh_verify = int(pm.dev.query(comm='ZH?', axis=axis))    
-    print("ZH after :", zh_verify, bin(zh_verify))
-
-    pm.dev.query(comm='SM')    # 保存
-    print("saved (SM)")
-
-
-# 1）枚举 USB 设备数量
-n = PicoMotor8742Controller.usb_device_count()
-print("USB 连接的 8743 数量:", n)
-
-# 2）让电机 连续运动 1s后，再停止
-with PicoMotor8742Controller(conn=0) as pm:
-    try:
-        pm.jog(axis, direction="+")    # 发出"连续移动"的指令，电机开始运动
-        time.sleep(0.1)                # 程序睡眠 0.1s
-    finally:
-        pm.stop(axis=axis, immediate=False)  # 睡眠之后，中断程序
-
-
-# 3) 连接第 0 台设备
-with PicoMotor8742Controller(conn=0) as pm:
-    print("连接成功, ID:", pm.get_id())
-    axis = 1
-
-    # 3) 读取当前位置（单位：steps）
-    p0 = pm.get_pos(axis)
-    print(f"Axis{axis} 初始位置:", p0)
-
-    # 4) 设置速度/加速度（可选）
-    old = pm.get_vel(axis)
-    print("原速度参数(speed,accel):", old)
-    pm.set_vel(axis, speed=200, accel=2000)
-    print("新速度参数(speed,accel):", pm.get_vel(axis))
-
-    # 6) 点动 0.5 秒然后停止
-    pm.jog(axis, direction="-")
-    time.sleep(0.5)
-    pm.stop(axis=axis, immediate=False)
-    print(f"Axis{axis} 点动后位置:", pm.get_pos(axis))
-
-
-# 3) 连接第 0 台设备
-with PicoMotor8742Controller(conn=0) as pm:
-    print("连接成功, ID:", pm.get_id())
-    axis = 2
-
-    # 1) 读取当前位置（单位：steps）
-    p0 = pm.get_pos(axis)
-    print(f"Axis{axis} 初始位置:", p0)
-
-    # 2) 设置速度/加速度（可选）
-    old = pm.get_vel(axis)
-    print("原速度参数(speed,accel):", old)
-    pm.set_vel(axis, speed=200, accel=2000)
-    print("新速度参数(speed,accel):", pm.get_vel(axis))
-
-    # 3) 相对移动 +1 steps（推荐）
-    pm.move_rel(axis, steps=50, wait=True)
-    print(f"Axis{axis} 移动后位置:", pm.get_pos(axis))
-
-    # 4） 停止
-    pm.stop(axis=axis, immediate=False)
-
-
 import sys
 import time
 from typing import Optional, Dict, List
@@ -626,4 +548,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-  
