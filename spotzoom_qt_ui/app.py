@@ -633,6 +633,15 @@ class SpotZoomQtMainWindow(QMainWindow):
         browse_wrap = QWidget()
         browse_wrap.setLayout(browse_row)
         sim_layout.addRow("帧源图像", browse_wrap)
+        self.controls["frame_source_image_2"] = QLineEdit()
+        btn_browse_2 = QPushButton("选择图像")
+        btn_browse_2.clicked.connect(self._select_frame_image_2)
+        browse_row_2 = QHBoxLayout()
+        browse_row_2.addWidget(self.controls["frame_source_image_2"])
+        browse_row_2.addWidget(btn_browse_2)
+        browse_wrap_2 = QWidget()
+        browse_wrap_2.setLayout(browse_row_2)
+        sim_layout.addRow("探测器2 帧源图像", browse_wrap_2)
         self.controls["sim_jitter_px"] = self._spin(0, 200, 0)
         self.controls["sim_noise_std"] = self._dspin(0.0, 100.0, 0.0, 2)
         sim_layout.addRow("模拟抖动 (px)", self.controls["sim_jitter_px"])
@@ -663,10 +672,14 @@ class SpotZoomQtMainWindow(QMainWindow):
         cfg_group = QGroupBox("运行模式配置")
         cfg_form = QFormLayout(cfg_group)
         self.controls["detector_backend"] = self._combo(["auto", "yolo", "classic"])
+        self.controls["detector_mode"] = self._combo(["single_detector", "dual_detector"])
         self.controls["xy_driver"] = self._combo(["dryrun", "thorlabs", "newport", "newport-mrc4"])
         self.controls["z_driver"] = self._combo(["dryrun", "wheel", "xps", "picomotor"])
         self.controls["select_roi"] = QCheckBox()
+        # 探测器模式联动：双探测器模式自动禁用Z轴
+        self.controls["detector_mode"].currentTextChanged.connect(self._on_detector_mode_changed)
         cfg_form.addRow("检测后端", self.controls["detector_backend"])
+        cfg_form.addRow("探测器模式", self.controls["detector_mode"])
         cfg_form.addRow("XY 驱动", self.controls["xy_driver"])
         cfg_form.addRow("Z 驱动", self.controls["z_driver"])
         cfg_form.addRow("启用 ROI", self.controls["select_roi"])
@@ -736,8 +749,9 @@ class SpotZoomQtMainWindow(QMainWindow):
         for title, rows in [
             ("基础参数", [("window_title", "窗口标题"), ("window_wait_seconds", "窗口等待秒数"), ("log_level", "日志级别")]),
             ("运动参数", [("newport_timeout", "Newport 超时"), ("z_step", "Z 步长"), ("disable_run_lock", "禁用运行锁")]),
-            ("ROI / 图像参数", [("sim_jitter_px", "模拟抖动"), ("sim_noise_std", "模拟噪声"), ("select_roi", "启用 ROI")]),
+            ("ROI / 图像参数", [("sim_jitter_px", "模拟抖动"), ("sim_noise_std", "模拟噪声"), ("select_roi", "启用 ROI"), ("select_roi_2", "探测器2 启用 ROI")]),
             ("安全参数", [("startup_motion_check_timeout", "启动自检超时"), ("startup_motion_check_xy_steps", "启动自检 XY 步数")]),
+            ("双探测器参数", [("detector2_focal_length", "探测器2 焦距 (mm)"), ("comparison_mode", "对比模式"), ("detector_weight", "主探测器权重"), ("touview_weight", "ToupView 权重"), ("disagreement_threshold_px", "不一致阈值 (px)")]),
         ]:
             group = QGroupBox(title)
             form = QFormLayout(group)
@@ -753,6 +767,18 @@ class SpotZoomQtMainWindow(QMainWindow):
                         self.controls[key] = self._dspin(0.1, 60.0, 5.0, 1)
                     elif key == "disable_run_lock":
                         self.controls[key] = QCheckBox()
+                    elif key == "select_roi_2":
+                        self.controls[key] = QCheckBox()
+                    elif key == "detector2_focal_length":
+                        self.controls[key] = self._dspin(50.0, 500.0, 200.0, 1)
+                    elif key == "comparison_mode":
+                        self.controls[key] = self._combo(["detector_primary", "touview_primary", "average", "weighted"])
+                    elif key == "detector_weight":
+                        self.controls[key] = self._dspin(0.0, 1.0, 0.7, 2)
+                    elif key == "touview_weight":
+                        self.controls[key] = self._dspin(0.0, 1.0, 0.3, 2)
+                    elif key == "disagreement_threshold_px":
+                        self.controls[key] = self._dspin(0.0, 50.0, 10.0, 1)
                     else:
                         continue
                 form.addRow(label, self.controls[key])
@@ -810,12 +836,15 @@ class SpotZoomQtMainWindow(QMainWindow):
         self.mode_real_radio.setChecked(p.run_mode == RunMode.REAL)
 
         self._set_combo("detector_backend", p.detector_backend)
+        self._set_combo("detector_mode", p.detector_mode)
         self._set_combo("xy_driver", p.xy_driver)
         self._set_combo("z_driver", p.z_driver)
         self._set_text("frame_source_image", p.frame_source_image or "")
+        self._set_text("frame_source_image_2", p.frame_source_image_2 or "")
         self._set_spin("sim_jitter_px", p.sim_jitter_px)
         self._set_dspin("sim_noise_std", p.sim_noise_std)
         self._set_check("select_roi", p.select_roi)
+        self._set_check("select_roi_2", p.select_roi_2)
         self._set_spin("tolerance_px", p.tolerance_px)
         self._set_spin("detect_retry", p.detect_retry)
         self._set_dspin("detect_retry_interval", p.detect_retry_interval)
@@ -854,17 +883,25 @@ class SpotZoomQtMainWindow(QMainWindow):
         self._set_combo("log_level", p.log_level)
         self._set_dspin("newport_timeout", p.newport_timeout)
         self._set_check("disable_run_lock", p.disable_run_lock)
+        self._set_dspin("detector2_focal_length", p.detector2_focal_length)
+        self._set_combo("comparison_mode", p.comparison_mode)
+        self._set_dspin("detector_weight", p.detector_weight)
+        self._set_dspin("touview_weight", p.touview_weight)
+        self._set_dspin("disagreement_threshold_px", p.disagreement_threshold_px)
 
     def _collect_profile_from_controls(self) -> RuntimeProfile:
         p = self.profile
         p.run_mode = RunMode.REAL if self.mode_real_radio.isChecked() else RunMode.SIMULATION
         p.detector_backend = self._combo_value("detector_backend", p.detector_backend)
+        p.detector_mode = self._combo_value("detector_mode", p.detector_mode)
         p.xy_driver = self._combo_value("xy_driver", p.xy_driver)
         p.z_driver = self._combo_value("z_driver", p.z_driver)
         p.frame_source_image = self._text_value("frame_source_image", p.frame_source_image or "")
+        p.frame_source_image_2 = self._text_value("frame_source_image_2", p.frame_source_image_2 or "")
         p.sim_jitter_px = self._spin_value("sim_jitter_px", p.sim_jitter_px)
         p.sim_noise_std = self._dspin_value("sim_noise_std", p.sim_noise_std)
         p.select_roi = self._check_value("select_roi", p.select_roi)
+        p.select_roi_2 = self._check_value("select_roi_2", p.select_roi_2)
         p.tolerance_px = self._spin_value("tolerance_px", p.tolerance_px)
         p.detect_retry = self._spin_value("detect_retry", p.detect_retry)
         p.detect_retry_interval = self._dspin_value("detect_retry_interval", p.detect_retry_interval)
@@ -905,6 +942,11 @@ class SpotZoomQtMainWindow(QMainWindow):
         p.log_level = self._combo_value("log_level", p.log_level)
         p.newport_timeout = self._dspin_value("newport_timeout", p.newport_timeout)
         p.disable_run_lock = self._check_value("disable_run_lock", p.disable_run_lock)
+        p.detector2_focal_length = self._dspin_value("detector2_focal_length", p.detector2_focal_length)
+        p.comparison_mode = self._combo_value("comparison_mode", p.comparison_mode)
+        p.detector_weight = self._dspin_value("detector_weight", p.detector_weight)
+        p.touview_weight = self._dspin_value("touview_weight", p.touview_weight)
+        p.disagreement_threshold_px = self._dspin_value("disagreement_threshold_px", p.disagreement_threshold_px)
         return p
 
     def _set_combo(self, key: str, value: str) -> None:
@@ -1311,6 +1353,24 @@ class SpotZoomQtMainWindow(QMainWindow):
         if path:
             self._set_text("frame_source_image", path)
             self._refresh_preview_images()
+
+    def _select_frame_image_2(self) -> None:
+        path, _ = QFileDialog.getOpenFileName(
+            self,
+            "选择探测器2模拟图像",
+            str(self.runtime.repo_root),
+            "Images (*.png *.jpg *.jpeg *.bmp)",
+        )
+        if path:
+            self._set_text("frame_source_image_2", path)
+            self._refresh_preview_images()
+
+    def _on_detector_mode_changed(self, mode: str) -> None:
+        if mode == "dual_detector":
+            self._set_check("disable_z_axis", True)
+            self._append_log("双探测器模式已启用，自动禁用Z轴")
+        else:
+            pass
 
     def _use_sample_frame(self) -> None:
         sample = str(self.runtime.ensure_sample_frame())
