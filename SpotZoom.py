@@ -4455,18 +4455,22 @@ class FrameSourcePair:
 
 class FourAxisController:
     """4轴双镜闭环控制器，支持双探测器和单探测器两种模式。
-    
+
     双探测器模式（dual_detector）：
         - Detector1测量位置误差（近端镜子后）
         - Detector2测量角度误差（远端镜子后+透镜）
-        - 两个镜子同时控制
-    
+        - 两个镜子同时控制，控制量经J-1解耦后下发
+
     单探测器模式（single_detector）：
         - 仅在远端镜子后有一个探测器
         - 采用顺序控制：先调镜子1（粗调），再调镜子2（细调）
         - 保留双探测器接口，后续可扩展
     """
-    
+
+    DEFAULT_INTEGRAL_LIMIT = 1000.0
+    DEFAULT_OUTPUT_LIMIT = 2000
+    MAX_DT = 1.0
+
     def __init__(
         self,
         stage1_kp: float = 1.0,
@@ -4504,7 +4508,30 @@ class FourAxisController:
 
         self.stable_frame_count = 0
         self.jacobian_matrix = None
+        self._jacobian_inv = None
         self._current_stage = 1  # 单探测器模式下当前控制阶段
+
+        self._converge_history: Deque[bool] = deque(maxlen=max(8, converge_stable_frames * 2))
+        self._converge_ratio_threshold = 0.75
+
+        self._prev_u1 = np.zeros(2, dtype=np.float64)
+        self._prev_u2 = np.zeros(2, dtype=np.float64)
+        self._osc_sign_changes_stage1 = np.zeros(2, dtype=np.float64)
+        self._osc_sign_changes_stage2 = np.zeros(2, dtype=np.float64)
+        self._osc_window_size = 6
+        self._osc_threshold = 5
+        self._osc_kp_scale = 1.0
+        self._osc_decay = 0.9
+
+        self._sat_freeze_integral = False
+        self._sat_suspend_count = 0
+        self._sat_suspend_threshold = 2
+
+        self._prev_time: Optional[float] = None
+
+        self._miss_streak = 0
+        self._miss_streak_max = 3
+
         LOGGER.info("FourAxisController initialized: mode=%s stage1_kp=%.2f stage1_ki=%.2f stage2_kp=%.2f stage2_ki=%.2f coupling=(%.2f,%.2f)",
                     detector_mode, stage1_kp, stage1_ki, stage2_kp, stage2_ki, coupling_c12, coupling_c21)
 
@@ -4514,12 +4541,30 @@ class FourAxisController:
         self.integral_ang_x = 0.0
         self.integral_ang_y = 0.0
         self.stable_frame_count = 0
+        self._converge_history.clear()
+        self._prev_u1 = np.zeros(2, dtype=np.float64)
+        self._prev_u2 = np.zeros(2, dtype=np.float64)
+        self._osc_sign_changes_stage1 = np.zeros(2, dtype=np.float64)
+        self._osc_sign_changes_stage2 = np.zeros(2, dtype=np.float64)
+        self._osc_kp_scale = 1.0
+        self._sat_freeze_integral = False
+        self._sat_suspend_count = 0
+        self._prev_time = None
+        self._miss_streak = 0
 
     def set_jacobian(self, J: np.ndarray) -> None:
         if J.shape != (4, 4):
             raise ValueError(f"Jacobian must be 4x4 matrix, got {J.shape}")
         self.jacobian_matrix = J
-        LOGGER.info("Jacobian matrix set:\n%s", J)
+        try:
+            self._jacobian_inv = np.linalg.inv(J)
+            cond = np.linalg.cond(J)
+            LOGGER.info("Jacobian matrix set (cond=%.2f):\n%s\ninv:\n%s", cond, J, self._jacobian_inv)
+            if cond > 50.0:
+                LOGGER.warning("Jacobian condition number is high (%.2f), decoupling may amplify noise", cond)
+        except np.linalg.LinAlgError:
+            LOGGER.warning("Jacobian matrix is singular, decoupling disabled")
+            self._jacobian_inv = None
 
     def estimate_jacobian(self, xy_stage, frame_source_pair, calibration_steps: int = 5) -> np.ndarray:
         LOGGER.info("Starting 4x4 Jacobian calibration with %d steps per axis", calibration_steps)
@@ -4556,8 +4601,7 @@ class FourAxisController:
 
             J[:, i] /= 2.0
 
-        self.jacobian_matrix = J
-        LOGGER.info("Jacobian calibration completed:\n%s", J)
+        self.set_jacobian(J)
         return J
 
     def _capture_reference(self, frame_source_pair) -> Optional[Tuple[int, int, int, int]]:
@@ -4584,64 +4628,150 @@ class FourAxisController:
         else:
             return self._compute_control_dual_detector(e_pos_x, e_pos_y, e_ang_x, e_ang_y)
 
+    def _compute_dt(self) -> float:
+        now = time.time()
+        dt = (now - self._prev_time) if self._prev_time is not None else 0.0
+        self._prev_time = now
+        return min(dt, self.MAX_DT)
+
+    def _update_integral(self, integral: float, error: float, dt: float) -> float:
+        integral += error * dt
+        return max(-self.DEFAULT_INTEGRAL_LIMIT, min(self.DEFAULT_INTEGRAL_LIMIT, integral))
+
+    def _detect_oscillation(self, u_now: np.ndarray, u_prev: np.ndarray, sign_changes: np.ndarray) -> np.ndarray:
+        for axis in range(2):
+            if u_now[axis] != 0 and u_prev[axis] != 0:
+                if np.sign(u_now[axis]) != np.sign(u_prev[axis]):
+                    sign_changes[axis] += 1.0
+            sign_changes[axis] *= self._osc_decay
+        return sign_changes
+
+    def _check_oscillation_and_adjust(self) -> float:
+        max_changes_stage1 = float(np.max(self._osc_sign_changes_stage1))
+        max_changes_stage2 = float(np.max(self._osc_sign_changes_stage2))
+        max_changes = max(max_changes_stage1, max_changes_stage2)
+
+        if max_changes >= self._osc_threshold:
+            self._osc_kp_scale = max(0.15, self._osc_kp_scale * 0.7)
+            self._osc_sign_changes_stage1 = np.zeros(2, dtype=np.float64)
+            self._osc_sign_changes_stage2 = np.zeros(2, dtype=np.float64)
+            LOGGER.warning("Oscillation detected (sign_changes=%.1f >= %d), reducing Kp scale to %.3f",
+                          max_changes, self._osc_threshold, self._osc_kp_scale)
+        elif max_changes <= 2.0 and self._osc_kp_scale < 0.95:
+            self._osc_kp_scale = min(1.0, self._osc_kp_scale * 1.05)
+            LOGGER.debug("Oscillation subsided, Kp scale recovering to %.3f", self._osc_kp_scale)
+
+        return self._osc_kp_scale
+
+    def _check_saturation(self, u1_x: int, u1_y: int, u2_x: int, u2_y: int) -> bool:
+        limit = self.DEFAULT_OUTPUT_LIMIT
+        saturated = (abs(u1_x) >= limit or abs(u1_y) >= limit or
+                     abs(u2_x) >= limit or abs(u2_y) >= limit)
+        if saturated:
+            self._sat_suspend_count += 1
+            if self._sat_suspend_count >= self._sat_suspend_threshold:
+                self._sat_freeze_integral = True
+                LOGGER.warning("Output saturated (%d consecutive frames), integral frozen", self._sat_suspend_count)
+        else:
+            if self._sat_suspend_count > 0:
+                self._sat_suspend_count = max(0, self._sat_suspend_count - 1)
+            if self._sat_suspend_count == 0:
+                self._sat_freeze_integral = False
+        return self._sat_freeze_integral
+
+    def _decouple_control(self, u1_x: float, u1_y: float, u2_x: float, u2_y: float) -> Tuple[float, float, float, float]:
+        if self._jacobian_inv is None:
+            return u1_x, u1_y, u2_x, u2_y
+        u_raw = np.array([u1_x, u1_y, u2_x, u2_y], dtype=np.float64)
+        u_decoupled = self._jacobian_inv @ u_raw
+        return float(u_decoupled[0]), float(u_decoupled[1]), float(u_decoupled[2]), float(u_decoupled[3])
+
     def _compute_control_dual_detector(self, e_pos_x, e_pos_y, e_ang_x, e_ang_y) -> Tuple[int, int, int, int]:
-        """双探测器模式：同时控制两个镜子。"""
-        self.integral_pos_x = max(-1000.0, min(1000.0, self.integral_pos_x + e_pos_x))
-        self.integral_pos_y = max(-1000.0, min(1000.0, self.integral_pos_y + e_pos_y))
-        self.integral_ang_x = max(-1000.0, min(1000.0, self.integral_ang_x + e_ang_x))
-        self.integral_ang_y = max(-1000.0, min(1000.0, self.integral_ang_y + e_ang_y))
+        """双探测器模式：同时控制两个镜子，含dt积分、振荡检测、饱和检测、J-1解耦。"""
+        dt = self._compute_dt()
 
-        u1_x = int(round(self.stage1_kp * e_pos_x + self.stage1_ki * self.integral_pos_x + self.coupling_c12 * e_ang_x))
-        u1_y = int(round(self.stage1_kp * e_pos_y + self.stage1_ki * self.integral_pos_y + self.coupling_c12 * e_ang_y))
-        u2_x = int(round(self.stage2_kp * e_ang_x + self.stage2_ki * self.integral_ang_x + self.coupling_c21 * e_pos_x))
-        u2_y = int(round(self.stage2_kp * e_ang_y + self.stage2_ki * self.integral_ang_y + self.coupling_c21 * e_pos_y))
+        if not self._sat_freeze_integral and dt > 0:
+            self.integral_pos_x = self._update_integral(self.integral_pos_x, e_pos_x, dt)
+            self.integral_pos_y = self._update_integral(self.integral_pos_y, e_pos_y, dt)
+            self.integral_ang_x = self._update_integral(self.integral_ang_x, e_ang_x, dt)
+            self.integral_ang_y = self._update_integral(self.integral_ang_y, e_ang_y, dt)
 
-        u1_x = max(-2000, min(2000, u1_x))
-        u1_y = max(-2000, min(2000, u1_y))
-        u2_x = max(-2000, min(2000, u2_x))
-        u2_y = max(-2000, min(2000, u2_y))
+        kp_scale = self._check_oscillation_and_adjust()
 
-        return (u1_x, u1_y, u2_x, u2_y)
+        u1_x = self.stage1_kp * kp_scale * e_pos_x + self.stage1_ki * self.integral_pos_x + self.coupling_c12 * e_ang_x
+        u1_y = self.stage1_kp * kp_scale * e_pos_y + self.stage1_ki * self.integral_pos_y + self.coupling_c12 * e_ang_y
+        u2_x = self.stage2_kp * kp_scale * e_ang_x + self.stage2_ki * self.integral_ang_x + self.coupling_c21 * e_pos_x
+        u2_y = self.stage2_kp * kp_scale * e_ang_y + self.stage2_ki * self.integral_ang_y + self.coupling_c21 * e_pos_y
+
+        u1_x_sat = max(-self.DEFAULT_OUTPUT_LIMIT, min(self.DEFAULT_OUTPUT_LIMIT, u1_x))
+        u1_y_sat = max(-self.DEFAULT_OUTPUT_LIMIT, min(self.DEFAULT_OUTPUT_LIMIT, u1_y))
+        u2_x_sat = max(-self.DEFAULT_OUTPUT_LIMIT, min(self.DEFAULT_OUTPUT_LIMIT, u2_x))
+        u2_y_sat = max(-self.DEFAULT_OUTPUT_LIMIT, min(self.DEFAULT_OUTPUT_LIMIT, u2_y))
+
+        self._check_saturation(int(round(u1_x_sat)), int(round(u1_y_sat)),
+                               int(round(u2_x_sat)), int(round(u2_y_sat)))
+
+        u1_x_dec, u1_y_dec, u2_x_dec, u2_y_dec = self._decouple_control(u1_x_sat, u1_y_sat, u2_x_sat, u2_y_sat)
+
+        u_now_u1 = np.array([u1_x_dec, u1_y_dec], dtype=np.float64)
+        u_now_u2 = np.array([u2_x_dec, u2_y_dec], dtype=np.float64)
+        self._osc_sign_changes_stage1 = self._detect_oscillation(u_now_u1, self._prev_u1, self._osc_sign_changes_stage1)
+        self._osc_sign_changes_stage2 = self._detect_oscillation(u_now_u2, self._prev_u2, self._osc_sign_changes_stage2)
+        self._prev_u1 = u_now_u1
+        self._prev_u2 = u_now_u2
+
+        return (int(round(u1_x_dec)), int(round(u1_y_dec)), int(round(u2_x_dec)), int(round(u2_y_dec)))
 
     def _compute_control_single_detector(self, e_pos_x, e_pos_y) -> Tuple[int, int, int, int]:
-        """单探测器模式：顺序控制。
-        
+        """单探测器模式：顺序控制，含dt积分、振荡检测、饱和检测。
+
         阶段1：用镜子1进行粗调（增益较大，因为镜子1离探测器远，杠杆效应大）
         阶段2：用镜子2进行细调（增益较小，因为镜子2离探测器近，调节更精细）
         """
-        self.integral_pos_x = max(-1000.0, min(1000.0, self.integral_pos_x + e_pos_x))
-        self.integral_pos_y = max(-1000.0, min(1000.0, self.integral_pos_y + e_pos_y))
+        dt = self._compute_dt()
 
+        if not self._sat_freeze_integral and dt > 0:
+            self.integral_pos_x = self._update_integral(self.integral_pos_x, e_pos_x, dt)
+            self.integral_pos_y = self._update_integral(self.integral_pos_y, e_pos_y, dt)
+
+        kp_scale = self._check_oscillation_and_adjust()
         error_norm = math.hypot(e_pos_x, e_pos_y)
-        
-        # 阶段1：粗调 - 使用镜子1（近端镜子）
+
         if self._current_stage == 1:
-            # 镜子1的增益乘以杠杆系数（离探测器远，影响大）
-            u1_x = int(round(self.stage1_kp * self.stage1_gain_factor * e_pos_x + 
-                           self.stage1_ki * self.integral_pos_x))
-            u1_y = int(round(self.stage1_kp * self.stage1_gain_factor * e_pos_y + 
-                           self.stage1_ki * self.integral_pos_y))
-            u2_x, u2_y = 0, 0  # 阶段1不动镜子2
-            
-            LOGGER.debug("Single-detector Stage 1: error_norm=%.2f, u1=(%d, %d)", 
+            u1_x = self.stage1_kp * self.stage1_gain_factor * kp_scale * e_pos_x + self.stage1_ki * self.integral_pos_x
+            u1_y = self.stage1_kp * self.stage1_gain_factor * kp_scale * e_pos_y + self.stage1_ki * self.integral_pos_y
+            u2_x, u2_y = 0.0, 0.0
+
+            LOGGER.debug("Single-detector Stage 1: error_norm=%.2f, u1=(%.1f, %.1f)",
                         error_norm, u1_x, u1_y)
-        
-        # 阶段2：细调 - 使用镜子2（远端镜子）
         else:
-            # 镜子2的增益较小（离探测器近，调节精细）
-            u2_x = int(round(self.stage2_kp * e_pos_x + self.stage2_ki * self.integral_pos_x))
-            u2_y = int(round(self.stage2_kp * e_pos_y + self.stage2_ki * self.integral_pos_y))
-            u1_x, u1_y = 0, 0  # 阶段2不动镜子1
-            
-            LOGGER.debug("Single-detector Stage 2: error_norm=%.2f, u2=(%d, %d)", 
+            u2_x = self.stage2_kp * kp_scale * e_pos_x + self.stage2_ki * self.integral_pos_x
+            u2_y = self.stage2_kp * kp_scale * e_pos_y + self.stage2_ki * self.integral_pos_y
+            u1_x, u1_y = 0.0, 0.0
+
+            LOGGER.debug("Single-detector Stage 2: error_norm=%.2f, u2=(%.1f, %.1f)",
                         error_norm, u2_x, u2_y)
 
-        u1_x = max(-2000, min(2000, u1_x))
-        u1_y = max(-2000, min(2000, u1_y))
-        u2_x = max(-2000, min(2000, u2_x))
-        u2_y = max(-2000, min(2000, u2_y))
+        u1_x_sat = max(-self.DEFAULT_OUTPUT_LIMIT, min(self.DEFAULT_OUTPUT_LIMIT, u1_x))
+        u1_y_sat = max(-self.DEFAULT_OUTPUT_LIMIT, min(self.DEFAULT_OUTPUT_LIMIT, u1_y))
+        u2_x_sat = max(-self.DEFAULT_OUTPUT_LIMIT, min(self.DEFAULT_OUTPUT_LIMIT, u2_x))
+        u2_y_sat = max(-self.DEFAULT_OUTPUT_LIMIT, min(self.DEFAULT_OUTPUT_LIMIT, u2_y))
 
-        return (u1_x, u1_y, u2_x, u2_y)
+        self._check_saturation(int(round(u1_x_sat)), int(round(u1_y_sat)),
+                               int(round(u2_x_sat)), int(round(u2_y_sat)))
+
+        u1_x_dec, u1_y_dec, u2_x_dec, u2_y_dec = self._decouple_control(u1_x_sat, u1_y_sat, u2_x_sat, u2_y_sat)
+
+        if self._current_stage == 1:
+            u_now = np.array([u1_x_dec, u1_y_dec], dtype=np.float64)
+            self._osc_sign_changes_stage1 = self._detect_oscillation(u_now, self._prev_u1, self._osc_sign_changes_stage1)
+            self._prev_u1 = u_now
+        else:
+            u_now = np.array([u2_x_dec, u2_y_dec], dtype=np.float64)
+            self._osc_sign_changes_stage2 = self._detect_oscillation(u_now, self._prev_u2, self._osc_sign_changes_stage2)
+            self._prev_u2 = u_now
+
+        return (int(round(u1_x_dec)), int(round(u1_y_dec)), int(round(u2_x_dec)), int(round(u2_y_dec)))
 
     def update_stage(self, iteration: int) -> None:
         """单探测器模式下更新控制阶段。"""
@@ -4654,27 +4784,44 @@ class FourAxisController:
                 LOGGER.info("Single-detector mode: Stage 2 (fine adjustment with mirror 2)")
 
     def is_converged(self, e_pos: Tuple[int, int], e_ang: Tuple[int, int]) -> bool:
-        """收敛判据，单探测器模式下只检查位置误差。"""
+        """收敛判据：滑动窗口比例阈值，容忍偶尔超差帧。"""
         pos_norm = math.hypot(e_pos[0], e_pos[1])
-        
+
         if self.detector_mode == "dual_detector":
             ang_norm = math.hypot(e_ang[0], e_ang[1])
-            if pos_norm <= self.tolerance_pos_px and ang_norm <= self.tolerance_ang_px:
-                self.stable_frame_count += 1
-                if self.stable_frame_count >= self.converge_stable_frames:
-                    return True
-            else:
-                self.stable_frame_count = 0
+            frame_ok = (pos_norm <= self.tolerance_pos_px and ang_norm <= self.tolerance_ang_px)
         else:
-            # 单探测器模式：只检查位置误差
-            if pos_norm <= self.tolerance_pos_px:
-                self.stable_frame_count += 1
-                if self.stable_frame_count >= self.converge_stable_frames:
-                    return True
-            else:
-                self.stable_frame_count = 0
+            frame_ok = (pos_norm <= self.tolerance_pos_px)
 
+        self._converge_history.append(frame_ok)
+
+        min_frames = max(1, self.converge_stable_frames // 2)
+        if len(self._converge_history) < min_frames:
+            self.stable_frame_count = 0
+            return False
+
+        ok_count = sum(1 for ok in self._converge_history if ok)
+        ratio = ok_count / len(self._converge_history)
+
+        if ratio >= self._converge_ratio_threshold and ok_count >= min_frames:
+            self.stable_frame_count = ok_count
+            LOGGER.debug("Convergence: %d/%d frames OK (ratio=%.2f, threshold=%.2f)",
+                        ok_count, len(self._converge_history), ratio, self._converge_ratio_threshold)
+            return True
+
+        self.stable_frame_count = ok_count
         return False
+
+    def needs_recapture(self) -> bool:
+        return self._miss_streak >= self._miss_streak_max
+
+    def record_detection_miss(self) -> None:
+        self._miss_streak += 1
+        if self._miss_streak >= self._miss_streak_max:
+            LOGGER.warning("Detection missed %d consecutive frames, recapture recommended", self._miss_streak)
+
+    def record_detection_hit(self) -> None:
+        self._miss_streak = 0
 
     def angle_to_pixels(self, angle_rad: float) -> float:
         return angle_rad * self.detector2_focal_length * 1000.0
@@ -8713,8 +8860,23 @@ class SpotZoomController:
 
             if det_pos is None or det_ang is None:
                 LOGGER.warning("Detection failed on iteration %d", iteration)
+                self.four_axis_controller.record_detection_miss()
+                if self.four_axis_controller.needs_recapture():
+                    LOGGER.warning("Detection lost for %d consecutive frames, re-acquiring targets",
+                                  self.four_axis_controller._miss_streak)
+                    new_target_pos = self._detect_center_with_retry(tag="Re-capture position target")
+                    new_target_ang = self._detect_center_with_retry(tag="Re-capture angle target", frame_source_idx=1)
+                    if new_target_pos is not None and new_target_ang is not None:
+                        target_pos = new_target_pos
+                        target_ang = new_target_ang
+                        self.four_axis_controller.record_detection_hit()
+                        LOGGER.info("Re-captured targets: pos=%s, ang=%s", target_pos.center, target_ang.center)
+                    else:
+                        LOGGER.error("Re-capture failed, retrying on next iteration")
                 time.sleep(self.cfg.settle_time_s)
                 continue
+
+            self.four_axis_controller.record_detection_hit()
 
             e_pos = (target_pos.center[0] - det_pos.center[0], target_pos.center[1] - det_pos.center[1])
             e_ang = (target_ang.center[0] - det_ang.center[0], target_ang.center[1] - det_ang.center[1])
@@ -8787,8 +8949,21 @@ class SpotZoomController:
 
             if det is None:
                 LOGGER.warning("Detection failed on iteration %d", iteration)
+                self.four_axis_controller.record_detection_miss()
+                if self.four_axis_controller.needs_recapture():
+                    LOGGER.warning("Detection lost for %d consecutive frames, re-acquiring target",
+                                  self.four_axis_controller._miss_streak)
+                    new_target = self._detect_center_with_retry(tag="Re-capture target")
+                    if new_target is not None:
+                        target = new_target
+                        self.four_axis_controller.record_detection_hit()
+                        LOGGER.info("Re-captured target: %s", target.center)
+                    else:
+                        LOGGER.error("Re-capture failed, retrying on next iteration")
                 time.sleep(self.cfg.settle_time_s)
                 continue
+
+            self.four_axis_controller.record_detection_hit()
 
             # 计算误差
             e_pos = (target.center[0] - det.center[0], target.center[1] - det.center[1])
