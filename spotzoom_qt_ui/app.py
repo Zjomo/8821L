@@ -753,12 +753,22 @@ class SpotZoomQtMainWindow(QMainWindow):
         self._ucc_preview_info = QLabel("状态: 未启动")
         self._ucc_preview_info.setStyleSheet("color: #888;")
 
+        self._ucc_preview_format = self._combo(["AUTO", "MJPG", "YUY2", "YUYV", "UYVY"])
+        self._ucc_preview_format.setCurrentText("AUTO")
+
+        self._ucc_preview_btn_save = QPushButton("💾 保存调试帧")
+        self._ucc_preview_btn_save.clicked.connect(self._save_ucc_debug_frame)
+        self._ucc_preview_btn_save.setEnabled(False)
+
         ucc_control_row.addWidget(QLabel("设备索引:"))
         ucc_control_row.addWidget(self._ucc_preview_device)
         ucc_control_row.addWidget(QLabel("分辨率:"))
         ucc_control_row.addWidget(self._ucc_preview_resolution)
+        ucc_control_row.addWidget(QLabel("像素格式:"))
+        ucc_control_row.addWidget(self._ucc_preview_format)
         ucc_control_row.addWidget(self._ucc_preview_btn_start)
         ucc_control_row.addWidget(self._ucc_preview_btn_stop)
+        ucc_control_row.addWidget(self._ucc_preview_btn_save)
         ucc_control_row.addWidget(self._ucc_preview_info)
         ucc_control_row.addStretch(1)
         ucc_preview_layout.addLayout(ucc_control_row)
@@ -1500,11 +1510,15 @@ class SpotZoomQtMainWindow(QMainWindow):
 
         device_idx = self._ucc_preview_device.value()
         resolution = self._ucc_preview_resolution.currentText()
+        pixel_format = self._ucc_preview_format.currentText()
+        if pixel_format == "AUTO":
+            pixel_format = None
 
         try:
             self._ucc_preview_source = UCCFrameSource(
                 device_index=device_idx,
                 resolution=resolution,
+                pixel_format=pixel_format,
             )
         except Exception as exc:
             self._append_log(f"UCC 相机打开失败 (device={device_idx}): {exc}")
@@ -1521,12 +1535,17 @@ class SpotZoomQtMainWindow(QMainWindow):
         self._ucc_preview_fps_counter = 0
         self._ucc_preview_fps_time = time.time()
         self._ucc_preview_actual_fps = 0.0
+        self._ucc_preview_last_frame: Optional[np.ndarray] = None
 
         self._ucc_preview_btn_start.setEnabled(False)
         self._ucc_preview_btn_stop.setEnabled(True)
+        self._ucc_preview_btn_save.setEnabled(True)
         self._ucc_preview_info.setText(f"状态: 运行中 | {resolution}")
         self._ucc_preview_info.setStyleSheet("color: #34D399; font-weight: bold;")
-        self._append_log(f"UCC 实时预览已启动 (device={device_idx}, resolution={resolution})")
+        self._append_log(
+            f"UCC 实时预览已启动 (device={device_idx}, resolution={resolution}, "
+            f"format={pixel_format or 'AUTO'})"
+        )
 
     def _stop_ucc_preview(self) -> None:
         """停止 UCC 相机实时预览。"""
@@ -1545,10 +1564,45 @@ class SpotZoomQtMainWindow(QMainWindow):
 
         self._ucc_preview_btn_start.setEnabled(True)
         self._ucc_preview_btn_stop.setEnabled(False)
+        self._ucc_preview_btn_save.setEnabled(False)
         self._ucc_preview_label.setText("点击「启动预览」打开 UCC 相机画面")
         self._ucc_preview_info.setText("状态: 已停止")
         self._ucc_preview_info.setStyleSheet("color: #888;")
         self._append_log("UCC 实时预览已停止")
+
+    def _save_ucc_debug_frame(self) -> None:
+        """保存当前原始帧和显示帧到调试目录。"""
+        if self._ucc_preview_last_frame is None:
+            QMessageBox.information(self, "保存调试帧", "暂无可用帧")
+            return
+        
+        debug_dir = Path("UCC_Debug")
+        debug_dir.mkdir(exist_ok=True)
+        ts = time.strftime("%Y%m%d_%H%M%S")
+        
+        # 保存原始帧（BGR）
+        raw_path = debug_dir / f"ucc_raw_{ts}.png"
+        cv2.imwrite(str(raw_path), self._ucc_preview_last_frame)
+        
+        # 保存 RGB 转换后的帧
+        rgb = cv2.cvtColor(self._ucc_preview_last_frame, cv2.COLOR_BGR2RGB)
+        rgb_path = debug_dir / f"ucc_rgb_{ts}.png"
+        cv2.imwrite(str(rgb_path), cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR))
+        
+        # 保存元数据
+        meta_path = debug_dir / f"ucc_meta_{ts}.txt"
+        h, w = self._ucc_preview_last_frame.shape[:2]
+        ch = self._ucc_preview_last_frame.shape[2] if len(self._ucc_preview_last_frame.shape) > 2 else 1
+        source = self._ucc_preview_source
+        fourcc = source._actual_fourcc_str if source else "N/A"
+        with open(meta_path, "w", encoding="utf-8") as f:
+            f.write(f"分辨率: {w}x{h}\n")
+            f.write(f"通道: {ch}\n")
+            f.write(f"FourCC: {fourcc}\n")
+            f.write(f"dtype: {self._ucc_preview_last_frame.dtype}\n")
+        
+        self._append_log(f"调试帧已保存到 {debug_dir}/ucc_*_{ts}.*")
+        QMessageBox.information(self, "保存成功", f"调试帧已保存到:\n{debug_dir}")
 
     def _update_ucc_preview(self) -> None:
         """定时器回调：抓帧并显示到预览标签。"""
@@ -1568,6 +1622,7 @@ class SpotZoomQtMainWindow(QMainWindow):
             frame = source.grab_frame()
             if frame is None:
                 return
+            self._ucc_preview_last_frame = frame.copy()
 
             # 统计实际 FPS
             self._ucc_preview_fps_counter += 1

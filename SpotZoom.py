@@ -4262,13 +4262,16 @@ class UCCFrameSource:
         gain: Optional[float] = None,
         brightness: Optional[float] = None,
         contrast: Optional[float] = None,
+        pixel_format: Optional[str] = None,
         auto_reconnect: bool = True,
         reconnect_attempts: int = 3,
     ):
         self.device_index = device_index
         self.resolution = resolution.upper()
+        self.pixel_format = pixel_format.upper() if pixel_format else None
         self.cap = None
         self.roi = None
+        self._actual_fourcc_str: str = ""
         
         # 相机参数
         self.exposure = exposure
@@ -4290,8 +4293,8 @@ class UCCFrameSource:
         # 连接相机
         self._connect()
         
-        LOGGER.info("UCCFrameSource initialized: device=%d, resolution=%s, region=%s",
-                   device_index, self.resolution, self.get_capture_region())
+        LOGGER.info("UCCFrameSource initialized: device=%d, resolution=%s, fourcc=%s, region=%s",
+                   device_index, self.resolution, self._actual_fourcc_str, self.get_capture_region())
     
     def _connect(self):
         """连接UCC相机并配置参数。"""
@@ -4307,6 +4310,9 @@ class UCCFrameSource:
                              f"2. 驱动是否已安装\n"
                              f"3. 设备索引是否正确\n"
                              f"4. 相机12V电源是否已接通")
+        
+        # 配置像素格式（优先使用用户指定，否则尝试 MJPG → YUY2）
+        self._setup_pixel_format()
         
         # 配置分辨率
         res_config = self.RESOLUTIONS[self.resolution]
@@ -4326,18 +4332,46 @@ class UCCFrameSource:
         if self.contrast is not None:
             self.cap.set(cv2.CAP_PROP_CONTRAST, self.contrast)
         
-        # 读取实际参数，验证分辨率是否达标
+        # 读取实际参数
         actual_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         actual_height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         actual_fps = self.cap.get(cv2.CAP_PROP_FPS)
+        
+        # 读取实际 FourCC
+        fourcc = int(self.cap.get(cv2.CAP_PROP_FOURCC))
+        self._actual_fourcc_str = "".join(chr((fourcc >> (8 * i)) & 0xFF) for i in range(4))
         
         res_config = self.RESOLUTIONS[self.resolution]
         if res_config["width"] > 0 and (actual_width < res_config["width"] or actual_height < res_config["height"]):
             LOGGER.warning("UCC分辨率未达标: 目标=%dx%d, 实际=%dx%d, 设备索引可能不是UCC相机",
                           res_config["width"], res_config["height"], actual_width, actual_height)
         
-        LOGGER.info("UCC相机已连接: device=%d, 实际分辨率=%dx%d, FPS=%.1f",
-                   self.device_index, actual_width, actual_height, actual_fps)
+        LOGGER.info("UCC相机已连接: device=%d, 实际分辨率=%dx%d, FPS=%.1f, FourCC=%s",
+                   self.device_index, actual_width, actual_height, actual_fps, self._actual_fourcc_str)
+    
+    def _setup_pixel_format(self) -> None:
+        """配置采集卡的像素格式。"""
+        if self.pixel_format is not None:
+            # 用户指定了格式
+            codes = [self.pixel_format]
+        else:
+            # 自动尝试：优先 MJPG（压缩流，兼容性好），其次 YUY2（原生）
+            codes = ["MJPG", "YUY2", "YUYV"]
+        
+        for code in codes:
+            try:
+                fourcc = cv2.VideoWriter_fourcc(*code)
+                self.cap.set(cv2.CAP_PROP_FOURCC, fourcc)
+                # 验证是否设置成功
+                actual = int(self.cap.get(cv2.CAP_PROP_FOURCC))
+                actual_str = "".join(chr((actual >> (8 * i)) & 0xFF) for i in range(4))
+                if actual_str.upper() == code.upper():
+                    LOGGER.info("UCC像素格式已设置为: %s", code)
+                    return
+            except Exception:
+                continue
+        
+        LOGGER.warning("UCC像素格式设置失败，使用驱动默认值")
     
     def is_healthy(self) -> bool:
         """检测相机是否健康可用。"""
@@ -4392,6 +4426,9 @@ class UCCFrameSource:
         self._connect_failures = 0
         self._is_connected = True
         
+        # 像素格式自动转换（YUV → BGR）
+        frame = self._convert_pixel_format(frame)
+        
         # ROI裁剪
         if self.roi is not None:
             x, y, w, h = self.roi
@@ -4402,6 +4439,61 @@ class UCCFrameSource:
             h = min(h, h0 - y)
             frame = frame[y:y + h, x:x + w]
         
+        return frame
+    
+    def _convert_pixel_format(self, frame: np.ndarray) -> np.ndarray:
+        """根据实际 FourCC 将帧转换为标准 BGR 格式。"""
+        if not self._actual_fourcc_str:
+            return frame
+        
+        fourcc = self._actual_fourcc_str.upper().strip()
+        h, w = frame.shape[:2]
+        
+        # YUV 4:2:2 格式
+        if fourcc in ("YUY2", "YUYV"):
+            # YUY2 原生是 2 通道/像素，但某些驱动会打包成 3 通道返回
+            if len(frame.shape) == 3 and frame.shape[2] == 3:
+                # 驱动已打包为 BGR 但数据实际是 YUV 交错 → 需要提取重排
+                # 尝试直接按 YUY2 解码：将 3 通道数据重新视为 2 字节/像素
+                try:
+                    yuy2 = frame.reshape(-1, 2)[:, :2].reshape(h, w // 3 * 2)
+                    # 重新调整为正确宽度
+                    target_w = w * 2 // 3
+                    if target_w > 0:
+                        yuy2 = yuy2[:, :target_w]
+                        return cv2.cvtColor(yuy2, cv2.COLOR_YUV2BGR_YUY2)
+                except Exception:
+                    pass
+            else:
+                try:
+                    return cv2.cvtColor(frame, cv2.COLOR_YUV2BGR_YUY2)
+                except Exception:
+                    pass
+        
+        if fourcc == "UYVY":
+            try:
+                return cv2.cvtColor(frame, cv2.COLOR_YUV2BGR_UYVY)
+            except Exception:
+                pass
+        
+        # NV12 / NV21
+        if fourcc in ("NV12", "NV21"):
+            try:
+                if fourcc == "NV12":
+                    return cv2.cvtColor(frame, cv2.COLOR_YUV2BGR_NV12)
+                else:
+                    return cv2.cvtColor(frame, cv2.COLOR_YUV2BGR_NV21)
+            except Exception:
+                pass
+        
+        # RGB 格式
+        if fourcc in ("RGB ", "RGB3"):
+            try:
+                return cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+            except Exception:
+                pass
+        
+        # MJPG / BMP / PNG：OpenCV 通常已自动解码为 BGR，无需处理
         return frame
     
     def get_capture_region(self):
