@@ -62,6 +62,12 @@ from .services import (
 import numpy as np
 import cv2
 from SpotZoom import UCCFrameSource
+from collections import deque
+
+try:
+    from PySide6.QtGui import QPainter, QPen, QColor, QFont, QPointF
+except ImportError:
+    from PySide2.QtGui import QPainter, QPen, QColor, QFont, QPointF
 
 
 STATUS_STYLE = {
@@ -78,6 +84,170 @@ STATUS_STYLE = {
 
 def status_text(status: UiStatus) -> str:
     return status.value.upper()
+
+
+def analyze_spot(frame: np.ndarray) -> Optional[dict]:
+    """分析单帧光斑参数（轻量级，用于实时预览）。
+
+    Returns
+    -------
+    dict or None
+        {
+            "min_val": float,
+            "peak": float,
+            "peak_loc": (px, py),
+            "centroid": (cx, cy),
+            "width": (wx, wy),   # 二阶矩标准差
+        }
+    """
+    if frame is None or frame.size == 0:
+        return None
+
+    # 转灰度
+    if len(frame.shape) == 3:
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY).astype(np.float64)
+    else:
+        gray = frame.astype(np.float64)
+
+    min_val = float(gray.min())
+    peak = float(gray.max())
+
+    # 如果画面太暗，无法检测
+    if peak < 10:
+        return None
+
+    # 峰值位置
+    py, px = np.unravel_index(np.argmax(gray), gray.shape)
+    peak_loc = (int(px), int(py))
+
+    # 背景扣除（底部10%百分位）
+    bg = np.percentile(gray, 10.0)
+    signal = np.maximum(gray - bg, 0.0)
+    total = signal.sum()
+    if total < 1e-6:
+        return None
+
+    h, w = gray.shape
+    yy, xx = np.mgrid[:h, :w]
+
+    # 灰度加权质心
+    cx = float(np.sum(xx * signal) / total)
+    cy = float(np.sum(yy * signal) / total)
+
+    # 二阶矩宽度 (X/Y 方向标准差)
+    dx = xx - cx
+    dy = yy - cy
+    var_x = float(np.sum(dx * dx * signal) / total)
+    var_y = float(np.sum(dy * dy * signal) / total)
+    wx = float(np.sqrt(max(var_x, 0.0)))
+    wy = float(np.sqrt(max(var_y, 0.0)))
+
+    return {
+        "min_val": min_val,
+        "peak": peak,
+        "peak_loc": peak_loc,
+        "centroid": (cx, cy),
+        "width": (wx, wy),
+    }
+
+
+class SpotCurveWidget(QWidget):
+    """光斑位置历史曲线绘制控件（XYCurve）。"""
+
+    def __init__(self, max_points: int = 200, parent: Optional[QWidget] = None) -> None:
+        super().__init__(parent)
+        self.max_points = max_points
+        self.x_history: deque = deque(maxlen=max_points)
+        self.y_history: deque = deque(maxlen=max_points)
+        self.setMinimumSize(200, 120)
+        self.setSizePolicy(
+            self.sizePolicy().Expanding,
+            self.sizePolicy().Expanding,
+        )
+
+    def append(self, x: float, y: float) -> None:
+        self.x_history.append(x)
+        self.y_history.append(y)
+        self.update()
+
+    def clear_history(self) -> None:
+        self.x_history.clear()
+        self.y_history.clear()
+        self.update()
+
+    def paintEvent(self, event) -> None:
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        w, h = self.width(), self.height()
+        mid_y = h // 2
+
+        # 背景
+        painter.fillRect(self.rect(), QColor("#1a1a2e"))
+
+        # 网格
+        pen_grid = QPen(QColor("#333"))
+        pen_grid.setWidth(1)
+        painter.setPen(pen_grid)
+        for i in range(0, w, 40):
+            painter.drawLine(i, 0, i, h)
+        for i in range(0, h, 20):
+            painter.drawLine(0, i, w, i)
+
+        # 中线
+        pen_axis = QPen(QColor("#555"))
+        pen_axis.setWidth(1)
+        painter.setPen(pen_axis)
+        painter.drawLine(0, mid_y, w, mid_y)
+
+        if len(self.x_history) < 2:
+            painter.end()
+            return
+
+        # 计算显示范围
+        all_vals = list(self.x_history) + list(self.y_history)
+        if not all_vals:
+            painter.end()
+            return
+        max_val = max(abs(v) for v in all_vals) if all_vals else 1.0
+        margin = max(max_val * 0.2, 1.0)
+        y_max = max_val + margin
+        y_min = -(max_val + margin)
+        y_range = y_max - y_min if y_max != y_min else 1.0
+
+        # 绘制 X 曲线 (青色)
+        pen_x = QPen(QColor("#22D3EE"))
+        pen_x.setWidth(2)
+        painter.setPen(pen_x)
+        pts_x = []
+        n = len(self.x_history)
+        for i, val in enumerate(self.x_history):
+            px = int((i / max(n - 1, 1)) * (w - 2)) + 1
+            py = int(h - 1 - ((val - y_min) / y_range) * (h - 2))
+            pts_x.append(QPointF(px, py))
+        for i in range(len(pts_x) - 1):
+            painter.drawLine(pts_x[i], pts_x[i + 1])
+
+        # 绘制 Y 曲线 (品红)
+        pen_y = QPen(QColor("#F472B6"))
+        pen_y.setWidth(2)
+        painter.setPen(pen_y)
+        pts_y = []
+        for i, val in enumerate(self.y_history):
+            px = int((i / max(n - 1, 1)) * (w - 2)) + 1
+            py = int(h - 1 - ((val - y_min) / y_range) * (h - 2))
+            pts_y.append(QPointF(px, py))
+        for i in range(len(pts_y) - 1):
+            painter.drawLine(pts_y[i], pts_y[i + 1])
+
+        # 图例
+        font = QFont("Microsoft YaHei", 8)
+        painter.setFont(font)
+        painter.setPen(QColor("#22D3EE"))
+        painter.drawText(8, 16, "X 位置")
+        painter.setPen(QColor("#F472B6"))
+        painter.drawText(60, 16, "Y 位置")
+
+        painter.end()
 
 
 class RunEventStreamModel(QAbstractTableModel):
@@ -727,7 +897,10 @@ class SpotZoomQtMainWindow(QMainWindow):
         ucc_preview_group = QGroupBox("UCC 相机实时预览")
         ucc_preview_layout = QVBoxLayout(ucc_preview_group)
 
-        # 预览画面
+        # 画面上方区域：左=预览画面，右=XY曲线+参数表
+        ucc_top_layout = QHBoxLayout()
+
+        # 左侧：预览画面
         self._ucc_preview_label = QLabel("点击「启动预览」打开 UCC 相机画面")
         self._ucc_preview_label.setAlignment(Qt.AlignCenter)
         self._ucc_preview_label.setMinimumSize(488, 360)
@@ -735,7 +908,40 @@ class SpotZoomQtMainWindow(QMainWindow):
             "background-color: #1a1a2e; color: #888; border: 1px solid #333; "
             "border-radius: 4px; font-size: 14px;"
         )
-        ucc_preview_layout.addWidget(self._ucc_preview_label)
+        ucc_top_layout.addWidget(self._ucc_preview_label, 3)
+
+        # 右侧：XY 曲线 + 参数表
+        ucc_right_layout = QVBoxLayout()
+
+        # XY 曲线
+        ucc_curve_group = QGroupBox("XY 位置曲线 (XYCurve)")
+        ucc_curve_layout = QVBoxLayout(ucc_curve_group)
+        self._ucc_curve_widget = SpotCurveWidget(max_points=200)
+        ucc_curve_layout.addWidget(self._ucc_curve_widget)
+        ucc_right_layout.addWidget(ucc_curve_group, 1)
+
+        # 参数表 (Calcult)
+        ucc_param_group = QGroupBox("光斑参数 (Calcult)")
+        ucc_param_layout = QVBoxLayout(ucc_param_group)
+        self._ucc_param_table = QTableWidget()
+        self._ucc_param_table.setColumnCount(2)
+        self._ucc_param_table.setHorizontalHeaderLabels(["参数", "数值"])
+        self._ucc_param_table.setEditTriggers(QTableWidget.NoEditTriggers)
+        self._ucc_param_table.setSelectionMode(QTableWidget.NoSelection)
+        self._ucc_param_table.verticalHeader().setVisible(False)
+        self._ucc_param_table.horizontalHeader().setStretchLastSection(True)
+        self._ucc_param_table.setMaximumHeight(140)
+        # 初始化空行
+        param_names = ["Min, Peak", "Peak Loc (X, Y)", "Centroid (X, Y)", "Width (X, Y)"]
+        self._ucc_param_table.setRowCount(len(param_names))
+        for i, name in enumerate(param_names):
+            self._ucc_param_table.setItem(i, 0, QTableWidgetItem(name))
+            self._ucc_param_table.setItem(i, 1, QTableWidgetItem("--"))
+        ucc_param_layout.addWidget(self._ucc_param_table)
+        ucc_right_layout.addWidget(ucc_param_group, 1)
+
+        ucc_top_layout.addLayout(ucc_right_layout, 2)
+        ucc_preview_layout.addLayout(ucc_top_layout)
 
         # 控制行
         ucc_control_row = QHBoxLayout()
@@ -1537,6 +1743,11 @@ class SpotZoomQtMainWindow(QMainWindow):
         self._ucc_preview_actual_fps = 0.0
         self._ucc_preview_last_frame: Optional[np.ndarray] = None
 
+        # 清空分析数据
+        self._ucc_curve_widget.clear_history()
+        for i in range(self._ucc_param_table.rowCount()):
+            self._ucc_param_table.setItem(i, 1, QTableWidgetItem("--"))
+
         self._ucc_preview_btn_start.setEnabled(False)
         self._ucc_preview_btn_stop.setEnabled(True)
         self._ucc_preview_btn_save.setEnabled(True)
@@ -1568,6 +1779,10 @@ class SpotZoomQtMainWindow(QMainWindow):
         self._ucc_preview_label.setText("点击「启动预览」打开 UCC 相机画面")
         self._ucc_preview_info.setText("状态: 已停止")
         self._ucc_preview_info.setStyleSheet("color: #888;")
+        # 清空分析数据
+        self._ucc_curve_widget.clear_history()
+        for i in range(self._ucc_param_table.rowCount()):
+            self._ucc_param_table.setItem(i, 1, QTableWidgetItem("--"))
         self._append_log("UCC 实时预览已停止")
 
     def _save_ucc_debug_frame(self) -> None:
@@ -1633,13 +1848,52 @@ class SpotZoomQtMainWindow(QMainWindow):
                 self._ucc_preview_fps_counter = 0
                 self._ucc_preview_fps_time = now
 
+            h, w = frame.shape[:2]
+
+            # 光斑分析
+            spot = analyze_spot(frame)
+            if spot is not None:
+                cx, cy = spot["centroid"]
+                px, py = spot["peak_loc"]
+                wx, wy = spot["width"]
+
+                # 在 BGR 帧上叠加十字准线和标记
+                # 十字准线（画面中心）
+                cx_int, cy_int = int(round(cx)), int(round(cy))
+                color_cross = (0, 255, 255)   # 青色
+                color_centroid = (0, 255, 0)  # 绿色
+                color_peak = (0, 0, 255)      # 红色
+
+                # 水平线（贯穿画面）
+                cv2.line(frame, (0, cy_int), (w, cy_int), color_cross, 1, cv2.LINE_AA)
+                # 垂直线（贯穿画面）
+                cv2.line(frame, (cx_int, 0), (cx_int, h), color_cross, 1, cv2.LINE_AA)
+                # 质心圆点
+                cv2.circle(frame, (cx_int, cy_int), 4, color_centroid, -1, cv2.LINE_AA)
+                cv2.circle(frame, (cx_int, cy_int), 8, color_centroid, 1, cv2.LINE_AA)
+                # 峰值位置叉号
+                cv2.drawMarker(frame, (px, py), color_peak, cv2.MARKER_CROSS, 10, 1, cv2.LINE_AA)
+
+                # 更新 XY 曲线（使用相对于画面中心的偏移，单位：像素）
+                offset_x = cx - w / 2.0
+                offset_y = cy - h / 2.0
+                self._ucc_curve_widget.append(offset_x, offset_y)
+
+                # 更新参数表
+                self._ucc_param_table.setItem(0, 1, QTableWidgetItem(f"{spot['min_val']:.1f}, {spot['peak']:.1f}"))
+                self._ucc_param_table.setItem(1, 1, QTableWidgetItem(f"{px}, {py}"))
+                self._ucc_param_table.setItem(2, 1, QTableWidgetItem(f"{cx:.2f}, {cy:.2f}"))
+                self._ucc_param_table.setItem(3, 1, QTableWidgetItem(f"{wx:.2f}, {wy:.2f}"))
+            else:
+                # 画面太暗，没有检测到光斑
+                for i in range(self._ucc_param_table.rowCount()):
+                    self._ucc_param_table.setItem(i, 1, QTableWidgetItem("--"))
+
             # BGR → RGB → QPixmap
-            # 注意：OpenCV 的 numpy 数组在行末可能有内存对齐填充，
-            # 必须用 strides[0] 作为 QImage 的 bytesPerLine，否则画面会撕裂。
             rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            rgb = np.ascontiguousarray(rgb)          # 确保内存连续
-            h, w, ch = rgb.shape
-            bytes_per_line = int(rgb.strides[0])     # 实际的行字节数（含填充）
+            rgb = np.ascontiguousarray(rgb)
+            ch = rgb.shape[2]
+            bytes_per_line = int(rgb.strides[0])
             qimg = QImage(rgb.data, w, h, bytes_per_line, QImage.Format_RGB888)
 
             # 按比例缩放至预览区域
