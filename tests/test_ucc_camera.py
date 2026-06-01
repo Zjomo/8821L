@@ -69,6 +69,15 @@ def fourcc_to_str(fourcc: float) -> str:
         return "N/A"
 
 
+def _open_camera(device_index: int) -> cv2.VideoCapture:
+    """在Windows上强制使用DSHOW后端打开相机，避免MSMF的兼容性问题。"""
+    if sys.platform == "win32":
+        cap = cv2.VideoCapture(device_index, cv2.CAP_DSHOW)
+    else:
+        cap = cv2.VideoCapture(device_index)
+    return cap
+
+
 def scan_usb_cameras(scan_range: range) -> List[Tuple[int, cv2.VideoCapture]]:
     """扫描所有可用的 USB 相机设备。
 
@@ -85,10 +94,17 @@ def scan_usb_cameras(scan_range: range) -> List[Tuple[int, cv2.VideoCapture]]:
 
     for idx in scan_range:
         print(f"\n  [camera {idx}] 尝试打开 ...", end=" ", flush=True)
-        cap = cv2.VideoCapture(idx)
+        cap = _open_camera(idx)
         if cap.isOpened():
-            print("✅ 已连接")
-            found.append((idx, cap))
+            # 尝试读取一帧验证设备是否真正可用
+            ret, test_frame = cap.read()
+            if ret and test_frame is not None:
+                print("✅ 已连接")
+                # 放回第一帧（cap.read 已消耗）
+                found.append((idx, cap))
+            else:
+                print("⚠️ 已连接但无法采集（可能是虚拟设备或兼容性问题）")
+                cap.release()
         else:
             print("❌ 未检测到设备")
             cap.release()
@@ -149,6 +165,16 @@ def configure_device(
     actual_h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     actual_fps = cap.get(cv2.CAP_PROP_FPS)
     print(f"  实际: {actual_w}x{actual_h} @ {actual_fps:.1f}fps")
+
+    # 检测分辨率不兼容并给出建议
+    target_w = res_cfg["width"]
+    target_h = res_cfg["height"]
+    if target_w > 0 and (actual_w != target_w or actual_h != target_h):
+        print(f"  ⚠️ 分辨率不匹配：目标 {target_w}x{target_h} → 实际 {actual_w}x{actual_h}")
+        if actual_w <= 800 and actual_h <= 600:
+            print(f"  💡 提示：当前设备可能是内置摄像头（{actual_w}x{actual_h}），不支持 PAL 制式")
+            print(f"     建议使用 --resolution AUTO 或指定正确的 UCC 设备索引")
+        print()
 
 
 def grab_test_frames(
@@ -293,10 +319,15 @@ def main():
     devices: List[Tuple[int, cv2.VideoCapture]] = []
 
     if args.device is not None:
-        cap = cv2.VideoCapture(args.device)
+        cap = _open_camera(args.device)
         if cap.isOpened():
-            devices.append((args.device, cap))
-            print(f"\n  camera {args.device}: ✅ 已连接")
+            ret, test_frame = cap.read()
+            if ret and test_frame is not None:
+                devices.append((args.device, cap))
+                print(f"\n  camera {args.device}: ✅ 已连接")
+            else:
+                print(f"\n  camera {args.device}: ⚠️ 已连接但无法采集帧")
+                cap.release()
         else:
             print(f"\n  camera {args.device}: ❌ 无法打开")
             cap.release()

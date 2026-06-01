@@ -4243,7 +4243,7 @@ class UCCFrameSource:
     - 工作电压：DC 12V
     
     使用示例：
-        ucc = UCCFrameSource(device_index=0, resolution="PAL")
+        ucc = UCCFrameSource(device_index=1, resolution="PAL")
         frame = ucc.grab_frame()
     """
     
@@ -4295,13 +4295,18 @@ class UCCFrameSource:
     
     def _connect(self):
         """连接UCC相机并配置参数。"""
-        self.cap = cv2.VideoCapture(self.device_index)
+        # Windows上强制使用DSHOW后端，避免MSMF的MF_E_INVALIDMEDIATYPE错误
+        if os.name == "nt":
+            self.cap = cv2.VideoCapture(self.device_index, cv2.CAP_DSHOW)
+        else:
+            self.cap = cv2.VideoCapture(self.device_index)
         
         if not self.cap.isOpened():
             raise RuntimeError(f"无法打开UCC相机设备 {self.device_index}，请检查：\n"
                              f"1. 相机是否已连接\n"
                              f"2. 驱动是否已安装\n"
-                             f"3. 设备索引是否正确（可用cv2.VideoCapture(index)测试）")
+                             f"3. 设备索引是否正确\n"
+                             f"4. 相机12V电源是否已接通")
         
         # 配置分辨率
         res_config = self.RESOLUTIONS[self.resolution]
@@ -4321,10 +4326,15 @@ class UCCFrameSource:
         if self.contrast is not None:
             self.cap.set(cv2.CAP_PROP_CONTRAST, self.contrast)
         
-        # 读取实际参数
+        # 读取实际参数，验证分辨率是否达标
         actual_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         actual_height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         actual_fps = self.cap.get(cv2.CAP_PROP_FPS)
+        
+        res_config = self.RESOLUTIONS[self.resolution]
+        if res_config["width"] > 0 and (actual_width < res_config["width"] or actual_height < res_config["height"]):
+            LOGGER.warning("UCC分辨率未达标: 目标=%dx%d, 实际=%dx%d, 设备索引可能不是UCC相机",
+                          res_config["width"], res_config["height"], actual_width, actual_height)
         
         LOGGER.info("UCC相机已连接: device=%d, 实际分辨率=%dx%d, FPS=%.1f",
                    self.device_index, actual_width, actual_height, actual_fps)

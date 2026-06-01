@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import sys
 import threading
+import time
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional
 
@@ -57,6 +58,10 @@ from .services import (
     ModuleCatalogService,
     RuntimeControlService,
 )
+
+import numpy as np
+import cv2
+from SpotZoom import UCCFrameSource
 
 
 STATUS_STYLE = {
@@ -148,6 +153,14 @@ class SpotZoomQtMainWindow(QMainWindow):
         self.status_fields: Dict[str, QLabel] = {}
         self.dashboard_fields: Dict[str, QLabel] = {}
         self.runtime_fields: Dict[str, QLabel] = {}
+
+        # UCC 实时预览
+        self._ucc_preview_source: Optional[UCCFrameSource] = None
+        self._ucc_preview_timer: Optional[QTimer] = None
+        self._ucc_preview_running: bool = False
+        self._ucc_preview_fps_counter: int = 0
+        self._ucc_preview_fps_time: float = 0.0
+        self._ucc_preview_actual_fps: float = 0.0
 
         self.setWindowTitle("SpotZoom 主动激光束稳定控制台")
         self.resize(1680, 980)
@@ -709,6 +722,48 @@ class SpotZoomQtMainWindow(QMainWindow):
         monitor_layout.addWidget(self.monitor_status_label)
         monitor_layout.addStretch(1)
         layout.addWidget(monitor_group)
+
+        # UCC 相机实时预览
+        ucc_preview_group = QGroupBox("UCC 相机实时预览")
+        ucc_preview_layout = QVBoxLayout(ucc_preview_group)
+
+        # 预览画面
+        self._ucc_preview_label = QLabel("点击「启动预览」打开 UCC 相机画面")
+        self._ucc_preview_label.setAlignment(Qt.AlignCenter)
+        self._ucc_preview_label.setMinimumSize(488, 360)
+        self._ucc_preview_label.setStyleSheet(
+            "background-color: #1a1a2e; color: #888; border: 1px solid #333; "
+            "border-radius: 4px; font-size: 14px;"
+        )
+        ucc_preview_layout.addWidget(self._ucc_preview_label)
+
+        # 控制行
+        ucc_control_row = QHBoxLayout()
+        self._ucc_preview_device = self._spin(0, 9, 1)
+        self._ucc_preview_device.setPrefix("设备 ")
+        self._ucc_preview_resolution = self._combo(["PAL", "NTSC", "AUTO"])
+        self._ucc_preview_resolution.setCurrentText("AUTO")
+
+        self._ucc_preview_btn_start = QPushButton("▶ 启动预览")
+        self._ucc_preview_btn_start.clicked.connect(self._start_ucc_preview)
+        self._ucc_preview_btn_stop = QPushButton("■ 停止预览")
+        self._ucc_preview_btn_stop.clicked.connect(self._stop_ucc_preview)
+        self._ucc_preview_btn_stop.setEnabled(False)
+
+        self._ucc_preview_info = QLabel("状态: 未启动")
+        self._ucc_preview_info.setStyleSheet("color: #888;")
+
+        ucc_control_row.addWidget(QLabel("设备索引:"))
+        ucc_control_row.addWidget(self._ucc_preview_device)
+        ucc_control_row.addWidget(QLabel("分辨率:"))
+        ucc_control_row.addWidget(self._ucc_preview_resolution)
+        ucc_control_row.addWidget(self._ucc_preview_btn_start)
+        ucc_control_row.addWidget(self._ucc_preview_btn_stop)
+        ucc_control_row.addWidget(self._ucc_preview_info)
+        ucc_control_row.addStretch(1)
+        ucc_preview_layout.addLayout(ucc_control_row)
+
+        layout.addWidget(ucc_preview_group)
 
         self.run_mode_snapshot = QPlainTextEdit()
         self.run_mode_snapshot.setReadOnly(True)
@@ -1434,6 +1489,121 @@ class SpotZoomQtMainWindow(QMainWindow):
         self.monitor_status_label.setStyleSheet("color: #888;")
         self._append_log("持续监控已停止")
 
+    # ------------------------------------------------------------------ #
+    #  UCC 相机实时预览
+    # ------------------------------------------------------------------ #
+    def _start_ucc_preview(self) -> None:
+        """启动 UCC 相机实时预览。"""
+        if self._ucc_preview_running:
+            self._append_log("UCC 预览已在运行中")
+            return
+
+        device_idx = self._ucc_preview_device.value()
+        resolution = self._ucc_preview_resolution.currentText()
+
+        try:
+            self._ucc_preview_source = UCCFrameSource(
+                device_index=device_idx,
+                resolution=resolution,
+            )
+        except Exception as exc:
+            self._append_log(f"UCC 相机打开失败 (device={device_idx}): {exc}")
+            QMessageBox.warning(self, "预览失败", f"无法打开 UCC 相机:\n{exc}")
+            return
+
+        # 启动定时器，每 50ms 采集一帧（约 20 FPS）
+        self._ucc_preview_timer = QTimer(self)
+        self._ucc_preview_timer.setInterval(50)
+        self._ucc_preview_timer.timeout.connect(self._update_ucc_preview)
+        self._ucc_preview_timer.start()
+
+        self._ucc_preview_running = True
+        self._ucc_preview_fps_counter = 0
+        self._ucc_preview_fps_time = time.time()
+        self._ucc_preview_actual_fps = 0.0
+
+        self._ucc_preview_btn_start.setEnabled(False)
+        self._ucc_preview_btn_stop.setEnabled(True)
+        self._ucc_preview_info.setText(f"状态: 运行中 | {resolution}")
+        self._ucc_preview_info.setStyleSheet("color: #34D399; font-weight: bold;")
+        self._append_log(f"UCC 实时预览已启动 (device={device_idx}, resolution={resolution})")
+
+    def _stop_ucc_preview(self) -> None:
+        """停止 UCC 相机实时预览。"""
+        self._ucc_preview_running = False
+
+        if self._ucc_preview_timer is not None:
+            self._ucc_preview_timer.stop()
+            self._ucc_preview_timer = None
+
+        if self._ucc_preview_source is not None:
+            try:
+                self._ucc_preview_source.release()
+            except Exception:
+                pass
+            self._ucc_preview_source = None
+
+        self._ucc_preview_btn_start.setEnabled(True)
+        self._ucc_preview_btn_stop.setEnabled(False)
+        self._ucc_preview_label.setText("点击「启动预览」打开 UCC 相机画面")
+        self._ucc_preview_info.setText("状态: 已停止")
+        self._ucc_preview_info.setStyleSheet("color: #888;")
+        self._append_log("UCC 实时预览已停止")
+
+    def _update_ucc_preview(self) -> None:
+        """定时器回调：抓帧并显示到预览标签。"""
+        source = self._ucc_preview_source
+        if source is None or not self._ucc_preview_running:
+            return
+
+        try:
+            if not source.is_healthy():
+                self._ucc_preview_label.setText("⚠️ 相机连接异常，尝试重连...")
+                if not source.reconnect():
+                    self._stop_ucc_preview()
+                    self._append_log("UCC 预览：重连失败")
+                    return
+                self._append_log("UCC 预览：重连成功")
+
+            frame = source.grab_frame()
+            if frame is None:
+                return
+
+            # 统计实际 FPS
+            self._ucc_preview_fps_counter += 1
+            now = time.time()
+            elapsed = now - self._ucc_preview_fps_time
+            if elapsed >= 1.0:
+                self._ucc_preview_actual_fps = self._ucc_preview_fps_counter / elapsed
+                self._ucc_preview_fps_counter = 0
+                self._ucc_preview_fps_time = now
+
+            # BGR → RGB → QPixmap
+            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            h, w, ch = rgb.shape
+            qimg = QImage(rgb.data, w, h, ch * w, QImage.Format_RGB888)
+
+            # 按比例缩放至预览区域
+            pix = QPixmap.fromImage(qimg)
+            scaled = pix.scaled(
+                self._ucc_preview_label.width(),
+                self._ucc_preview_label.height(),
+                Qt.KeepAspectRatio,
+                Qt.SmoothTransformation,
+            )
+            self._ucc_preview_label.setPixmap(scaled)
+
+            # 更新信息栏
+            info_text = (
+                f"状态: 运行中 | {w}×{h} @ {self._ucc_preview_actual_fps:.1f} FPS"
+                f" | {source.resolution}"
+            )
+            self._ucc_preview_info.setText(info_text)
+            self._ucc_preview_info.setStyleSheet("color: #34D399; font-weight: bold;")
+
+        except Exception as exc:
+            self._append_log(f"UCC 预览帧采集异常: {exc}")
+
     def _on_test_selected(self) -> None:
         item = self.test_tree.currentItem()
         if item is None:
@@ -1582,6 +1752,9 @@ class SpotZoomQtMainWindow(QMainWindow):
         self._refresh_all_panels()
 
     def closeEvent(self, event) -> None:
+        # 停止 UCC 预览
+        self._stop_ucc_preview()
+
         panel = getattr(self, "picomotor_driver_panel", None)
         if panel is not None:
             try:
