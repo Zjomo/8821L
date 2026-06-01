@@ -67,7 +67,8 @@ from collections import deque
 try:
     from PySide6.QtGui import QPainter, QPen, QColor, QFont, QPointF
 except ImportError:
-    from PySide2.QtGui import QPainter, QPen, QColor, QFont, QPointF
+    from PySide2.QtGui import QPainter, QPen, QColor, QFont
+    from PySide2.QtCore import QPointF
 
 
 STATUS_STYLE = {
