@@ -1579,9 +1579,13 @@ class SpotZoomQtMainWindow(QMainWindow):
                 self._ucc_preview_fps_time = now
 
             # BGR → RGB → QPixmap
+            # 注意：OpenCV 的 numpy 数组在行末可能有内存对齐填充，
+            # 必须用 strides[0] 作为 QImage 的 bytesPerLine，否则画面会撕裂。
             rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            rgb = np.ascontiguousarray(rgb)          # 确保内存连续
             h, w, ch = rgb.shape
-            qimg = QImage(rgb.data, w, h, ch * w, QImage.Format_RGB888)
+            bytes_per_line = int(rgb.strides[0])     # 实际的行字节数（含填充）
+            qimg = QImage(rgb.data, w, h, bytes_per_line, QImage.Format_RGB888)
 
             # 按比例缩放至预览区域
             pix = QPixmap.fromImage(qimg)
