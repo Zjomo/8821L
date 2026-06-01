@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import sys
+import threading
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional
 
@@ -49,7 +50,7 @@ from .qt_compat import (
 )
 
 from .picomotor_driver_panel import PicomotorDriverPanel
-from .models import EventRecord, RunMode, RuntimeProfile, TestCaseSpec, UiStatus
+from .models import AlignmentStrategy, EventRecord, RunMode, RuntimeProfile, TestCaseSpec, UiStatus
 from .services import (
     DeviceRegistryService,
     DeviceTestService,
@@ -669,21 +670,45 @@ class SpotZoomQtMainWindow(QMainWindow):
         mode_row.addWidget(real_card, 1)
         layout.addLayout(mode_row, 2)
 
-        cfg_group = QGroupBox("运行模式配置")
+        cfg_group = QGroupBox("闭环架构配置")
         cfg_form = QFormLayout(cfg_group)
-        self.controls["detector_backend"] = self._combo(["auto", "yolo", "classic"])
+        # 4轴/5轴 策略选择
+        self.controls["alignment_strategy"] = self._combo(["dual_detector_4axis", "z_scan_legacy"])
+        # 探测器模式
         self.controls["detector_mode"] = self._combo(["single_detector", "dual_detector"])
+        self.controls["detector_backend"] = self._combo(["auto", "yolo", "classic"])
         self.controls["xy_driver"] = self._combo(["dryrun", "thorlabs", "newport", "newport-mrc4"])
         self.controls["z_driver"] = self._combo(["dryrun", "wheel", "xps", "picomotor"])
         self.controls["select_roi"] = QCheckBox()
-        # 探测器模式联动：双探测器模式自动禁用Z轴
+        # 策略说明标签
+        self.strategy_desc = QLabel("4轴模式：双镜闭环，禁用Z轴")
+        self.strategy_desc.setStyleSheet("color: #888; font-style: italic;")
+        # 策略联动：4轴模式禁用Z轴，5轴模式启用Z轴
+        self.controls["alignment_strategy"].currentTextChanged.connect(self._on_alignment_strategy_changed)
         self.controls["detector_mode"].currentTextChanged.connect(self._on_detector_mode_changed)
-        cfg_form.addRow("检测后端", self.controls["detector_backend"])
+        cfg_form.addRow("闭环策略", self.controls["alignment_strategy"])
+        cfg_form.addRow(self.strategy_desc)
         cfg_form.addRow("探测器模式", self.controls["detector_mode"])
+        cfg_form.addRow("检测后端", self.controls["detector_backend"])
         cfg_form.addRow("XY 驱动", self.controls["xy_driver"])
         cfg_form.addRow("Z 驱动", self.controls["z_driver"])
         cfg_form.addRow("启用 ROI", self.controls["select_roi"])
         layout.addWidget(cfg_group, 1)
+
+        # 持续监控控制
+        monitor_group = QGroupBox("持续监控（对准后保持运行）")
+        monitor_layout = QHBoxLayout(monitor_group)
+        btn_start_monitor = QPushButton("▶ 开始持续监控")
+        btn_start_monitor.clicked.connect(self._start_continuous_monitoring)
+        btn_stop_monitor = QPushButton("■ 停止监控")
+        btn_stop_monitor.clicked.connect(self._stop_continuous_monitoring)
+        self.monitor_status_label = QLabel("监控状态：未启动")
+        self.monitor_status_label.setStyleSheet("color: #888;")
+        monitor_layout.addWidget(btn_start_monitor)
+        monitor_layout.addWidget(btn_stop_monitor)
+        monitor_layout.addWidget(self.monitor_status_label)
+        monitor_layout.addStretch(1)
+        layout.addWidget(monitor_group)
 
         self.run_mode_snapshot = QPlainTextEdit()
         self.run_mode_snapshot.setReadOnly(True)
@@ -752,6 +777,8 @@ class SpotZoomQtMainWindow(QMainWindow):
             ("ROI / 图像参数", [("sim_jitter_px", "模拟抖动"), ("sim_noise_std", "模拟噪声"), ("select_roi", "启用 ROI"), ("select_roi_2", "探测器2 启用 ROI")]),
             ("安全参数", [("startup_motion_check_timeout", "启动自检超时"), ("startup_motion_check_xy_steps", "启动自检 XY 步数")]),
             ("双探测器参数", [("detector2_focal_length", "探测器2 焦距 (mm)"), ("comparison_mode", "对比模式"), ("detector_weight", "主探测器权重"), ("touview_weight", "ToupView 权重"), ("disagreement_threshold_px", "不一致阈值 (px)")]),
+            ("UCC 探测器参数", [("ucc_device", "探测器1 设备索引"), ("ucc_resolution", "探测器1 分辨率"), ("ucc_exposure", "探测器1 曝光"), ("ucc_gain", "探测器1 增益"), ("ucc_brightness", "探测器1 亮度"), ("ucc_contrast", "探测器1 对比度"), ("ucc_device_2", "探测器2 设备索引"), ("ucc_resolution_2", "探测器2 分辨率")]),
+            ("中间帧保存", [("save_intermediate_frames", "保存ROI中间帧"), ("frame_cache_enabled", "启用帧缓存 (./Tmp_Frames)")]),
         ]:
             group = QGroupBox(title)
             form = QFormLayout(group)
@@ -779,10 +806,34 @@ class SpotZoomQtMainWindow(QMainWindow):
                         self.controls[key] = self._dspin(0.0, 1.0, 0.3, 2)
                     elif key == "disagreement_threshold_px":
                         self.controls[key] = self._dspin(0.0, 50.0, 10.0, 1)
+                    elif key == "ucc_device":
+                        self.controls[key] = self._spin(0, 10, 0)
+                    elif key == "ucc_device_2":
+                        self.controls[key] = self._spin(0, 10, 0)
+                    elif key == "ucc_resolution":
+                        self.controls[key] = self._combo(["PAL", "NTSC", "AUTO"])
+                    elif key == "ucc_resolution_2":
+                        self.controls[key] = self._combo(["PAL", "NTSC", "AUTO"])
+                    elif key == "save_intermediate_frames":
+                        self.controls[key] = QCheckBox()
+                    elif key == "frame_cache_enabled":
+                        self.controls[key] = QCheckBox()
+                    elif key in ("ucc_exposure", "ucc_gain", "ucc_brightness", "ucc_contrast"):
+                        self.controls[key] = self._dspin(-100.0, 100.0, 0.0, 1)
                     else:
                         continue
                 form.addRow(label, self.controls[key])
             body_layout.addWidget(group)
+
+        # frame_tmp_dir 带浏览按钮的行
+        tmp_dir_group = QGroupBox("中间帧保存目录")
+        tmp_dir_layout = QHBoxLayout(tmp_dir_group)
+        self.controls["frame_tmp_dir"] = QLineEdit("FrameTmp")
+        btn_browse_tmp = QPushButton("选择目录")
+        btn_browse_tmp.clicked.connect(lambda: self._select_frame_tmp_dir())
+        tmp_dir_layout.addWidget(self.controls["frame_tmp_dir"])
+        tmp_dir_layout.addWidget(btn_browse_tmp)
+        body_layout.addWidget(tmp_dir_group)
 
         io_group = QGroupBox("配置导入/导出")
         io_layout = QHBoxLayout(io_group)
@@ -837,6 +888,7 @@ class SpotZoomQtMainWindow(QMainWindow):
 
         self._set_combo("detector_backend", p.detector_backend)
         self._set_combo("detector_mode", p.detector_mode)
+        self._set_combo("alignment_strategy", p.alignment_strategy.value)
         self._set_combo("xy_driver", p.xy_driver)
         self._set_combo("z_driver", p.z_driver)
         self._set_text("frame_source_image", p.frame_source_image or "")
@@ -888,12 +940,26 @@ class SpotZoomQtMainWindow(QMainWindow):
         self._set_dspin("detector_weight", p.detector_weight)
         self._set_dspin("touview_weight", p.touview_weight)
         self._set_dspin("disagreement_threshold_px", p.disagreement_threshold_px)
+        # UCC 探测器参数
+        self._set_spin("ucc_device", p.ucc_device if p.ucc_device is not None else 0)
+        self._set_combo("ucc_resolution", p.ucc_resolution)
+        self._set_dspin("ucc_exposure", p.ucc_exposure if p.ucc_exposure is not None else 0.0)
+        self._set_dspin("ucc_gain", p.ucc_gain if p.ucc_gain is not None else 0.0)
+        self._set_dspin("ucc_brightness", p.ucc_brightness if p.ucc_brightness is not None else 0.0)
+        self._set_dspin("ucc_contrast", p.ucc_contrast if p.ucc_contrast is not None else 0.0)
+        self._set_spin("ucc_device_2", p.ucc_device_2 if p.ucc_device_2 is not None else 0)
+        self._set_combo("ucc_resolution_2", p.ucc_resolution_2)
+        # 中间帧保存
+        self._set_check("save_intermediate_frames", p.save_intermediate_frames)
+        self._set_text("frame_tmp_dir", p.frame_tmp_dir)
 
     def _collect_profile_from_controls(self) -> RuntimeProfile:
         p = self.profile
         p.run_mode = RunMode.REAL if self.mode_real_radio.isChecked() else RunMode.SIMULATION
         p.detector_backend = self._combo_value("detector_backend", p.detector_backend)
         p.detector_mode = self._combo_value("detector_mode", p.detector_mode)
+        strategy_text = self._combo_value("alignment_strategy", p.alignment_strategy.value)
+        p.alignment_strategy = AlignmentStrategy(strategy_text)
         p.xy_driver = self._combo_value("xy_driver", p.xy_driver)
         p.z_driver = self._combo_value("z_driver", p.z_driver)
         p.frame_source_image = self._text_value("frame_source_image", p.frame_source_image or "")
@@ -947,6 +1013,18 @@ class SpotZoomQtMainWindow(QMainWindow):
         p.detector_weight = self._dspin_value("detector_weight", p.detector_weight)
         p.touview_weight = self._dspin_value("touview_weight", p.touview_weight)
         p.disagreement_threshold_px = self._dspin_value("disagreement_threshold_px", p.disagreement_threshold_px)
+        # UCC 探测器参数
+        p.ucc_device = self._spin_value("ucc_device", p.ucc_device or 0)
+        p.ucc_resolution = self._combo_value("ucc_resolution", p.ucc_resolution)
+        p.ucc_exposure = self._dspin_value("ucc_exposure", p.ucc_exposure or 0.0)
+        p.ucc_gain = self._dspin_value("ucc_gain", p.ucc_gain or 0.0)
+        p.ucc_brightness = self._dspin_value("ucc_brightness", p.ucc_brightness or 0.0)
+        p.ucc_contrast = self._dspin_value("ucc_contrast", p.ucc_contrast or 0.0)
+        p.ucc_device_2 = self._spin_value("ucc_device_2", p.ucc_device_2 or 0)
+        p.ucc_resolution_2 = self._combo_value("ucc_resolution_2", p.ucc_resolution_2)
+        # 中间帧保存
+        p.save_intermediate_frames = self._check_value("save_intermediate_frames", p.save_intermediate_frames)
+        p.frame_tmp_dir = self._text_value("frame_tmp_dir", p.frame_tmp_dir)
         return p
 
     def _set_combo(self, key: str, value: str) -> None:
@@ -1322,6 +1400,40 @@ class SpotZoomQtMainWindow(QMainWindow):
         self.test_raw_output.setPlainText(result.raw_return)
         self._append_log(f"[DeviceTest] {result.title}: {result.status.value} / {result.message}")
 
+    def _start_continuous_monitoring(self) -> None:
+        """启动持续监控模式。"""
+        profile = self._collect_profile_from_controls()
+        controller = getattr(self, '_controller', None)
+        if controller is None:
+            self._append_log("错误：控制器未初始化，请先运行对准")
+            return
+        
+        if not hasattr(controller, 'run_continuous_monitoring'):
+            self._append_log("错误：当前控制器不支持持续监控模式")
+            return
+        
+        def _run_monitor():
+            try:
+                controller.run_continuous_monitoring()
+            except Exception as exc:
+                self._append_log(f"持续监控异常: {exc}")
+        
+        self._monitor_thread = threading.Thread(target=_run_monitor, daemon=True)
+        self._monitor_thread.start()
+        self.monitor_status_label.setText("监控状态：运行中")
+        self.monitor_status_label.setStyleSheet("color: green; font-weight: bold;")
+        self._append_log("持续监控已启动")
+
+    def _stop_continuous_monitoring(self) -> None:
+        """停止持续监控模式。"""
+        controller = getattr(self, '_controller', None)
+        if controller is not None and hasattr(controller, 'stop_continuous_monitoring'):
+            controller.stop_continuous_monitoring()
+        
+        self.monitor_status_label.setText("监控状态：已停止")
+        self.monitor_status_label.setStyleSheet("color: #888;")
+        self._append_log("持续监控已停止")
+
     def _on_test_selected(self) -> None:
         item = self.test_tree.currentItem()
         if item is None:
@@ -1364,6 +1476,27 @@ class SpotZoomQtMainWindow(QMainWindow):
         if path:
             self._set_text("frame_source_image_2", path)
             self._refresh_preview_images()
+
+    def _select_frame_tmp_dir(self) -> None:
+        path = QFileDialog.getExistingDirectory(
+            self,
+            "选择中间帧保存目录",
+            str(Path.cwd() / "FrameTmp"),
+        )
+        if path:
+            self._set_text("frame_tmp_dir", path)
+
+    def _on_alignment_strategy_changed(self, strategy: str) -> None:
+        if strategy == "dual_detector_4axis":
+            self._set_check("disable_z_axis", True)
+            self.strategy_desc.setText("4轴模式：双镜闭环，禁用Z轴")
+            self.strategy_desc.setStyleSheet("color: #4a9; font-style: italic;")
+            self._append_log("4轴双镜闭环模式已启用，自动禁用Z轴")
+        else:
+            self.strategy_desc.setText("5轴模式：Z扫描 + XY对准")
+            self.strategy_desc.setStyleSheet("color: #94a; font-style: italic;")
+            self._set_check("disable_z_axis", False)
+            self._append_log("5轴Z扫描模式已启用")
 
     def _on_detector_mode_changed(self, mode: str) -> None:
         if mode == "dual_detector":

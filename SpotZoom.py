@@ -4262,6 +4262,8 @@ class UCCFrameSource:
         gain: Optional[float] = None,
         brightness: Optional[float] = None,
         contrast: Optional[float] = None,
+        auto_reconnect: bool = True,
+        reconnect_attempts: int = 3,
     ):
         self.device_index = device_index
         self.resolution = resolution.upper()
@@ -4273,6 +4275,13 @@ class UCCFrameSource:
         self.gain = gain
         self.brightness = brightness
         self.contrast = contrast
+        
+        # 自动重连配置
+        self.auto_reconnect = auto_reconnect
+        self.reconnect_attempts = reconnect_attempts
+        self._last_frame_time: float = 0.0
+        self._connect_failures: int = 0
+        self._is_connected: bool = False
         
         # 验证分辨率
         if self.resolution not in self.RESOLUTIONS:
@@ -4320,14 +4329,58 @@ class UCCFrameSource:
         LOGGER.info("UCC相机已连接: device=%d, 实际分辨率=%dx%d, FPS=%.1f",
                    self.device_index, actual_width, actual_height, actual_fps)
     
+    def is_healthy(self) -> bool:
+        """检测相机是否健康可用。"""
+        if self.cap is None:
+            return False
+        if not self.cap.isOpened():
+            return False
+        ret, frame = self.cap.read()
+        if not ret or frame is None:
+            return False
+        return True
+
+    def reconnect(self) -> bool:
+        """重新连接UCC相机。"""
+        LOGGER.info("Attempting to reconnect UCC camera (device=%d)...", self.device_index)
+        self.release()
+        for attempt in range(1, self.reconnect_attempts + 1):
+            try:
+                self._connect()
+                self._connect_failures = 0
+                LOGGER.info("UCC camera reconnected successfully on attempt %d", attempt)
+                return True
+            except RuntimeError:
+                LOGGER.warning("Reconnect attempt %d/%d failed", attempt, self.reconnect_attempts)
+                if attempt < self.reconnect_attempts:
+                    time.sleep(1.0)
+        LOGGER.error("UCC camera reconnect failed after %d attempts", self.reconnect_attempts)
+        return False
+
     def grab_frame(self) -> np.ndarray:
-        """采集单帧图像。"""
+        """采集单帧图像，支持自动重连。"""
         if self.cap is None or not self.cap.isOpened():
-            raise RuntimeError("UCC相机未连接或已断开")
+            if self.auto_reconnect:
+                LOGGER.warning("UCC相机未连接，尝试自动重连...")
+                if self.reconnect():
+                    self._is_connected = True
+                else:
+                    raise RuntimeError("UCC相机自动重连失败，请检查设备连接")
+            else:
+                raise RuntimeError("UCC相机未连接或已断开")
         
         ret, frame = self.cap.read()
         if not ret or frame is None:
-            raise RuntimeError("UCC相机帧采集失败，请检查设备连接")
+            self._connect_failures += 1
+            if self.auto_reconnect and self._connect_failures < 3:
+                LOGGER.warning("UCC相机帧采集失败，尝试自动重连...")
+                if self.reconnect():
+                    ret, frame = self.cap.read()
+            if not ret or frame is None:
+                raise RuntimeError("UCC相机帧采集失败，请检查设备连接")
+        
+        self._connect_failures = 0
+        self._is_connected = True
         
         # ROI裁剪
         if self.roi is not None:
@@ -8740,10 +8793,36 @@ class SpotZoomController:
             self._frame_cache_counter = 0
             LOGGER.info("Frame cache enabled: directory=%s", cache_dir)
 
+        # 中间帧保存初始化
+        self._frame_tmp_dir: Optional[Path] = None
+        self._frame_tmp_counter: int = 0
+        if getattr(self.cfg, "save_intermediate_frames", False):
+            tmp_dir = Path(getattr(self.cfg, "frame_tmp_dir", "FrameTmp"))
+            tmp_dir.mkdir(parents=True, exist_ok=True)
+            self._frame_tmp_dir = tmp_dir
+            self._frame_tmp_counter = 0
+            LOGGER.info("Intermediate frame saving enabled: directory=%s", tmp_dir)
+
     def _inc_metric(self, name: str, delta: int = 1) -> None:
         """Increment a reporter metric if reporter is available."""
         if self.reporter is not None:
             setattr(self.reporter.metrics, name, getattr(self.reporter.metrics, name) + delta)
+
+    def _save_intermediate_frame(self, frame: np.ndarray, tag: str = "") -> None:
+        """保存ROI中间帧到FrameTmp目录（带检测标记）。"""
+        if self._frame_tmp_dir is None:
+            return
+        try:
+            self._frame_tmp_counter += 1
+            timestamp = datetime.now().strftime("%H%M%S")
+            fname = f"frame_{self._frame_tmp_counter:04d}_{timestamp}"
+            if tag:
+                fname += f"_{tag}"
+            fpath = self._frame_tmp_dir / f"{fname}.png"
+            cv2.imwrite(str(fpath), frame)
+            LOGGER.info("Intermediate frame saved: %s", fpath)
+        except Exception as exc:
+            LOGGER.warning("Failed to save intermediate frame: %s", exc)
 
     def _detect_with_runtime_metrics(
         self,
@@ -9014,6 +9093,117 @@ class SpotZoomController:
             self.reporter.event("not_converged_4axis_single", max_iterations=self.cfg.max_iterations)
         return False
 
+    def run_continuous_monitoring(self) -> None:
+        """ROI框定后进入持续监控模式。
+        
+        在闭环对准收敛后，持续检测光斑位置：
+        - 不断采集图像并检测光斑中心
+        - 监控与目标位置的偏差
+        - 超过阈值时自动微调
+        - 监控显微镜关班准直状态
+        - 可通过stop_event终止
+        """
+        LOGGER.info("Starting continuous monitoring mode...")
+        
+        if not hasattr(self, 'stop_event') or self.stop_event is None:
+            import threading
+            self.stop_event = threading.Event()
+        
+        self._monitoring_active = True
+        
+        # 获取初始目标
+        if hasattr(self, '_monitoring_target'):
+            target = self._monitoring_target
+        else:
+            initial_det = self._detect_center_with_retry(tag="Monitoring initial")
+            if initial_det is None:
+                LOGGER.error("Cannot start continuous monitoring: initial detection failed")
+                self._monitoring_active = False
+                return
+            target = initial_det.center
+            self._monitoring_target = target
+        
+        LOGGER.info("Monitoring target: %s", target)
+        
+        monitoring_interval = getattr(self.cfg, "settle_time_s", getattr(self.cfg, "settle_time", 0.35))
+        drift_threshold = getattr(self.cfg, "tolerance_px", 6)
+        check_counter = 0
+        
+        while self._monitoring_active and not self.stop_event.is_set():
+            try:
+                check_counter += 1
+                
+                # 采集帧
+                frame = self.window.grab_frame()
+                
+                # 保存中间帧（带monitoring标记）
+                self._save_intermediate_frame(frame, tag="monitoring")
+                
+                # 检测光斑
+                det = self._detect_on_frame(frame, tag=f"monitoring_check")
+                
+                if det is None:
+                    LOGGER.warning("Monitoring: detection failed on check %d", check_counter)
+                    time.sleep(monitoring_interval)
+                    continue
+                
+                # 计算偏移量
+                dx = target[0] - det.center[0]
+                dy = target[1] - det.center[1]
+                drift = (dx ** 2 + dy ** 2) ** 0.5
+                
+                # 记录状态
+                if self.reporter is not None:
+                    self.reporter.event("monitoring_status",
+                        check=check_counter,
+                        center=list(det.center),
+                        drift_px=round(drift, 2))
+                
+                # 定期输出监控日志
+                if check_counter % 10 == 0:
+                    LOGGER.info("Monitoring [%d]: center=%s, drift=%.2fpx, target=%s",
+                               check_counter, det.center, drift, target)
+                
+                # 超过漂移阈值时自动校正
+                if drift > drift_threshold:
+                    LOGGER.info("Monitoring: drift detected (%.2fpx > %dpx), auto-correcting...", drift, drift_threshold)
+                    self._save_intermediate_frame(frame, tag="drift_correction")
+                    
+                    # 使用4轴控制进行校正
+                    if hasattr(self, 'four_axis_controller') and self.four_axis_controller is not None:
+                        e_pos = (int(dx), int(dy))
+                        e_ang = (0, 0)
+                        u1_x, u1_y, u2_x, u2_y = self.four_axis_controller.compute_control(e_pos, e_ang)
+                        
+                        if hasattr(self.xy_stage, 'move_x1'):
+                            self.xy_stage.move_x1(u1_x)
+                            self.xy_stage.move_y1(u1_y)
+                            self.xy_stage.move_x2(u2_x)
+                            self.xy_stage.move_y2(u2_y)
+                        else:
+                            self.xy_stage.move_x(u1_x + u2_x)
+                            self.xy_stage.move_y(u1_y + u2_y)
+                        
+                        LOGGER.info("Monitoring correction applied: mirror1=(%d,%d) mirror2=(%d,%d)",
+                                   u1_x, u1_y, u2_x, u2_y)
+                    
+                    time.sleep(monitoring_interval)
+                
+                time.sleep(monitoring_interval)
+                
+            except Exception as exc:
+                LOGGER.warning("Monitoring error: %s", exc)
+                time.sleep(monitoring_interval)
+        
+        LOGGER.info("Continuous monitoring stopped")
+
+    def stop_continuous_monitoring(self) -> None:
+        """停止持续监控模式。"""
+        self._monitoring_active = False
+        if hasattr(self, 'stop_event') and self.stop_event is not None:
+            self.stop_event.set()
+        LOGGER.info("Continuous monitoring stop requested")
+
     def _run_detector_comparison(self) -> bool:
         """探测器效果对比策略：同时使用ToupView和探测器进行对比校准。
         
@@ -9207,15 +9397,20 @@ class SpotZoomController:
             return None
         try:
             prepared = self._prepare_detection_frame(frame)
+            # 保存中间帧（原始帧 + 带标记）
+            self._save_intermediate_frame(frame, tag=f"{tag}_raw")
             det = self.detector.detect(prepared)
             if det is not None:
+                self._save_intermediate_frame(frame, tag=f"{tag}_detected")
                 return det
             for attempt in range(1, self.cfg.detect_retry + 1):
                 time.sleep(self.cfg.detect_retry_interval)
                 prepared = self._prepare_detection_frame(frame)
                 det = self.detector.detect(prepared)
                 if det is not None:
+                    self._save_intermediate_frame(frame, tag=f"{tag}_detected_retry{attempt}")
                     return det
+            self._save_intermediate_frame(frame, tag=f"{tag}_failed")
             return None
         except Exception as exc:
             LOGGER.warning("Detection failed: %s", exc)
