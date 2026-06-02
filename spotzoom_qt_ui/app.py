@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import json
+import random
 import sys
 import threading
 import time
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional
+from typing import Dict, Iterable, List, Optional, Tuple
 
 from .qt_compat import (
     QAbstractTableModel,
@@ -333,6 +334,21 @@ class SpotZoomQtMainWindow(QMainWindow):
         self._ucc_preview_fps_time: float = 0.0
         self._ucc_preview_actual_fps: float = 0.0
 
+        # 准直工作台 UCC 预览 + 闭环控制
+        self._alignment_ucc_source: Optional[UCCFrameSource] = None
+        self._alignment_ucc_timer: Optional[QTimer] = None
+        self._alignment_ucc_running: bool = False
+        self._alignment_ucc_fps_counter: int = 0
+        self._alignment_ucc_fps_time: float = 0.0
+        self._alignment_ucc_actual_fps: float = 0.0
+        self._alignment_target_point: Optional[Tuple[float, float]] = None
+        self._alignment_last_centroid: Optional[Tuple[float, float]] = None
+        self._alignment_centroid_history: List[Tuple[float, float]] = []
+        self._alignment_stabilizing: bool = False
+        self._alignment_stabilize_timer: Optional[QTimer] = None
+        self._alignment_jitter_timer: Optional[QTimer] = None
+        self._alignment_jitter_running: bool = False
+
         self.setWindowTitle("SpotZoom 主动激光束稳定控制台")
         self.resize(1680, 980)
         self._build_ui()
@@ -509,23 +525,83 @@ class SpotZoomQtMainWindow(QMainWindow):
         layout = QHBoxLayout(page)
         layout.setSpacing(8)
 
+        # ==================================================================
+        # 左侧：实时图像区 — UCC 探测器 + 显微镜画面
+        # ==================================================================
         image_group = QGroupBox("实时图像区")
         image_layout = QVBoxLayout(image_group)
-        self.image_mode_combo = QComboBox()
-        self.image_mode_combo.addItems(["原图", "检测叠加", "阈值图", "候选点图", "轨迹图"])
-        image_layout.addWidget(self.image_mode_combo)
-        self.image_label = QLabel("无图像")
-        self.image_label.setAlignment(Qt.AlignCenter)
-        self.image_label.setMinimumSize(760, 540)
-        self.image_label.setStyleSheet("background:#060A10; border:1px solid #2B3642;")
-        image_layout.addWidget(self.image_label, 1)
-        self.image_overlay_label = QLabel("ROI: - | P1/P2/P3: - | 置信度: - | 焦点评分: - | 偏差向量: -")
-        image_layout.addWidget(self.image_overlay_label)
-        layout.addWidget(image_group, 3)
 
+        # 双画面水平布局
+        dual_view_layout = QHBoxLayout()
+
+        # UCC 探测器画面
+        ucc_view = QVBoxLayout()
+        self._alignment_ucc_label = QLabel("UCC 探测器\n点击「启动UCC预览」")
+        self._alignment_ucc_label.setAlignment(Qt.AlignCenter)
+        self._alignment_ucc_label.setMinimumSize(420, 320)
+        self._alignment_ucc_label.setStyleSheet(
+            "background-color: #1a1a2e; color: #888; border: 1px solid #333; "
+            "border-radius: 4px; font-size: 13px;"
+        )
+        ucc_view.addWidget(QLabel("UCC 探测器"))
+        ucc_view.addWidget(self._alignment_ucc_label, 1)
+        dual_view_layout.addLayout(ucc_view, 1)
+
+        # 显微镜画面（预留）
+        micro_view = QVBoxLayout()
+        self._alignment_micro_label = QLabel("显微镜图像\n待通信接入")
+        self._alignment_micro_label.setAlignment(Qt.AlignCenter)
+        self._alignment_micro_label.setMinimumSize(320, 320)
+        self._alignment_micro_label.setStyleSheet(
+            "background-color: #1a1a2e; color: #666; border: 1px solid #333; "
+            "border-radius: 4px; font-size: 13px;"
+        )
+        micro_view.addWidget(QLabel("显微镜 (ToupView/NIS)"))
+        micro_view.addWidget(self._alignment_micro_label, 1)
+        dual_view_layout.addLayout(micro_view, 1)
+
+        image_layout.addLayout(dual_view_layout)
+
+        # 图像叠加信息栏
+        self.image_overlay_label = QLabel("质心: - | 目标点: - | 偏差: - | 状态: 未启动")
+        self.image_overlay_label.setStyleSheet("color: #9FB3C8; font-size: 12px;")
+        image_layout.addWidget(self.image_overlay_label)
+
+        # UCC 控制行
+        ucc_ctrl_row = QHBoxLayout()
+        self._alignment_ucc_device = self._spin(0, 9, 1)
+        self._alignment_ucc_device.setPrefix("设备 ")
+        self._alignment_ucc_resolution = self._combo(["PAL", "NTSC", "AUTO"])
+        self._alignment_ucc_resolution.setCurrentText("AUTO")
+        self._alignment_ucc_format = self._combo(["AUTO", "MJPG", "YUY2", "YUYV", "UYVY"])
+        self._alignment_ucc_format.setCurrentText("AUTO")
+
+        self._alignment_ucc_btn_start = QPushButton("▶ 启动UCC预览")
+        self._alignment_ucc_btn_start.clicked.connect(self._start_alignment_ucc_preview)
+        self._alignment_ucc_btn_stop = QPushButton("■ 停止UCC预览")
+        self._alignment_ucc_btn_stop.clicked.connect(self._stop_alignment_ucc_preview)
+        self._alignment_ucc_btn_stop.setEnabled(False)
+
+        ucc_ctrl_row.addWidget(QLabel("设备:"))
+        ucc_ctrl_row.addWidget(self._alignment_ucc_device)
+        ucc_ctrl_row.addWidget(QLabel("分辨率:"))
+        ucc_ctrl_row.addWidget(self._alignment_ucc_resolution)
+        ucc_ctrl_row.addWidget(QLabel("格式:"))
+        ucc_ctrl_row.addWidget(self._alignment_ucc_format)
+        ucc_ctrl_row.addWidget(self._alignment_ucc_btn_start)
+        ucc_ctrl_row.addWidget(self._alignment_ucc_btn_stop)
+        ucc_ctrl_row.addStretch(1)
+        image_layout.addLayout(ucc_ctrl_row)
+
+        layout.addWidget(image_group, 4)
+
+        # ==================================================================
+        # 右侧：控制区 + 参数区 + 曲线 + 参数表 + 状态区
+        # ==================================================================
         right = QWidget()
         right_layout = QVBoxLayout(right)
 
+        # --- 准直控制区 ---
         ctrl = QGroupBox("准直控制区")
         ctrl_layout = QGridLayout(ctrl)
         self.btn_run = QPushButton("开始")
@@ -536,15 +612,25 @@ class SpotZoomQtMainWindow(QMainWindow):
         self.btn_env = QPushButton("环境检查")
         self.btn_startup = QPushButton("启动自检")
         self.btn_export = QPushButton("导出报告")
+        # 新增：目标点与闭环控制
+        self.btn_set_target = QPushButton("🎯 设定目标点")
+        self.btn_set_target.clicked.connect(self._set_alignment_target_point)
+        self.btn_set_target.setEnabled(False)
+        self.btn_jitter = QPushButton("🌀 模拟抖动")
+        self.btn_jitter.clicked.connect(self._simulate_alignment_jitter)
+        self.btn_jitter.setEnabled(False)
+        self.btn_stabilize = QPushButton("🔄 开始稳定闭环")
+        self.btn_stabilize.clicked.connect(self._start_alignment_stabilization)
+        self.btn_stabilize.setEnabled(False)
+        self.btn_stop_stabilize = QPushButton("⏹ 停止闭环")
+        self.btn_stop_stabilize.clicked.connect(self._stop_alignment_stabilization)
+        self.btn_stop_stabilize.setEnabled(False)
+
         actions = [
-            self.btn_run,
-            self.btn_pause,
-            self.btn_stop,
-            self.btn_step,
-            self.btn_roi,
-            self.btn_env,
-            self.btn_startup,
-            self.btn_export,
+            self.btn_run, self.btn_pause, self.btn_stop, self.btn_step,
+            self.btn_roi, self.btn_env, self.btn_startup, self.btn_export,
+            self.btn_set_target, self.btn_jitter,
+            self.btn_stabilize, self.btn_stop_stabilize,
         ]
         for i, btn in enumerate(actions):
             ctrl_layout.addWidget(btn, i // 2, i % 2)
@@ -558,8 +644,48 @@ class SpotZoomQtMainWindow(QMainWindow):
         self.btn_export.clicked.connect(self._export_report)
         right_layout.addWidget(ctrl)
 
-        param_group = QGroupBox("关键参数区")
-        param_form = QFormLayout(param_group)
+        # --- 抖动参数 ---
+        jitter_group = QGroupBox("抖动与闭环参数")
+        jitter_form = QFormLayout(jitter_group)
+        self._alignment_jitter_amplitude = self._spin(5, 2000, 50)
+        self._alignment_jitter_interval = self._dspin(0.1, 5.0, 0.5, 2)
+        self._alignment_stabilize_kp = self._dspin(0.01, 2.0, 0.3, 2)
+        self._alignment_stabilize_tolerance = self._spin(1, 50, 5)
+        jitter_form.addRow("抖动幅值 (步)", self._alignment_jitter_amplitude)
+        jitter_form.addRow("抖动间隔 (s)", self._alignment_jitter_interval)
+        jitter_form.addRow("闭环 Kp 增益", self._alignment_stabilize_kp)
+        jitter_form.addRow("收敛容差 (px)", self._alignment_stabilize_tolerance)
+        right_layout.addWidget(jitter_group)
+
+        # --- XY 曲线 ---
+        curve_group = QGroupBox("XY 位置曲线 (XYCurve)")
+        curve_layout = QVBoxLayout(curve_group)
+        self._alignment_curve_widget = SpotCurveWidget(max_points=200)
+        curve_layout.addWidget(self._alignment_curve_widget)
+        right_layout.addWidget(curve_group, 1)
+
+        # --- 光斑参数表 ---
+        param_group = QGroupBox("光斑参数 (Calcult)")
+        param_layout = QVBoxLayout(param_group)
+        self._alignment_param_table = QTableWidget()
+        self._alignment_param_table.setColumnCount(2)
+        self._alignment_param_table.setHorizontalHeaderLabels(["参数", "数值"])
+        self._alignment_param_table.setEditTriggers(QTableWidget.NoEditTriggers)
+        self._alignment_param_table.setSelectionMode(QTableWidget.NoSelection)
+        self._alignment_param_table.verticalHeader().setVisible(False)
+        self._alignment_param_table.horizontalHeader().setStretchLastSection(True)
+        self._alignment_param_table.setMaximumHeight(120)
+        param_names = ["Min, Peak", "Peak Loc (X, Y)", "Centroid (X, Y)", "Width (X, Y)"]
+        self._alignment_param_table.setRowCount(len(param_names))
+        for i, name in enumerate(param_names):
+            self._alignment_param_table.setItem(i, 0, QTableWidgetItem(name))
+            self._alignment_param_table.setItem(i, 1, QTableWidgetItem("--"))
+        param_layout.addWidget(self._alignment_param_table)
+        right_layout.addWidget(param_group)
+
+        # --- 关键参数区 ---
+        key_param_group = QGroupBox("关键参数区")
+        key_param_form = QFormLayout(key_param_group)
         self.controls["tolerance_px"] = self._spin(1, 300, 6)
         self.controls["detect_retry"] = self._spin(1, 20, 6)
         self.controls["detect_retry_interval"] = self._dspin(0.01, 10.0, 0.25, 2)
@@ -603,9 +729,10 @@ class SpotZoomQtMainWindow(QMainWindow):
             text = label if isinstance(label, str) else key
             if text == key:
                 text = key
-            param_form.addRow(text, widget)
-        right_layout.addWidget(param_group)
+            key_param_form.addRow(text, widget)
+        right_layout.addWidget(key_param_group)
 
+        # --- 过程状态区 ---
         runtime_group = QGroupBox("过程状态区")
         runtime_layout = QFormLayout(runtime_group)
         for key, label in [
@@ -624,7 +751,7 @@ class SpotZoomQtMainWindow(QMainWindow):
             runtime_layout.addRow(label, v)
         right_layout.addWidget(runtime_group, 1)
 
-        layout.addWidget(right, 2)
+        layout.addWidget(right, 3)
         return page
 
     def _build_module_page(self) -> QWidget:
@@ -1643,6 +1770,316 @@ class SpotZoomQtMainWindow(QMainWindow):
         self.btn_stop.setEnabled(False)
         self._refresh_all_panels()
 
+    # ==================================================================
+    # 准直工作台 — UCC 预览 + 闭环控制
+    # ==================================================================
+
+    def _start_alignment_ucc_preview(self) -> None:
+        if self._alignment_ucc_running:
+            self._append_log("[准直工作台] UCC 预览已在运行中")
+            return
+        try:
+            device = self._alignment_ucc_device.value()
+            resolution = self._alignment_ucc_resolution.currentText()
+            fmt = self._alignment_ucc_format.currentText()
+
+            self._alignment_ucc_source = UCCFrameSource(
+                device=device,
+                resolution=resolution if resolution != "AUTO" else None,
+                pixel_format=fmt if fmt != "AUTO" else None,
+            )
+            self._alignment_ucc_source.open()
+            self._append_log(f"[准直工作台] UCC 预览已启动: 设备={device} 分辨率={resolution} 格式={fmt}")
+        except Exception as e:
+            self._append_log(f"[准直工作台] UCC 预览启动失败: {e}")
+            QMessageBox.warning(self, "UCC 错误", f"无法打开 UCC 相机:\n{e}")
+            self._alignment_ucc_source = None
+            return
+
+        self._alignment_ucc_timer = QTimer(self)
+        self._alignment_ucc_timer.setInterval(50)
+        self._alignment_ucc_timer.timeout.connect(self._update_alignment_ucc_preview)
+        self._alignment_ucc_timer.start()
+
+        self._alignment_ucc_running = True
+        self._alignment_ucc_btn_start.setEnabled(False)
+        self._alignment_ucc_btn_stop.setEnabled(True)
+        self.btn_set_target.setEnabled(True)
+        self.btn_jitter.setEnabled(True)
+        self.btn_stabilize.setEnabled(True)
+
+    def _stop_alignment_ucc_preview(self) -> None:
+        self._stop_alignment_stabilization()
+        self._stop_alignment_jitter()
+
+        self._alignment_ucc_running = False
+
+        if self._alignment_ucc_timer is not None:
+            self._alignment_ucc_timer.stop()
+            self._alignment_ucc_timer = None
+
+        if self._alignment_ucc_source is not None:
+            try:
+                self._alignment_ucc_source.release()
+            except Exception as e:
+                self._append_log(f"[准直工作台] UCC 释放异常: {e}")
+            self._alignment_ucc_source = None
+
+        self._alignment_ucc_label.setText("UCC 探测器\n已停止预览")
+        self._alignment_ucc_btn_start.setEnabled(True)
+        self._alignment_ucc_btn_stop.setEnabled(False)
+        self.btn_set_target.setEnabled(False)
+        self.btn_jitter.setEnabled(False)
+        self.btn_stabilize.setEnabled(False)
+        self._append_log("[准直工作台] UCC 预览已停止")
+
+    def _update_alignment_ucc_preview(self) -> None:
+        source = self._alignment_ucc_source
+        if source is None or not self._alignment_ucc_running:
+            return
+
+        try:
+            bgr = source.read_frame()
+            if bgr is None:
+                return
+        except Exception as e:
+            self._append_log(f"[准直工作台] UCC 帧读取失败: {e}")
+            return
+
+        self._alignment_ucc_fps_counter += 1
+        now = time.time()
+        if self._alignment_ucc_fps_time == 0.0:
+            self._alignment_ucc_fps_time = now
+        elapsed = now - self._alignment_ucc_fps_time
+        if elapsed >= 1.0:
+            self._alignment_ucc_actual_fps = self._alignment_ucc_fps_counter / elapsed
+            self._alignment_ucc_fps_counter = 0
+            self._alignment_ucc_fps_time = now
+
+        frame = bgr.copy()
+        height, width = frame.shape[:2]
+
+        # 光斑分析
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(gray)
+        _, thresh = cv2.threshold(gray, int(max_val * 0.5), 255, cv2.THRESH_BINARY)
+        moments = cv2.moments(thresh)
+        if moments["m00"] > 0:
+            cx = moments["m10"] / moments["m00"]
+            cy = moments["m01"] / moments["m00"]
+            self._alignment_last_centroid = (cx, cy)
+            self._alignment_centroid_history.append((cx, cy))
+            if len(self._alignment_centroid_history) > 200:
+                self._alignment_centroid_history = self._alignment_centroid_history[-200:]
+
+            # 叠加标注
+            cv2.drawMarker(frame, (int(cx), int(cy)), (0, 0, 255), cv2.MARKER_CROSS, 20, 2)
+            cv2.circle(frame, (int(cx), int(cy)), 8, (0, 255, 255), 1)
+
+            if self._alignment_target_point is not None:
+                tx, ty = self._alignment_target_point
+                cv2.drawMarker(frame, (int(tx), int(ty)), (0, 255, 0), cv2.MARKER_CROSS, 20, 2)
+                cv2.circle(frame, (int(tx), int(ty)), 10, (0, 255, 0), 2)
+                cv2.line(frame, (int(cx), int(cy)), (int(tx), int(ty)), (255, 0, 255), 1)
+
+            # 质心宽高
+            if moments["mu20"] + moments["mu02"] > 0:
+                sigma_x = (moments["mu20"] / moments["m00"]) ** 0.5
+                sigma_y = (moments["mu02"] / moments["m00"]) ** 0.5
+            else:
+                sigma_x = sigma_y = 0.0
+
+            self._alignment_param_table.item(0, 1).setText(f"{min_val:.1f}, {max_val:.1f}")
+            self._alignment_param_table.item(1, 1).setText(f"({max_loc[0]}, {max_loc[1]})")
+            self._alignment_param_table.item(2, 1).setText(f"({cx:.1f}, {cy:.1f})")
+            self._alignment_param_table.item(3, 1).setText(f"({sigma_x:.1f}, {sigma_y:.1f})")
+
+            # 曲线
+            if self._alignment_centroid_history:
+                xs = [p[0] for p in self._alignment_centroid_history]
+                ys = [p[1] for p in self._alignment_centroid_history]
+                self._alignment_curve_widget.append(xs[-1], ys[-1])
+
+            # 偏差信息
+            if self._alignment_target_point is not None:
+                tx, ty = self._alignment_target_point
+                dx = cx - tx
+                dy = cy - ty
+                dist = (dx * dx + dy * dy) ** 0.5
+                status = f"稳定闭环中" if self._alignment_stabilizing else "目标已锁定"
+                status += f" | 偏差 Δ=({dx:.1f}, {dy:.1f})px d={dist:.1f}px"
+            else:
+                status = "未设定目标点"
+            self.image_overlay_label.setText(
+                f"质心: ({cx:.1f}, {cy:.1f}) | "
+                f"目标点: {self._alignment_target_point or '未设定'} | "
+                f"FPS: {self._alignment_ucc_actual_fps:.1f} | "
+                f"状态: {status}"
+            )
+        else:
+            self._alignment_param_table.item(2, 1).setText("--")
+            self.image_overlay_label.setText("检测中... 未检测到光斑")
+
+        # 显示
+        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        h, w, ch = rgb.shape
+        bytes_per_line = ch * w
+        qimg = QImage(rgb.data, w, h, bytes_per_line, QImage.Format_RGB888)
+        pix = QPixmap.fromImage(qimg)
+        self._alignment_ucc_label.setPixmap(
+            pix.scaled(self._alignment_ucc_label.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        )
+
+    def _set_alignment_target_point(self) -> None:
+        if self._alignment_last_centroid is None:
+            QMessageBox.warning(self, "无光斑", "请先确保 UCC 预览中检测到光斑质心")
+            return
+        self._alignment_target_point = self._alignment_last_centroid
+        cx, cy = self._alignment_target_point
+        self._alignment_centroid_history.clear()
+        self._append_log(f"[准直工作台] 已设定目标点: ({cx:.1f}, {cy:.1f})")
+        self.image_overlay_label.setText(
+            f"目标点已设定: ({cx:.1f}, {cy:.1f}) | 状态: 等待闭环启动"
+        )
+        self.btn_stabilize.setEnabled(True)
+
+    def _get_alignment_axis_widget(self, axis_num: int):
+        panel = getattr(self, "picomotor_driver_panel", None)
+        if panel is None:
+            return None
+        for aw in panel.axis_widgets:
+            if aw.axis == axis_num:
+                return aw
+        return None
+
+    def _get_alignment_mirror_axes(self):
+        self.profile = self._collect_profile_from_controls()
+        return {
+            "mirror1_x": self.profile.mrc_mirror1_x_axis,
+            "mirror1_y": self.profile.mrc_mirror1_y_axis,
+            "mirror2_x": self.profile.mrc_mirror2_x_axis,
+            "mirror2_y": self.profile.mrc_mirror2_y_axis,
+        }
+
+    def _simulate_alignment_jitter(self) -> None:
+        if self._alignment_jitter_running:
+            self._stop_alignment_jitter()
+            self.btn_jitter.setText("🌀 模拟抖动")
+            self._append_log("[准直工作台] 模拟抖动已停止")
+            return
+
+        panel = getattr(self, "picomotor_driver_panel", None)
+        if panel is None:
+            QMessageBox.warning(self, "未连接", "请先在「Picomotor 8742/8743 驱动调试」页面连接设备")
+            return
+
+        self._alignment_jitter_running = True
+        self.btn_jitter.setText("⏹ 停止抖动")
+
+        amplitude = self._alignment_jitter_amplitude.value()
+        interval_ms = int(self._alignment_jitter_interval.value() * 1000)
+
+        def _do_jitter() -> None:
+            if not self._alignment_jitter_running:
+                return
+            try:
+                amplitude = self._alignment_jitter_amplitude.value()
+                dx = random.randint(-amplitude, amplitude)
+                dy = random.randint(-amplitude, amplitude)
+                axes = self._get_alignment_mirror_axes()
+                wx = self._get_alignment_axis_widget(axes["mirror1_x"])
+                wy = self._get_alignment_axis_widget(axes["mirror1_y"])
+                if wx:
+                    wx.move_relative(dx)
+                if wy:
+                    wy.move_relative(dy)
+                self._append_log(f"[抖动] ΔX={dx}, ΔY={dy}")
+            except Exception as e:
+                self._append_log(f"[抖动] 电机控制异常: {e}")
+
+        self._alignment_jitter_timer = QTimer(self)
+        self._alignment_jitter_timer.setInterval(interval_ms)
+        self._alignment_jitter_timer.timeout.connect(_do_jitter)
+        self._alignment_jitter_timer.start()
+        self._append_log(f"[准直工作台] 模拟抖动已启动: 幅值={amplitude}步 间隔={self._alignment_jitter_interval.value()}s")
+
+    def _stop_alignment_jitter(self) -> None:
+        self._alignment_jitter_running = False
+        if self._alignment_jitter_timer is not None:
+            self._alignment_jitter_timer.stop()
+            self._alignment_jitter_timer = None
+        self.btn_jitter.setText("🌀 模拟抖动")
+
+    def _start_alignment_stabilization(self) -> None:
+        if self._alignment_stabilizing:
+            return
+        if self._alignment_target_point is None:
+            QMessageBox.warning(self, "无目标点", "请先点击「设定目标点」锁定当前光斑位置")
+            return
+
+        panel = getattr(self, "picomotor_driver_panel", None)
+        if panel is None:
+            QMessageBox.warning(self, "未连接", "请先在「Picomotor 8742/8743 驱动调试」页面连接设备")
+            return
+
+        self._alignment_stabilizing = True
+        self.btn_stabilize.setEnabled(False)
+        self.btn_stop_stabilize.setEnabled(True)
+        self._append_log("[准直工作台] 稳定闭环已启动")
+
+        self._alignment_stabilize_timer = QTimer(self)
+        self._alignment_stabilize_timer.setInterval(100)
+        self._alignment_stabilize_timer.timeout.connect(self._alignment_stabilize_step)
+        self._alignment_stabilize_timer.start()
+
+    def _stop_alignment_stabilization(self) -> None:
+        self._alignment_stabilizing = False
+        if self._alignment_stabilize_timer is not None:
+            self._alignment_stabilize_timer.stop()
+            self._alignment_stabilize_timer = None
+        self.btn_stabilize.setEnabled(True)
+        self.btn_stop_stabilize.setEnabled(False)
+        self._append_log("[准直工作台] 稳定闭环已停止")
+
+    def _alignment_stabilize_step(self) -> None:
+        if not self._alignment_stabilizing:
+            return
+        if self._alignment_last_centroid is None or self._alignment_target_point is None:
+            return
+
+        cx, cy = self._alignment_last_centroid
+        tx, ty = self._alignment_target_point
+        dx = cx - tx
+        dy = cy - ty
+        dist = (dx * dx + dy * dy) ** 0.5
+
+        tolerance = self._alignment_stabilize_tolerance.value()
+        if dist < tolerance:
+            return
+
+        kp = self._alignment_stabilize_kp.value()
+        steps_x = int(dx * kp)
+        steps_y = int(dy * kp)
+
+        if abs(steps_x) < 1 and abs(steps_y) < 1:
+            return
+
+        try:
+            panel = getattr(self, "picomotor_driver_panel", None)
+            if panel is None:
+                return
+            axes = self._get_alignment_mirror_axes()
+            wx = self._get_alignment_axis_widget(axes["mirror1_x"])
+            wy = self._get_alignment_axis_widget(axes["mirror1_y"])
+            if abs(steps_x) >= 1 and wx:
+                wx.move_relative(steps_x)
+            if abs(steps_y) >= 1 and wy:
+                wy.move_relative(steps_y)
+        except Exception as e:
+            self._append_log(f"[闭环] 电机控制异常: {e}")
+
+    # ==================================================================
+
     def _toggle_roi(self) -> None:
         current = self._check_value("select_roi", False)
         self._set_check("select_roi", not current)
@@ -2001,12 +2438,14 @@ class SpotZoomQtMainWindow(QMainWindow):
             path = str(self.runtime.ensure_sample_frame())
         qimg = QImage(path)
         if qimg.isNull():
-            self.image_label.setText("图像加载失败")
-            self.sim_preview.setText("图像加载失败")
+            sim_preview = getattr(self, "sim_preview", None)
+            if sim_preview:
+                sim_preview.setText("图像加载失败")
             return
         pix = QPixmap.fromImage(qimg)
-        self.image_label.setPixmap(pix.scaled(self.image_label.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation))
-        self.sim_preview.setPixmap(pix.scaled(self.sim_preview.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        sim_preview = getattr(self, "sim_preview", None)
+        if sim_preview:
+            sim_preview.setPixmap(pix.scaled(sim_preview.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation))
 
     def _export_report(self) -> None:
         self.profile = self._collect_profile_from_controls()
@@ -2068,6 +2507,7 @@ class SpotZoomQtMainWindow(QMainWindow):
     def closeEvent(self, event) -> None:
         # 停止 UCC 预览
         self._stop_ucc_preview()
+        self._stop_alignment_ucc_preview()
 
         panel = getattr(self, "picomotor_driver_panel", None)
         if panel is not None:
