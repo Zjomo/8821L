@@ -37,6 +37,7 @@ from .qt_compat import (
     QPushButton,
     QPlainTextEdit,
     QScrollArea,
+    QSizePolicy,
     QSpinBox,
     QSplitter,
     QStackedWidget,
@@ -66,7 +67,8 @@ from SpotZoom import UCCFrameSource
 from collections import deque
 
 try:
-    from PySide6.QtGui import QPainter, QPen, QColor, QFont, QPointF
+    from PySide6.QtGui import QPainter, QPen, QColor, QFont
+    from PySide6.QtCore import QPointF
 except ImportError:
     from PySide2.QtGui import QPainter, QPen, QColor, QFont
     from PySide2.QtCore import QPointF
@@ -163,8 +165,8 @@ class SpotCurveWidget(QWidget):
         self.y_history: deque = deque(maxlen=max_points)
         self.setMinimumSize(200, 120)
         self.setSizePolicy(
-            self.sizePolicy().Expanding,
-            self.sizePolicy().Expanding,
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Expanding,
         )
 
     def append(self, x: float, y: float) -> None:
