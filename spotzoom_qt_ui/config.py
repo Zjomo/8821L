@@ -84,7 +84,7 @@ NEWPORT_VELOCITY: Optional[int] = None
 NEWPORT_ACCELERATION: Optional[int] = None
 NEWPORT_NO_WAIT: bool = False
 
-# --- MRC 4轴参数 ---
+# --- MRC 4轴参数（轴1、轴2 指定为mirror1；轴3、轴4 指定为mirror2）
 MRC_MIRROR1_X_AXIS: int = 1
 MRC_MIRROR1_Y_AXIS: int = 2
 MRC_MIRROR2_X_AXIS: int = 3
