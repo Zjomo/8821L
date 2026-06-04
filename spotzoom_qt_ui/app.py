@@ -2097,13 +2097,16 @@ class SpotZoomQtMainWindow(QMainWindow):
         if panel is None:
             QMessageBox.warning(self, "面板未就绪", "请先在「Picomotor 8742/8743 驱动调试」页面初始化")
             return False
-        # 如果没有真实控制器，自动创建虚拟轴用于测试
+        # 如果面板没有轴控件，先尝试自动连接真实控制器
         if not panel.axis_widgets:
-            if panel.controller is not None:
-                QMessageBox.warning(self, "控制器异常", "控制器已连接但无可用轴")
-                return False
-            self._append_log("[准直工作台] 未检测到真实控制器，自动创建虚拟轴...")
-            panel.ensure_virtual_axes()
+            self.profile = self._collect_profile_from_controls()
+            auto_connected = panel.try_auto_connect(conn=self.profile.newport_conn)
+            if auto_connected:
+                self._append_log(f"[准直工作台] 已自动连接控制器: axes={[aw.axis for aw in panel.axis_widgets]}")
+            else:
+                # 自动连接失败，创建虚拟轴用于测试
+                self._append_log("[准直工作台] 未检测到真实控制器，自动创建虚拟轴...")
+                panel.ensure_virtual_axes()
         axes = self._get_alignment_mirror_axes()
         missing = [name for name, axis in axes.items() if self._get_alignment_axis_widget(axis) is None]
         if missing:

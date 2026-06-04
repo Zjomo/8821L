@@ -416,20 +416,33 @@ class PicomotorDriverPanel(QWidget):
         if self.controller is not None:
             return
         try:
-            controller = SpotZoom.PicoMotor8742Controller(
-                conn=int(self.conn_spin.value()),
-                backend=self.backend_combo.currentText().strip(),
-                timeout=float(self.timeout_spin.value()),
-                multiaddr=bool(self.multiaddr_check.isChecked()),
-                scan=bool(self.scan_check.isChecked()),
-            ).open()
-            axes = controller.axes()
-            device_id = controller.get_id()
+            self._do_connect()
         except Exception as exc:
             QMessageBox.critical(self, "连接错误", f"连接失败: {exc}")
             self._log(f"连接失败: {exc}")
-            return
 
+    def try_auto_connect(self, conn: int = 0) -> bool:
+        """静默尝试连接控制器，失败时返回 False 不弹窗。"""
+        if self.controller is not None:
+            return True
+        if self.axis_widgets:
+            return True
+        try:
+            self._do_connect(conn=conn)
+            return True
+        except Exception:
+            return False
+
+    def _do_connect(self, conn: Optional[int] = None) -> None:
+        controller = SpotZoom.PicoMotor8742Controller(
+            conn=int(conn) if conn is not None else int(self.conn_spin.value()),
+            backend=self.backend_combo.currentText().strip(),
+            timeout=float(self.timeout_spin.value()),
+            multiaddr=bool(self.multiaddr_check.isChecked()),
+            scan=bool(self.scan_check.isChecked()),
+        ).open()
+        axes = controller.axes()
+        device_id = controller.get_id()
         self.controller = controller
         self.axis_tabs.clear()
         self.axis_widgets = []
@@ -442,7 +455,6 @@ class PicomotorDriverPanel(QWidget):
             )
             self.axis_tabs.addTab(axis_widget, f"轴 {axis}")
             self.axis_widgets.append(axis_widget)
-
         self.device_id_label.setText(str(device_id))
         self.axes_label.setText(", ".join(str(axis) for axis in axes))
         self.status_label.setText("已连接")
