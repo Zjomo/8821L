@@ -355,7 +355,10 @@ class SpotZoomQtMainWindow(QMainWindow):
         self.resize(1680, 980)
         self._build_ui()
         self._apply_profile_to_controls(self.profile)
-        self._refresh_all_panels()
+        self.btn_axis4_enter.setEnabled(True)
+        self.axis4_status_label.setText(
+            f"状态：4轴闭环已激活 | 策略={self.profile.alignment_strategy.value} | 探测器模式={self.profile.detector_mode}"
+        )
         self._append_log("UI 启动完成。")
 
         self.poll_timer = QTimer(self)
@@ -606,18 +609,14 @@ class SpotZoomQtMainWindow(QMainWindow):
         right = QWidget()
         right_layout = QVBoxLayout(right)
 
-        # --- 准直控制区 ---
-        ctrl = QGroupBox("准直控制区")
-        ctrl_layout = QGridLayout(ctrl)
-        self.btn_run = QPushButton("开始")
-        self.btn_pause = QPushButton("暂停")
-        self.btn_stop = QPushButton("停止")
-        self.btn_step = QPushButton("单步一轮")
-        self.btn_roi = QPushButton("重新选择 ROI")
-        self.btn_env = QPushButton("环境检查")
-        self.btn_startup = QPushButton("启动自检")
-        self.btn_export = QPushButton("导出报告")
-        # 新增：目标点与闭环控制
+        # --- 4轴闭环入口与状态显示 ---
+        axis4_group = QGroupBox("4轴闭环入口")
+        axis4_layout = QGridLayout(axis4_group)
+        axis4_layout.setHorizontalSpacing(10)
+        axis4_layout.setVerticalSpacing(8)
+        self.btn_axis4_enter = QPushButton("进入4轴闭环")
+        self.btn_axis4_enter.clicked.connect(self._enter_alignment_4axis_mode)
+        self.btn_axis4_enter.setToolTip("将闭环策略切换为 dual_detector_4axis，并联动探测器模式")
         self.btn_set_target = QPushButton("🎯 设定目标点")
         self.btn_set_target.clicked.connect(self._set_alignment_target_point)
         self.btn_set_target.setEnabled(False)
@@ -630,24 +629,15 @@ class SpotZoomQtMainWindow(QMainWindow):
         self.btn_stop_stabilize = QPushButton("⏹ 停止闭环")
         self.btn_stop_stabilize.clicked.connect(self._stop_alignment_stabilization)
         self.btn_stop_stabilize.setEnabled(False)
-
-        actions = [
-            self.btn_run, self.btn_pause, self.btn_stop, self.btn_step,
-            self.btn_roi, self.btn_env, self.btn_startup, self.btn_export,
-            self.btn_set_target, self.btn_jitter,
-            self.btn_stabilize, self.btn_stop_stabilize,
-        ]
-        for i, btn in enumerate(actions):
-            ctrl_layout.addWidget(btn, i // 2, i % 2)
-        self.btn_run.clicked.connect(self._start_alignment)
-        self.btn_pause.clicked.connect(self._pause_alignment)
-        self.btn_stop.clicked.connect(self._stop_alignment)
-        self.btn_step.clicked.connect(self._single_step_run)
-        self.btn_roi.clicked.connect(self._toggle_roi)
-        self.btn_env.clicked.connect(self._run_env_check)
-        self.btn_startup.clicked.connect(self._run_startup_check)
-        self.btn_export.clicked.connect(self._export_report)
-        right_layout.addWidget(ctrl)
+        axis4_layout.addWidget(self.btn_axis4_enter, 0, 0, 1, 2)
+        axis4_layout.addWidget(self.btn_set_target, 1, 0)
+        axis4_layout.addWidget(self.btn_stabilize, 1, 1)
+        axis4_layout.addWidget(self.btn_jitter, 2, 0)
+        axis4_layout.addWidget(self.btn_stop_stabilize, 2, 1)
+        self.axis4_status_label = QLabel("状态：未进入4轴闭环")
+        self.axis4_status_label.setStyleSheet("color: #9FB3C8; font-size: 12px;")
+        axis4_layout.addWidget(self.axis4_status_label, 3, 0, 1, 2)
+        right_layout.addWidget(axis4_group)
 
         # --- 抖动参数 ---
         jitter_group = QGroupBox("抖动与闭环参数")
@@ -1938,20 +1928,21 @@ class SpotZoomQtMainWindow(QMainWindow):
             pix.scaled(self._alignment_ucc_label.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
         )
 
-    def _set_alignment_target_point(self) -> None:
-        if self._alignment_last_centroid is None:
-            QMessageBox.warning(self, "无光斑", "请先确保 UCC 预览中检测到光斑质心")
-            return
-        self._alignment_target_point = self._alignment_last_centroid
-        cx, cy = self._alignment_target_point
-        self._alignment_centroid_history.clear()
-        self._append_log(f"[准直工作台] 已设定目标点: ({cx:.1f}, {cy:.1f})")
-        self.image_overlay_label.setText(
-            f"目标点已设定: ({cx:.1f}, {cy:.1f}) | 状态: 等待闭环启动"
+    def _enter_alignment_4axis_mode(self) -> None:
+        self._set_combo("alignment_strategy", AlignmentStrategy.DUAL_DETECTOR_4AXIS.value)
+        self._set_combo("detector_mode", "dual_detector")
+        self.profile = self._collect_profile_from_controls()
+        self.axis4_status_label.setText(
+            f"状态：4轴闭环已激活 | 策略={self.profile.alignment_strategy.value} | 探测器模式={self.profile.detector_mode}"
         )
+        self.image_overlay_label.setText("质心: - | 目标点: - | 偏差: - | 状态: 已进入4轴闭环")
+        self.btn_set_target.setEnabled(True)
+        self.btn_jitter.setEnabled(True)
         self.btn_stabilize.setEnabled(True)
-
-    def _get_alignment_axis_widget(self, axis_num: int):
+        self.btn_axis4_enter.setEnabled(False)
+        self._append_log(
+            f"[准直工作台] 已切换到4轴闭环入口: strategy={self.profile.alignment_strategy.value}, detector_mode={self.profile.detector_mode}"
+        )
         panel = getattr(self, "picomotor_driver_panel", None)
         if panel is None:
             return None
@@ -2049,10 +2040,26 @@ class SpotZoomQtMainWindow(QMainWindow):
         self.btn_stop_stabilize.setEnabled(False)
         self._append_log("[准直工作台] 稳定闭环已停止")
 
+    def _refresh_alignment_status_label(self, status_text: str = "-") -> None:
+        cx, cy = self._alignment_last_centroid if self._alignment_last_centroid is not None else (None, None)
+        tx, ty = self._alignment_target_point if self._alignment_target_point is not None else (None, None)
+        if cx is not None and tx is not None:
+            dx = cx - tx
+            dy = cy - ty
+            status = f"目标点: ({tx:.1f}, {ty:.1f}) | 当前点: ({cx:.1f}, {cy:.1f}) | 偏差: ({dx:.1f}, {dy:.1f}) | 状态: {status_text}"
+        else:
+            status = f"目标点: -- | 当前点: -- | 偏差: -- | 状态: {status_text}"
+        self.image_overlay_label.setText(status)
+        if hasattr(self, "axis4_status_label"):
+            mode = self.profile.alignment_strategy.value if hasattr(self, "profile") else "-"
+            det = self.profile.detector_mode if hasattr(self, "profile") else "-"
+            self.axis4_status_label.setText(f"状态：{status_text} | 策略={mode} | 探测器模式={det}")
+
     def _alignment_stabilize_step(self) -> None:
         if not self._alignment_stabilizing:
             return
         if self._alignment_last_centroid is None or self._alignment_target_point is None:
+            self._refresh_alignment_status_label("等待探测到目标点")
             return
 
         cx, cy = self._alignment_last_centroid
@@ -2063,11 +2070,14 @@ class SpotZoomQtMainWindow(QMainWindow):
 
         tolerance = self._alignment_stabilize_tolerance.value()
         if dist < tolerance:
+            self._refresh_alignment_status_label("已收敛")
             return
 
         kp = self._alignment_stabilize_kp.value()
         steps_x = int(dx * kp)
         steps_y = int(dy * kp)
+
+        self._refresh_alignment_status_label(f"纠偏中 Δ=({dx:.1f}, {dy:.1f})")
 
         if abs(steps_x) < 1 and abs(steps_y) < 1:
             return
