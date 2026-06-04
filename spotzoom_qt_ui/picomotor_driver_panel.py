@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+import random
 from typing import Callable, List, Optional
 
 from .qt_compat import (
@@ -228,6 +229,47 @@ class PicomotorAxisWidget(QWidget):
         self._run("设零点", lambda: self._controller().set_zero_here(axis=self.axis, position=0))
 
 
+class VirtualPicoMotorController:
+    """模拟的控制器，用于在没有真实硬件时进行准直工作台测试"""
+
+    def __init__(self, axes: Optional[List[int]] = None) -> None:
+        self._axes = list(axes) if axes else [1, 2, 3, 4]
+        self._positions: dict[int, int] = {}
+
+    def get_id(self) -> str:
+        return "VIRTUAL-8742"
+
+    def axes(self) -> List[int]:
+        return list(self._axes)
+
+    def get_pos(self, axis: int = 1) -> int:
+        return self._positions.get(axis, 0)
+
+    def move_rel(self, axis: int = 1, steps: int = 0, wait: bool = True) -> None:
+        self._positions[axis] = self._positions.get(axis, 0) + steps
+
+    def move_abs(self, axis: int = 1, position: int = 0, wait: bool = True) -> None:
+        self._positions[axis] = position
+
+    def jog(self, axis: int = 1, direction: str = "+") -> None:
+        pass
+
+    def stop(self, axis: str = "all", immediate: bool = False) -> None:
+        pass
+
+    def set_zero_here(self, axis: int = 1, position: int = 0) -> None:
+        self._positions[axis] = position
+
+    def get_vel(self, axis: int = 1):
+        return (0, 0)
+
+    def set_vel(self, axis: int = 1, speed: int = 0, accel: int = 0) -> None:
+        pass
+
+    def close(self) -> None:
+        pass
+
+
 class PicomotorDriverPanel(QWidget):
     def __init__(self, log_callback: Optional[Callable[[str], None]] = None, parent: Optional[QWidget] = None):
         super().__init__(parent)
@@ -333,6 +375,31 @@ class PicomotorDriverPanel(QWidget):
 
     def _controller_getter(self) -> Optional[SpotZoom.PicoMotor8742Controller]:
         return self.controller
+
+    def ensure_virtual_axes(self) -> bool:
+        """如果没有连接真实控制器，创建虚拟轴供准直工作台使用。返回是否已有可用轴。"""
+        if self.axis_widgets:
+            return True
+        if self.controller is not None:
+            return False
+        vc = VirtualPicoMotorController(axes=[1, 2, 3, 4])
+        self.controller = vc  # type: ignore
+        self.axis_tabs.clear()
+        self.axis_widgets = []
+        for axis in vc.axes():
+            axis_widget = PicomotorAxisWidget(
+                axis=axis,
+                controller_getter=self._controller_getter,
+                log_callback=self._log,
+                parent=self.axis_tabs,
+            )
+            self.axis_tabs.addTab(axis_widget, f"虚拟轴 {axis}")
+            self.axis_widgets.append(axis_widget)
+        self.device_id_label.setText("VIRTUAL-8742")
+        self.axes_label.setText("1, 2, 3, 4")
+        self.status_label.setText("虚拟模式")
+        self._log("[虚拟控制器] 已创建 4 个虚拟轴 (1/2/3/4)")
+        return True
 
     def _set_connected_state(self, connected: bool) -> None:
         self.btn_connect.setEnabled(not connected)

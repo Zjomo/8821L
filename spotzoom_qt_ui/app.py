@@ -2093,6 +2093,17 @@ class SpotZoomQtMainWindow(QMainWindow):
         self._append_log("[准直工作台] 稳定闭环已停止")
 
     def _alignment_axes_ready(self) -> bool:
+        panel = getattr(self, "picomotor_driver_panel", None)
+        if panel is None:
+            QMessageBox.warning(self, "面板未就绪", "请先在「Picomotor 8742/8743 驱动调试」页面初始化")
+            return False
+        # 如果没有真实控制器，自动创建虚拟轴用于测试
+        if not panel.axis_widgets:
+            if panel.controller is not None:
+                QMessageBox.warning(self, "控制器异常", "控制器已连接但无可用轴")
+                return False
+            self._append_log("[准直工作台] 未检测到真实控制器，自动创建虚拟轴...")
+            panel.ensure_virtual_axes()
         axes = self._get_alignment_mirror_axes()
         missing = [name for name, axis in axes.items() if self._get_alignment_axis_widget(axis) is None]
         if missing:
