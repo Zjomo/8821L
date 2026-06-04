@@ -350,6 +350,11 @@ class SpotZoomQtMainWindow(QMainWindow):
         self._alignment_stabilize_timer: Optional[QTimer] = None
         self._alignment_jitter_timer: Optional[QTimer] = None
         self._alignment_jitter_running: bool = False
+        # 4轴→探测器 映射标定
+        self._alignment_calibrated: bool = False
+        self._alignment_calib_active: bool = False  # 正在标定中
+        self._alignment_calib_steps_per_px_x: float = 1.0  # X方向 步/像素
+        self._alignment_calib_steps_per_px_y: float = 1.0  # Y方向 步/像素
 
         self.setWindowTitle("SpotZoom 主动激光束稳定控制台")
         self.resize(1680, 980)
@@ -620,6 +625,10 @@ class SpotZoomQtMainWindow(QMainWindow):
         self.btn_set_target = QPushButton("🎯 设定目标点")
         self.btn_set_target.clicked.connect(self._set_alignment_target_point)
         self.btn_set_target.setEnabled(False)
+        self.btn_calibrate = QPushButton("📏 标定映射")
+        self.btn_calibrate.clicked.connect(self._calibrate_axis_mapping)
+        self.btn_calibrate.setEnabled(False)
+        self.btn_calibrate.setToolTip("逐轴移动+测量质心偏移，标定4轴步长与像素的映射关系")
         self.btn_jitter = QPushButton("🌀 模拟抖动")
         self.btn_jitter.clicked.connect(self._simulate_alignment_jitter)
         self.btn_jitter.setEnabled(False)
@@ -631,12 +640,28 @@ class SpotZoomQtMainWindow(QMainWindow):
         self.btn_stop_stabilize.setEnabled(False)
         axis4_layout.addWidget(self.btn_axis4_enter, 0, 0, 1, 2)
         axis4_layout.addWidget(self.btn_set_target, 1, 0)
-        axis4_layout.addWidget(self.btn_stabilize, 1, 1)
-        axis4_layout.addWidget(self.btn_jitter, 2, 0)
-        axis4_layout.addWidget(self.btn_stop_stabilize, 2, 1)
+        axis4_layout.addWidget(self.btn_calibrate, 1, 1)
+        axis4_layout.addWidget(self.btn_stabilize, 2, 0)
+        axis4_layout.addWidget(self.btn_jitter, 2, 1)
+        axis4_layout.addWidget(self.btn_stop_stabilize, 3, 0)
         self.axis4_status_label = QLabel("状态：未进入4轴闭环")
         self.axis4_status_label.setStyleSheet("color: #9FB3C8; font-size: 12px;")
-        axis4_layout.addWidget(self.axis4_status_label, 3, 0, 1, 2)
+        axis4_layout.addWidget(self.axis4_status_label, 4, 0, 1, 2)
+        self.axis4_calib_label = QLabel("标定：未标定")
+        self.axis4_calib_label.setStyleSheet("color: #F59E0B; font-size: 11px;")
+        axis4_layout.addWidget(self.axis4_calib_label, 5, 0, 1, 2)
+        # 校正镜选择行
+        axis4_layout.addWidget(QLabel("校正镜组:"), 6, 0)
+        self._alignment_correction_mirror = QComboBox()
+        self._alignment_correction_mirror.addItems(["mirror2", "mirror1", "both"])
+        self._alignment_correction_mirror.setToolTip(
+            "选择本探测器对应的校正镜:\n"
+            "  mirror2 — Mirror2 校正本探测器（默认）\n"
+            "  mirror1 — Mirror1 校正本探测器\n"
+            "  both    — 两个镜子同时参与"
+        )
+        axis4_layout.addWidget(self._alignment_correction_mirror, 6, 1)
+        axis4_layout.addWidget(QLabel("  "), 7, 0, 1, 2)  # spacing
         right_layout.addWidget(axis4_group)
 
         # --- 抖动参数 ---
@@ -1290,6 +1315,10 @@ class SpotZoomQtMainWindow(QMainWindow):
 
         self._set_combo("detector_backend", p.detector_backend)
         self._set_combo("detector_mode", p.detector_mode)
+        # 校正镜组（准直工作台用）
+        idx = self._alignment_correction_mirror.findText(p.correction_mirror)
+        if idx >= 0:
+            self._alignment_correction_mirror.setCurrentIndex(idx)
         self._set_combo("alignment_strategy", p.alignment_strategy.value)
         self._set_combo("xy_driver", p.xy_driver)
         self._set_combo("z_driver", p.z_driver)
@@ -1415,6 +1444,8 @@ class SpotZoomQtMainWindow(QMainWindow):
         p.detector_weight = self._dspin_value("detector_weight", p.detector_weight)
         p.touview_weight = self._dspin_value("touview_weight", p.touview_weight)
         p.disagreement_threshold_px = self._dspin_value("disagreement_threshold_px", p.disagreement_threshold_px)
+        # 校正镜组（准直工作台对齐用）
+        p.correction_mirror = self._alignment_correction_mirror.currentText()
         # UCC 探测器参数
         p.ucc_device = self._spin_value("ucc_device", p.ucc_device or 0)
         p.ucc_resolution = self._combo_value("ucc_resolution", p.ucc_resolution)
@@ -1942,6 +1973,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         )
         self.image_overlay_label.setText("目标点: -- | 当前点: -- | 偏差: -- | 状态: 已进入4轴闭环")
         self.btn_set_target.setEnabled(True)
+        self.btn_calibrate.setEnabled(True)
         self.btn_jitter.setEnabled(True)
         self.btn_stabilize.setEnabled(True)
         self.btn_axis4_enter.setEnabled(False)
@@ -1995,6 +2027,11 @@ class SpotZoomQtMainWindow(QMainWindow):
 
     def _apply_alignment_delta_to_all_axes(self, dx: int, dy: int, label: str) -> None:
         axes = self._get_alignment_mirror_axes()
+        # 根据用户选择的校正镜组决定参与运动的轴
+        #   mirror2 — 仅 Mirror2 参与校正（默认）
+        #   mirror1 — 仅 Mirror1 参与校正
+        #   both    — 两个镜子同时参与
+        correction = self._alignment_correction_mirror.currentText()
         assignments = [
             (axes["mirror1_x"], int(dx) * int(self.profile.mrc_mirror1_x_sign), "mirror1_x"),
             (axes["mirror1_y"], int(dy) * int(self.profile.mrc_mirror1_y_sign), "mirror1_y"),
@@ -2008,12 +2045,151 @@ class SpotZoomQtMainWindow(QMainWindow):
                 continue
             if steps == 0:
                 continue
+            # 仅当该镜组被选中时才移动
+            if name.startswith("mirror1_") and correction not in ("mirror1", "both"):
+                continue
+            if name.startswith("mirror2_") and correction not in ("mirror2", "both"):
+                continue
             widget.move_relative(steps)
             moved.append(f"{name}={steps}")
         if moved:
             self._append_log(f"{label}: " + ", ".join(moved))
         else:
             self._append_log(f"{label}: 未找到可用轴")
+
+        # 虚拟模式下同步偏移质心，使标定/抖动/闭环均有真实偏差可测
+        if self._is_virtual_mode() and self._alignment_last_centroid is not None:
+            scale = 0.05
+            cx, cy = self._alignment_last_centroid
+            self._alignment_last_centroid = (cx + dx * scale, cy + dy * scale)
+
+    def _is_virtual_mode(self) -> bool:
+        """检测当前是否为虚拟控制器模式"""
+        panel = getattr(self, "picomotor_driver_panel", None)
+        if panel is not None and getattr(panel, "status_label", None) is not None:
+            return panel.status_label.text() == "虚拟模式"
+        return False
+
+    def _calibrate_axis_mapping(self) -> None:
+        """基于探测器坐标与4轴移动，标定方向与步长/像素比"""
+        if self._alignment_calib_active:
+            return
+        if self._alignment_last_centroid is None:
+            QMessageBox.warning(self, "无光斑", "请先确保 UCC 预览中检测到光斑质心")
+            return
+        if not self._alignment_axes_ready():
+            return
+
+        self._alignment_calib_active = True
+        self.btn_calibrate.setEnabled(False)
+        self.btn_calibrate.setText("标定中...")
+
+        CALIB_STEP = 200
+        correction = self._alignment_correction_mirror.currentText()
+        self._append_log(f"[标定] 校正镜组={correction}，本次标定将移动 {correction} 轴并观察质心变化")
+        self._calib_origin = self._alignment_last_centroid
+        self._calib_phase = 0
+        self._calib_step_size = CALIB_STEP
+        self._calib_dx_px = 0.0
+        self._calib_dy_px = 0.0
+
+        self._append_log(f"[标定] 开始4轴→探测器映射标定，步长={CALIB_STEP}")
+        self._append_log(f"[标定] 起始质心: ({self._calib_origin[0]:.1f}, {self._calib_origin[1]:.1f})")
+
+        self._calib_timer = QTimer(self)
+        self._calib_timer.setInterval(2000)
+        self._calib_timer.timeout.connect(self._calibrate_tick)
+        self._calib_timer.start()
+
+    def _calibrate_cleanup(self) -> None:
+        """清理标定状态"""
+        self._alignment_calib_active = False
+        timer = getattr(self, "_calib_timer", None)
+        if timer is not None:
+            timer.stop()
+            self._calib_timer = None  # type: ignore[assignment]
+        self.btn_calibrate.setEnabled(True)
+        self.btn_calibrate.setText("📏 标定映射")
+
+    def _calibrate_tick(self) -> None:
+        """标定状态机——每个 tick 执行一步"""
+        try:
+            self._calibrate_tick_impl()
+        except Exception as e:
+            self._append_log(f"[标定] 错误: {e}")
+            import traceback
+            self._append_log(traceback.format_exc())
+            self._calibrate_cleanup()
+
+    def _calibrate_tick_impl(self) -> None:
+        centroid = self._alignment_last_centroid
+        phase = self._calib_phase
+        step = self._calib_step_size
+
+        if phase == 0:
+            # Phase 0：记录原点 → X轴正向移动 step 步
+            self._apply_alignment_delta_to_all_axes(step, 0, f"[标定] X轴正向移动 step={step}")
+            self._calib_phase = 1
+
+        elif phase == 1:
+            # Phase 1：读取新质心 → 计算 Δx → X轴归位
+            if centroid is None:
+                return
+            dx = centroid[0] - self._calib_origin[0]
+            if abs(dx) < 0.5:
+                self._append_log(f"[标定] X轴移动后质心未明显变化(Δx={dx:.1f})，等待下一帧...")
+                return
+            self._calib_dx_px = dx
+            self._append_log(f"[标定] X轴移动后质心: ({centroid[0]:.1f}, {centroid[1]:.1f}), Δx={dx:.2f}px")
+            self._apply_alignment_delta_to_all_axes(-step, 0, "[标定] X轴归位")
+            self._calib_phase = 2
+
+        elif phase == 2:
+            # Phase 2：等待归位稳定 → Y轴正向移动
+            if centroid is None:
+                return
+            self._apply_alignment_delta_to_all_axes(0, step, f"[标定] Y轴正向移动 step={step}")
+            self._calib_phase = 3
+
+        elif phase == 3:
+            # Phase 3：读取新质心 → 计算 Δy → Y轴归位
+            if centroid is None:
+                return
+            dy = centroid[1] - self._calib_origin[1]
+            if abs(dy) < 0.5:
+                self._append_log(f"[标定] Y轴移动后质心未明显变化(Δy={dy:.1f})，等待下一帧...")
+                return
+            self._calib_dy_px = dy
+            self._append_log(f"[标定] Y轴移动后质心: ({centroid[0]:.1f}, {centroid[1]:.1f}), Δy={dy:.2f}px")
+            self._apply_alignment_delta_to_all_axes(0, -step, "[标定] Y轴归位")
+            self._calib_phase = 4
+
+        elif phase == 4:
+            # Phase 4：计算结果 → 写入标定参数
+            if abs(self._calib_dx_px) < 0.1 or abs(self._calib_dy_px) < 0.1:
+                self._append_log("[标定] 质心变化太小，标定失败")
+                self._calibrate_cleanup()
+                return
+
+            self._alignment_calib_steps_per_px_x = step / abs(self._calib_dx_px)
+            self._alignment_calib_steps_per_px_y = step / abs(self._calib_dy_px)
+            self._alignment_calibrated = True
+
+            self._append_log("[标定] ✅ 标定完成:")
+            self._append_log(
+                f"[标定]    X方向: {step}步 → {self._calib_dx_px:.2f}px, "
+                f"即 {self._alignment_calib_steps_per_px_x:.1f} 步/像素"
+            )
+            self._append_log(
+                f"[标定]    Y方向: {step}步 → {self._calib_dy_px:.2f}px, "
+                f"即 {self._alignment_calib_steps_per_px_y:.1f} 步/像素"
+            )
+            self.axis4_calib_label.setText(
+                f"标定：{self._alignment_calib_steps_per_px_x:.1f}步/px(X) | "
+                f"{self._alignment_calib_steps_per_px_y:.1f}步/px(Y)"
+            )
+            self.axis4_calib_label.setStyleSheet("color: #22C55E; font-size: 11px;")
+            self._calibrate_cleanup()
 
     def _simulate_alignment_jitter(self) -> None:
         if self._alignment_jitter_running:
@@ -2043,16 +2219,6 @@ class SpotZoomQtMainWindow(QMainWindow):
                 dx = random.randint(-amplitude, amplitude)
                 dy = random.randint(-amplitude, amplitude)
                 self._apply_alignment_delta_to_all_axes(dx, dy, f"[抖动] ΔX={dx}, ΔY={dy}")
-                # 虚拟模式下将电机偏移映射为质心偏移，使闭环有真实偏差可纠
-                panel = getattr(self, "picomotor_driver_panel", None)
-                if panel is not None and getattr(panel, "status_label", None) is not None:
-                    is_virtual = panel.status_label.text() == "虚拟模式"
-                else:
-                    is_virtual = False
-                if is_virtual and self._alignment_last_centroid is not None:
-                    scale = 0.05  # 1步 ≈ 0.05 像素
-                    cx, cy = self._alignment_last_centroid
-                    self._alignment_last_centroid = (cx + dx * scale, cy + dy * scale)
             except Exception as e:
                 self._append_log(f"[抖动] 电机控制异常: {e}")
 
@@ -2149,8 +2315,14 @@ class SpotZoomQtMainWindow(QMainWindow):
             return
 
         kp = self._alignment_stabilize_kp.value()
-        steps_x = int(dx * kp)
-        steps_y = int(dy * kp)
+        if self._alignment_calibrated:
+            # 使用标定映射: 像素偏差 × 步/像素比例 × Kp阻尼
+            steps_x = int(dx * self._alignment_calib_steps_per_px_x * kp)
+            steps_y = int(dy * self._alignment_calib_steps_per_px_y * kp)
+        else:
+            # 未标定时直接使用 Kp 作为无单位增益（旧行为）
+            steps_x = int(dx * kp)
+            steps_y = int(dy * kp)
 
         if abs(steps_x) < 1 and abs(steps_y) < 1:
             self._append_log(f"[闭环] 步长不足: 偏差=({dx:.1f}, {dy:.1f}) steps=({steps_x}, {steps_y}) 增益={kp}")
@@ -2159,7 +2331,8 @@ class SpotZoomQtMainWindow(QMainWindow):
         self._refresh_alignment_status_label(f"纠偏中 Δ=({dx:.1f}, {dy:.1f})")
 
         try:
-            self._apply_alignment_delta_to_all_axes(steps_x, steps_y, f"[闭环] 纠偏 Δ=({dx:.1f}, {dy:.1f})")
+            calib_tag = "标定" if self._alignment_calibrated else "无标定"
+            self._apply_alignment_delta_to_all_axes(steps_x, steps_y, f"[闭环] [{calib_tag}] 纠偏 Δ=({dx:.1f}, {dy:.1f})→steps=({steps_x}, {steps_y})")
         except Exception as e:
             self._append_log(f"[闭环] 电机控制异常: {e}")
 

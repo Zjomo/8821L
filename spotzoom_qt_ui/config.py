@@ -128,6 +128,7 @@ CONVERGE_STABLE_FRAMES: int = 5
 # --- 双探测器 ---
 DETECTOR2_FOCAL_LENGTH: float = 200.0
 DETECTOR_MODE: str = "single_detector"
+CORRECTION_MIRROR: str = "mirror2"  # 本探测器对应的校正镜: mirror1, mirror2, both
 STAGE1_GAIN_FACTOR: float = 2.0
 SEQUENTIAL_STAGE1_ITERATIONS: int = 3
 

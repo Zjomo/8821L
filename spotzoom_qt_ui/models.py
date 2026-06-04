@@ -119,6 +119,7 @@ class RuntimeProfile:
     converge_stable_frames: int = cfg_defaults.CONVERGE_STABLE_FRAMES
     detector2_focal_length: float = cfg_defaults.DETECTOR2_FOCAL_LENGTH
     detector_mode: str = cfg_defaults.DETECTOR_MODE
+    correction_mirror: str = cfg_defaults.CORRECTION_MIRROR  # mirror1 / mirror2 / both
     stage1_gain_factor: float = cfg_defaults.STAGE1_GAIN_FACTOR
     sequential_stage1_iterations: int = cfg_defaults.SEQUENTIAL_STAGE1_ITERATIONS
     # 探测器效果对比参数
