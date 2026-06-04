@@ -2043,6 +2043,16 @@ class SpotZoomQtMainWindow(QMainWindow):
                 dx = random.randint(-amplitude, amplitude)
                 dy = random.randint(-amplitude, amplitude)
                 self._apply_alignment_delta_to_all_axes(dx, dy, f"[抖动] ΔX={dx}, ΔY={dy}")
+                # 虚拟模式下将电机偏移映射为质心偏移，使闭环有真实偏差可纠
+                panel = getattr(self, "picomotor_driver_panel", None)
+                if panel is not None and getattr(panel, "status_label", None) is not None:
+                    is_virtual = panel.status_label.text() == "虚拟模式"
+                else:
+                    is_virtual = False
+                if is_virtual and self._alignment_last_centroid is not None:
+                    scale = 0.05  # 1步 ≈ 0.05 像素
+                    cx, cy = self._alignment_last_centroid
+                    self._alignment_last_centroid = (cx + dx * scale, cy + dy * scale)
             except Exception as e:
                 self._append_log(f"[抖动] 电机控制异常: {e}")
 
@@ -2062,6 +2072,10 @@ class SpotZoomQtMainWindow(QMainWindow):
     def _start_alignment_stabilization(self) -> None:
         if self._alignment_stabilizing:
             return
+        # 启动闭环前自动停止抖动，避免两者对抗
+        if self._alignment_jitter_running:
+            self._stop_alignment_jitter()
+            self._append_log("[准直工作台] 闭环启动，已自动停止抖动")
         if self._alignment_target_point is None:
             QMessageBox.warning(self, "无目标点", "请先点击「设定目标点」锁定当前光斑位置")
             return
@@ -2131,16 +2145,18 @@ class SpotZoomQtMainWindow(QMainWindow):
         tolerance = self._alignment_stabilize_tolerance.value()
         if dist < tolerance:
             self._refresh_alignment_status_label("已收敛")
+            self._append_log(f"[闭环] 已收敛: 偏差=({dx:.1f}, {dy:.1f}) 容差={tolerance}")
             return
 
         kp = self._alignment_stabilize_kp.value()
         steps_x = int(dx * kp)
         steps_y = int(dy * kp)
 
-        self._refresh_alignment_status_label(f"纠偏中 Δ=({dx:.1f}, {dy:.1f})")
-
         if abs(steps_x) < 1 and abs(steps_y) < 1:
+            self._append_log(f"[闭环] 步长不足: 偏差=({dx:.1f}, {dy:.1f}) steps=({steps_x}, {steps_y}) 增益={kp}")
             return
+
+        self._refresh_alignment_status_label(f"纠偏中 Δ=({dx:.1f}, {dy:.1f})")
 
         try:
             self._apply_alignment_delta_to_all_axes(steps_x, steps_y, f"[闭环] 纠偏 Δ=({dx:.1f}, {dy:.1f})")
