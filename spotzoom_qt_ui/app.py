@@ -749,7 +749,12 @@ class SpotZoomQtMainWindow(QMainWindow):
             runtime_layout.addRow(label, v)
         right_layout.addWidget(runtime_group, 1)
 
-        layout.addWidget(right, 3)
+        # 右侧滚动区，避免控件过多时超出屏幕
+        right_scroll = QScrollArea()
+        right_scroll.setWidgetResizable(True)
+        right_scroll.setFrameShape(QFrame.NoFrame)
+        right_scroll.setWidget(right)
+        layout.addWidget(right_scroll, 3)
         return page
 
     def _build_module_page(self) -> QWidget:
@@ -1954,6 +1959,15 @@ class SpotZoomQtMainWindow(QMainWindow):
         self._append_log(f"[准直工作台] 已设定目标点: ({cx:.1f}, {cy:.1f})")
         self._refresh_alignment_status_label("目标点已设定，等待闭环启动")
         self.btn_stabilize.setEnabled(True)
+
+    def _get_alignment_mirror_axes(self):
+        self.profile = self._collect_profile_from_controls()
+        return {
+            "mirror1_x": self.profile.mrc_mirror1_x_axis,
+            "mirror1_y": self.profile.mrc_mirror1_y_axis,
+            "mirror2_x": self.profile.mrc_mirror2_x_axis,
+            "mirror2_y": self.profile.mrc_mirror2_y_axis,
+        }
 
     def _get_alignment_axis_widget(self, axis_num: int):
         panel = getattr(self, "picomotor_driver_panel", None)
