@@ -1946,7 +1946,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         self.btn_stabilize.setEnabled(True)
         self.btn_axis4_enter.setEnabled(False)
         self._append_log(
-            f"[准直工作台] 已切换到4轴闭环入口: strategy={self.profile.alignment_strategy.value}, detector_mode={self.profile.detector_mode}"
+            f"[准直工作台] 已切换到4轴闭环入口: strategy={self.profile.alignment_strategy.value}, detector_mode={self.profile.detector_mode}; 4轴映射={self._get_alignment_mirror_axes()}"
         )
 
     def _set_alignment_target_point(self) -> None:
@@ -1993,6 +1993,28 @@ class SpotZoomQtMainWindow(QMainWindow):
             det = self.profile.detector_mode if hasattr(self, "profile") else "-"
             self.axis4_status_label.setText(f"状态：{status_text} | 策略={mode} | 探测器模式={det}")
 
+    def _apply_alignment_delta_to_all_axes(self, dx: int, dy: int, label: str) -> None:
+        axes = self._get_alignment_mirror_axes()
+        assignments = [
+            (axes["mirror1_x"], int(dx) * int(self.profile.mrc_mirror1_x_sign), "mirror1_x"),
+            (axes["mirror1_y"], int(dy) * int(self.profile.mrc_mirror1_y_sign), "mirror1_y"),
+            (axes["mirror2_x"], int(dx) * int(self.profile.mrc_mirror2_x_sign), "mirror2_x"),
+            (axes["mirror2_y"], int(dy) * int(self.profile.mrc_mirror2_y_sign), "mirror2_y"),
+        ]
+        moved = []
+        for axis_num, steps, name in assignments:
+            widget = self._get_alignment_axis_widget(axis_num)
+            if widget is None:
+                continue
+            if steps == 0:
+                continue
+            widget.move_relative(steps)
+            moved.append(f"{name}={steps}")
+        if moved:
+            self._append_log(f"{label}: " + ", ".join(moved))
+        else:
+            self._append_log(f"{label}: 未找到可用轴")
+
     def _simulate_alignment_jitter(self) -> None:
         if self._alignment_jitter_running:
             self._stop_alignment_jitter()
@@ -2003,6 +2025,8 @@ class SpotZoomQtMainWindow(QMainWindow):
         panel = getattr(self, "picomotor_driver_panel", None)
         if panel is None:
             QMessageBox.warning(self, "未连接", "请先在「Picomotor 8742/8743 驱动调试」页面连接设备")
+            return
+        if not self._alignment_axes_ready():
             return
 
         self._alignment_jitter_running = True
@@ -2018,14 +2042,7 @@ class SpotZoomQtMainWindow(QMainWindow):
                 amplitude = self._alignment_jitter_amplitude.value()
                 dx = random.randint(-amplitude, amplitude)
                 dy = random.randint(-amplitude, amplitude)
-                axes = self._get_alignment_mirror_axes()
-                wx = self._get_alignment_axis_widget(axes["mirror1_x"])
-                wy = self._get_alignment_axis_widget(axes["mirror1_y"])
-                if wx:
-                    wx.move_relative(dx)
-                if wy:
-                    wy.move_relative(dy)
-                self._append_log(f"[抖动] ΔX={dx}, ΔY={dy}")
+                self._apply_alignment_delta_to_all_axes(dx, dy, f"[抖动] ΔX={dx}, ΔY={dy}")
             except Exception as e:
                 self._append_log(f"[抖动] 电机控制异常: {e}")
 
@@ -2053,6 +2070,8 @@ class SpotZoomQtMainWindow(QMainWindow):
         if panel is None:
             QMessageBox.warning(self, "未连接", "请先在「Picomotor 8742/8743 驱动调试」页面连接设备")
             return
+        if not self._alignment_axes_ready():
+            return
 
         self._alignment_stabilizing = True
         self.btn_stabilize.setEnabled(False)
@@ -2073,20 +2092,14 @@ class SpotZoomQtMainWindow(QMainWindow):
         self.btn_stop_stabilize.setEnabled(False)
         self._append_log("[准直工作台] 稳定闭环已停止")
 
-    def _refresh_alignment_status_label(self, status_text: str = "-") -> None:
-        cx, cy = self._alignment_last_centroid if self._alignment_last_centroid is not None else (None, None)
-        tx, ty = self._alignment_target_point if self._alignment_target_point is not None else (None, None)
-        if cx is not None and tx is not None:
-            dx = cx - tx
-            dy = cy - ty
-            status = f"目标点: ({tx:.1f}, {ty:.1f}) | 当前点: ({cx:.1f}, {cy:.1f}) | 偏差: ({dx:.1f}, {dy:.1f}) | 状态: {status_text}"
-        else:
-            status = f"目标点: -- | 当前点: -- | 偏差: -- | 状态: {status_text}"
-        self.image_overlay_label.setText(status)
-        if hasattr(self, "axis4_status_label"):
-            mode = self.profile.alignment_strategy.value if hasattr(self, "profile") else "-"
-            det = self.profile.detector_mode if hasattr(self, "profile") else "-"
-            self.axis4_status_label.setText(f"状态：{status_text} | 策略={mode} | 探测器模式={det}")
+    def _alignment_axes_ready(self) -> bool:
+        axes = self._get_alignment_mirror_axes()
+        missing = [name for name, axis in axes.items() if self._get_alignment_axis_widget(axis) is None]
+        if missing:
+            QMessageBox.warning(self, "轴未就绪", f"以下轴未连接或未初始化：{', '.join(missing)}")
+            self._append_log(f"[准直工作台] 4轴未就绪: {', '.join(missing)}")
+            return False
+        return True
 
     def _alignment_stabilize_step(self) -> None:
         if not self._alignment_stabilizing:
@@ -2116,16 +2129,7 @@ class SpotZoomQtMainWindow(QMainWindow):
             return
 
         try:
-            panel = getattr(self, "picomotor_driver_panel", None)
-            if panel is None:
-                return
-            axes = self._get_alignment_mirror_axes()
-            wx = self._get_alignment_axis_widget(axes["mirror1_x"])
-            wy = self._get_alignment_axis_widget(axes["mirror1_y"])
-            if abs(steps_x) >= 1 and wx:
-                wx.move_relative(steps_x)
-            if abs(steps_y) >= 1 and wy:
-                wy.move_relative(steps_y)
+            self._apply_alignment_delta_to_all_axes(steps_x, steps_y, f"[闭环] 纠偏 Δ=({dx:.1f}, {dy:.1f})")
         except Exception as e:
             self._append_log(f"[闭环] 电机控制异常: {e}")
 
