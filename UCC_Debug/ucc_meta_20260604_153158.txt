@@ -1,0 +1,4 @@
+分辨率: 640x480
+通道: 3
+FourCC: MJPG
+dtype: uint8

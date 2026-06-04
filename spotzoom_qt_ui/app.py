@@ -594,6 +594,9 @@ class SpotZoomQtMainWindow(QMainWindow):
         ucc_ctrl_row.addWidget(self._alignment_ucc_btn_stop)
         ucc_ctrl_row.addStretch(1)
         image_layout.addLayout(ucc_ctrl_row)
+        self._alignment_ucc_path_info = QLabel("调试帧目录: Tmp_Frames / FrameTmp | 预览状态: 未启动")
+        self._alignment_ucc_path_info.setStyleSheet("color: #8BA3B8; font-size: 12px;")
+        image_layout.addWidget(self._alignment_ucc_path_info)
 
         layout.addWidget(image_group, 4)
 
@@ -687,7 +690,10 @@ class SpotZoomQtMainWindow(QMainWindow):
 
         # --- 关键参数区 ---
         key_param_group = QGroupBox("关键参数区")
-        key_param_form = QFormLayout(key_param_group)
+        key_param_layout = QGridLayout(key_param_group)
+        key_param_layout.setHorizontalSpacing(14)
+        key_param_layout.setVerticalSpacing(10)
+        key_param_layout.setContentsMargins(10, 12, 10, 12)
         self.controls["tolerance_px"] = self._spin(1, 300, 6)
         self.controls["detect_retry"] = self._spin(1, 20, 6)
         self.controls["detect_retry_interval"] = self._dspin(0.01, 10.0, 0.25, 2)
@@ -726,12 +732,12 @@ class SpotZoomQtMainWindow(QMainWindow):
             ("frame_cache_enabled", "启用帧缓存 (./Tmp_Frames)"),
             ("disable_z_axis", "不启用 Z 轴 (4轴模式)"),
         ]
-        for key, label in pairs:
+        for idx, (key, label) in enumerate(pairs):
             widget = self.controls[key]
-            text = label if isinstance(label, str) else key
-            if text == key:
-                text = key
-            key_param_form.addRow(text, widget)
+            row = idx % 9
+            col = (idx // 9) * 2
+            key_param_layout.addWidget(QLabel(label), row, col)
+            key_param_layout.addWidget(widget, row, col + 1)
         right_layout.addWidget(key_param_group)
 
         # --- 过程状态区 ---
@@ -1786,11 +1792,10 @@ class SpotZoomQtMainWindow(QMainWindow):
             fmt = self._alignment_ucc_format.currentText()
 
             self._alignment_ucc_source = UCCFrameSource(
-                device=device,
-                resolution=resolution if resolution != "AUTO" else None,
+                device_index=device,
+                resolution=resolution or "AUTO",
                 pixel_format=fmt if fmt != "AUTO" else None,
             )
-            self._alignment_ucc_source.open()
             self._append_log(f"[准直工作台] UCC 预览已启动: 设备={device} 分辨率={resolution} 格式={fmt}")
         except Exception as e:
             self._append_log(f"[准直工作台] UCC 预览启动失败: {e}")
@@ -1806,6 +1811,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         self._alignment_ucc_running = True
         self._alignment_ucc_btn_start.setEnabled(False)
         self._alignment_ucc_btn_stop.setEnabled(True)
+        self._alignment_ucc_path_info.setText(f"调试帧目录: Tmp_Frames / FrameTmp | 预览状态: 运行中 | 设备={device} | 分辨率={resolution}")
         self.btn_set_target.setEnabled(True)
         self.btn_jitter.setEnabled(True)
         self.btn_stabilize.setEnabled(True)
@@ -1841,7 +1847,7 @@ class SpotZoomQtMainWindow(QMainWindow):
             return
 
         try:
-            bgr = source.read_frame()
+            bgr = source.grab_frame()
             if bgr is None:
                 return
         except Exception as e:

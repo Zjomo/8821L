@@ -4267,7 +4267,7 @@ class UCCFrameSource:
         reconnect_attempts: int = 3,
     ):
         self.device_index = device_index
-        self.resolution = resolution.upper()
+        self.resolution = (resolution or "AUTO").upper()
         self.pixel_format = pixel_format.upper() if pixel_format else None
         self.cap = None
         self.roi = None
@@ -4563,14 +4563,18 @@ class UCCFrameSource:
     
     def release(self):
         """释放相机资源。"""
-        if self.cap is not None:
-            self.cap.release()
+        cap = getattr(self, "cap", None)
+        if cap is not None:
+            cap.release()
             self.cap = None
             LOGGER.info("UCC相机已断开: device=%d", self.device_index)
     
     def __del__(self):
         """析构时自动释放资源。"""
-        self.release()
+        try:
+            self.release()
+        except Exception:
+            pass
     
     def wheel(self, clicks: int) -> None:
         """UCC相机不支持滚轮操作。"""
