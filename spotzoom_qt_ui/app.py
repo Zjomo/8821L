@@ -1935,7 +1935,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         self.axis4_status_label.setText(
             f"状态：4轴闭环已激活 | 策略={self.profile.alignment_strategy.value} | 探测器模式={self.profile.detector_mode}"
         )
-        self.image_overlay_label.setText("质心: - | 目标点: - | 偏差: - | 状态: 已进入4轴闭环")
+        self.image_overlay_label.setText("目标点: -- | 当前点: -- | 偏差: -- | 状态: 已进入4轴闭环")
         self.btn_set_target.setEnabled(True)
         self.btn_jitter.setEnabled(True)
         self.btn_stabilize.setEnabled(True)
@@ -1943,6 +1943,19 @@ class SpotZoomQtMainWindow(QMainWindow):
         self._append_log(
             f"[准直工作台] 已切换到4轴闭环入口: strategy={self.profile.alignment_strategy.value}, detector_mode={self.profile.detector_mode}"
         )
+
+    def _set_alignment_target_point(self) -> None:
+        if self._alignment_last_centroid is None:
+            QMessageBox.warning(self, "无光斑", "请先确保 UCC 预览中检测到光斑质心")
+            return
+        self._alignment_target_point = self._alignment_last_centroid
+        cx, cy = self._alignment_target_point
+        self._alignment_centroid_history.clear()
+        self._append_log(f"[准直工作台] 已设定目标点: ({cx:.1f}, {cy:.1f})")
+        self._refresh_alignment_status_label("目标点已设定，等待闭环启动")
+        self.btn_stabilize.setEnabled(True)
+
+    def _get_alignment_axis_widget(self, axis_num: int):
         panel = getattr(self, "picomotor_driver_panel", None)
         if panel is None:
             return None
@@ -1951,21 +1964,20 @@ class SpotZoomQtMainWindow(QMainWindow):
                 return aw
         return None
 
-    def _get_alignment_mirror_axes(self):
-        self.profile = self._collect_profile_from_controls()
-        return {
-            "mirror1_x": self.profile.mrc_mirror1_x_axis,
-            "mirror1_y": self.profile.mrc_mirror1_y_axis,
-            "mirror2_x": self.profile.mrc_mirror2_x_axis,
-            "mirror2_y": self.profile.mrc_mirror2_y_axis,
-        }
-
-    def _simulate_alignment_jitter(self) -> None:
-        if self._alignment_jitter_running:
-            self._stop_alignment_jitter()
-            self.btn_jitter.setText("🌀 模拟抖动")
-            self._append_log("[准直工作台] 模拟抖动已停止")
-            return
+    def _refresh_alignment_status_label(self, status_text: str = "-") -> None:
+        cx, cy = self._alignment_last_centroid if self._alignment_last_centroid is not None else (None, None)
+        tx, ty = self._alignment_target_point if self._alignment_target_point is not None else (None, None)
+        if cx is not None and tx is not None:
+            dx = cx - tx
+            dy = cy - ty
+            status = f"目标点: ({tx:.1f}, {ty:.1f}) | 当前点: ({cx:.1f}, {cy:.1f}) | 偏差: ({dx:.1f}, {dy:.1f}) | 状态: {status_text}"
+        else:
+            status = f"目标点: -- | 当前点: -- | 偏差: -- | 状态: {status_text}"
+        self.image_overlay_label.setText(status)
+        if hasattr(self, "axis4_status_label"):
+            mode = self.profile.alignment_strategy.value if hasattr(self, "profile") else "-"
+            det = self.profile.detector_mode if hasattr(self, "profile") else "-"
+            self.axis4_status_label.setText(f"状态：{status_text} | 策略={mode} | 探测器模式={det}")
 
         panel = getattr(self, "picomotor_driver_panel", None)
         if panel is None:
