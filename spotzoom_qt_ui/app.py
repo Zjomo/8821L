@@ -1979,6 +1979,13 @@ class SpotZoomQtMainWindow(QMainWindow):
             det = self.profile.detector_mode if hasattr(self, "profile") else "-"
             self.axis4_status_label.setText(f"状态：{status_text} | 策略={mode} | 探测器模式={det}")
 
+    def _simulate_alignment_jitter(self) -> None:
+        if self._alignment_jitter_running:
+            self._stop_alignment_jitter()
+            self.btn_jitter.setText("🌀 模拟抖动")
+            self._append_log("[准直工作台] 模拟抖动已停止")
+            return
+
         panel = getattr(self, "picomotor_driver_panel", None)
         if panel is None:
             QMessageBox.warning(self, "未连接", "请先在「Picomotor 8742/8743 驱动调试」页面连接设备")
