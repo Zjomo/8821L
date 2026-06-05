@@ -406,7 +406,7 @@ class SpotZoomQtMainWindow(QMainWindow):
     def _apply_app_style(self) -> None:
         self.setStyleSheet(
             """
-            QWidget { background: #11161C; color: #D9E2EC; font-size: 12px; }
+            QWidget { background: #11161C; color: #D9E2EC; font-size: 11px; }
             QGroupBox { border: 1px solid #2B3642; margin-top: 10px; }
             QGroupBox::title { subcontrol-origin: margin; left: 8px; padding: 0 4px; color: #9FB3C8; }
             QPushButton { background: #1B2530; border: 1px solid #334155; padding: 4px 10px; border-radius: 3px; }
@@ -422,8 +422,8 @@ class SpotZoomQtMainWindow(QMainWindow):
     def _build_top_status_strip(self) -> QWidget:
         bar = QFrame()
         layout = QGridLayout(bar)
-        layout.setContentsMargins(8, 4, 8, 4)
-        layout.setHorizontalSpacing(12)
+        layout.setContentsMargins(6, 3, 6, 3)
+        layout.setHorizontalSpacing(8)
         specs = [
             ("运行模式", "mode"),
             ("检测后端", "backend"),
@@ -541,14 +541,14 @@ class SpotZoomQtMainWindow(QMainWindow):
         image_group = QGroupBox("实时图像区")
         image_layout = QVBoxLayout(image_group)
 
-        # 双画面水平布局
         dual_view_layout = QHBoxLayout()
+        dual_view_layout.setSpacing(10)
 
         # UCC 探测器画面
         ucc_view = QVBoxLayout()
         self._alignment_ucc_label = QLabel("UCC 探测器\n点击「启动UCC预览」")
         self._alignment_ucc_label.setAlignment(Qt.AlignCenter)
-        self._alignment_ucc_label.setMinimumSize(420, 320)
+        self._alignment_ucc_label.setMinimumSize(360, 260)
         self._alignment_ucc_label.setStyleSheet(
             "background-color: #1a1a2e; color: #888; border: 1px solid #333; "
             "border-radius: 4px; font-size: 13px;"
@@ -561,7 +561,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         micro_view = QVBoxLayout()
         self._alignment_micro_label = QLabel("显微镜图像\n待通信接入")
         self._alignment_micro_label.setAlignment(Qt.AlignCenter)
-        self._alignment_micro_label.setMinimumSize(320, 320)
+        self._alignment_micro_label.setMinimumSize(280, 260)
         self._alignment_micro_label.setStyleSheet(
             "background-color: #1a1a2e; color: #666; border: 1px solid #333; "
             "border-radius: 4px; font-size: 13px;"
@@ -606,7 +606,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         self._alignment_ucc_path_info.setStyleSheet("color: #8BA3B8; font-size: 12px;")
         image_layout.addWidget(self._alignment_ucc_path_info)
 
-        layout.addWidget(image_group, 4)
+        layout.addWidget(image_group, 3)
 
         # ==================================================================
         # 右侧：控制区 + 参数区 + 曲线 + 参数表 + 状态区
@@ -706,9 +706,9 @@ class SpotZoomQtMainWindow(QMainWindow):
         # --- 关键参数区 ---
         key_param_group = QGroupBox("关键参数区")
         key_param_layout = QGridLayout(key_param_group)
-        key_param_layout.setHorizontalSpacing(14)
-        key_param_layout.setVerticalSpacing(10)
-        key_param_layout.setContentsMargins(10, 12, 10, 12)
+        key_param_layout.setHorizontalSpacing(10)
+        key_param_layout.setVerticalSpacing(6)
+        key_param_layout.setContentsMargins(6, 8, 6, 8)
         self.controls["tolerance_px"] = self._spin(1, 300, 6)
         self.controls["detect_retry"] = self._spin(1, 20, 6)
         self.controls["detect_retry_interval"] = self._dspin(0.01, 10.0, 0.25, 2)
