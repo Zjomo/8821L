@@ -355,6 +355,8 @@ class SpotZoomQtMainWindow(QMainWindow):
         self._alignment_calib_active: bool = False  # 正在标定中
         self._alignment_calib_steps_per_px_x: float = 1.0  # X方向 步/像素
         self._alignment_calib_steps_per_px_y: float = 1.0  # Y方向 步/像素
+        self._alignment_calib_direction_x: int = 1
+        self._alignment_calib_direction_y: int = 1
 
         self.setWindowTitle("SpotZoom 主动激光束稳定控制台")
         self.resize(1680, 980)
@@ -671,8 +673,12 @@ class SpotZoomQtMainWindow(QMainWindow):
         self._alignment_jitter_interval = self._dspin(0.1, 5.0, 0.5, 2)
         self._alignment_stabilize_kp = self._dspin(0.01, 2.0, 0.3, 2)
         self._alignment_stabilize_tolerance = self._spin(1, 50, 5)
-        jitter_form.addRow("抖动幅值 (步)", self._alignment_jitter_amplitude)
-        jitter_form.addRow("抖动间隔 (s)", self._alignment_jitter_interval)
+        self._alignment_calib_step = self._spin(1, 5000, 200)
+        self._alignment_calib_interval = self._spin(100, 10000, 2000)
+        self._alignment_calib_step.setToolTip("标定单次移动步数")
+        self._alignment_calib_interval.setToolTip("标定状态机 tick 间隔，单位 ms")
+        jitter_form.addRow("标定步长 (步)", self._alignment_calib_step)
+        jitter_form.addRow("标定间隔 (ms)", self._alignment_calib_interval)
         jitter_form.addRow("闭环 Kp 增益", self._alignment_stabilize_kp)
         jitter_form.addRow("收敛容差 (px)", self._alignment_stabilize_tolerance)
         right_layout.addWidget(jitter_group)
@@ -2095,7 +2101,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         self._append_log(f"[标定] 起始质心: ({self._calib_origin[0]:.1f}, {self._calib_origin[1]:.1f})")
 
         self._calib_timer = QTimer(self)
-        self._calib_timer.setInterval(2000)
+        self._calib_timer.setInterval(int(self._alignment_calib_interval.value()))
         self._calib_timer.timeout.connect(self._calibrate_tick)
         self._calib_timer.start()
 
@@ -2169,6 +2175,8 @@ class SpotZoomQtMainWindow(QMainWindow):
                 self._calibrate_cleanup()
                 return
 
+            self._alignment_calib_direction_x = -1 if self._calib_dx_px < 0 else 1
+            self._alignment_calib_direction_y = -1 if self._calib_dy_px < 0 else 1
             self._alignment_calib_steps_per_px_x = step / abs(self._calib_dx_px)
             self._alignment_calib_steps_per_px_y = step / abs(self._calib_dy_px)
             self._alignment_calibrated = True
@@ -2180,7 +2188,7 @@ class SpotZoomQtMainWindow(QMainWindow):
             )
             self._append_log(
                 f"[标定]    Y方向: {step}步 → {self._calib_dy_px:.2f}px, "
-                f"即 {self._alignment_calib_steps_per_px_y:.1f} 步/像素"
+                f"即 {self._alignment_calib_steps_per_px_y:.1f} 步/像素, 方向={self._alignment_calib_direction_y}"
             )
             self.axis4_calib_label.setText(
                 f"标定：{self._alignment_calib_steps_per_px_x:.1f}步/px(X) | "
@@ -2257,7 +2265,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         self._append_log("[准直工作台] 稳定闭环已启动")
 
         self._alignment_stabilize_timer = QTimer(self)
-        self._alignment_stabilize_timer.setInterval(100)
+        self._alignment_stabilize_timer.setInterval(150)
         self._alignment_stabilize_timer.timeout.connect(self._alignment_stabilize_step)
         self._alignment_stabilize_timer.start()
 
@@ -2319,8 +2327,8 @@ class SpotZoomQtMainWindow(QMainWindow):
             steps_y = int(dy * self._alignment_calib_steps_per_px_y * kp)
         else:
             # 未标定时直接使用 Kp 作为无单位增益（旧行为）
-            steps_x = int(dx * kp)
-            steps_y = int(dy * kp)
+            steps_x = int(dx * kp * self._alignment_calib_direction_x)
+            steps_y = int(dy * kp * self._alignment_calib_direction_y)
 
         if abs(steps_x) < 1 and abs(steps_y) < 1:
             self._append_log(f"[闭环] 步长不足: 偏差=({dx:.1f}, {dy:.1f}) steps=({steps_x}, {steps_y}) 增益={kp}")
