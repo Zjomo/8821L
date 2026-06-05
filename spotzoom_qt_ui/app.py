@@ -2162,15 +2162,15 @@ class SpotZoomQtMainWindow(QMainWindow):
             self._calib_phase = 1
 
         elif phase == 1:
-            # Phase 1：读取新质心 → 计算 Δx → X轴归位
+            # Phase 1：读取新质心 → 计算探测器Y变化（mirror2_X实际影响探测器Y）→ X轴归位
             if centroid is None:
                 return
-            dx = centroid[0] - self._calib_origin[0]
+            dx = centroid[1] - self._calib_origin[1]
             if abs(dx) < 0.5:
-                self._append_log(f"[标定] X轴移动后质心未明显变化(Δx={dx:.1f})，等待下一帧...")
+                self._append_log(f"[标定] X轴(mirror2_X)移动后探测器Y未明显变化(ΔY={dx:.1f})，等待下一帧...")
                 return
             self._calib_dx_px = dx
-            self._append_log(f"[标定] X轴移动后质心: ({centroid[0]:.1f}, {centroid[1]:.1f}), Δx={dx:.2f}px")
+            self._append_log(f"[标定] X轴移动后: 质心=({centroid[0]:.1f}, {centroid[1]:.1f}), 探测器ΔY={dx:.2f}px")
             self._apply_alignment_delta_to_all_axes(-step, 0, "[标定] X轴归位")
             self._calib_phase = 2
 
@@ -2182,15 +2182,15 @@ class SpotZoomQtMainWindow(QMainWindow):
             self._calib_phase = 3
 
         elif phase == 3:
-            # Phase 3：读取新质心 → 计算 Δy → Y轴归位
+            # Phase 3：读取新质心 → 计算探测器X变化（mirror2_Y实际影响探测器X）→ Y轴归位
             if centroid is None:
                 return
-            dy = centroid[1] - self._calib_origin[1]
+            dy = centroid[0] - self._calib_origin[0]
             if abs(dy) < 0.5:
-                self._append_log(f"[标定] Y轴移动后质心未明显变化(Δy={dy:.1f})，等待下一帧...")
+                self._append_log(f"[标定] Y轴(mirror2_Y)移动后探测器X未明显变化(ΔX={dy:.1f})，等待下一帧...")
                 return
             self._calib_dy_px = dy
-            self._append_log(f"[标定] Y轴移动后质心: ({centroid[0]:.1f}, {centroid[1]:.1f}), Δy={dy:.2f}px")
+            self._append_log(f"[标定] Y轴移动后: 质心=({centroid[0]:.1f}, {centroid[1]:.1f}), 探测器ΔX={dy:.2f}px")
             self._apply_alignment_delta_to_all_axes(0, -step, "[标定] Y轴归位")
             self._calib_phase = 4
 
@@ -2207,18 +2207,18 @@ class SpotZoomQtMainWindow(QMainWindow):
             self._alignment_calib_steps_per_px_y = step / abs(self._calib_dy_px)
             self._alignment_calibrated = True
 
-            self._append_log("[标定] ✅ 标定完成:")
+            self._append_log("[标定] ✅ 标定完成 (轴交叉映射):")
             self._append_log(
-                f"[标定]    X方向: {step}步 → {self._calib_dx_px:.2f}px, "
+                f"[标定]    mirror2_X → 探测器Y: {step}步 → {self._calib_dx_px:.2f}px, "
                 f"即 {self._alignment_calib_steps_per_px_x:.1f} 步/像素"
             )
             self._append_log(
-                f"[标定]    Y方向: {step}步 → {self._calib_dy_px:.2f}px, "
-                f"即 {self._alignment_calib_steps_per_px_y:.1f} 步/像素, 方向={self._alignment_calib_direction_y}"
+                f"[标定]    mirror2_Y → 探测器X: {step}步 → {self._calib_dy_px:.2f}px, "
+                f"即 {self._alignment_calib_steps_per_px_y:.1f} 步/像素"
             )
             self.axis4_calib_label.setText(
-                f"标定：{self._alignment_calib_steps_per_px_x:.1f}步/px(X) | "
-                f"{self._alignment_calib_steps_per_px_y:.1f}步/px(Y)"
+                f"标定: X→Y {self._alignment_calib_steps_per_px_x:.1f}步/px | "
+                f"Y→X {self._alignment_calib_steps_per_px_y:.1f}步/px"
             )
             self.axis4_calib_label.setStyleSheet("color: #22C55E; font-size: 11px;")
             self._calibrate_cleanup()
@@ -2348,13 +2348,13 @@ class SpotZoomQtMainWindow(QMainWindow):
 
         kp = self._alignment_stabilize_kp.value()
         if self._alignment_calibrated:
-            # 使用标定映射: 像素偏差 × 步/像素比例 × Kp阻尼
-            steps_x = int(dx * self._alignment_calib_steps_per_px_x * kp)
-            steps_y = int(dy * self._alignment_calib_steps_per_px_y * kp)
+            # 轴交叉修正: mirror2_X ↔ 探测器Y, mirror2_Y ↔ 探测器X
+            steps_x = int(dy * self._alignment_calib_steps_per_px_x * kp)  # 探测器Y偏差驱动mirror2_X
+            steps_y = int(dx * self._alignment_calib_steps_per_px_y * kp)  # 探测器X偏差驱动mirror2_Y
         else:
-            # 未标定时直接使用 Kp 作为无单位增益（旧行为）
-            steps_x = int(dx * kp * self._alignment_calib_direction_x)
-            steps_y = int(dy * kp * self._alignment_calib_direction_y)
+            # 未标定，也按轴交叉处理
+            steps_x = int(dy * kp * self._alignment_calib_direction_x)
+            steps_y = int(dx * kp * self._alignment_calib_direction_y)
 
         if abs(steps_x) < 1 and abs(steps_y) < 1:
             self._append_log(f"[闭环] 步长不足: 偏差=({dx:.1f}, {dy:.1f}) steps=({steps_x}, {steps_y}) 增益={kp}")
