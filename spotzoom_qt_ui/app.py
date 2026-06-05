@@ -2016,9 +2016,9 @@ class SpotZoomQtMainWindow(QMainWindow):
         if cx is not None and tx is not None:
             dx = cx - tx
             dy = cy - ty
-            status = f"目标点: ({tx:.1f}, {ty:.1f}) | 当前点: ({cx:.1f}, {cy:.1f}) | 偏差: ({dx:.1f}, {dy:.1f}) | 状态: {status_text}"
+            status = f"目标点: ({tx:.1f}, {ty:.1f}) | 当前点: ({cx:.1f}, {cy:.1f})\n偏差: ({dx:.1f}, {dy:.1f}) | 状态: {status_text}"
         else:
-            status = f"目标点: -- | 当前点: -- | 偏差: -- | 状态: {status_text}"
+            status = f"目标点: -- | 当前点: --\n偏差: -- | 状态: {status_text}"
         self.image_overlay_label.setText(status)
         if hasattr(self, "axis4_status_label"):
             mode = self.profile.alignment_strategy.value if hasattr(self, "profile") else "-"
