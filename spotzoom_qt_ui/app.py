@@ -681,6 +681,8 @@ class SpotZoomQtMainWindow(QMainWindow):
         self._alignment_jitter_interval = self._dspin(0.1, 5.0, 0.5, 2)
         self._alignment_stabilize_kp = self._dspin(0.01, 2.0, 0.3, 2)
         self._alignment_stabilize_tolerance = self._spin(1, 50, 5)
+        self._alignment_stabilize_interval = self._spin(50, 5000, 150)
+        self._alignment_stabilize_interval.setToolTip("稳定闭环每次纠偏的间隔，单位 ms")
         self._alignment_calib_step = self._spin(1, 5000, 200)
         self._alignment_calib_interval = self._spin(100, 10000, 2000)
         self._alignment_calib_step.setToolTip("标定单次移动步数")
@@ -692,6 +694,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         self._update_alignment_calib_info_label()
         jitter_form.addRow("闭环 Kp 增益", self._alignment_stabilize_kp)
         jitter_form.addRow("收敛容差 (px)", self._alignment_stabilize_tolerance)
+        jitter_form.addRow("闭环间隔 (ms)", self._alignment_stabilize_interval)
         right_layout.addWidget(jitter_group)
 
         # --- XY 曲线 ---
@@ -2291,9 +2294,10 @@ class SpotZoomQtMainWindow(QMainWindow):
         self._append_log("[准直工作台] 稳定闭环已启动")
 
         self._alignment_stabilize_timer = QTimer(self)
-        self._alignment_stabilize_timer.setInterval(150)
+        self._alignment_stabilize_timer.setInterval(int(self._alignment_stabilize_interval.value()))
         self._alignment_stabilize_timer.timeout.connect(self._alignment_stabilize_step)
         self._alignment_stabilize_timer.start()
+        self._append_log(f"[准直工作台] 稳定闭环已启动: 间隔={int(self._alignment_stabilize_interval.value())}ms")
 
     def _stop_alignment_stabilization(self) -> None:
         self._alignment_stabilizing = False
