@@ -2098,17 +2098,18 @@ class SpotZoomQtMainWindow(QMainWindow):
         self.btn_calibrate.setEnabled(False)
         self.btn_stop_calibrate.setEnabled(True)
         self.btn_calibrate.setText("标定中...")
+        self._alignment_calib_active = True
 
-        CALIB_STEP = 200
+        calib_step = int(self._alignment_calib_step.value())
         correction = self._alignment_correction_mirror.currentText()
         self._append_log(f"[标定] 校正镜组={correction}，本次标定将移动 {correction} 轴并观察质心变化")
         self._calib_origin = self._alignment_last_centroid
         self._calib_phase = 0
-        self._calib_step_size = CALIB_STEP
+        self._calib_step_size = calib_step
         self._calib_dx_px = 0.0
         self._calib_dy_px = 0.0
 
-        self._append_log(f"[标定] 开始4轴→探测器映射标定，步长={CALIB_STEP}")
+        self._append_log(f"[标定] 开始4轴→探测器映射标定，步长={calib_step}")
         self._append_log(f"[标定] 起始质心: ({self._calib_origin[0]:.1f}, {self._calib_origin[1]:.1f})")
 
         self._calib_timer = QTimer(self)
