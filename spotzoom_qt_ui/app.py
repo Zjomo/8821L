@@ -1945,10 +1945,8 @@ class SpotZoomQtMainWindow(QMainWindow):
             else:
                 status = "未设定目标点"
             self.image_overlay_label.setText(
-                f"质心: ({cx:.1f}, {cy:.1f}) | "
-                f"目标点: {self._alignment_target_point or '未设定'} | "
-                f"FPS: {self._alignment_ucc_actual_fps:.1f} | "
-                f"状态: {status}"
+                f"质心: ({cx:.1f}, {cy:.1f}) | 目标点: {self._alignment_target_point or '未设定'}\n"
+                f"FPS: {self._alignment_ucc_actual_fps:.1f} | 状态: {status}"
             )
         else:
             self._alignment_param_table.item(2, 1).setText("--")
