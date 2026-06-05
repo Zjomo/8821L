@@ -650,6 +650,10 @@ class SpotZoomQtMainWindow(QMainWindow):
         axis4_layout.addWidget(self.btn_stabilize, 2, 1)
         axis4_layout.addWidget(self.btn_jitter, 3, 0)
         axis4_layout.addWidget(self.btn_stop_stabilize, 3, 1)
+        self._alignment_calib_info_label = QLabel()
+        self._alignment_calib_info_label.setStyleSheet("color: #93C5FD; font-size: 11px;")
+        self._alignment_calib_info_label.setWordWrap(True)
+        axis4_layout.addWidget(self._alignment_calib_info_label, 1, 2, 2, 1)
         self.axis4_status_label = QLabel("状态：未进入4轴闭环")
         self.axis4_status_label.setStyleSheet("color: #9FB3C8; font-size: 12px;")
         axis4_layout.addWidget(self.axis4_status_label, 4, 0, 1, 2)
@@ -2122,6 +2126,12 @@ class SpotZoomQtMainWindow(QMainWindow):
         self.btn_calibrate.setEnabled(True)
         self.btn_stop_calibrate.setEnabled(False)
         self.btn_calibrate.setText("📏 标定映射")
+
+    def _stop_alignment_calibration(self) -> None:
+        if not self._alignment_calib_active:
+            return
+        self._append_log("[标定] 用户手动停止标定")
+        self._calibrate_cleanup()
 
     def _update_alignment_calib_info_label(self) -> None:
         self._alignment_calib_info_label.setText(
