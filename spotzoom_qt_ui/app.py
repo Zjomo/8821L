@@ -631,6 +631,9 @@ class SpotZoomQtMainWindow(QMainWindow):
         self.btn_calibrate.clicked.connect(self._calibrate_axis_mapping)
         self.btn_calibrate.setEnabled(False)
         self.btn_calibrate.setToolTip("逐轴移动+测量质心偏移，标定4轴步长与像素的映射关系")
+        self.btn_stop_calibrate = QPushButton("⏸ 停止标定")
+        self.btn_stop_calibrate.clicked.connect(self._stop_alignment_calibration)
+        self.btn_stop_calibrate.setEnabled(False)
         self.btn_jitter = QPushButton("🌀 模拟抖动")
         self.btn_jitter.clicked.connect(self._simulate_alignment_jitter)
         self.btn_jitter.setEnabled(False)
@@ -643,9 +646,10 @@ class SpotZoomQtMainWindow(QMainWindow):
         axis4_layout.addWidget(self.btn_axis4_enter, 0, 0, 1, 2)
         axis4_layout.addWidget(self.btn_set_target, 1, 0)
         axis4_layout.addWidget(self.btn_calibrate, 1, 1)
-        axis4_layout.addWidget(self.btn_stabilize, 2, 0)
-        axis4_layout.addWidget(self.btn_jitter, 2, 1)
-        axis4_layout.addWidget(self.btn_stop_stabilize, 3, 0)
+        axis4_layout.addWidget(self.btn_stop_calibrate, 2, 0)
+        axis4_layout.addWidget(self.btn_stabilize, 2, 1)
+        axis4_layout.addWidget(self.btn_jitter, 3, 0)
+        axis4_layout.addWidget(self.btn_stop_stabilize, 3, 1)
         self.axis4_status_label = QLabel("状态：未进入4轴闭环")
         self.axis4_status_label.setStyleSheet("color: #9FB3C8; font-size: 12px;")
         axis4_layout.addWidget(self.axis4_status_label, 4, 0, 1, 2)
@@ -679,6 +683,9 @@ class SpotZoomQtMainWindow(QMainWindow):
         self._alignment_calib_interval.setToolTip("标定状态机 tick 间隔，单位 ms")
         jitter_form.addRow("标定步长 (步)", self._alignment_calib_step)
         jitter_form.addRow("标定间隔 (ms)", self._alignment_calib_interval)
+        self._alignment_calib_step.valueChanged.connect(self._update_alignment_calib_info_label)
+        self._alignment_calib_interval.valueChanged.connect(self._update_alignment_calib_info_label)
+        self._update_alignment_calib_info_label()
         jitter_form.addRow("闭环 Kp 增益", self._alignment_stabilize_kp)
         jitter_form.addRow("收敛容差 (px)", self._alignment_stabilize_tolerance)
         right_layout.addWidget(jitter_group)
@@ -2084,8 +2091,8 @@ class SpotZoomQtMainWindow(QMainWindow):
         if not self._alignment_axes_ready():
             return
 
-        self._alignment_calib_active = True
         self.btn_calibrate.setEnabled(False)
+        self.btn_stop_calibrate.setEnabled(True)
         self.btn_calibrate.setText("标定中...")
 
         CALIB_STEP = 200
@@ -2113,7 +2120,15 @@ class SpotZoomQtMainWindow(QMainWindow):
             timer.stop()
             self._calib_timer = None  # type: ignore[assignment]
         self.btn_calibrate.setEnabled(True)
+        self.btn_stop_calibrate.setEnabled(False)
         self.btn_calibrate.setText("📏 标定映射")
+
+    def _update_alignment_calib_info_label(self) -> None:
+        self._alignment_calib_info_label.setText(
+            f"当前标定参数\n"
+            f"步长: {self._alignment_calib_step.value()} 步\n"
+            f"间隔: {self._alignment_calib_interval.value()} ms"
+        )
 
     def _calibrate_tick(self) -> None:
         """标定状态机——每个 tick 执行一步"""
@@ -2787,6 +2802,11 @@ def run_qt_ui(repo_root: Optional[Path] = None) -> int:
     window = SpotZoomQtMainWindow(repo_root=repo_root)
     window.show()
     return app_exec(app)
+
+
+
+
+
 
 
 
