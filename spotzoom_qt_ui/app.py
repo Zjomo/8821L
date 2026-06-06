@@ -350,6 +350,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         self._alignment_stabilize_timer: Optional[QTimer] = None
         self._alignment_jitter_timer: Optional[QTimer] = None
         self._alignment_jitter_running: bool = False
+        self._alignment_precision_samples: List[Tuple[float, float, float]] = []
         # 4轴→探测器 映射标定
         self._alignment_calibrated: bool = False
         self._alignment_calib_active: bool = False  # 正在标定中
@@ -696,6 +697,30 @@ class SpotZoomQtMainWindow(QMainWindow):
         jitter_form.addRow("收敛容差 (px)", self._alignment_stabilize_tolerance)
         jitter_form.addRow("闭环间隔 (ms)", self._alignment_stabilize_interval)
         right_layout.addWidget(jitter_group)
+
+        # --- 稳定精度统计 ---
+        precision_group = QGroupBox("稳定精度统计")
+        precision_layout = QGridLayout(precision_group)
+        precision_layout.setHorizontalSpacing(10)
+        precision_layout.setVerticalSpacing(6)
+        self._alignment_precision_fields: Dict[str, QLabel] = {}
+        precision_items = [
+            ("samples", "采样数"),
+            ("rms", "RMS"),
+            ("p95", "P95"),
+            ("max", "Max"),
+            ("x_std", "X_std"),
+            ("y_std", "Y_std"),
+        ]
+        for idx, (key, label) in enumerate(precision_items):
+            row = idx // 2
+            col = (idx % 2) * 2
+            precision_layout.addWidget(QLabel(label), row, col)
+            value_label = QLabel("--")
+            value_label.setStyleSheet("color: #E5E7EB; font-weight: 600;")
+            self._alignment_precision_fields[key] = value_label
+            precision_layout.addWidget(value_label, row, col + 1)
+        right_layout.addWidget(precision_group)
 
         # --- XY 曲线 ---
         curve_group = QGroupBox("XY 位置曲线 (XYCurve)")
@@ -2270,6 +2295,33 @@ class SpotZoomQtMainWindow(QMainWindow):
             self._alignment_jitter_timer = None
         self.btn_jitter.setText("🌀 模拟抖动")
 
+    def _reset_alignment_precision_stats(self) -> None:
+        self._alignment_precision_samples.clear()
+        fields = getattr(self, "_alignment_precision_fields", {})
+        for label in fields.values():
+            label.setText("--")
+
+    def _record_alignment_precision_sample(self, dx: float, dy: float, dist: float) -> None:
+        self._alignment_precision_samples.append((dx, dy, dist))
+        samples = self._alignment_precision_samples
+        n = len(samples)
+        xs = [item[0] for item in samples]
+        ys = [item[1] for item in samples]
+        rs = sorted(item[2] for item in samples)
+        rms = (sum(r * r for r in rs) / n) ** 0.5
+        p95_index = min(n - 1, int(0.95 * (n - 1)))
+        mean_x = sum(xs) / n
+        mean_y = sum(ys) / n
+        x_std = (sum((x - mean_x) ** 2 for x in xs) / n) ** 0.5
+        y_std = (sum((y - mean_y) ** 2 for y in ys) / n) ** 0.5
+        fields = self._alignment_precision_fields
+        fields["samples"].setText(str(n))
+        fields["rms"].setText(f"{rms:.2f} px")
+        fields["p95"].setText(f"{rs[p95_index]:.2f} px")
+        fields["max"].setText(f"{rs[-1]:.2f} px")
+        fields["x_std"].setText(f"{x_std:.2f} px")
+        fields["y_std"].setText(f"{y_std:.2f} px")
+
     def _start_alignment_stabilization(self) -> None:
         if self._alignment_stabilizing:
             return
@@ -2343,6 +2395,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         dx = cx - tx
         dy = cy - ty
         dist = (dx * dx + dy * dy) ** 0.5
+        self._record_alignment_precision_sample(dx, dy, dist)
 
         tolerance = self._alignment_stabilize_tolerance.value()
         if dist < tolerance:
