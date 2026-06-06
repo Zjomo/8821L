@@ -684,6 +684,10 @@ class SpotZoomQtMainWindow(QMainWindow):
         self._alignment_stabilize_tolerance = self._spin(1, 50, 5)
         self._alignment_stabilize_interval = self._spin(50, 5000, 150)
         self._alignment_stabilize_interval.setToolTip("稳定闭环每次纠偏的间隔，单位 ms")
+        self._alignment_pixel_size_um = self._dspin(0.01, 1000.0, 2.5, 2)
+        self._alignment_detector_distance_mm = self._dspin(1.0, 10000.0, 100.0, 1)
+        self._alignment_pixel_size_um.setToolTip("用于将 px 误差换算为 μm 位置精度")
+        self._alignment_detector_distance_mm.setToolTip("两个探测器间距，用于将位置差估算为 μrad 指向精度")
         self._alignment_calib_step = self._spin(1, 5000, 200)
         self._alignment_calib_interval = self._spin(100, 10000, 2000)
         self._alignment_calib_step.setToolTip("标定单次移动步数")
@@ -696,6 +700,8 @@ class SpotZoomQtMainWindow(QMainWindow):
         jitter_form.addRow("闭环 Kp 增益", self._alignment_stabilize_kp)
         jitter_form.addRow("收敛容差 (px)", self._alignment_stabilize_tolerance)
         jitter_form.addRow("闭环间隔 (ms)", self._alignment_stabilize_interval)
+        jitter_form.addRow("像素尺寸 (μm/px)", self._alignment_pixel_size_um)
+        jitter_form.addRow("探测器间距 (mm)", self._alignment_detector_distance_mm)
         right_layout.addWidget(jitter_group)
 
         # --- 稳定精度统计 ---
@@ -706,11 +712,17 @@ class SpotZoomQtMainWindow(QMainWindow):
         self._alignment_precision_fields: Dict[str, QLabel] = {}
         precision_items = [
             ("samples", "采样数"),
-            ("rms", "RMS"),
-            ("p95", "P95"),
-            ("max", "Max"),
-            ("x_std", "X_std"),
-            ("y_std", "Y_std"),
+            ("rms", "RMS(px)"),
+            ("p95", "P95(px)"),
+            ("max", "Max(px)"),
+            ("x_std", "X_std(px)"),
+            ("y_std", "Y_std(px)"),
+            ("rms_um", "RMS(μm)"),
+            ("p95_um", "P95(μm)"),
+            ("max_um", "Max(μm)"),
+            ("pointing_p95", "指向P95(μrad)"),
+            ("linear", "线性区"),
+            ("range", "范围状态"),
         ]
         for idx, (key, label) in enumerate(precision_items):
             row = idx // 2
@@ -2310,17 +2322,30 @@ class SpotZoomQtMainWindow(QMainWindow):
         rs = sorted(item[2] for item in samples)
         rms = (sum(r * r for r in rs) / n) ** 0.5
         p95_index = min(n - 1, int(0.95 * (n - 1)))
+        p95 = rs[p95_index]
+        max_r = rs[-1]
         mean_x = sum(xs) / n
         mean_y = sum(ys) / n
         x_std = (sum((x - mean_x) ** 2 for x in xs) / n) ** 0.5
         y_std = (sum((y - mean_y) ** 2 for y in ys) / n) ** 0.5
+        pixel_um = self._alignment_pixel_size_um.value()
+        detector_distance_mm = self._alignment_detector_distance_mm.value()
+        pointing_p95_urad = p95 * pixel_um / detector_distance_mm * 1000.0
+        linear_ok = p95 < self._alignment_stabilize_tolerance.value() * 2
+        range_ok = max_r < self._alignment_stabilize_tolerance.value() * 4
         fields = self._alignment_precision_fields
         fields["samples"].setText(str(n))
-        fields["rms"].setText(f"{rms:.2f} px")
-        fields["p95"].setText(f"{rs[p95_index]:.2f} px")
-        fields["max"].setText(f"{rs[-1]:.2f} px")
-        fields["x_std"].setText(f"{x_std:.2f} px")
-        fields["y_std"].setText(f"{y_std:.2f} px")
+        fields["rms"].setText(f"{rms:.2f}")
+        fields["p95"].setText(f"{p95:.2f}")
+        fields["max"].setText(f"{max_r:.2f}")
+        fields["x_std"].setText(f"{x_std:.2f}")
+        fields["y_std"].setText(f"{y_std:.2f}")
+        fields["rms_um"].setText(f"{rms * pixel_um:.2f}")
+        fields["p95_um"].setText(f"{p95 * pixel_um:.2f}")
+        fields["max_um"].setText(f"{max_r * pixel_um:.2f}")
+        fields["pointing_p95"].setText(f"{pointing_p95_urad:.2f}")
+        fields["linear"].setText("OK" if linear_ok else "超出")
+        fields["range"].setText("OK" if range_ok else "超限")
 
     def _start_alignment_stabilization(self) -> None:
         if self._alignment_stabilizing:
