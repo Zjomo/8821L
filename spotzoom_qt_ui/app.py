@@ -646,6 +646,9 @@ class SpotZoomQtMainWindow(QMainWindow):
         self.btn_record_convergence = QPushButton("📝 收敛误差记录")
         self.btn_record_convergence.clicked.connect(self._start_convergence_error_recording)
         self.btn_record_convergence.setEnabled(True)
+        self.btn_stop_record_convergence = QPushButton("⏹ 停止记录")
+        self.btn_stop_record_convergence.clicked.connect(lambda: self._stop_convergence_error_recording(auto_export=True))
+        self.btn_stop_record_convergence.setEnabled(False)
         self.btn_stabilize = QPushButton("🔄 开始稳定闭环")
         self.btn_stabilize.clicked.connect(self._start_alignment_stabilization)
         self.btn_stabilize.setEnabled(False)
@@ -659,7 +662,9 @@ class SpotZoomQtMainWindow(QMainWindow):
         axis4_layout.addWidget(self.btn_stabilize, 2, 1)
         axis4_layout.addWidget(self.btn_jitter, 3, 0)
         axis4_layout.addWidget(self.btn_record_convergence, 3, 1)
-        axis4_layout.addWidget(self.btn_stop_stabilize, 4, 0, 1, 2)
+        axis4_layout.addWidget(self.btn_stop_record_convergence, 4, 0)
+        axis4_layout.addWidget(self.btn_stop_stabilize, 4, 1)
+        axis4_layout.addWidget(QLabel("  "), 5, 0, 1, 2)  # spacing
         self._alignment_calib_info_label = QLabel()
         self._alignment_calib_info_label.setStyleSheet("color: #93C5FD; font-size: 11px;")
         self._alignment_calib_info_label.setWordWrap(True)
@@ -697,12 +702,13 @@ class SpotZoomQtMainWindow(QMainWindow):
         self._alignment_detector_distance_mm = self._dspin(1.0, 10000.0, 100.0, 1)
         self._alignment_pixel_size_um.setToolTip("用于将 px 误差换算为 μm 位置精度")
         self._alignment_detector_distance_mm.setToolTip("两个探测器间距，用于将位置差估算为 μrad 指向精度")
-        self._alignment_record_duration_h = self._dspin(0.1, 48.0, 1.0, 1)
+        self._alignment_record_duration_min = self._dspin(0.1, 2880.0, 60.0, 1)
         self._alignment_record_export_path = QLineEdit(str(self.runtime.repo_root / "artifacts" / "convergence_error_record.xlsx"))
         self._alignment_record_browse_btn = QPushButton("选择路径")
         self._alignment_record_browse_btn.clicked.connect(self._select_convergence_record_export_path)
         self._alignment_record_status_label = QLabel("记录状态：未开始")
         self._alignment_record_status_label.setStyleSheet("color: #9FB3C8; font-size: 11px;")
+        self._alignment_record_exported_path: str = ""
         self._alignment_calib_step = self._spin(1, 5000, 200)
         self._alignment_calib_interval = self._spin(100, 10000, 2000)
         self._alignment_calib_step.setToolTip("标定单次移动步数")
@@ -717,7 +723,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         jitter_form.addRow("闭环间隔 (ms)", self._alignment_stabilize_interval)
         jitter_form.addRow("像素尺寸 (μm/px)", self._alignment_pixel_size_um)
         jitter_form.addRow("探测器间距 (mm)", self._alignment_detector_distance_mm)
-        jitter_form.addRow("记录时长 (h)", self._alignment_record_duration_h)
+        jitter_form.addRow("记录时长 (min)", self._alignment_record_duration_min)
         record_path_wrap = QWidget()
         record_path_layout = QHBoxLayout(record_path_wrap)
         record_path_layout.setContentsMargins(0, 0, 0, 0)
@@ -2342,6 +2348,23 @@ class SpotZoomQtMainWindow(QMainWindow):
                 out_path += ".xlsx"
             self._alignment_record_export_path.setText(out_path)
 
+    def _update_convergence_record_status_label(self) -> None:
+        timer = self._alignment_convergence_record_timer
+        if timer is None:
+            if self._alignment_convergence_record_rows:
+                exported_path = self._alignment_record_exported_path or self._alignment_record_export_path.text().strip()
+                self._alignment_record_status_label.setText(
+                    f"记录状态：已结束 / 共记录 {len(self._alignment_convergence_record_rows)} 条 / 已导出路径 {exported_path}"
+                )
+            else:
+                self._alignment_record_status_label.setText("记录状态：未开始")
+            return
+        remain_minutes = max(0.0, (self._alignment_convergence_record_end_ts - time.time()) / 60.0)
+        exported_path = self._alignment_record_exported_path or self._alignment_record_export_path.text().strip()
+        self._alignment_record_status_label.setText(
+            f"记录中：剩余 {remain_minutes:.1f} min / 已记录 {len(self._alignment_convergence_record_rows)} 条 / 已导出路径 {exported_path}"
+        )
+
     def _write_simple_xlsx(self, out_path: Path, rows: List[List[object]]) -> None:
         shared_strings: List[str] = []
         shared_index: Dict[str, int] = {}
@@ -2445,6 +2468,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         self._alignment_convergence_record_rows.append([
             stamp, f"{ccx:.3f}", f"{ccy:.3f}", f"{tx:.3f}", f"{ty:.3f}", f"{cx:.3f}", f"{cy:.3f}", f"{dx:.3f}", f"{dy:.3f}", f"{dist:.3f}"
         ])
+        self._update_convergence_record_status_label()
         if time.time() >= self._alignment_convergence_record_end_ts:
             self._stop_convergence_error_recording(auto_export=True)
 
@@ -2459,10 +2483,10 @@ class SpotZoomQtMainWindow(QMainWindow):
         if not out_path.lower().endswith(".xlsx"):
             QMessageBox.warning(self, "格式错误", "导出路径必须是 .xlsx 文件")
             return
-        duration_hours = self._alignment_record_duration_h.value()
+        duration_minutes = self._alignment_record_duration_min.value()
         self._alignment_convergence_record_rows = []
         self._alignment_convergence_record_start_ts = time.time()
-        self._alignment_convergence_record_end_ts = self._alignment_convergence_record_start_ts + duration_hours * 3600.0
+        self._alignment_convergence_record_end_ts = self._alignment_convergence_record_start_ts + duration_minutes * 60.0
         self._alignment_converged_centroid = self._alignment_last_centroid
         if self._alignment_convergence_record_timer is not None:
             self._alignment_convergence_record_timer.stop()
@@ -2472,8 +2496,11 @@ class SpotZoomQtMainWindow(QMainWindow):
         self._alignment_convergence_record_timer.start()
         self._record_convergence_error_sample()
         self.btn_record_convergence.setEnabled(False)
+        self.btn_stop_record_convergence.setEnabled(True)
         self._alignment_record_status_label.setText("记录状态：记录中")
-        self._append_log(f"[收敛误差记录] 已启动: 时长={duration_hours:.1f}h, 间隔=1min, 导出={out_path}")
+        self._alignment_record_exported_path = out_path
+        self._update_convergence_record_status_label()
+        self._append_log(f"[收敛误差记录] 已启动: 时长={duration_minutes:.1f}min, 间隔=1min, 导出={out_path}")
 
     def _stop_convergence_error_recording(self, auto_export: bool = False) -> None:
         if self._alignment_convergence_record_timer is not None:
@@ -2482,6 +2509,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         if auto_export and self._alignment_convergence_record_rows:
             self._export_convergence_record_xlsx()
         self.btn_record_convergence.setEnabled(True)
+        self.btn_stop_record_convergence.setEnabled(False)
         if self._alignment_convergence_record_rows:
             self._alignment_record_status_label.setText(
                 f"记录状态：已结束 / 共记录 {len(self._alignment_convergence_record_rows)} 条"
@@ -2566,7 +2594,6 @@ class SpotZoomQtMainWindow(QMainWindow):
 
     def _stop_alignment_stabilization(self) -> None:
         self._alignment_stabilizing = False
-        self._stop_convergence_error_recording(auto_export=False)
         if self._alignment_stabilize_timer is not None:
             self._alignment_stabilize_timer.stop()
             self._alignment_stabilize_timer = None
