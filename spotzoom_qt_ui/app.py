@@ -355,7 +355,6 @@ class SpotZoomQtMainWindow(QMainWindow):
         self._alignment_convergence_record_rows: List[List[object]] = []
         self._alignment_convergence_record_start_ts: float = 0.0
         self._alignment_convergence_record_end_ts: float = 0.0
-        self._alignment_convergence_record_unlocked: bool = False
         self._alignment_converged_centroid: Optional[Tuple[float, float]] = None
         # 4轴→探测器 映射标定
         self._alignment_calibrated: bool = False
@@ -646,7 +645,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         self.btn_jitter.setEnabled(False)
         self.btn_record_convergence = QPushButton("📝 收敛误差记录")
         self.btn_record_convergence.clicked.connect(self._start_convergence_error_recording)
-        self.btn_record_convergence.setEnabled(False)
+        self.btn_record_convergence.setEnabled(True)
         self.btn_stabilize = QPushButton("🔄 开始稳定闭环")
         self.btn_stabilize.clicked.connect(self._start_alignment_stabilization)
         self.btn_stabilize.setEnabled(False)
@@ -2450,8 +2449,8 @@ class SpotZoomQtMainWindow(QMainWindow):
             self._stop_convergence_error_recording(auto_export=True)
 
     def _start_convergence_error_recording(self) -> None:
-        if not self._alignment_convergence_record_unlocked or self._alignment_converged_centroid is None:
-            QMessageBox.information(self, "未解锁", "请先开始稳定闭环并等待收敛完成后再记录")
+        if self._alignment_target_point is None or self._alignment_last_centroid is None:
+            QMessageBox.information(self, "未准备好", "请先确保已经检测到光斑并设定目标点")
             return
         out_path = self._alignment_record_export_path.text().strip()
         if not out_path:
@@ -2464,6 +2463,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         self._alignment_convergence_record_rows = []
         self._alignment_convergence_record_start_ts = time.time()
         self._alignment_convergence_record_end_ts = self._alignment_convergence_record_start_ts + duration_hours * 3600.0
+        self._alignment_converged_centroid = self._alignment_last_centroid
         if self._alignment_convergence_record_timer is not None:
             self._alignment_convergence_record_timer.stop()
         self._alignment_convergence_record_timer = QTimer(self)
@@ -2472,6 +2472,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         self._alignment_convergence_record_timer.start()
         self._record_convergence_error_sample()
         self.btn_record_convergence.setEnabled(False)
+        self._alignment_record_status_label.setText("记录状态：记录中")
         self._append_log(f"[收敛误差记录] 已启动: 时长={duration_hours:.1f}h, 间隔=1min, 导出={out_path}")
 
     def _stop_convergence_error_recording(self, auto_export: bool = False) -> None:
@@ -2480,8 +2481,8 @@ class SpotZoomQtMainWindow(QMainWindow):
             self._alignment_convergence_record_timer = None
         if auto_export and self._alignment_convergence_record_rows:
             self._export_convergence_record_xlsx()
-        self.btn_record_convergence.setEnabled(self._alignment_convergence_record_unlocked)
-        if self._alignment_convergence_record_unlocked:
+        self.btn_record_convergence.setEnabled(True)
+        if self._alignment_convergence_record_rows:
             self._alignment_record_status_label.setText(
                 f"记录状态：已结束 / 共记录 {len(self._alignment_convergence_record_rows)} 条"
             )
@@ -2612,14 +2613,9 @@ class SpotZoomQtMainWindow(QMainWindow):
 
         tolerance = self._alignment_stabilize_tolerance.value()
         if dist < tolerance:
-            if not self._alignment_convergence_record_unlocked:
-                self._alignment_convergence_record_unlocked = True
-                self._alignment_converged_centroid = (cx, cy)
-                self.btn_record_convergence.setEnabled(True)
-                self._alignment_record_status_label.setText("记录状态：已解锁，可开始记录")
-                self._append_log("[闭环] 已收敛，已解锁“收敛误差记录”")
-            else:
-                self.btn_record_convergence.setEnabled(True)
+            self._alignment_converged_centroid = (cx, cy)
+            self.btn_record_convergence.setEnabled(True)
+            self._alignment_record_status_label.setText("记录状态：已收敛，可直接记录")
             self._refresh_alignment_status_label("已收敛")
             self._append_log(f"[闭环] 已收敛: 偏差=({dx:.1f}, {dy:.1f}) 容差={tolerance}")
             return
