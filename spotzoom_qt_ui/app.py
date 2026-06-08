@@ -351,6 +351,12 @@ class SpotZoomQtMainWindow(QMainWindow):
         self._alignment_jitter_timer: Optional[QTimer] = None
         self._alignment_jitter_running: bool = False
         self._alignment_precision_samples: List[Tuple[float, float, float]] = []
+        self._alignment_convergence_record_timer: Optional[QTimer] = None
+        self._alignment_convergence_record_rows: List[List[object]] = []
+        self._alignment_convergence_record_start_ts: float = 0.0
+        self._alignment_convergence_record_end_ts: float = 0.0
+        self._alignment_convergence_record_unlocked: bool = False
+        self._alignment_converged_centroid: Optional[Tuple[float, float]] = None
         # 4轴→探测器 映射标定
         self._alignment_calibrated: bool = False
         self._alignment_calib_active: bool = False  # 正在标定中
@@ -638,6 +644,9 @@ class SpotZoomQtMainWindow(QMainWindow):
         self.btn_jitter = QPushButton("🌀 模拟抖动")
         self.btn_jitter.clicked.connect(self._simulate_alignment_jitter)
         self.btn_jitter.setEnabled(False)
+        self.btn_record_convergence = QPushButton("📝 收敛误差记录")
+        self.btn_record_convergence.clicked.connect(self._start_convergence_error_recording)
+        self.btn_record_convergence.setEnabled(False)
         self.btn_stabilize = QPushButton("🔄 开始稳定闭环")
         self.btn_stabilize.clicked.connect(self._start_alignment_stabilization)
         self.btn_stabilize.setEnabled(False)
@@ -650,7 +659,8 @@ class SpotZoomQtMainWindow(QMainWindow):
         axis4_layout.addWidget(self.btn_stop_calibrate, 2, 0)
         axis4_layout.addWidget(self.btn_stabilize, 2, 1)
         axis4_layout.addWidget(self.btn_jitter, 3, 0)
-        axis4_layout.addWidget(self.btn_stop_stabilize, 3, 1)
+        axis4_layout.addWidget(self.btn_record_convergence, 3, 1)
+        axis4_layout.addWidget(self.btn_stop_stabilize, 4, 0, 1, 2)
         self._alignment_calib_info_label = QLabel()
         self._alignment_calib_info_label.setStyleSheet("color: #93C5FD; font-size: 11px;")
         self._alignment_calib_info_label.setWordWrap(True)
@@ -688,6 +698,12 @@ class SpotZoomQtMainWindow(QMainWindow):
         self._alignment_detector_distance_mm = self._dspin(1.0, 10000.0, 100.0, 1)
         self._alignment_pixel_size_um.setToolTip("用于将 px 误差换算为 μm 位置精度")
         self._alignment_detector_distance_mm.setToolTip("两个探测器间距，用于将位置差估算为 μrad 指向精度")
+        self._alignment_record_duration_h = self._dspin(0.1, 48.0, 1.0, 1)
+        self._alignment_record_export_path = QLineEdit(str(self.runtime.repo_root / "artifacts" / "convergence_error_record.xlsx"))
+        self._alignment_record_browse_btn = QPushButton("选择路径")
+        self._alignment_record_browse_btn.clicked.connect(self._select_convergence_record_export_path)
+        self._alignment_record_status_label = QLabel("记录状态：未开始")
+        self._alignment_record_status_label.setStyleSheet("color: #9FB3C8; font-size: 11px;")
         self._alignment_calib_step = self._spin(1, 5000, 200)
         self._alignment_calib_interval = self._spin(100, 10000, 2000)
         self._alignment_calib_step.setToolTip("标定单次移动步数")
@@ -702,6 +718,14 @@ class SpotZoomQtMainWindow(QMainWindow):
         jitter_form.addRow("闭环间隔 (ms)", self._alignment_stabilize_interval)
         jitter_form.addRow("像素尺寸 (μm/px)", self._alignment_pixel_size_um)
         jitter_form.addRow("探测器间距 (mm)", self._alignment_detector_distance_mm)
+        jitter_form.addRow("记录时长 (h)", self._alignment_record_duration_h)
+        record_path_wrap = QWidget()
+        record_path_layout = QHBoxLayout(record_path_wrap)
+        record_path_layout.setContentsMargins(0, 0, 0, 0)
+        record_path_layout.addWidget(self._alignment_record_export_path)
+        record_path_layout.addWidget(self._alignment_record_browse_btn)
+        jitter_form.addRow("导出路径 (.xlsx)", record_path_wrap)
+        jitter_form.addRow("记录状态", self._alignment_record_status_label)
         right_layout.addWidget(jitter_group)
 
         # --- 稳定精度统计 ---
@@ -2307,6 +2331,163 @@ class SpotZoomQtMainWindow(QMainWindow):
             self._alignment_jitter_timer = None
         self.btn_jitter.setText("🌀 模拟抖动")
 
+    def _select_convergence_record_export_path(self) -> None:
+        out_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "选择收敛误差记录导出路径",
+            self._alignment_record_export_path.text().strip(),
+            "Excel Files (*.xlsx)",
+        )
+        if out_path:
+            if not out_path.lower().endswith(".xlsx"):
+                out_path += ".xlsx"
+            self._alignment_record_export_path.setText(out_path)
+
+    def _write_simple_xlsx(self, out_path: Path, rows: List[List[object]]) -> None:
+        shared_strings: List[str] = []
+        shared_index: Dict[str, int] = {}
+
+        def _ss_idx(text: str) -> int:
+            if text not in shared_index:
+                shared_index[text] = len(shared_strings)
+                shared_strings.append(text)
+            return shared_index[text]
+
+        sheet_rows: List[str] = []
+        for row_idx, row in enumerate(rows, start=1):
+            cells: List[str] = []
+            for col_idx, value in enumerate(row, start=1):
+                col_name = ""
+                x = col_idx
+                while x > 0:
+                    x, rem = divmod(x - 1, 26)
+                    col_name = chr(65 + rem) + col_name
+                cell_ref = f"{col_name}{row_idx}"
+                text = "" if value is None else str(value)
+                ss_id = _ss_idx(text)
+                cells.append(f'<c r="{cell_ref}" t="s"><v>{ss_id}</v></c>')
+            sheet_rows.append(f'<row r="{row_idx}">' + "".join(cells) + "</row>")
+
+        shared_xml = "".join(f"<si><t>{xml_escape(s)}</t></si>" for s in shared_strings)
+        worksheet_xml = (
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+            '<sheetData>' + "".join(sheet_rows) + '</sheetData></worksheet>'
+        )
+        workbook_xml = (
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" '
+            'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+            '<sheets><sheet name="convergence_record" sheetId="1" r:id="rId1"/></sheets></workbook>'
+        )
+        workbook_rels_xml = (
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>'
+            '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/>'
+            '</Relationships>'
+        )
+        rels_xml = (
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>'
+            '</Relationships>'
+        )
+        content_types_xml = (
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+            '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+            '<Default Extension="xml" ContentType="application/xml"/>'
+            '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
+            '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
+            '<Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/>'
+            '</Types>'
+        )
+        shared_strings_xml = (
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            f'<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="{len(shared_strings)}" uniqueCount="{len(shared_strings)}">{shared_xml}</sst>'
+        )
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        with zipfile.ZipFile(out_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+            zf.writestr("[Content_Types].xml", content_types_xml)
+            zf.writestr("_rels/.rels", rels_xml)
+            zf.writestr("xl/workbook.xml", workbook_xml)
+            zf.writestr("xl/_rels/workbook.xml.rels", workbook_rels_xml)
+            zf.writestr("xl/worksheets/sheet1.xml", worksheet_xml)
+            zf.writestr("xl/sharedStrings.xml", shared_strings_xml)
+
+    def _export_convergence_record_xlsx(self) -> None:
+        out_path = Path(self._alignment_record_export_path.text().strip())
+        rows = [[
+            "记录时间",
+            "收敛坐标质心X",
+            "收敛坐标质心Y",
+            "目标点X",
+            "目标点Y",
+            "当前质心X",
+            "当前质心Y",
+            "X坐标误差(px)",
+            "Y坐标误差(px)",
+            "总体误差(px)",
+        ]] + self._alignment_convergence_record_rows
+        self._write_simple_xlsx(out_path, rows)
+        self._append_log(f"[收敛误差记录] 已导出: {out_path}")
+
+    def _record_convergence_error_sample(self) -> None:
+        if self._alignment_last_centroid is None or self._alignment_target_point is None or self._alignment_converged_centroid is None:
+            return
+        cx, cy = self._alignment_last_centroid
+        tx, ty = self._alignment_target_point
+        ccx, ccy = self._alignment_converged_centroid
+        dx = cx - tx
+        dy = cy - ty
+        dist = (dx * dx + dy * dy) ** 0.5
+        stamp = time.strftime("%Y-%m-%d %H:%M:%S")
+        self._alignment_convergence_record_rows.append([
+            stamp, f"{ccx:.3f}", f"{ccy:.3f}", f"{tx:.3f}", f"{ty:.3f}", f"{cx:.3f}", f"{cy:.3f}", f"{dx:.3f}", f"{dy:.3f}", f"{dist:.3f}"
+        ])
+        if time.time() >= self._alignment_convergence_record_end_ts:
+            self._stop_convergence_error_recording(auto_export=True)
+
+    def _start_convergence_error_recording(self) -> None:
+        if not self._alignment_convergence_record_unlocked or self._alignment_converged_centroid is None:
+            QMessageBox.information(self, "未解锁", "请先开始稳定闭环并等待收敛完成后再记录")
+            return
+        out_path = self._alignment_record_export_path.text().strip()
+        if not out_path:
+            QMessageBox.warning(self, "路径为空", "请先设置 .xlsx 导出路径")
+            return
+        if not out_path.lower().endswith(".xlsx"):
+            QMessageBox.warning(self, "格式错误", "导出路径必须是 .xlsx 文件")
+            return
+        duration_hours = self._alignment_record_duration_h.value()
+        self._alignment_convergence_record_rows = []
+        self._alignment_convergence_record_start_ts = time.time()
+        self._alignment_convergence_record_end_ts = self._alignment_convergence_record_start_ts + duration_hours * 3600.0
+        if self._alignment_convergence_record_timer is not None:
+            self._alignment_convergence_record_timer.stop()
+        self._alignment_convergence_record_timer = QTimer(self)
+        self._alignment_convergence_record_timer.setInterval(60_000)
+        self._alignment_convergence_record_timer.timeout.connect(self._record_convergence_error_sample)
+        self._alignment_convergence_record_timer.start()
+        self._record_convergence_error_sample()
+        self.btn_record_convergence.setEnabled(False)
+        self._append_log(f"[收敛误差记录] 已启动: 时长={duration_hours:.1f}h, 间隔=1min, 导出={out_path}")
+
+    def _stop_convergence_error_recording(self, auto_export: bool = False) -> None:
+        if self._alignment_convergence_record_timer is not None:
+            self._alignment_convergence_record_timer.stop()
+            self._alignment_convergence_record_timer = None
+        if auto_export and self._alignment_convergence_record_rows:
+            self._export_convergence_record_xlsx()
+        self.btn_record_convergence.setEnabled(self._alignment_convergence_record_unlocked)
+        if self._alignment_convergence_record_unlocked:
+            self._alignment_record_status_label.setText(
+                f"记录状态：已结束 / 共记录 {len(self._alignment_convergence_record_rows)} 条"
+            )
+        else:
+            self._alignment_record_status_label.setText("记录状态：未开始")
+
     def _reset_alignment_precision_stats(self) -> None:
         self._alignment_precision_samples.clear()
         fields = getattr(self, "_alignment_precision_fields", {})
@@ -2366,6 +2547,12 @@ class SpotZoomQtMainWindow(QMainWindow):
             return
 
         self._alignment_stabilizing = True
+        self._alignment_convergence_record_unlocked = False
+        self._alignment_converged_centroid = None
+        self.btn_record_convergence.setEnabled(False)
+        self._alignment_record_status_label.setText("记录状态：未开始")
+        self._stop_convergence_error_recording(auto_export=False)
+        self._reset_alignment_precision_stats()
         self.btn_stabilize.setEnabled(False)
         self.btn_stop_stabilize.setEnabled(True)
         self._append_log("[准直工作台] 稳定闭环已启动")
@@ -2378,6 +2565,7 @@ class SpotZoomQtMainWindow(QMainWindow):
 
     def _stop_alignment_stabilization(self) -> None:
         self._alignment_stabilizing = False
+        self._stop_convergence_error_recording(auto_export=False)
         if self._alignment_stabilize_timer is not None:
             self._alignment_stabilize_timer.stop()
             self._alignment_stabilize_timer = None
