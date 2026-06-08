@@ -2612,6 +2612,14 @@ class SpotZoomQtMainWindow(QMainWindow):
 
         tolerance = self._alignment_stabilize_tolerance.value()
         if dist < tolerance:
+            if not self._alignment_convergence_record_unlocked:
+                self._alignment_convergence_record_unlocked = True
+                self._alignment_converged_centroid = (cx, cy)
+                self.btn_record_convergence.setEnabled(True)
+                self._alignment_record_status_label.setText("记录状态：已解锁，可开始记录")
+                self._append_log("[闭环] 已收敛，已解锁“收敛误差记录”")
+            else:
+                self.btn_record_convergence.setEnabled(True)
             self._refresh_alignment_status_label("已收敛")
             self._append_log(f"[闭环] 已收敛: 偏差=({dx:.1f}, {dy:.1f}) 容差={tolerance}")
             return
