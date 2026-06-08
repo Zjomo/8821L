@@ -255,6 +255,134 @@ class SpotCurveWidget(QWidget):
         painter.end()
 
 
+class ErrorDistributionWidget(QWidget):
+    """收敛误差分布可视化控件：时间序列曲线 + 直方图。"""
+
+    def __init__(self, max_points: int = 500, parent: Optional[QWidget] = None) -> None:
+        super().__init__(parent)
+        self.max_points = max_points
+        # (timestamp, dist) tuples
+        self.error_history: deque = deque(maxlen=max_points)
+        self.setMinimumSize(200, 150)
+        self.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Expanding,
+        )
+
+    def append_dist(self, dist: float) -> None:
+        self.error_history.append((time.time(), dist))
+        self.update()
+
+    def clear_history(self) -> None:
+        self.error_history.clear()
+        self.update()
+
+    def paintEvent(self, event) -> None:
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        w, h = self.width(), self.height()
+
+        # 背景
+        painter.fillRect(self.rect(), QColor("#1a1a2e"))
+
+        # 网格
+        pen_grid = QPen(QColor("#333"))
+        pen_grid.setWidth(1)
+        painter.setPen(pen_grid)
+        for i in range(0, w, 40):
+            painter.drawLine(i, 0, i, h)
+        for i in range(0, h, 20):
+            painter.drawLine(0, i, w, i)
+
+        n = len(self.error_history)
+        if n < 2:
+            font = QFont("Microsoft YaHei", 10)
+            painter.setFont(font)
+            painter.setPen(QColor("#9FB3C8"))
+            painter.drawText(self.rect(), Qt.AlignCenter, "等待记录数据...")
+            painter.end()
+            return
+
+        dists = [d for _, d in self.error_history]
+        min_d = min(dists)
+        max_d = max(dists)
+        d_range = max_d - min_d if max_d != min_d else 1.0
+        margin = d_range * 0.15
+        y_min = max(0.0, min_d - margin)
+        y_max = max_d + margin
+        y_range = y_max - y_min if y_max != y_min else 1.0
+
+        chart_top = 20
+        chart_bottom = h - 2
+        chart_left = 2
+        chart_right = w - 2
+        chart_h = chart_bottom - chart_top
+        chart_w = chart_right - chart_left
+
+        # ========== 上部分：时间序列曲线 ==========
+        curve_bottom = chart_top + chart_h // 2 - 4
+        curve_h = curve_bottom - chart_top
+
+        pen_curve = QPen(QColor("#FBBF24"))
+        pen_curve.setWidth(2)
+        painter.setPen(pen_curve)
+        pts = []
+        for i, d in enumerate(dists):
+            px = chart_left + int((i / max(n - 1, 1)) * chart_w)
+            py = curve_bottom - int(((d - y_min) / y_range) * curve_h)
+            pts.append(QPointF(px, py))
+        for i in range(len(pts) - 1):
+            painter.drawLine(pts[i], pts[i + 1])
+
+        # 标注文字
+        font = QFont("Microsoft YaHei", 8)
+        painter.setFont(font)
+        painter.setPen(QColor("#FBBF24"))
+        painter.drawText(chart_left + 4, chart_top + 12, f"总误差 ─ 当前 {dists[-1]:.3f}px")
+
+        # ========== 下部分：直方图 ==========
+        hist_top = curve_bottom + 4
+        hist_bottom = chart_bottom
+        hist_h = hist_bottom - hist_top
+
+        # 自动分 bin（最多 15 个）
+        num_bins = min(15, max(5, n // 3))
+        bin_w = chart_w / num_bins
+        bin_edges = [min_d + i * d_range / num_bins for i in range(num_bins + 1)]
+        bin_counts = [0] * num_bins
+        for d in dists:
+            idx = min(num_bins - 1, int((d - min_d) / d_range * num_bins))
+            bin_counts[idx] += 1
+        max_count = max(bin_counts) if max(bin_counts) > 0 else 1
+
+        pen_bar = QPen(QColor("#34D399"))
+        pen_bar.setWidth(1)
+        brush_bar = QColor(52, 211, 153, 80)
+        for i, count in enumerate(bin_counts):
+            bar_h = int((count / max_count) * (hist_h - 2))
+            bar_x = chart_left + int(i * bin_w) + 1
+            bar_w = max(int(bin_w) - 2, 2)
+            bar_y = hist_bottom - bar_h
+            painter.fillRect(bar_x, bar_y, bar_w, bar_h, brush_bar)
+            painter.setPen(pen_bar)
+            painter.drawRect(bar_x, bar_y, bar_w, bar_h)
+
+        # 直方图标注
+        painter.setPen(QColor("#34D399"))
+        painter.drawText(chart_left + 4, hist_top + 12,
+                         f"分布 (n={n} μ={sum(dists)/n:.3f} σ={self._std(dists):.3f})")
+
+        painter.end()
+
+    @staticmethod
+    def _std(vals: List[float]) -> float:
+        n = len(vals)
+        if n < 2:
+            return 0.0
+        mean = sum(vals) / n
+        return (sum((x - mean) ** 2 for x in vals) / (n - 1)) ** 0.5
+
+
 class RunEventStreamModel(QAbstractTableModel):
     HEADERS = ["时间", "事件", "摘要"]
 
@@ -346,6 +474,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         self._alignment_ucc_actual_fps: float = 0.0
         self._alignment_target_point: Optional[Tuple[float, float]] = None
         self._alignment_last_centroid: Optional[Tuple[float, float]] = None
+        self._alignment_last_centroid_ts: float = 0.0
         self._alignment_centroid_history: List[Tuple[float, float]] = []
         self._alignment_stabilizing: bool = False
         self._alignment_stabilize_timer: Optional[QTimer] = None
@@ -699,6 +828,8 @@ class SpotZoomQtMainWindow(QMainWindow):
         self._alignment_stabilize_tolerance = self._spin(1, 50, 5)
         self._alignment_stabilize_interval = self._spin(50, 5000, 150)
         self._alignment_stabilize_interval.setToolTip("稳定闭环每次纠偏的间隔，单位 ms")
+        self._alignment_spot_loss_timeout = self._dspin(0.5, 60.0, 5.0, 1)
+        self._alignment_spot_loss_timeout.setToolTip("光斑消失超过此时间(秒)自动停止闭环，保护电机")
         self._alignment_pixel_size_um = self._dspin(0.01, 1000.0, 2.5, 2)
         self._alignment_detector_distance_mm = self._dspin(1.0, 10000.0, 100.0, 1)
         self._alignment_pixel_size_um.setToolTip("用于将 px 误差换算为 μm 位置精度")
@@ -710,7 +841,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         self._alignment_record_status_label = QLabel("记录状态：未开始")
         self._alignment_record_status_label.setStyleSheet("color: #9FB3C8; font-size: 11px;")
         self._alignment_record_exported_path: str = ""
-        self._alignment_calib_step = self._spin(1, 5000, 200)
+        self._alignment_calib_step = self._spin(1, 5000, 500)
         self._alignment_calib_interval = self._spin(100, 10000, 2000)
         self._alignment_calib_step.setToolTip("标定单次移动步数")
         self._alignment_calib_interval.setToolTip("标定状态机 tick 间隔，单位 ms")
@@ -722,6 +853,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         jitter_form.addRow("闭环 Kp 增益", self._alignment_stabilize_kp)
         jitter_form.addRow("收敛容差 (px)", self._alignment_stabilize_tolerance)
         jitter_form.addRow("闭环间隔 (ms)", self._alignment_stabilize_interval)
+        jitter_form.addRow("光斑丢失超时 (s)", self._alignment_spot_loss_timeout)
         jitter_form.addRow("像素尺寸 (μm/px)", self._alignment_pixel_size_um)
         jitter_form.addRow("探测器间距 (mm)", self._alignment_detector_distance_mm)
         jitter_form.addRow("记录时长 (min)", self._alignment_record_duration_min)
@@ -763,6 +895,13 @@ class SpotZoomQtMainWindow(QMainWindow):
             self._alignment_precision_fields[key] = value_label
             precision_layout.addWidget(value_label, row, col + 1)
         right_layout.addWidget(precision_group)
+
+        # --- 收敛误差分布可视化 ---
+        error_dist_group = QGroupBox("收敛误差分布")
+        error_dist_layout = QVBoxLayout(error_dist_group)
+        self._alignment_error_dist_widget = ErrorDistributionWidget(max_points=500)
+        error_dist_layout.addWidget(self._alignment_error_dist_widget)
+        right_layout.addWidget(error_dist_group)
 
         # --- XY 曲线 ---
         curve_group = QGroupBox("XY 位置曲线 (XYCurve)")
@@ -1989,6 +2128,7 @@ class SpotZoomQtMainWindow(QMainWindow):
             cx = moments["m10"] / moments["m00"]
             cy = moments["m01"] / moments["m00"]
             self._alignment_last_centroid = (cx, cy)
+            self._alignment_last_centroid_ts = time.time()
             self._alignment_centroid_history.append((cx, cy))
             if len(self._alignment_centroid_history) > 200:
                 self._alignment_centroid_history = self._alignment_centroid_history[-200:]
@@ -2480,6 +2620,8 @@ class SpotZoomQtMainWindow(QMainWindow):
             f"Δ=({dx:.2f}, {dy:.2f}) dist={dist:.3f}px "
             f"丨已用 {elapsed_min:.1f}/{total_min:.1f} min"
         )
+        # 更新分布可视化
+        self._alignment_error_dist_widget.append_dist(dist)
         if time.time() >= self._alignment_convergence_record_end_ts:
             self._stop_convergence_error_recording(auto_export=True)
 
@@ -2496,6 +2638,7 @@ class SpotZoomQtMainWindow(QMainWindow):
             return
         duration_minutes = self._alignment_record_duration_min.value()
         self._alignment_convergence_record_rows = []
+        self._alignment_error_dist_widget.clear_history()
         self._alignment_convergence_record_start_ts = time.time()
         self._alignment_convergence_record_end_ts = self._alignment_convergence_record_start_ts + duration_minutes * 60.0
         self._alignment_converged_centroid = self._alignment_last_centroid
@@ -2640,6 +2783,16 @@ class SpotZoomQtMainWindow(QMainWindow):
             return
         if self._alignment_last_centroid is None or self._alignment_target_point is None:
             self._refresh_alignment_status_label("等待探测到目标点")
+            return
+
+        # 光斑丢失保护：如果最后一次检测到光斑超过超时阈值，自动停止闭环
+        timeout_s = self._alignment_spot_loss_timeout.value()
+        if self._alignment_last_centroid_ts > 0 and time.time() - self._alignment_last_centroid_ts > timeout_s:
+            self._append_log(
+                f"[闭环] ⚠️ 光斑已丢失 {time.time() - self._alignment_last_centroid_ts:.0f}s"
+                f"（超时 {timeout_s}s），自动停止闭环保护电机"
+            )
+            self._stop_alignment_stabilization()
             return
 
         cx, cy = self._alignment_last_centroid
