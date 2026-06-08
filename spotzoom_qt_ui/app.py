@@ -5,6 +5,7 @@ import random
 import sys
 import threading
 import time
+import zipfile
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple
 
@@ -2366,6 +2367,8 @@ class SpotZoomQtMainWindow(QMainWindow):
         )
 
     def _write_simple_xlsx(self, out_path: Path, rows: List[List[object]]) -> None:
+        from xml.sax.saxutils import escape as xml_escape
+
         shared_strings: List[str] = []
         shared_index: Dict[str, int] = {}
 
@@ -2469,6 +2472,14 @@ class SpotZoomQtMainWindow(QMainWindow):
             stamp, f"{ccx:.3f}", f"{ccy:.3f}", f"{tx:.3f}", f"{ty:.3f}", f"{cx:.3f}", f"{cy:.3f}", f"{dx:.3f}", f"{dy:.3f}", f"{dist:.3f}"
         ])
         self._update_convergence_record_status_label()
+        remain = self._alignment_convergence_record_end_ts - time.time()
+        total_min = (self._alignment_convergence_record_end_ts - self._alignment_convergence_record_start_ts) / 60.0
+        elapsed_min = (time.time() - self._alignment_convergence_record_start_ts) / 60.0
+        self._append_log(
+            f"[收敛误差记录] 采样 #{len(self._alignment_convergence_record_rows)}: "
+            f"Δ=({dx:.2f}, {dy:.2f}) dist={dist:.3f}px "
+            f"丨已用 {elapsed_min:.1f}/{total_min:.1f} min"
+        )
         if time.time() >= self._alignment_convergence_record_end_ts:
             self._stop_convergence_error_recording(auto_export=True)
 
@@ -2641,8 +2652,10 @@ class SpotZoomQtMainWindow(QMainWindow):
         tolerance = self._alignment_stabilize_tolerance.value()
         if dist < tolerance:
             self._alignment_converged_centroid = (cx, cy)
-            self.btn_record_convergence.setEnabled(True)
-            self._alignment_record_status_label.setText("记录状态：已收敛，可直接记录")
+            # 仅在未进行记录时才启用记录按钮，避免记录过程中被重新启用导致误操作
+            if self._alignment_convergence_record_timer is None:
+                self.btn_record_convergence.setEnabled(True)
+                self._alignment_record_status_label.setText("记录状态：已收敛，可直接记录")
             self._refresh_alignment_status_label("已收敛")
             self._append_log(f"[闭环] 已收敛: 偏差=({dx:.1f}, {dy:.1f}) 容差={tolerance}")
             return
