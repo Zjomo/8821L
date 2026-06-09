@@ -1,5 +1,6 @@
 artifacts/
 Tmp_Frames/
+Document/发票申请/
 __pycache__/
 *.pyc
 *.pyo
