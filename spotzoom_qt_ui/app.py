@@ -53,7 +53,15 @@ from .qt_compat import (
     app_exec,
 )
 
-from .picomotor_driver_panel import PicomotorDriverPanel
+from dataclasses import dataclass, field
+
+
+@dataclass
+class UiPreferences:
+    theme_dark: bool = True
+    autozoom_window_titles: List[str] = field(default_factory=list)
+
+
 from .models import AlignmentStrategy, EventRecord, RunMode, RuntimeProfile, TestCaseSpec, UiStatus
 from .services import (
     DeviceRegistryService,
@@ -61,6 +69,8 @@ from .services import (
     ModuleCatalogService,
     RuntimeControlService,
 )
+from .picomotor_driver_panel import PicomotorDriverPanel
+
 
 import numpy as np
 import cv2
@@ -429,6 +439,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         "仪表盘",
         "准直工作台",
         "模块中心",
+        "AutoZoom",
         "设备中心",
         "设备测试",
         "运行模式",
@@ -444,6 +455,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         self.device_test = DeviceTestService(self.runtime)
         self.module_catalog = ModuleCatalogService()
         self.profile = self.runtime.default_profile()
+        self.ui_prefs = self._load_ui_preferences()
 
         self.env_status = UiStatus.NORMAL
         self.startup_status = UiStatus.NORMAL
@@ -502,7 +514,8 @@ class SpotZoomQtMainWindow(QMainWindow):
         self.axis4_status_label.setText(
             f"状态：4轴闭环已激活 | 策略={self.profile.alignment_strategy.value} | 探测器模式={self.profile.detector_mode}"
         )
-        self._append_log("UI 启动完成。")
+        self.statusBar().showMessage("就绪")
+        self._update_status_bar()
 
         self.poll_timer = QTimer(self)
         self.poll_timer.setInterval(1500)
@@ -529,7 +542,9 @@ class SpotZoomQtMainWindow(QMainWindow):
         self.nav_list.setCurrentRow(0)
 
         self._build_menu_actions()
+        self._theme_dark = True
         self._apply_app_style()
+        self._apply_theme_style()
 
     def _build_menu_actions(self) -> None:
         toolbar = self.addToolBar("main")
@@ -540,6 +555,9 @@ class SpotZoomQtMainWindow(QMainWindow):
         act_export = QAction("导出报告", self)
         act_export.triggered.connect(self._export_report)
         toolbar.addAction(act_export)
+        act_theme = QAction("切换主题", self)
+        act_theme.triggered.connect(self._toggle_theme)
+        toolbar.addAction(act_theme)
 
     def _apply_app_style(self) -> None:
         self.setStyleSheet(
@@ -556,6 +574,32 @@ class SpotZoomQtMainWindow(QMainWindow):
             QHeaderView::section { background: #18212B; color: #9FB3C8; border: 1px solid #2B3642; padding: 3px; }
             """
         )
+
+    def _apply_light_style(self) -> None:
+        self.setStyleSheet(
+            """
+            QWidget { background: #F6F8FB; color: #1F2937; font-size: 11px; }
+            QGroupBox { border: 1px solid #CBD5E1; margin-top: 10px; }
+            QGroupBox::title { subcontrol-origin: margin; left: 8px; padding: 0 4px; color: #334155; }
+            QPushButton { background: #FFFFFF; border: 1px solid #94A3B8; padding: 4px 10px; border-radius: 3px; }
+            QPushButton:hover { background: #E2E8F0; }
+            QPushButton:disabled { color: #94A3B8; border-color: #CBD5E1; }
+            QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox, QTextEdit, QPlainTextEdit, QTableWidget, QListWidget, QTreeWidget {
+              background: #FFFFFF; border: 1px solid #CBD5E1; color: #1F2937;
+            }
+            QHeaderView::section { background: #E2E8F0; color: #334155; border: 1px solid #CBD5E1; padding: 3px; }
+            """
+        )
+
+    def _apply_theme_style(self) -> None:
+        if self._theme_dark:
+            self._apply_app_style()
+        else:
+            self._apply_light_style()
+
+    def _toggle_theme(self) -> None:
+        self._theme_dark = not getattr(self, "_theme_dark", True)
+        self._apply_theme_style()
 
     def _build_top_status_strip(self) -> QWidget:
         bar = QFrame()
@@ -598,6 +642,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         self.pages.addWidget(self._build_dashboard_page())
         self.pages.addWidget(self._build_alignment_page())
         self.pages.addWidget(self._build_module_page())
+        self.pages.addWidget(self._build_autozoom_page())
         self.pages.addWidget(self._build_device_center_page())
         self.pages.addWidget(self._build_device_test_page())
         self.pages.addWidget(self._build_run_modes_page())
@@ -652,7 +697,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         btn_start = QPushButton("开始准直")
         btn_start.clicked.connect(self._start_alignment)
         btn_test = QPushButton("设备测试")
-        btn_test.clicked.connect(lambda: self.nav_list.setCurrentRow(4))
+        btn_test.clicked.connect(lambda: self.nav_list.setCurrentRow(5))
         btn_module = QPushButton("模块配置")
         btn_module.clicked.connect(lambda: self.nav_list.setCurrentRow(2))
         btn_row.addWidget(btn_start)
@@ -1028,7 +1073,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         self.module_search.setPlaceholderText("搜索模块名标题")
         self.module_search.textChanged.connect(self._refresh_module_table)
         self.module_version_filter = QComboBox()
-        self.module_version_filter.addItems(["全部版本", "v2", "v3", "v4", "v5", "v6", "v7"])
+        self.module_version_filter.addItems(["全部版本", "v2", "v3", "v4", "v5", "v6", "v7", "v8"])
         self.module_version_filter.currentIndexChanged.connect(self._refresh_module_table)
         self.module_integrated_only = QCheckBox("只看已接入")
         self.module_integrated_only.stateChanged.connect(self._refresh_module_table)
@@ -1057,6 +1102,413 @@ class SpotZoomQtMainWindow(QMainWindow):
         right_layout.addWidget(self.module_detail_text, 1)
         layout.addWidget(right, 2)
         return page
+
+    def _build_autozoom_page(self) -> QWidget:
+        page = QWidget()
+        layout = QVBoxLayout(page)
+
+        title = QLabel("AutoZoom 独立页面")
+        title.setStyleSheet("font-size: 18px; font-weight: 700;")
+        layout.addWidget(title)
+
+        summary = QLabel(
+            "这里集中展示 AutoZoom 显微镜自动聚焦相关模块，按 控制 / 参考 / Z轴 / 日志 四个子区管理。"
+        )
+        summary.setWordWrap(True)
+        layout.addWidget(summary)
+
+        tabs = QTabWidget()
+        tabs.addTab(self._build_autozoom_console_tab(), "控制台")
+        tabs.addTab(self._build_autozoom_reference_tab(), "聚焦参考")
+        tabs.addTab(self._build_autozoom_zaxis_tab(), "Z轴控制")
+        tabs.addTab(self._build_autozoom_module_tab(), "模块清单")
+        layout.addWidget(tabs, 1)
+
+        self.autozoom_log = QPlainTextEdit()
+        self.autozoom_log.setReadOnly(True)
+        self.autozoom_log.setPlaceholderText("AutoZoom 运行日志 / 参考建立日志 / 补焦状态")
+        layout.addWidget(self.autozoom_log, 1)
+
+        return page
+
+    def _build_autozoom_console_tab(self) -> QWidget:
+        page = QWidget()
+        layout = QVBoxLayout(page)
+
+        btn_row = QHBoxLayout()
+        self.autozoom_start_button = QPushButton("启动 AutoZoom 演示")
+        self.autozoom_start_button.clicked.connect(self._run_autozoom_demo)
+        self.autozoom_ref_button = QPushButton("建立聚焦参考")
+        self.autozoom_ref_button.clicked.connect(self._build_autozoom_reference)
+        self.autozoom_check_button = QPushButton("检查补焦状态")
+        self.autozoom_check_button.clicked.connect(self._check_autozoom_focus)
+        self.autozoom_open_folder_button = QPushButton("打开 AutoZoom 目录")
+        self.autozoom_open_folder_button.clicked.connect(self._open_autozoom_folder)
+        btn_row.addWidget(self.autozoom_start_button)
+        btn_row.addWidget(self.autozoom_ref_button)
+        btn_row.addWidget(self.autozoom_check_button)
+        btn_row.addWidget(self.autozoom_open_folder_button)
+        btn_row.addStretch(1)
+        layout.addLayout(btn_row)
+
+        self.autozoom_status_label = QLabel("状态：未就绪")
+        layout.addWidget(self.autozoom_status_label)
+
+        self.autozoom_console_detail = QPlainTextEdit()
+        self.autozoom_console_detail.setReadOnly(True)
+        self.autozoom_console_detail.setPlaceholderText("AutoZoom 当前状态 / 提示 / 操作结果")
+        layout.addWidget(self.autozoom_console_detail, 1)
+        return page
+
+    def _build_autozoom_reference_tab(self) -> QWidget:
+        page = QWidget()
+        layout = QVBoxLayout(page)
+
+        form = QFormLayout()
+        self.autozoom_ref_count = QSpinBox()
+        self.autozoom_ref_count.setRange(1, 100)
+        self.autozoom_ref_count.setValue(5)
+        self.autozoom_ref_sleep = QDoubleSpinBox()
+        self.autozoom_ref_sleep.setRange(0.0, 10.0)
+        self.autozoom_ref_sleep.setDecimals(2)
+        self.autozoom_ref_sleep.setSingleStep(0.1)
+        self.autozoom_ref_sleep.setValue(0.15)
+        form.addRow("采集次数", self.autozoom_ref_count)
+        form.addRow("采集间隔(s)", self.autozoom_ref_sleep)
+        layout.addLayout(form)
+
+        self.autozoom_capture_mode = QComboBox()
+        self.autozoom_capture_mode.addItems(["screen_region", "window_roi"])
+        self.autozoom_window_title = QComboBox()
+        self.autozoom_window_title.setEditable(True)
+        self.autozoom_window_title.setInsertPolicy(QComboBox.NoInsert)
+        self.autozoom_window_title.setPlaceholderText("窗口标题关键字，例如 ToupView / 你的自定义窗口名")
+        if self.autozoom_window_title.lineEdit() is not None:
+            self.autozoom_window_title.lineEdit().editingFinished.connect(self._sync_autozoom_window_title_history)
+            self.autozoom_window_title.lineEdit().returnPressed.connect(self._sync_autozoom_window_title_history)
+
+        self.autozoom_window_match_mode = QComboBox()
+        self.autozoom_window_match_mode.addItems(["contains", "exact"])
+        self.autozoom_window_padding_left = self._spin(0, 500, 0)
+        self.autozoom_window_padding_top = self._spin(0, 500, 0)
+        self.autozoom_window_padding_right = self._spin(0, 500, 0)
+        self.autozoom_window_padding_bottom = self._spin(0, 500, 0)
+        form.addRow("采集模式", self.autozoom_capture_mode)
+        form.addRow("窗口标题", self.autozoom_window_title)
+        form.addRow("匹配方式", self.autozoom_window_match_mode)
+        pad_row = QHBoxLayout()
+        pad_row.addWidget(QLabel("左"))
+        pad_row.addWidget(self.autozoom_window_padding_left)
+        pad_row.addWidget(QLabel("上"))
+        pad_row.addWidget(self.autozoom_window_padding_top)
+        pad_row.addWidget(QLabel("右"))
+        pad_row.addWidget(self.autozoom_window_padding_right)
+        pad_row.addWidget(QLabel("下"))
+        pad_row.addWidget(self.autozoom_window_padding_bottom)
+        pad_wrap = QWidget()
+        pad_wrap.setLayout(pad_row)
+        form.addRow("窗口边缘补偿", pad_wrap)
+        self.autozoom_test_capture_button = QPushButton("测试窗口采集")
+        self.autozoom_test_capture_button.clicked.connect(self._test_autozoom_capture)
+        layout.addWidget(self.autozoom_test_capture_button)
+
+        self.autozoom_reference_text = QPlainTextEdit()
+        self.autozoom_reference_text.setReadOnly(True)
+        self.autozoom_reference_text.setPlaceholderText("聚焦参考信息、基线结果和参考目录")
+        layout.addWidget(self.autozoom_reference_text, 1)
+        return page
+
+    def _build_autozoom_zaxis_tab(self) -> QWidget:
+        page = QWidget()
+        layout = QVBoxLayout(page)
+
+        form = QFormLayout()
+        self.autozoom_z_axis = QSpinBox()
+        self.autozoom_z_axis.setRange(1, 16)
+        self.autozoom_z_axis.setValue(1)
+        self.autozoom_z_speed = QSpinBox()
+        self.autozoom_z_speed.setRange(1, 10000)
+        self.autozoom_z_speed.setValue(100)
+        self.autozoom_z_accel = QSpinBox()
+        self.autozoom_z_accel.setRange(1, 10000)
+        self.autozoom_z_accel.setValue(100)
+        self.autozoom_z_steps = QSpinBox()
+        self.autozoom_z_steps.setRange(1, 100000)
+        self.autozoom_z_steps.setValue(10)
+        form.addRow("Z 轴编号", self.autozoom_z_axis)
+        form.addRow("速度", self.autozoom_z_speed)
+        form.addRow("加速度", self.autozoom_z_accel)
+        form.addRow("移动步数", self.autozoom_z_steps)
+        layout.addLayout(form)
+
+        move_row = QHBoxLayout()
+        btn_pos = QPushButton("正向移动")
+        btn_neg = QPushButton("反向移动")
+        btn_pos.clicked.connect(lambda: self._move_autozoom_zaxis(+1))
+        btn_neg.clicked.connect(lambda: self._move_autozoom_zaxis(-1))
+        move_row.addWidget(btn_pos)
+        move_row.addWidget(btn_neg)
+        move_row.addStretch(1)
+        layout.addLayout(move_row)
+
+        self.autozoom_z_text = QPlainTextEdit()
+        self.autozoom_z_text.setReadOnly(True)
+        self.autozoom_z_text.setPlaceholderText("Z 轴连接状态、移动结果、错误信息")
+        layout.addWidget(self.autozoom_z_text, 1)
+        return page
+
+    def _build_autozoom_module_tab(self) -> QWidget:
+        page = QWidget()
+        layout = QVBoxLayout(page)
+
+        self._autozoom_window_title_history = []
+        self._load_autozoom_window_title_history()
+
+        self.autozoom_table = QTableWidget(0, 6)
+        self.autozoom_table.setHorizontalHeaderLabels(["模块名", "版本", "类型", "状态", "接入位置", "简介"])
+        self.autozoom_table.horizontalHeader().setStretchLastSection(True)
+        self.autozoom_table.itemSelectionChanged.connect(self._show_selected_autozoom_detail)
+        layout.addWidget(self.autozoom_table, 2)
+
+        btn_row = QHBoxLayout()
+        btn_refresh = QPushButton("刷新 AutoZoom 列表")
+        btn_refresh.clicked.connect(self._refresh_autozoom_table)
+        btn_module_center = QPushButton("转到模块中心")
+        btn_module_center.clicked.connect(lambda: self.nav_list.setCurrentRow(2))
+        btn_row.addWidget(btn_refresh)
+        btn_row.addWidget(btn_module_center)
+        btn_row.addStretch(1)
+        layout.addLayout(btn_row)
+
+        self.autozoom_detail = QPlainTextEdit()
+        self.autozoom_detail.setReadOnly(True)
+        layout.addWidget(self.autozoom_detail, 1)
+
+        self._refresh_autozoom_table()
+        return page
+
+    def _refresh_autozoom_table(self) -> None:
+        if not hasattr(self, "autozoom_table"):
+            return
+        rows = [row for row in self.module_rows if row.version == 8 or "AutoZoom" in row.title or "focus_" in row.name]
+        self.autozoom_table.setRowCount(len(rows))
+        for i, row in enumerate(rows):
+            values = [row.name, f"v{row.version}", row.type_label, status_text(row.status), row.placement, row.summary]
+            for c, value in enumerate(values):
+                self.autozoom_table.setItem(i, c, QTableWidgetItem(str(value)))
+            self.autozoom_table.item(i, 0).setData(Qt.UserRole, row)
+        if rows:
+            self.autozoom_table.selectRow(0)
+            self._show_selected_autozoom_detail()
+
+    def _load_autozoom_window_title_history(self) -> None:
+        if not hasattr(self, "autozoom_window_title"):
+            return
+        history = list(getattr(self, "_autozoom_window_title_history", []))
+        current = self._autozoom_window_title_value() if hasattr(self, "_autozoom_window_title_value") else ""
+        if current and current not in history:
+            history.insert(0, current)
+        self._autozoom_window_title_history = history[:10]
+        self.autozoom_window_title.blockSignals(True)
+        try:
+            self.autozoom_window_title.clear()
+            for title in self._autozoom_window_title_history:
+                if title:
+                    self.autozoom_window_title.addItem(title)
+            if current:
+                idx = self.autozoom_window_title.findText(current)
+                if idx >= 0:
+                    self.autozoom_window_title.setCurrentIndex(idx)
+        finally:
+            self.autozoom_window_title.blockSignals(False)
+
+    def _sync_autozoom_window_title_history(self) -> None:
+        if not hasattr(self, "autozoom_window_title"):
+            return
+        title = self._autozoom_window_title_value()
+        if not title:
+            return
+        history = list(getattr(self, "_autozoom_window_title_history", []))
+        if title in history:
+            history.remove(title)
+        history.insert(0, title)
+        self._autozoom_window_title_history = history[:10]
+        self._load_autozoom_window_title_history()
+
+    def _autozoom_window_title_value(self) -> str:
+        if not hasattr(self, "autozoom_window_title"):
+            return ""
+        return self.autozoom_window_title.currentText().strip()
+
+    def _run_autozoom_demo(self) -> None:
+        self._append_log("[AutoZoom] 启动演示入口")
+        if hasattr(self, "autozoom_status_label"):
+            self.autozoom_status_label.setText("状态：正在运行演示")
+        if hasattr(self, "autozoom_console_detail"):
+            self.autozoom_console_detail.setPlainText("运行 demo 模式，用于验证 AutoZoom 入口和截图/聚焦链路。")
+        try:
+            from Utils.AutoZoom.Focus.run_autofocus import run_demo
+            run_demo()
+            self._append_log("[AutoZoom] 演示执行完成")
+            if hasattr(self, "autozoom_status_label"):
+                self.autozoom_status_label.setText("状态：演示完成")
+        except Exception as exc:
+            self._append_log(f"[AutoZoom] 演示执行失败: {exc}")
+            if hasattr(self, "autozoom_status_label"):
+                self.autozoom_status_label.setText("状态：演示失败")
+            if hasattr(self, "autozoom_console_detail"):
+                self.autozoom_console_detail.setPlainText(str(exc))
+            QMessageBox.warning(self, "AutoZoom", f"演示执行失败: {exc}")
+
+    def _build_autozoom_reference(self) -> None:
+        self._append_log("[AutoZoom] 开始建立聚焦参考")
+        if hasattr(self, "autozoom_reference_text"):
+            self.autozoom_reference_text.setPlainText("正在建立聚焦参考，请稍候...")
+        try:
+            from Utils.AutoZoom.Focus.config import AutofocusConfig
+            from Utils.AutoZoom.Focus.metrics import FocusMetricsCalculator
+            from Utils.AutoZoom.Focus.scorer import FocusScorer
+            from Utils.AutoZoom.Focus.z_axis import ZAxisController
+            from Utils.AutoZoom.Focus.controller import AutofocusController
+
+            cfg = AutofocusConfig(
+                capture_mode=self.autozoom_capture_mode.currentText() if hasattr(self, "autozoom_capture_mode") else "screen_region",
+                window_title=self.autozoom_window_title.text().strip() if hasattr(self, "autozoom_window_title") else "",
+                window_match_mode=self.autozoom_window_match_mode.currentText() if hasattr(self, "autozoom_window_match_mode") else "contains",
+                window_padding=(
+                    int(self.autozoom_window_padding_left.value()) if hasattr(self, "autozoom_window_padding_left") else 0,
+                    int(self.autozoom_window_padding_top.value()) if hasattr(self, "autozoom_window_padding_top") else 0,
+                    int(self.autozoom_window_padding_right.value()) if hasattr(self, "autozoom_window_padding_right") else 0,
+                    int(self.autozoom_window_padding_bottom.value()) if hasattr(self, "autozoom_window_padding_bottom") else 0,
+                ),
+                focus_reference_capture_count=int(self.autozoom_ref_count.value()) if hasattr(self, "autozoom_ref_count") else 5,
+            )
+            self._sync_autozoom_window_title_history()
+            metrics_calc = FocusMetricsCalculator(cfg)
+            scorer = FocusScorer(cfg, metrics_calc)
+            z_axis = ZAxisController(cfg)
+            controller = AutofocusController(cfg, scorer, metrics_calc, z_axis)
+            controller.on_log = self._append_log
+            ref = controller.build_reference(
+                output_root=self.runtime.artifacts_dir,
+            )
+            text = json.dumps(ref, ensure_ascii=False, indent=2)
+            if hasattr(self, "autozoom_reference_text"):
+                self.autozoom_reference_text.setPlainText(text)
+            self._append_log("[AutoZoom] 聚焦参考已建立")
+        except Exception as exc:
+            self._append_log(f"[AutoZoom] 建立参考失败: {exc}")
+            if hasattr(self, "autozoom_reference_text"):
+                self.autozoom_reference_text.setPlainText(str(exc))
+            QMessageBox.warning(self, "AutoZoom", f"建立参考失败: {exc}")
+
+    def _check_autozoom_focus(self) -> None:
+        self._append_log("[AutoZoom] 检查补焦状态")
+        try:
+            from Utils.AutoZoom.Focus.config import AutofocusConfig
+            from Utils.AutoZoom.Focus.metrics import FocusMetricsCalculator
+            from Utils.AutoZoom.Focus.scorer import FocusScorer
+            from Utils.AutoZoom.Focus.z_axis import ZAxisController
+            from Utils.AutoZoom.Focus.controller import AutofocusController
+
+            cfg = AutofocusConfig(
+                capture_mode=self.autozoom_capture_mode.currentText() if hasattr(self, "autozoom_capture_mode") else "screen_region",
+                window_title=self.autozoom_window_title.text().strip() if hasattr(self, "autozoom_window_title") else "",
+                window_match_mode=self.autozoom_window_match_mode.currentText() if hasattr(self, "autozoom_window_match_mode") else "contains",
+                window_padding=(
+                    int(self.autozoom_window_padding_left.value()) if hasattr(self, "autozoom_window_padding_left") else 0,
+                    int(self.autozoom_window_padding_top.value()) if hasattr(self, "autozoom_window_padding_top") else 0,
+                    int(self.autozoom_window_padding_right.value()) if hasattr(self, "autozoom_window_padding_right") else 0,
+                    int(self.autozoom_window_padding_bottom.value()) if hasattr(self, "autozoom_window_padding_bottom") else 0,
+                ),
+            )
+            metrics_calc = FocusMetricsCalculator(cfg)
+            scorer = FocusScorer(cfg, metrics_calc)
+            z_axis = ZAxisController(cfg)
+            controller = AutofocusController(cfg, scorer, metrics_calc, z_axis)
+            controller.on_log = self._append_log
+            if hasattr(self, "autozoom_reference_text"):
+                self.autozoom_reference_text.appendPlainText("\n[AutoZoom] 检查当前补焦状态...")
+            live = metrics_calc.capture_live()
+            focus_score, ratios = scorer.score_ratio(live.get("roi_metrics"))
+            need, reasons = controller.evaluate_trigger(focus_score)
+            msg = {
+                "focus_score_ratio": focus_score,
+                "component_ratios": ratios,
+                "need_autofocus": need,
+                "reasons": reasons,
+            }
+            if hasattr(self, "autozoom_console_detail"):
+                self.autozoom_console_detail.setPlainText(json.dumps(msg, ensure_ascii=False, indent=2))
+            self._append_log(f"[AutoZoom] 当前补焦触发={need}, 原因={reasons}")
+        except Exception as exc:
+            self._append_log(f"[AutoZoom] 检查失败: {exc}")
+            if hasattr(self, "autozoom_console_detail"):
+                self.autozoom_console_detail.setPlainText(str(exc))
+            QMessageBox.warning(self, "AutoZoom", f"检查失败: {exc}")
+
+    def _test_autozoom_capture(self) -> None:
+        try:
+            from Utils.AutoZoom.Focus.config import AutofocusConfig
+            from Utils.AutoZoom.Focus.metrics import FocusMetricsCalculator
+
+            cfg = AutofocusConfig(
+                capture_mode=self.autozoom_capture_mode.currentText() if hasattr(self, "autozoom_capture_mode") else "screen_region",
+                window_title=self.autozoom_window_title.text().strip() if hasattr(self, "autozoom_window_title") else "",
+                window_match_mode=self.autozoom_window_match_mode.currentText() if hasattr(self, "autozoom_window_match_mode") else "contains",
+                window_padding=(
+                    int(self.autozoom_window_padding_left.value()) if hasattr(self, "autozoom_window_padding_left") else 0,
+                    int(self.autozoom_window_padding_top.value()) if hasattr(self, "autozoom_window_padding_top") else 0,
+                    int(self.autozoom_window_padding_right.value()) if hasattr(self, "autozoom_window_padding_right") else 0,
+                    int(self.autozoom_window_padding_bottom.value()) if hasattr(self, "autozoom_window_padding_bottom") else 0,
+                ),
+            )
+            metrics_calc = FocusMetricsCalculator(cfg)
+            result = metrics_calc.capture_live()
+            preview = {
+                "capture_area": result.get("capture_area"),
+                "roi": result.get("roi"),
+                "full_tenengrad": result.get("full", {}).get("tenengrad"),
+                "roi_tenengrad": result.get("roi_metrics", {}).get("tenengrad"),
+            }
+            if hasattr(self, "autozoom_reference_text"):
+                self.autozoom_reference_text.setPlainText(json.dumps(preview, ensure_ascii=False, indent=2))
+            self._append_log(f"[AutoZoom] 测试采集成功: {preview}")
+        except Exception as exc:
+            self._append_log(f"[AutoZoom] 测试采集失败: {exc}")
+            QMessageBox.warning(self, "AutoZoom", f"测试采集失败: {exc}")
+
+    def _move_autozoom_zaxis(self, direction: int) -> None:
+        self._append_log(f"[AutoZoom] Z 轴移动请求: direction={direction}")
+        try:
+            from Utils.AutoZoom.Focus.config import AutofocusConfig
+            from Utils.AutoZoom.Focus.z_axis import ZAxisController
+
+            cfg = AutofocusConfig(
+                z_axis=int(self.autozoom_z_axis.value()) if hasattr(self, "autozoom_z_axis") else 1,
+                z_speed=int(self.autozoom_z_speed.value()) if hasattr(self, "autozoom_z_speed") else 100,
+                z_accel=int(self.autozoom_z_accel.value()) if hasattr(self, "autozoom_z_accel") else 100,
+            )
+            controller = ZAxisController(cfg)
+            controller.connect()
+            steps = int(self.autozoom_z_steps.value()) if hasattr(self, "autozoom_z_steps") else 10
+            controller.move_relative(direction * steps)
+            text = f"Z 轴移动完成: axis={cfg.z_axis}, steps={direction * steps}"
+            if hasattr(self, "autozoom_z_text"):
+                self.autozoom_z_text.setPlainText(text)
+            self._append_log(f"[AutoZoom] {text}")
+        except Exception as exc:
+            if hasattr(self, "autozoom_z_text"):
+                self.autozoom_z_text.setPlainText(str(exc))
+            self._append_log(f"[AutoZoom] Z 轴移动失败: {exc}")
+            QMessageBox.warning(self, "AutoZoom", f"Z 轴移动失败: {exc}")
+
+    def _open_autozoom_folder(self) -> None:
+        try:
+            import os
+            os.startfile(str(Path("Utils") / "AutoZoom"))
+        except Exception as exc:
+            QMessageBox.warning(self, "AutoZoom", f"打开目录失败: {exc}")
 
     def _build_device_center_page(self) -> QWidget:
         page = QWidget()
@@ -1507,9 +1959,52 @@ class SpotZoomQtMainWindow(QMainWindow):
         layout.addWidget(scroll, 1)
         return page
 
+    def _load_ui_preferences(self) -> UiPreferences:
+        prefs = UiPreferences()
+        try:
+            raw = self.runtime.read_run_report(self.runtime.repo_root / "artifacts" / "ui_prefs.json")
+            if isinstance(raw, dict):
+                prefs.theme_dark = bool(raw.get("theme_dark", prefs.theme_dark))
+                titles = raw.get("autozoom_window_titles", [])
+                if isinstance(titles, list):
+                    prefs.autozoom_window_titles = [str(v) for v in titles if str(v).strip()]
+        except Exception:
+            pass
+        return prefs
+
+    def _save_ui_preferences(self) -> None:
+        try:
+            payload = {
+                "theme_dark": bool(getattr(self, "_theme_dark", True)),
+                "autozoom_window_titles": list(getattr(self, "_autozoom_window_title_history", [])),
+            }
+            path = self.runtime.repo_root / "artifacts" / "ui_prefs.json"
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        except Exception as exc:
+            self._append_log(f"[UI] 保存偏好失败: {exc}")
+
+    def _update_status_bar(self, page_name: Optional[str] = None, message: Optional[str] = None) -> None:
+        parts = [
+            f"页面={page_name or self.current_page_name()}",
+            f"主题={'深色' if getattr(self, '_theme_dark', True) else '浅色'}",
+            f"运行模式={self.profile.run_mode.value}",
+            f"运行状态={status_text(self.run_status)}",
+        ]
+        if message:
+            parts.append(message)
+        self.statusBar().showMessage(" | ".join(parts))
+
+    def current_page_name(self) -> str:
+        idx = self.nav_list.currentRow() if hasattr(self, "nav_list") else -1
+        if 0 <= idx < len(self.NAV_ITEMS):
+            return self.NAV_ITEMS[idx]
+        return "-"
+
     def _switch_page(self, idx: int) -> None:
         if hasattr(self, "pages") and 0 <= idx < self.pages.count():
             self.pages.setCurrentIndex(idx)
+            self._update_status_bar(page_name=self.NAV_ITEMS[idx] if idx < len(self.NAV_ITEMS) else None)
 
     def _spin(self, min_v: int, max_v: int, val: int) -> QSpinBox:
         w = QSpinBox()
@@ -1533,6 +2028,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         self.profile = self.runtime.default_profile()
         self._apply_profile_to_controls(self.profile)
         self._refresh_all_panels()
+        self._save_ui_preferences()
         self._append_log("已恢复默认配置值")
 
     def _apply_profile_to_controls(self, p: RuntimeProfile) -> None:
@@ -1917,6 +2413,34 @@ class SpotZoomQtMainWindow(QMainWindow):
             table.setItem(i, 0, QTableWidgetItem(row.timestamp))
             table.setItem(i, 1, QTableWidgetItem(row.event_name))
             table.setItem(i, 2, QTableWidgetItem(row.payload_summary))
+
+    def _show_selected_autozoom_detail(self) -> None:
+        row = self.autozoom_table.currentRow()
+        if row < 0:
+            return
+        item = self.autozoom_table.item(row, 0)
+        if item is None:
+            return
+        module = item.data(Qt.UserRole)
+        if module is None:
+            return
+        detail = {
+            "模块名": module.name,
+            "版本": f"v{module.version}",
+            "类型": module.type_label,
+            "状态": status_text(module.status),
+            "接入位置": module.placement,
+            "import_path": module.import_path,
+            "source_path": module.source_path,
+            "primary_symbol": module.primary_symbol,
+            "config_symbol": module.config_symbol,
+            "docs_path": module.docs_path,
+            "依赖缺失原因": module.dependency_reason or "-",
+            "说明": module.summary,
+        }
+        self.autozoom_detail.setPlainText("\n".join(f"{k}: {v}" for k, v in detail.items()))
+        if hasattr(self, "autozoom_log"):
+            self.autozoom_log.appendPlainText(f"[AutoZoom] 当前选中: {module.title} ({module.name})")
 
     def _refresh_runtime_streams(self) -> None:
         self._refresh_dashboard()
@@ -3265,6 +3789,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         # 停止 UCC 预览
         self._stop_ucc_preview()
         self._stop_alignment_ucc_preview()
+        self._save_ui_preferences()
 
         panel = getattr(self, "picomotor_driver_panel", None)
         if panel is not None:

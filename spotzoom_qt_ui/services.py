@@ -68,6 +68,127 @@ def _shorten_payload(payload: Dict[str, object]) -> str:
     return preview if preview else "-"
 
 
+AUTOZOOM_DOCS_ROOT = Path("Utils") / "AutoZoom"
+AUTOZOOM_FOCUS_ROOT = AUTOZOOM_DOCS_ROOT / "Focus"
+
+
+def _build_autozoom_module_rows() -> List[ModuleViewItem]:
+    return [
+        ModuleViewItem(
+            version=8,
+            name="autozoom",
+            type_key=OptimizationType.ADAPTIVE_OPTICS_CONTROL.value,
+            type_label=TYPE_LABELS[OptimizationType.ADAPTIVE_OPTICS_CONTROL],
+            title="AutoZoom 自动聚焦插件区",
+            summary="用于显微镜自动对焦、聚焦指标分析与闭环补焦的插件集合，便于在 UI 中统一管理。",
+            status=UiStatus.RUNNING,
+            placement="插件区 / AutoZoom 总入口",
+            import_path="Utils.AutoZoom",
+            source_path=str(AUTOZOOM_DOCS_ROOT / "README.md").replace("\\", "/"),
+            docs_path=str(AUTOZOOM_DOCS_ROOT / "README.md"),
+            primary_symbol="",
+            config_symbol="",
+            dependency_reason="AutoZoom 独立插件区总入口",
+        ),
+        ModuleViewItem(
+            version=8,
+            name="focus_config",
+            type_key=OptimizationType.HARDWARE_ABSTRACTION.value,
+            type_label=TYPE_LABELS[OptimizationType.HARDWARE_ABSTRACTION],
+            title="Focus 配置与参数定义",
+            summary="集中管理自动对焦相关参数，包含截图区域、ROI、阈值和 Z 轴搜索参数。",
+            status=UiStatus.RUNNING,
+            placement="插件区 / AutoZoom Focus",
+            import_path="Utils.AutoZoom.Focus.config",
+            source_path=str(AUTOZOOM_FOCUS_ROOT / "config.py").replace("\\", "/"),
+            docs_path=str(AUTOZOOM_FOCUS_ROOT / "README.md"),
+            primary_symbol="",
+            config_symbol="AutofocusConfig",
+            dependency_reason="Focus 配置模块",
+        ),
+        ModuleViewItem(
+            version=8,
+            name="focus_metrics",
+            type_key=OptimizationType.SYSTEM_ANALYSIS.value,
+            type_label=TYPE_LABELS[OptimizationType.SYSTEM_ANALYSIS],
+            title="Focus 指标计算器",
+            summary="提供 Tenengrad、Laplacian、Brenner 等聚焦指标与 ROI 统计计算。",
+            status=UiStatus.RUNNING,
+            placement="插件区 / AutoZoom Focus",
+            import_path="Utils.AutoZoom.Focus.metrics",
+            source_path=str(AUTOZOOM_FOCUS_ROOT / "metrics.py").replace("\\", "/"),
+            docs_path=str(AUTOZOOM_FOCUS_ROOT / "README.md"),
+            primary_symbol="FocusMetricsCalculator",
+            config_symbol="AutofocusConfig",
+            dependency_reason="Focus 指标模块",
+        ),
+        ModuleViewItem(
+            version=8,
+            name="focus_scorer",
+            type_key=OptimizationType.SYSTEM_ANALYSIS.value,
+            type_label=TYPE_LABELS[OptimizationType.SYSTEM_ANALYSIS],
+            title="Focus 评分与基线管理",
+            summary="将多项聚焦指标融合为 FocusScore，并支持参考基线建立与评分归一化。",
+            status=UiStatus.RUNNING,
+            placement="插件区 / AutoZoom Focus",
+            import_path="Utils.AutoZoom.Focus.scorer",
+            source_path=str(AUTOZOOM_FOCUS_ROOT / "scorer.py").replace("\\", "/"),
+            docs_path=str(AUTOZOOM_FOCUS_ROOT / "README.md"),
+            primary_symbol="FocusScorer",
+            config_symbol="AutofocusConfig",
+            dependency_reason="Focus 评分模块",
+        ),
+        ModuleViewItem(
+            version=8,
+            name="focus_controller",
+            type_key=OptimizationType.ADAPTIVE_OPTICS_CONTROL.value,
+            type_label=TYPE_LABELS[OptimizationType.ADAPTIVE_OPTICS_CONTROL],
+            title="Focus 闭环补焦控制器",
+            summary="自动对焦闭环编排入口，负责触发判断、参考建立与 Z 轴补焦搜索。",
+            status=UiStatus.RUNNING,
+            placement="插件区 / AutoZoom Focus",
+            import_path="Utils.AutoZoom.Focus.controller",
+            source_path=str(AUTOZOOM_FOCUS_ROOT / "controller.py").replace("\\", "/"),
+            docs_path=str(AUTOZOOM_FOCUS_ROOT / "README.md"),
+            primary_symbol="AutofocusController",
+            config_symbol="AutofocusConfig",
+            dependency_reason="Focus 闭环控制模块",
+        ),
+        ModuleViewItem(
+            version=8,
+            name="focus_z_axis",
+            type_key=OptimizationType.HARDWARE_ABSTRACTION.value,
+            type_label=TYPE_LABELS[OptimizationType.HARDWARE_ABSTRACTION],
+            title="Focus Z 轴控制封装",
+            summary="封装 Newport 8742 Picomotor Z 轴控制接口，供自动补焦闭环使用。",
+            status=UiStatus.RUNNING,
+            placement="插件区 / AutoZoom Focus",
+            import_path="Utils.AutoZoom.Focus.z_axis",
+            source_path=str(AUTOZOOM_FOCUS_ROOT / "z_axis.py").replace("\\", "/"),
+            docs_path=str(AUTOZOOM_FOCUS_ROOT / "README.md"),
+            primary_symbol="ZAxisController",
+            config_symbol="AutofocusConfig",
+            dependency_reason="Focus Z 轴模块",
+        ),
+        ModuleViewItem(
+            version=8,
+            name="focus_demo",
+            type_key=OptimizationType.ADAPTIVE_OPTICS_CONTROL.value,
+            type_label=TYPE_LABELS[OptimizationType.ADAPTIVE_OPTICS_CONTROL],
+            title="Focus 演示入口",
+            summary="独立运行的自动对焦演示脚本，便于快速验证聚焦链路与日志输出。",
+            status=UiStatus.RUNNING,
+            placement="插件区 / AutoZoom Focus",
+            import_path="Utils.AutoZoom.Focus.run_autofocus",
+            source_path=str(AUTOZOOM_FOCUS_ROOT / "run_autofocus.py").replace("\\", "/"),
+            docs_path=str(AUTOZOOM_FOCUS_ROOT / "README.md"),
+            primary_symbol="run_demo",
+            config_symbol="AutofocusConfig",
+            dependency_reason="Focus 演示脚本",
+        ),
+    ]
+
+
 class RuntimeControlService:
     def __init__(self, repo_root: Optional[Path] = None, python_exe: Optional[str] = None):
         self.repo_root = Path(repo_root or Path(__file__).resolve().parent.parent)
@@ -105,9 +226,7 @@ class RuntimeControlService:
         startup_check_only: bool = False,
         extra_args: Optional[Iterable[str]] = None,
     ) -> List[str]:
-        profile = self._normalize_profile(profile)
-        args: List[str] = [self.python_exe, str(self.script_path)]
-
+        args: List[str] = [sys.executable, "-m", "SpotZoom"]
         if check_env:
             args.append("--check-env")
         if startup_check_only:
@@ -509,6 +628,7 @@ class ModuleCatalogService:
                     dependency_reason=reason,
                 )
             )
+        rows.extend(_build_autozoom_module_rows())
         return rows
 
 

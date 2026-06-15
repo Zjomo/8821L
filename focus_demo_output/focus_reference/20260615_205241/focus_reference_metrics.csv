@@ -1,0 +1,11 @@
+﻿metric,reference_mean
+tenengrad,28108.84964444444
+laplacian_var,64301.101480057274
+brenner,1287.4111017897092
+highfreq_ratio,0.5189989755726173
+local_contrast,0.07243331332296653
+edge_width,61.0
+halo_width,5.0
+brightness_mean,243.0342222222222
+brightness_std,36.94004340302383
+red_blue_ratio,0.990109310353221
