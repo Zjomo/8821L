@@ -39,6 +39,7 @@ from .qt_compat import (
     QPlainTextEdit,
     QScrollArea,
     QSizePolicy,
+    Signal,
     QSpinBox,
     QSplitter,
     QStackedWidget,
@@ -78,11 +79,152 @@ from SpotZoom import UCCFrameSource
 from collections import deque
 
 try:
-    from PySide6.QtGui import QPainter, QPen, QColor, QFont
-    from PySide6.QtCore import QPointF
+    from PySide6.QtGui import QPainter, QPen, QColor, QFont, QCursor
+    from PySide6.QtCore import QPointF, QRect
 except ImportError:
-    from PySide2.QtGui import QPainter, QPen, QColor, QFont
-    from PySide2.QtCore import QPointF
+    from PySide2.QtGui import QPainter, QPen, QColor, QFont, QCursor
+    from PySide2.QtCore import QPointF, QRect
+
+
+
+class AutoZoomWindowComboBox(QComboBox):
+    """点击下拉时自动刷新当前可见窗口列表的下拉框。"""
+
+    popupRequested = Signal()
+
+    def showPopup(self) -> None:
+        self.popupRequested.emit()
+        super().showPopup()
+
+
+class AutoZoomRoiPreviewLabel(QLabel):
+    """
+    支持在参考帧上鼠标拖拽框选 ROI 的预览标签。
+
+    - 显示抓拍的参考帧或实时 ROI 画面；
+    - 只有在 reference_mode=True 时才允许框选；
+    - 框选完成后发出 roiSelected(rect)，rect 为 (x, y, w, h)。
+    """
+
+    roiSelected = Signal(int, int, int, int)
+
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
+        super().__init__(parent)
+        self.setAlignment(Qt.AlignCenter)
+        self.setMinimumSize(400, 300)
+        self.setStyleSheet(
+            "background-color: #1a1a2e; color: #888; border: 1px solid #333; "
+            "border-radius: 4px; font-size: 14px;"
+        )
+        self.setMouseTracking(True)
+        self._pixmap: Optional[QPixmap] = None
+        self._reference_mode = False
+        self._drawing = False
+        self._start_pos: Optional[Tuple[int, int]] = None
+        self._roi: Optional[QRect] = None
+        self._scale = 1.0
+        self._offset: Tuple[int, int] = (0, 0)
+
+    def set_reference_mode(self, enabled: bool) -> None:
+        """切换为参考帧模式（允许框选）或实时预览模式。"""
+        self._reference_mode = enabled
+        if enabled:
+            self.setCursor(QCursor(Qt.CrossCursor))
+        else:
+            self.setCursor(QCursor(Qt.ArrowCursor))
+        self.update()
+
+    def set_preview_pixmap(self, pixmap: QPixmap) -> None:
+        """设置要显示的 QPixmap（已按标签大小缩放）。"""
+        self._pixmap = pixmap
+        self.update()
+
+    def clear_preview(self) -> None:
+        self._pixmap = None
+        self._roi = None
+        self.update()
+
+    def set_roi(self, x: int, y: int, w: int, h: int) -> None:
+        self._roi = QRect(int(x), int(y), int(w), int(h))
+        self.update()
+
+    def get_roi(self) -> Optional[Tuple[int, int, int, int]]:
+        if self._roi is None:
+            return None
+        return (self._roi.x(), self._roi.y(), self._roi.width(), self._roi.height())
+
+    def paintEvent(self, event) -> None:
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        painter.fillRect(self.rect(), QColor("#1a1a2e"))
+
+        if self._pixmap is not None and not self._pixmap.isNull():
+            scaled = self._pixmap.scaled(
+                self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation
+            )
+            x = (self.width() - scaled.width()) // 2
+            y = (self.height() - scaled.height()) // 2
+            painter.drawPixmap(x, y, scaled)
+            self._scale = scaled.width() / max(1, self._pixmap.width())
+            self._offset = (x, y)
+        else:
+            self._scale = 1.0
+            self._offset = (0, 0)
+
+        if self._reference_mode and self._roi is not None:
+            pen = QPen(QColor("#22D3EE"))
+            pen.setWidth(2)
+            pen.setStyle(Qt.DashLine)
+            painter.setPen(pen)
+            ox, oy = self._offset
+            roi_display = QRect(
+                int(ox + self._roi.x() * self._scale),
+                int(oy + self._roi.y() * self._scale),
+                int(self._roi.width() * self._scale),
+                int(self._roi.height() * self._scale),
+            )
+            painter.drawRect(roi_display)
+
+    def mousePressEvent(self, event) -> None:
+        if not self._reference_mode or self._pixmap is None:
+            super().mousePressEvent(event)
+            return
+        if event.button() == Qt.LeftButton:
+            self._drawing = True
+            ox, oy = self._offset
+            x = int((event.pos().x() - ox) / self._scale)
+            y = int((event.pos().y() - oy) / self._scale)
+            x = max(0, min(x, self._pixmap.width() - 1))
+            y = max(0, min(y, self._pixmap.height() - 1))
+            self._roi = QRect(x, y, 0, 0)
+            self._start_pos = (x, y)
+            self.update()
+
+    def mouseMoveEvent(self, event) -> None:
+        if not self._reference_mode or not self._drawing or self._pixmap is None:
+            super().mouseMoveEvent(event)
+            return
+        ox, oy = self._offset
+        x = int((event.pos().x() - ox) / self._scale)
+        y = int((event.pos().y() - oy) / self._scale)
+        x = max(0, min(x, self._pixmap.width() - 1))
+        y = max(0, min(y, self._pixmap.height() - 1))
+        sx, sy = self._start_pos
+        self._roi = QRect(min(sx, x), min(sy, y), abs(x - sx), abs(y - sy))
+        self.update()
+
+    def mouseReleaseEvent(self, event) -> None:
+        if event.button() != Qt.LeftButton or not self._reference_mode or not self._drawing:
+            super().mouseReleaseEvent(event)
+            return
+        self._drawing = False
+        if self._roi is not None and self._roi.width() > 2 and self._roi.height() > 2:
+            self.roiSelected.emit(
+                self._roi.x(), self._roi.y(), self._roi.width(), self._roi.height()
+            )
+        else:
+            self._roi = None
+            self.update()
 
 
 STATUS_STYLE = {
@@ -1164,7 +1306,62 @@ class SpotZoomQtMainWindow(QMainWindow):
         page = QWidget()
         layout = QVBoxLayout(page)
 
-        form = QFormLayout()
+        splitter = QSplitter(Qt.Horizontal)
+
+        # ---------- 左侧：配置 ----------
+        left = QWidget()
+        left_layout = QVBoxLayout(left)
+
+        capture_group = QGroupBox("采集配置")
+        form = QFormLayout(capture_group)
+
+        self.autozoom_capture_mode = QComboBox()
+        self.autozoom_capture_mode.addItems(["screen_region", "window_roi", "usb_camera"])
+        self.autozoom_capture_mode.currentTextChanged.connect(self._on_autozoom_capture_mode_changed)
+
+        self.autozoom_window_title = AutoZoomWindowComboBox()
+        self.autozoom_window_title.setEditable(True)
+        self.autozoom_window_title.setInsertPolicy(QComboBox.NoInsert)
+        self.autozoom_window_title.setPlaceholderText("选择或输入窗口标题")
+        self.autozoom_window_title.popupRequested.connect(self._refresh_autozoom_window_list)
+        self.autozoom_window_title.currentTextChanged.connect(self._on_autozoom_window_selected)
+        if self.autozoom_window_title.lineEdit() is not None:
+            self.autozoom_window_title.lineEdit().editingFinished.connect(self._sync_autozoom_window_title_history)
+
+        self.autozoom_window_match_mode = QComboBox()
+        self.autozoom_window_match_mode.addItems(["contains", "exact"])
+
+        self.autozoom_window_padding_left = self._spin(0, 500, 0)
+        self.autozoom_window_padding_top = self._spin(0, 500, 0)
+        self.autozoom_window_padding_right = self._spin(0, 500, 0)
+        self.autozoom_window_padding_bottom = self._spin(0, 500, 0)
+        pad_row = QHBoxLayout()
+        for label_text, widget in [
+            ("左", self.autozoom_window_padding_left),
+            ("上", self.autozoom_window_padding_top),
+            ("右", self.autozoom_window_padding_right),
+            ("下", self.autozoom_window_padding_bottom),
+        ]:
+            pad_row.addWidget(QLabel(label_text))
+            pad_row.addWidget(widget)
+        pad_row.addStretch(1)
+        pad_wrap = QWidget()
+        pad_wrap.setLayout(pad_row)
+
+        # USB 相机配置
+        self.autozoom_usb_group = QGroupBox("USB 相机配置")
+        usb_form = QFormLayout(self.autozoom_usb_group)
+        self.autozoom_usb_device = self._spin(0, 20, 0)
+        self.autozoom_usb_device.setPrefix("设备 ")
+        self.autozoom_usb_resolution = self._combo(["PAL", "NTSC", "AUTO"])
+        self.autozoom_usb_resolution.setCurrentText("AUTO")
+        self.autozoom_usb_format = self._combo(["AUTO", "MJPG", "YUY2", "YUYV", "UYVY"])
+        self.autozoom_usb_format.setCurrentText("AUTO")
+        usb_form.addRow("设备索引", self.autozoom_usb_device)
+        usb_form.addRow("分辨率", self.autozoom_usb_resolution)
+        usb_form.addRow("像素格式", self.autozoom_usb_format)
+        self.autozoom_usb_group.setVisible(False)
+
         self.autozoom_ref_count = QSpinBox()
         self.autozoom_ref_count.setRange(1, 100)
         self.autozoom_ref_count.setValue(5)
@@ -1173,49 +1370,90 @@ class SpotZoomQtMainWindow(QMainWindow):
         self.autozoom_ref_sleep.setDecimals(2)
         self.autozoom_ref_sleep.setSingleStep(0.1)
         self.autozoom_ref_sleep.setValue(0.15)
-        form.addRow("采集次数", self.autozoom_ref_count)
-        form.addRow("采集间隔(s)", self.autozoom_ref_sleep)
-        layout.addLayout(form)
 
-        self.autozoom_capture_mode = QComboBox()
-        self.autozoom_capture_mode.addItems(["screen_region", "window_roi"])
-        self.autozoom_window_title = QComboBox()
-        self.autozoom_window_title.setEditable(True)
-        self.autozoom_window_title.setInsertPolicy(QComboBox.NoInsert)
-        self.autozoom_window_title.setPlaceholderText("窗口标题关键字，例如 ToupView / 你的自定义窗口名")
-        if self.autozoom_window_title.lineEdit() is not None:
-            self.autozoom_window_title.lineEdit().editingFinished.connect(self._sync_autozoom_window_title_history)
-            self.autozoom_window_title.lineEdit().returnPressed.connect(self._sync_autozoom_window_title_history)
-
-        self.autozoom_window_match_mode = QComboBox()
-        self.autozoom_window_match_mode.addItems(["contains", "exact"])
-        self.autozoom_window_padding_left = self._spin(0, 500, 0)
-        self.autozoom_window_padding_top = self._spin(0, 500, 0)
-        self.autozoom_window_padding_right = self._spin(0, 500, 0)
-        self.autozoom_window_padding_bottom = self._spin(0, 500, 0)
         form.addRow("采集模式", self.autozoom_capture_mode)
         form.addRow("窗口标题", self.autozoom_window_title)
         form.addRow("匹配方式", self.autozoom_window_match_mode)
-        pad_row = QHBoxLayout()
-        pad_row.addWidget(QLabel("左"))
-        pad_row.addWidget(self.autozoom_window_padding_left)
-        pad_row.addWidget(QLabel("上"))
-        pad_row.addWidget(self.autozoom_window_padding_top)
-        pad_row.addWidget(QLabel("右"))
-        pad_row.addWidget(self.autozoom_window_padding_right)
-        pad_row.addWidget(QLabel("下"))
-        pad_row.addWidget(self.autozoom_window_padding_bottom)
-        pad_wrap = QWidget()
-        pad_wrap.setLayout(pad_row)
         form.addRow("窗口边缘补偿", pad_wrap)
+        form.addRow("采集次数", self.autozoom_ref_count)
+        form.addRow("采集间隔(s)", self.autozoom_ref_sleep)
+        left_layout.addWidget(capture_group)
+        left_layout.addWidget(self.autozoom_usb_group)
+
+        roi_group = QGroupBox("ROI 区域（在右侧预览图中拖拽框选）")
+        roi_form = QFormLayout(roi_group)
+        self.autozoom_roi_x = self._spin(0, 99999, 0)
+        self.autozoom_roi_y = self._spin(0, 99999, 0)
+        self.autozoom_roi_w = self._spin(1, 99999, 300)
+        self.autozoom_roi_h = self._spin(1, 99999, 300)
+        self.autozoom_roi_x.setReadOnly(True)
+        self.autozoom_roi_y.setReadOnly(True)
+        self.autozoom_roi_w.setReadOnly(True)
+        self.autozoom_roi_h.setReadOnly(True)
+        roi_row = QHBoxLayout()
+        for label_text, widget in [
+            ("X", self.autozoom_roi_x),
+            ("Y", self.autozoom_roi_y),
+            ("W", self.autozoom_roi_w),
+            ("H", self.autozoom_roi_h),
+        ]:
+            roi_row.addWidget(QLabel(label_text))
+            roi_row.addWidget(widget)
+        roi_row.addStretch(1)
+        roi_wrap = QWidget()
+        roi_wrap.setLayout(roi_row)
+        roi_form.addRow("坐标", roi_wrap)
+        left_layout.addWidget(roi_group)
+
+        btn_row = QHBoxLayout()
+        self.autozoom_capture_frame_button = QPushButton("抓拍参考帧")
+        self.autozoom_capture_frame_button.setToolTip("捕获当前窗口/USB 一帧完整图像，用于在右侧框选 ROI")
+        self.autozoom_capture_frame_button.clicked.connect(self._capture_reference_frame)
+
+        self.autozoom_start_preview_button = QPushButton("开始 ROI 预览")
+        self.autozoom_start_preview_button.clicked.connect(self._start_autozoom_roi_preview)
+        self.autozoom_stop_preview_button = QPushButton("停止 ROI 预览")
+        self.autozoom_stop_preview_button.clicked.connect(self._stop_autozoom_roi_preview)
+        self.autozoom_stop_preview_button.setEnabled(False)
+
         self.autozoom_test_capture_button = QPushButton("测试窗口采集")
         self.autozoom_test_capture_button.clicked.connect(self._test_autozoom_capture)
-        layout.addWidget(self.autozoom_test_capture_button)
 
+        btn_row.addWidget(self.autozoom_capture_frame_button)
+        btn_row.addWidget(self.autozoom_start_preview_button)
+        btn_row.addWidget(self.autozoom_stop_preview_button)
+        btn_row.addWidget(self.autozoom_test_capture_button)
+        btn_row.addStretch(1)
+        left_layout.addLayout(btn_row)
+        left_layout.addStretch(1)
+
+        # ---------- 右侧：预览 ----------
+        right = QWidget()
+        right_layout = QVBoxLayout(right)
+        self.autozoom_preview_label = AutoZoomRoiPreviewLabel()
+        self.autozoom_preview_label.roiSelected.connect(self._on_autozoom_roi_selected)
+        right_layout.addWidget(self.autozoom_preview_label, 1)
+        self.autozoom_preview_info = QLabel("状态: 未启动")
+        self.autozoom_preview_info.setStyleSheet("color: #888;")
+        right_layout.addWidget(self.autozoom_preview_info)
+
+        splitter.addWidget(left)
+        splitter.addWidget(right)
+        splitter.setStretchFactor(0, 1)
+        splitter.setStretchFactor(1, 2)
+        layout.addWidget(splitter, 2)
+
+        # ---------- 底部：参考信息 ----------
         self.autozoom_reference_text = QPlainTextEdit()
         self.autozoom_reference_text.setReadOnly(True)
         self.autozoom_reference_text.setPlaceholderText("聚焦参考信息、基线结果和参考目录")
+        self.autozoom_reference_text.setMaximumHeight(160)
         layout.addWidget(self.autozoom_reference_text, 1)
+
+        # 初始化历史记录与窗口列表
+        self._autozoom_window_title_history = []
+        self._load_autozoom_window_title_history()
+        self._refresh_autozoom_window_list()
         return page
 
     def _build_autozoom_zaxis_tab(self) -> QWidget:
@@ -1260,9 +1498,6 @@ class SpotZoomQtMainWindow(QMainWindow):
     def _build_autozoom_module_tab(self) -> QWidget:
         page = QWidget()
         layout = QVBoxLayout(page)
-
-        self._autozoom_window_title_history = []
-        self._load_autozoom_window_title_history()
 
         self.autozoom_table = QTableWidget(0, 6)
         self.autozoom_table.setHorizontalHeaderLabels(["模块名", "版本", "类型", "状态", "接入位置", "简介"])
@@ -1373,7 +1608,7 @@ class SpotZoomQtMainWindow(QMainWindow):
 
             cfg = AutofocusConfig(
                 capture_mode=self.autozoom_capture_mode.currentText() if hasattr(self, "autozoom_capture_mode") else "screen_region",
-                window_title=self.autozoom_window_title.text().strip() if hasattr(self, "autozoom_window_title") else "",
+                window_title=self._autozoom_window_title_value(),
                 window_match_mode=self.autozoom_window_match_mode.currentText() if hasattr(self, "autozoom_window_match_mode") else "contains",
                 window_padding=(
                     int(self.autozoom_window_padding_left.value()) if hasattr(self, "autozoom_window_padding_left") else 0,
@@ -1382,6 +1617,10 @@ class SpotZoomQtMainWindow(QMainWindow):
                     int(self.autozoom_window_padding_bottom.value()) if hasattr(self, "autozoom_window_padding_bottom") else 0,
                 ),
                 focus_reference_capture_count=int(self.autozoom_ref_count.value()) if hasattr(self, "autozoom_ref_count") else 5,
+                focus_roi=self._autozoom_roi_value(),
+                usb_device_index=int(self.autozoom_usb_device.value()) if hasattr(self, "autozoom_usb_device") else 0,
+                usb_resolution=self.autozoom_usb_resolution.currentText() if hasattr(self, "autozoom_usb_resolution") else "AUTO",
+                usb_pixel_format=self._autozoom_usb_format_value(),
             )
             self._sync_autozoom_window_title_history()
             metrics_calc = FocusMetricsCalculator(cfg)
@@ -1413,7 +1652,7 @@ class SpotZoomQtMainWindow(QMainWindow):
 
             cfg = AutofocusConfig(
                 capture_mode=self.autozoom_capture_mode.currentText() if hasattr(self, "autozoom_capture_mode") else "screen_region",
-                window_title=self.autozoom_window_title.text().strip() if hasattr(self, "autozoom_window_title") else "",
+                window_title=self._autozoom_window_title_value(),
                 window_match_mode=self.autozoom_window_match_mode.currentText() if hasattr(self, "autozoom_window_match_mode") else "contains",
                 window_padding=(
                     int(self.autozoom_window_padding_left.value()) if hasattr(self, "autozoom_window_padding_left") else 0,
@@ -1421,6 +1660,10 @@ class SpotZoomQtMainWindow(QMainWindow):
                     int(self.autozoom_window_padding_right.value()) if hasattr(self, "autozoom_window_padding_right") else 0,
                     int(self.autozoom_window_padding_bottom.value()) if hasattr(self, "autozoom_window_padding_bottom") else 0,
                 ),
+                focus_roi=self._autozoom_roi_value(),
+                usb_device_index=int(self.autozoom_usb_device.value()) if hasattr(self, "autozoom_usb_device") else 0,
+                usb_resolution=self.autozoom_usb_resolution.currentText() if hasattr(self, "autozoom_usb_resolution") else "AUTO",
+                usb_pixel_format=self._autozoom_usb_format_value(),
             )
             metrics_calc = FocusMetricsCalculator(cfg)
             scorer = FocusScorer(cfg, metrics_calc)
@@ -1454,7 +1697,7 @@ class SpotZoomQtMainWindow(QMainWindow):
 
             cfg = AutofocusConfig(
                 capture_mode=self.autozoom_capture_mode.currentText() if hasattr(self, "autozoom_capture_mode") else "screen_region",
-                window_title=self.autozoom_window_title.text().strip() if hasattr(self, "autozoom_window_title") else "",
+                window_title=self._autozoom_window_title_value(),
                 window_match_mode=self.autozoom_window_match_mode.currentText() if hasattr(self, "autozoom_window_match_mode") else "contains",
                 window_padding=(
                     int(self.autozoom_window_padding_left.value()) if hasattr(self, "autozoom_window_padding_left") else 0,
@@ -1462,6 +1705,10 @@ class SpotZoomQtMainWindow(QMainWindow):
                     int(self.autozoom_window_padding_right.value()) if hasattr(self, "autozoom_window_padding_right") else 0,
                     int(self.autozoom_window_padding_bottom.value()) if hasattr(self, "autozoom_window_padding_bottom") else 0,
                 ),
+                focus_roi=self._autozoom_roi_value(),
+                usb_device_index=int(self.autozoom_usb_device.value()) if hasattr(self, "autozoom_usb_device") else 0,
+                usb_resolution=self.autozoom_usb_resolution.currentText() if hasattr(self, "autozoom_usb_resolution") else "AUTO",
+                usb_pixel_format=self._autozoom_usb_format_value(),
             )
             metrics_calc = FocusMetricsCalculator(cfg)
             result = metrics_calc.capture_live()
@@ -1477,6 +1724,319 @@ class SpotZoomQtMainWindow(QMainWindow):
         except Exception as exc:
             self._append_log(f"[AutoZoom] 测试采集失败: {exc}")
             QMessageBox.warning(self, "AutoZoom", f"测试采集失败: {exc}")
+
+    def _autozoom_roi_value(self) -> Tuple[int, int, int, int]:
+        """读取界面 ROI 坐标控件，返回 (x, y, w, h)。"""
+        x = int(self.autozoom_roi_x.value()) if hasattr(self, "autozoom_roi_x") else 0
+        y = int(self.autozoom_roi_y.value()) if hasattr(self, "autozoom_roi_y") else 0
+        w = int(self.autozoom_roi_w.value()) if hasattr(self, "autozoom_roi_w") else 300
+        h = int(self.autozoom_roi_h.value()) if hasattr(self, "autozoom_roi_h") else 300
+        return (x, y, w, h)
+
+    def _set_autozoom_roi_value(self, x: int, y: int, w: int, h: int) -> None:
+        """设置界面 ROI 坐标控件。"""
+        if hasattr(self, "autozoom_roi_x"):
+            self.autozoom_roi_x.setValue(max(0, int(x)))
+        if hasattr(self, "autozoom_roi_y"):
+            self.autozoom_roi_y.setValue(max(0, int(y)))
+        if hasattr(self, "autozoom_roi_w"):
+            self.autozoom_roi_w.setValue(max(1, int(w)))
+        if hasattr(self, "autozoom_roi_h"):
+            self.autozoom_roi_h.setValue(max(1, int(h)))
+        if hasattr(self, "autozoom_preview_label"):
+            self.autozoom_preview_label.set_roi(x, y, w, h)
+
+    def _autozoom_usb_format_value(self) -> Optional[str]:
+        """获取 USB 像素格式，AUTO 返回 None。"""
+        if not hasattr(self, "autozoom_usb_format"):
+            return None
+        fmt = self.autozoom_usb_format.currentText()
+        return None if fmt == "AUTO" else fmt
+
+    def _open_autozoom_usb_source(self) -> Optional[UCCFrameSource]:
+        """根据当前 USB 配置打开 UCCFrameSource，失败时弹窗并返回 None。"""
+        if not hasattr(self, "autozoom_usb_device"):
+            return None
+        device_idx = int(self.autozoom_usb_device.value())
+        resolution = self.autozoom_usb_resolution.currentText() if hasattr(self, "autozoom_usb_resolution") else "AUTO"
+        pixel_format = self._autozoom_usb_format_value()
+        try:
+            source = UCCFrameSource(
+                device_index=device_idx,
+                resolution=resolution,
+                pixel_format=pixel_format,
+            )
+            self._append_log(f"[AutoZoom] USB 相机已打开: device={device_idx}, resolution={resolution}, format={pixel_format or 'AUTO'}")
+            return source
+        except Exception as exc:
+            self._append_log(f"[AutoZoom] USB 相机打开失败 (device={device_idx}): {exc}")
+            QMessageBox.warning(self, "AutoZoom", f"USB 相机打开失败:\n{exc}")
+            return None
+
+    def _close_autozoom_usb_source(self, source: Optional[UCCFrameSource]) -> None:
+        """安全释放 USB 相机资源。"""
+        if source is not None:
+            try:
+                source.release()
+                self._append_log("[AutoZoom] USB 相机已释放")
+            except Exception as exc:
+                self._append_log(f"[AutoZoom] USB 相机释放异常: {exc}")
+
+    def _grab_autozoom_usb_frame(
+        self,
+        source: Optional[UCCFrameSource] = None,
+        auto_release: bool = True,
+    ) -> Tuple[Optional[np.ndarray], Optional[UCCFrameSource]]:
+        """从 USB 相机读取一帧 RGB 图像。
+
+        返回 (rgb_image, source)。如果传入了 source 则复用，否则临时打开并在
+        auto_release=True 时自动释放。
+        """
+        opened_here = False
+        if source is None:
+            source = self._open_autozoom_usb_source()
+            opened_here = True
+        if source is None:
+            return None, None
+        try:
+            frame_bgr = source.grab_frame()
+            if frame_bgr is None or frame_bgr.size == 0:
+                raise RuntimeError("USB 相机读取帧为空")
+            rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
+            return rgb, source
+        except Exception as exc:
+            self._append_log(f"[AutoZoom] USB 相机读帧失败: {exc}")
+            if opened_here or auto_release:
+                self._close_autozoom_usb_source(source)
+            return None, None
+        finally:
+            if (opened_here or auto_release) and source is not None:
+                self._close_autozoom_usb_source(source)
+
+    def _on_autozoom_capture_mode_changed(self, mode: str) -> None:
+        """根据采集模式切换相关控件的可见性。"""
+        is_window = mode == "window_roi"
+        is_usb = mode == "usb_camera"
+        if hasattr(self, "autozoom_window_title"):
+            self.autozoom_window_title.setVisible(is_window)
+        if hasattr(self, "autozoom_window_match_mode"):
+            self.autozoom_window_match_mode.setVisible(is_window)
+        if hasattr(self, "autozoom_window_padding_left"):
+            self.autozoom_window_padding_left.parentWidget().setVisible(not is_usb)
+        if hasattr(self, "autozoom_usb_group"):
+            self.autozoom_usb_group.setVisible(is_usb)
+
+    def _refresh_autozoom_window_list(self) -> None:
+        """枚举当前可见窗口并刷新下拉框。"""
+        if not hasattr(self, "autozoom_window_title"):
+            return
+        try:
+            import win32gui
+            titles = set()
+
+            def _enum(hwnd, _):
+                if not win32gui.IsWindowVisible(hwnd):
+                    return
+                text = (win32gui.GetWindowText(hwnd) or "").strip()
+                if text:
+                    titles.add(text)
+
+            win32gui.EnumWindows(_enum, None)
+            current = self._autozoom_window_title_value()
+            history = list(getattr(self, "_autozoom_window_title_history", []))
+            self.autozoom_window_title.blockSignals(True)
+            try:
+                self.autozoom_window_title.clear()
+                for title in history:
+                    if title:
+                        self.autozoom_window_title.addItem(title)
+                for title in sorted(titles):
+                    if title and title not in history:
+                        self.autozoom_window_title.addItem(title)
+                if current:
+                    idx = self.autozoom_window_title.findText(current)
+                    if idx >= 0:
+                        self.autozoom_window_title.setCurrentIndex(idx)
+            finally:
+                self.autozoom_window_title.blockSignals(False)
+        except Exception as exc:
+            self._append_log(f"[AutoZoom] 刷新窗口列表失败: {exc}")
+
+    def _on_autozoom_window_selected(self, text: str) -> None:
+        """用户从下拉框选择窗口后，自动切到 window_roi 模式。"""
+        if not text.strip():
+            return
+        if hasattr(self, "autozoom_capture_mode"):
+            idx = self.autozoom_capture_mode.findText("window_roi")
+            if idx >= 0:
+                self.autozoom_capture_mode.setCurrentIndex(idx)
+        self._sync_autozoom_window_title_history()
+
+    def _display_autozoom_reference_frame(self, image_rgb: np.ndarray, source_desc: str) -> None:
+        """将 RGB 参考帧显示到预览区并设置默认 ROI。"""
+        self._autozoom_reference_frame_shape = image_rgb.shape[:2]
+        h, w = image_rgb.shape[:2]
+        qt_image = QImage(image_rgb.data, w, h, w * 3, QImage.Format_RGB888)
+        pixmap = QPixmap.fromImage(qt_image.copy())
+
+        self.autozoom_preview_label.clear_preview()
+        self.autozoom_preview_label.set_preview_pixmap(pixmap)
+        self.autozoom_preview_label.set_reference_mode(True)
+
+        default_w, default_h = min(300, w), min(300, h)
+        default_x, default_y = (w - default_w) // 2, (h - default_h) // 2
+        self._set_autozoom_roi_value(default_x, default_y, default_w, default_h)
+
+        self.autozoom_preview_info.setText(f"状态: {source_desc} 参考帧已捕获 {w}x{h}，请拖拽框选 ROI")
+        self._append_log(f"[AutoZoom] {source_desc} 参考帧已捕获: {w}x{h}")
+
+    def _capture_reference_frame(self) -> None:
+        """抓拍当前数据源的一帧完整图像，供用户框选 ROI。"""
+        mode = self.autozoom_capture_mode.currentText() if hasattr(self, "autozoom_capture_mode") else "screen_region"
+        self._append_log(f"[AutoZoom] 抓拍参考帧 (mode={mode})...")
+        try:
+            if mode == "usb_camera":
+                rgb, _ = self._grab_autozoom_usb_frame()
+                if rgb is None or rgb.size == 0:
+                    raise RuntimeError("未能从 USB 相机获取图像")
+                self._display_autozoom_reference_frame(rgb, "USB")
+            else:
+                cfg = self._get_autozoom_cfg_for_preview()
+                from Utils.AutoZoom.Focus.metrics import FocusMetricsCalculator
+                metrics_calc = FocusMetricsCalculator(cfg)
+                result = metrics_calc.capture_live()
+                image_rgb = result.get("full_rgb")
+                if image_rgb is None or image_rgb.size == 0:
+                    raise RuntimeError("未能获取到窗口/屏幕图像")
+                self._display_autozoom_reference_frame(image_rgb, "窗口")
+        except Exception as exc:
+            self._append_log(f"[AutoZoom] 抓拍参考帧失败: {exc}")
+            QMessageBox.warning(self, "AutoZoom", f"抓拍参考帧失败: {exc}")
+
+    def _on_autozoom_roi_selected(self, x: int, y: int, w: int, h: int) -> None:
+        """用户在参考帧上完成 ROI 框选。"""
+        self._set_autozoom_roi_value(x, y, w, h)
+        self.autozoom_preview_info.setText(f"状态: ROI 已选定 ({x}, {y}, {w}, {h})，可点击「开始 ROI 预览」")
+        self._append_log(f"[AutoZoom] ROI 已选定: ({x}, {y}, {w}, {h})")
+
+    def _get_autozoom_cfg_for_preview(self) -> "AutofocusConfig":
+        """根据当前界面控件构造 AutofocusConfig，用于预览/抓拍。"""
+        from Utils.AutoZoom.Focus.config import AutofocusConfig
+        return AutofocusConfig(
+            capture_mode=self.autozoom_capture_mode.currentText() if hasattr(self, "autozoom_capture_mode") else "screen_region",
+            window_title=self._autozoom_window_title_value(),
+            window_match_mode=self.autozoom_window_match_mode.currentText() if hasattr(self, "autozoom_window_match_mode") else "contains",
+            window_padding=(
+                int(self.autozoom_window_padding_left.value()) if hasattr(self, "autozoom_window_padding_left") else 0,
+                int(self.autozoom_window_padding_top.value()) if hasattr(self, "autozoom_window_padding_top") else 0,
+                int(self.autozoom_window_padding_right.value()) if hasattr(self, "autozoom_window_padding_right") else 0,
+                int(self.autozoom_window_padding_bottom.value()) if hasattr(self, "autozoom_window_padding_bottom") else 0,
+            ),
+            focus_roi=self._autozoom_roi_value(),
+            usb_device_index=int(self.autozoom_usb_device.value()) if hasattr(self, "autozoom_usb_device") else 0,
+            usb_resolution=self.autozoom_usb_resolution.currentText() if hasattr(self, "autozoom_usb_resolution") else "AUTO",
+            usb_pixel_format=self._autozoom_usb_format_value(),
+        )
+
+    def _start_autozoom_roi_preview(self) -> None:
+        """启动 ROI 实时预览定时器。"""
+        if getattr(self, "_autozoom_roi_preview_running", False):
+            return
+        try:
+            mode = self.autozoom_capture_mode.currentText() if hasattr(self, "autozoom_capture_mode") else "screen_region"
+            if mode == "usb_camera":
+                self._autozoom_roi_preview_usb_source = self._open_autozoom_usb_source()
+                if self._autozoom_roi_preview_usb_source is None:
+                    return
+
+            self.autozoom_preview_label.set_reference_mode(False)
+            self.autozoom_start_preview_button.setEnabled(False)
+            self.autozoom_stop_preview_button.setEnabled(True)
+            self.autozoom_capture_frame_button.setEnabled(False)
+            self._autozoom_roi_preview_running = True
+
+            if not hasattr(self, "_autozoom_roi_preview_timer"):
+                self._autozoom_roi_preview_timer = QTimer(self)
+                self._autozoom_roi_preview_timer.timeout.connect(self._update_autozoom_roi_preview)
+            self._autozoom_roi_preview_timer.start(200)
+            self.autozoom_preview_info.setText("状态: ROI 实时预览中...")
+            self._append_log(f"[AutoZoom] 开始 ROI 实时预览 (mode={mode})")
+        except Exception as exc:
+            self._append_log(f"[AutoZoom] 启动 ROI 预览失败: {exc}")
+            self._stop_autozoom_roi_preview()
+
+    def _stop_autozoom_roi_preview(self) -> None:
+        """停止 ROI 实时预览定时器。"""
+        self._autozoom_roi_preview_running = False
+        if hasattr(self, "_autozoom_roi_preview_timer"):
+            self._autozoom_roi_preview_timer.stop()
+        if hasattr(self, "autozoom_start_preview_button"):
+            self.autozoom_start_preview_button.setEnabled(True)
+        if hasattr(self, "autozoom_stop_preview_button"):
+            self.autozoom_stop_preview_button.setEnabled(False)
+        if hasattr(self, "autozoom_capture_frame_button"):
+            self.autozoom_capture_frame_button.setEnabled(True)
+        if hasattr(self, "autozoom_preview_info"):
+            self.autozoom_preview_info.setText("状态: 预览已停止")
+        usb_source = getattr(self, "_autozoom_roi_preview_usb_source", None)
+        if usb_source is not None:
+            self._close_autozoom_usb_source(usb_source)
+            self._autozoom_roi_preview_usb_source = None
+        self._append_log("[AutoZoom] 停止 ROI 实时预览")
+
+    def _update_autozoom_roi_preview(self) -> None:
+        """定时捕获窗口/USB 帧并显示 ROI 区域。"""
+        if not getattr(self, "_autozoom_roi_preview_running", False):
+            return
+        try:
+            mode = self.autozoom_capture_mode.currentText() if hasattr(self, "autozoom_capture_mode") else "screen_region"
+            roi_rgb = None
+            tenengrad = 0.0
+
+            if mode == "usb_camera":
+                source = getattr(self, "_autozoom_roi_preview_usb_source", None)
+                if source is None or not source.is_healthy():
+                    self.autozoom_preview_info.setText("状态: USB 相机连接异常，尝试重连...")
+                    if source is not None:
+                        self._close_autozoom_usb_source(source)
+                    self._autozoom_roi_preview_usb_source = self._open_autozoom_usb_source()
+                    source = self._autozoom_roi_preview_usb_source
+                    if source is None:
+                        return
+                frame_bgr = source.grab_frame()
+                if frame_bgr is None or frame_bgr.size == 0:
+                    return
+                full_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
+                x, y, w, h = self._autozoom_roi_value()
+                fh, fw = full_rgb.shape[:2]
+                x = max(0, min(x, fw - 1))
+                y = max(0, min(y, fh - 1))
+                w = max(1, min(w, fw - x))
+                h = max(1, min(h, fh - y))
+                roi_rgb = full_rgb[y : y + h, x : x + w].copy()
+                gray = cv2.cvtColor(roi_rgb, cv2.COLOR_RGB2GRAY)
+                gx = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=3)
+                gy = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=3)
+                tenengrad = float((gx ** 2 + gy ** 2).sum())
+            else:
+                cfg = self._get_autozoom_cfg_for_preview()
+                from Utils.AutoZoom.Focus.metrics import FocusMetricsCalculator
+                metrics_calc = FocusMetricsCalculator(cfg)
+                result = metrics_calc.capture_live()
+                roi_rgb = result.get("roi_rgb")
+                tenengrad = result.get("roi_metrics", {}).get("tenengrad", 0.0)
+
+            if roi_rgb is None or roi_rgb.size == 0:
+                return
+            h, w = roi_rgb.shape[:2]
+            qt_image = QImage(roi_rgb.data, w, h, w * 3, QImage.Format_RGB888)
+            pixmap = QPixmap.fromImage(qt_image.copy())
+            self.autozoom_preview_label.set_preview_pixmap(pixmap)
+            source_name = "USB" if mode == "usb_camera" else "窗口"
+            info_text = f"状态: {source_name} 实时预览 {w}x{h} | tenengrad={tenengrad:.2f}"
+            self.autozoom_preview_info.setText(info_text)
+        except Exception as exc:
+            self._append_log(f"[AutoZoom] ROI 预览更新失败: {exc}")
 
     def _move_autozoom_zaxis(self, direction: int) -> None:
         self._append_log(f"[AutoZoom] Z 轴移动请求: direction={direction}")
