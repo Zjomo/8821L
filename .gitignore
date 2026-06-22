@@ -4,3 +4,7 @@ Document/发票申请/
 __pycache__/
 *.pyc
 *.pyo
+*.mp4
+*.jpg
+*.png
+*.pt
