@@ -62,13 +62,17 @@ class TrainThread(QThread):
 
     def run(self):
         try:
+            import torch
+            dev = self.device
+            if dev == "auto":
+                dev = "0" if torch.cuda.is_available() else "cpu"
             model = YOLO(self.model_path)
             model.train(
                 data=self.data_yaml,
                 epochs=self.epochs,
                 imgsz=self.imgsz,
                 batch=self.batch,
-                device=self.device,
+                device=dev,
                 project="runs/segment",
                 name="gui_train",
                 exist_ok=True,

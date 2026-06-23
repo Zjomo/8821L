@@ -1,7 +1,6 @@
-path: e:/jupyter file/2_Optics/8821L/Utils/YoloUI/Fore_BackGround_70_export
-train: images/train
-val: images/val
-
 names:
   0: Other
   1: Round
+path: F:\0_My_jupyter\0_Optical\8821L\Utils\YoloUI\Fore_BackGround_70_export
+train: images/train
+val: images/val
