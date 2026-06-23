@@ -13,13 +13,15 @@ from PyQt6.QtWidgets import (
     QLabel, QPushButton, QLineEdit, QComboBox, QSpinBox,
     QTextBrowser, QProgressBar, QTabWidget, QFileDialog,
     QMessageBox, QGroupBox, QGridLayout, QListWidget, QScrollArea,
-    QSizePolicy, QSplitter, QSlider
+    QSizePolicy, QSplitter, QSlider, QCheckBox
 )
 from PyQt6.QtCore import Qt, QThread, pyqtSignal, QObject, QPoint, QRect, QTimer
 from PyQt6.QtGui import QPixmap, QImage, QPainter, QPen, QScreen, QGuiApplication
 
 from ultralytics import YOLO
 import torch
+
+import dataset_utils
 
 # ------------------------------------------------------------------
 # Helpers
@@ -353,6 +355,7 @@ class MainWindow(QMainWindow):
         self.tabs = QTabWidget()
         self.setCentralWidget(self.tabs)
 
+        self._build_dataset_tab()
         self._build_train_tab()
         self._build_predict_tab()
         self._build_eval_tab()
@@ -391,6 +394,108 @@ class MainWindow(QMainWindow):
         return lbl
 
     # ======================== 训练页 ========================
+    def _build_dataset_tab(self):
+        w = QWidget()
+        layout = QVBoxLayout(w)
+
+        gb = QGroupBox("数据集准备")
+        gl = QGridLayout(gb)
+
+        gl.addWidget(QLabel("图片目录:"), 0, 0)
+        self.le_ds_img = QLineEdit()
+        gl.addWidget(self.le_ds_img, 0, 1)
+        btn = QPushButton("浏览...")
+        btn.clicked.connect(lambda: self._browse_dir(self.le_ds_img, "选择图片目录"))
+        gl.addWidget(btn, 0, 2)
+
+        gl.addWidget(QLabel("标注目录:"), 1, 0)
+        self.le_ds_lbl = QLineEdit()
+        gl.addWidget(self.le_ds_lbl, 1, 1)
+        btn2 = QPushButton("浏览...")
+        btn2.clicked.connect(lambda: self._browse_dir(self.le_ds_lbl, "选择标注目录"))
+        gl.addWidget(btn2, 1, 2)
+
+        gl.addWidget(QLabel("数据格式:"), 2, 0)
+        self.cb_ds_fmt = QComboBox()
+        self.cb_ds_fmt.addItems(["auto", "yolo_seg", "yolo_det", "yolo_11", "coco"])
+        gl.addWidget(self.cb_ds_fmt, 2, 1)
+
+        gl.addWidget(QLabel("输出目录:"), 3, 0)
+        self.le_ds_out = QLineEdit()
+        self.le_ds_out.setText(r"E:\jupyter file\2_Optics\8821L\Utils\YoloUI\Dataset\my_dataset")
+        gl.addWidget(self.le_ds_out, 3, 1)
+        btn3 = QPushButton("浏览...")
+        btn3.clicked.connect(lambda: self._browse_dir(self.le_ds_out, "选择输出目录"))
+        gl.addWidget(btn3, 3, 2)
+
+        gl.addWidget(QLabel("Train 比例:"), 4, 0)
+        self.sb_ds_train = QSpinBox(); self.sb_ds_train.setRange(1, 99); self.sb_ds_train.setValue(70); gl.addWidget(self.sb_ds_train, 4, 1)
+        gl.addWidget(QLabel("Val 比例:"), 4, 2)
+        self.sb_ds_val = QSpinBox(); self.sb_ds_val.setRange(0, 99); self.sb_ds_val.setValue(20); gl.addWidget(self.sb_ds_val, 4, 3)
+        gl.addWidget(QLabel("Test 比例:"), 5, 0)
+        self.sb_ds_test = QSpinBox(); self.sb_ds_test.setRange(0, 99); self.sb_ds_test.setValue(10); gl.addWidget(self.sb_ds_test, 5, 1)
+
+        layout.addWidget(gb)
+
+        hbtn = QHBoxLayout()
+        self.btn_ds_prepare = QPushButton("开始准备数据集")
+        self.btn_ds_prepare.setStyleSheet("font-size: 16px; padding: 8px;")
+        self.btn_ds_prepare.clicked.connect(self._prepare_dataset)
+        hbtn.addWidget(self.btn_ds_prepare)
+        self.btn_ds_use = QPushButton("应用到训练")
+        self.btn_ds_use.setEnabled(False)
+        self.btn_ds_use.clicked.connect(self._apply_dataset_to_train)
+        hbtn.addWidget(self.btn_ds_use)
+        layout.addLayout(hbtn)
+
+        self.lbl_ds_result = QLabel("结果: 未开始")
+        layout.addWidget(self.lbl_ds_result)
+
+        self.tb_ds_log = QTextBrowser()
+        self.tb_ds_log.setMinimumHeight(250)
+        layout.addWidget(self.tb_ds_log)
+        layout.addStretch()
+        self.tabs.addTab(w, "数据集准备")
+
+    def _prepare_dataset(self):
+        img_dir = self.le_ds_img.text()
+        lbl_dir = self.le_ds_lbl.text()
+        out_dir = self.le_ds_out.text()
+        fmt = self.cb_ds_fmt.currentText()
+        train_r = self.sb_ds_train.value() / 100.0
+        val_r = self.sb_ds_val.value() / 100.0
+        test_r = self.sb_ds_test.value() / 100.0
+
+        if not img_dir or not os.path.isdir(img_dir):
+            QMessageBox.warning(self, "提示", "请选择有效的图片目录"); return
+        if not lbl_dir or not os.path.isdir(lbl_dir):
+            QMessageBox.warning(self, "提示", "请选择有效的标注目录"); return
+        if abs(train_r + val_r + test_r - 1.0) > 1e-6:
+            QMessageBox.warning(self, "提示", "Train + Val + Test 比例之和必须等于 100"); return
+
+        try:
+            self.tb_ds_log.clear()
+            self.tb_ds_log.append(f"开始解析: {img_dir}")
+            self.tb_ds_log.append(f"格式: {fmt}")
+            yaml_path, info = dataset_utils.build_yolo_dataset(
+                img_dir, lbl_dir, out_dir, fmt=fmt,
+                train_ratio=train_r, val_ratio=val_r, test_ratio=test_r,
+                force_val_from_train=True
+            )
+            self.tb_ds_log.append(f"准备完成: {yaml_path}")
+            self.tb_ds_log.append(f"划分: {info}")
+            self.lbl_ds_result.setText(f"准备完成: {yaml_path}  |  {info}")
+            self.btn_ds_use.setEnabled(True)
+            self._last_prepared_dataset = out_dir
+        except Exception as e:
+            self.tb_ds_log.append(f"错误: {str(e)}")
+            QMessageBox.critical(self, "数据集准备错误", str(e))
+
+    def _apply_dataset_to_train(self):
+        if hasattr(self, '_last_prepared_dataset') and self._last_prepared_dataset:
+            self.le_data.setText(self._last_prepared_dataset)
+            self.tabs.setCurrentIndex(1)  # 切换到模型训练页
+
     def _build_train_tab(self):
         w = QWidget()
         layout = QVBoxLayout(w)
@@ -433,6 +538,10 @@ class MainWindow(QMainWindow):
         self.sb_batch = QSpinBox(); self.sb_batch.setRange(1, 64); self.sb_batch.setValue(8); gl3.addWidget(self.sb_batch, 1, 1)
         gl3.addWidget(QLabel("Device:"), 1, 2)
         self.cb_device = QComboBox(); self.cb_device.addItems(["auto", "cpu", "0"]); gl3.addWidget(self.cb_device, 1, 3)
+        gl3.addWidget(QLabel("无 val 自动拆分:"), 2, 0)
+        self.chk_auto_val = QCheckBox("从 train 划分 15% 作为 val")
+        self.chk_auto_val.setChecked(True)
+        gl3.addWidget(self.chk_auto_val, 2, 1)
         layout.addWidget(gb_hyp)
 
         hbtn = QHBoxLayout()
@@ -471,6 +580,16 @@ class MainWindow(QMainWindow):
         data_yaml = os.path.join(self.le_data.text(), "data.yaml")
         if not os.path.exists(data_yaml):
             QMessageBox.warning(self, "提示", f"未找到 data.yaml:\n{data_yaml}"); return
+
+        # 检查 val 并自动拆分
+        if not dataset_utils.has_val_in_yaml(self.le_data.text()):
+            if self.chk_auto_val.isChecked():
+                ok = dataset_utils.ensure_val_split(self.le_data.text(), val_ratio=0.15)
+                if not ok:
+                    QMessageBox.critical(self, "错误", "数据集中没有 val，且无法从 train 自动拆分"); return
+                QMessageBox.information(self, "提示", "已自动从 train 拆分 15% 作为 val")
+            else:
+                QMessageBox.warning(self, "提示", "数据集中没有 val 验证集，请勾选\"无 val 自动拆分\"或先在\"数据集准备\"页生成数据集"); return
 
         self.btn_start.setEnabled(False); self.btn_stop.setEnabled(True); self.pb_train.setValue(0); self.tb_log.clear()
         sys.stdout = self.redirector
