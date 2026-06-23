@@ -1,0 +1,14 @@
+F:\0_My_jupyter\0_Optical\8821L\Utils\YoloUI\Fore_BackGround_70\data\20260610_161538_f007550.jpg
+F:\0_My_jupyter\0_Optical\8821L\Utils\YoloUI\Fore_BackGround_70\data\20260610_161538_f006050.jpg
+F:\0_My_jupyter\0_Optical\8821L\Utils\YoloUI\Fore_BackGround_70\data\20260610_165726_f004050.jpg
+F:\0_My_jupyter\0_Optical\8821L\Utils\YoloUI\Fore_BackGround_70\data\20260610_161538_f006900.jpg
+F:\0_My_jupyter\0_Optical\8821L\Utils\YoloUI\Fore_BackGround_70\data\20260610_165726_f000400.jpg
+F:\0_My_jupyter\0_Optical\8821L\Utils\YoloUI\Fore_BackGround_70\data\20260610_161538_f001650.jpg
+F:\0_My_jupyter\0_Optical\8821L\Utils\YoloUI\Fore_BackGround_70\data\20260610_163505_f002000.jpg
+F:\0_My_jupyter\0_Optical\8821L\Utils\YoloUI\Fore_BackGround_70\data\20260610_165726_f002200.jpg
+F:\0_My_jupyter\0_Optical\8821L\Utils\YoloUI\Fore_BackGround_70\data\20260610_161538_f000700.jpg
+F:\0_My_jupyter\0_Optical\8821L\Utils\YoloUI\Fore_BackGround_70\data\20260610_165726_f003400.jpg
+F:\0_My_jupyter\0_Optical\8821L\Utils\YoloUI\Fore_BackGround_70\data\20260610_165726_f003200.jpg
+F:\0_My_jupyter\0_Optical\8821L\Utils\YoloUI\Fore_BackGround_70\data\20260610_170206_f000350.jpg
+F:\0_My_jupyter\0_Optical\8821L\Utils\YoloUI\Fore_BackGround_70\data\20260610_161538_f005400.jpg
+F:\0_My_jupyter\0_Optical\8821L\Utils\YoloUI\Fore_BackGround_70\data\20260610_161538_f006200.jpg
