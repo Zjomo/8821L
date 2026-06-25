@@ -18,9 +18,12 @@ from anylabeling.views.labeling.chatbot.utils import load_json, save_json
 from anylabeling.views.labeling.utils.qt import new_icon, new_icon_path
 
 
-_MODELS_CONFIG_PATH = os.path.join(
-    os.path.expanduser("~"), "xanylabeling_data/models.json"
+_PROJECT_ROOT = os.path.dirname(
+    os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    )
 )
+_MODELS_CONFIG_PATH = os.path.join(_PROJECT_ROOT, "models", "models.json")
 
 
 class SearchBar(QLineEdit):

@@ -1,0 +1,11 @@
+path: E:/datasets/your_dataset
+train: images/train
+val: images/val
+test: images/test
+
+nc: 4
+names:
+  0: class1
+  1: class2
+  2: class3
+  3: class4

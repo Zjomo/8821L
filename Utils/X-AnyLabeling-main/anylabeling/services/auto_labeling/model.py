@@ -167,17 +167,13 @@ class Model(QObject):
         download_url = model_path
 
         # Continue with the rest of your function logic
-        migrate_flag = self.allow_migrate_data()
-        home_dir = os.path.expanduser("~")
-        data_dir = "xanylabeling_data" if migrate_flag else "anylabeling_data"
-
-        # Create model folder
-        home_dir = os.path.expanduser("~")
-        model_path = os.path.abspath(os.path.join(home_dir, data_dir))
+        _project_root = os.path.dirname(
+            os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        )
+        model_path = os.path.abspath(os.path.join(_project_root, "models"))
         model_abs_path = os.path.abspath(
             os.path.join(
                 model_path,
-                "models",
                 model_config["name"],
                 filename,
             )

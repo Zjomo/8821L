@@ -1,4 +1,5 @@
 task: segment
+type: yolov8_seg
 mode: train
 model: yolov8l-seg.pt
 data: E:/jupyter file/2_Optics/8821L/Utils/YoloUI/Dataset/Fore_BackGround_201_annotation\data.yaml
