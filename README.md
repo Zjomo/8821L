@@ -1,4 +1,4 @@
-## 课题7：基于2轴的MRC主动激光束稳定系统	✔
+## 基于2轴的MRC主动激光束稳定系统	✔
 
 基于拉普拉斯方差/目标检测的光斑自动准直系统 -- 将激光自动准直压电落地
 
@@ -844,14 +844,3 @@ main(本地分支)  到 origin/main(github)，实现push与fetch			✔
 
 
 
-## 课题8：基于4轴的MRC主动激光束稳定系统【2天】
-
-## SpotZoom Qt UI (v1)
-
-Launch the native desktop console:
-
-```bash
-python -m spotzoom_qt_ui
-```
-
-The UI includes Dashboard, Alignment Workspace, Module Center, Device Center, Device Test, Run Modes, Simulation Lab, Logs & Reports, and Settings.

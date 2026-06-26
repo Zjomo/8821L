@@ -9,4 +9,4 @@ __pycache__/
 *.png
 *.pt
 Utils/AutoZoom/.git.bak/
-Utils/YoloUI/Dataset/
+Utils/ADOTOP/YoloUI/Dataset/
