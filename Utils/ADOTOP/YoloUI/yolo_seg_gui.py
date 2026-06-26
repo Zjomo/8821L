@@ -4,6 +4,7 @@ import glob
 import time
 import traceback
 from pathlib import Path
+from typing import Optional, Tuple
 
 import cv2
 import numpy as np

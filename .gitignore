@@ -10,3 +10,4 @@ __pycache__/
 *.pt
 Utils/AutoZoom/.git.bak/
 Utils/ADOTOP/YoloUI/Dataset/
+Utils/ADOTOP/EdgeDetect/outputs/
