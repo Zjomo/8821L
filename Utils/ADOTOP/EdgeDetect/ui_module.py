@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (
     QSlider,
     QSpinBox,
     QStyle,
+    QSizePolicy,
     QTableWidget,
     QTableWidgetItem,
     QToolBar,
@@ -62,7 +63,8 @@ class SegmentationWindow(QMainWindow):
     def __init__(self, input_path: Optional[str] = None, output_dir: Optional[str] = None):
         super().__init__()
         self.setWindowTitle("三对象识别 / 分割 / 标注")
-        self.resize(1700, 980)
+        self.setMinimumSize(1200, 800)
+        self.setMaximumSize(16777215, 16777215)
 
         self.input_path = Path(input_path) if input_path else None
         self.output_dir = Path(output_dir) if output_dir else Path.cwd() / "outputs"
@@ -97,6 +99,8 @@ class SegmentationWindow(QMainWindow):
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_frame)
         self.timer.start(30)
+
+        self.showMaximized()
 
         if self.input_path is not None:
             self._load_source(self.input_path)
@@ -163,10 +167,16 @@ class SegmentationWindow(QMainWindow):
         self.original_label = QLabel("原图")
         self.original_label.setAlignment(Qt.AlignCenter)
         self.original_label.setStyleSheet("background:#111;color:#ccc;border:1px solid #444;")
+        self.original_label.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
+        self.original_label.setMinimumSize(320, 240)
+        self.original_label.setMaximumSize(16777215, 16777215)
 
         self.seg_label = QLabel("分割图")
         self.seg_label.setAlignment(Qt.AlignCenter)
         self.seg_label.setStyleSheet("background:#111;color:#ccc;border:1px solid #444;")
+        self.seg_label.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
+        self.seg_label.setMinimumSize(320, 240)
+        self.seg_label.setMaximumSize(16777215, 16777215)
 
         center_row = QHBoxLayout()
         center_row.addWidget(self.original_label, 1)
@@ -246,6 +256,7 @@ class SegmentationWindow(QMainWindow):
         self.info_table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.info_table.setSelectionMode(QTableWidget.NoSelection)
         self.info_table.setAlternatingRowColors(True)
+        self.info_table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         for row, name in enumerate(["圆底", "长条", "旋转体"]):
             self.info_table.setItem(row, 0, QTableWidgetItem(name))
             for col in range(1, 8):
@@ -309,7 +320,9 @@ class SegmentationWindow(QMainWindow):
             self.last_frame = self._capture_screen()
             self.select_roi()
             self.status_label.setText("已进入屏幕模式")
-            self.info_label.setText("屏幕模式已就绪")
+            self.info_table.item(0, 1).setText("待检测")
+            self.info_table.item(1, 1).setText("待检测")
+            self.info_table.item(2, 1).setText("待检测")
             return
 
         suffix = path.suffix.lower()
@@ -334,7 +347,9 @@ class SegmentationWindow(QMainWindow):
             self.select_roi()
             self.paused = False
             self.status_label.setText(f"已加载视频: {path.name}")
-            self.info_label.setText("视频已加载，等待识别")
+            self.info_table.item(0, 1).setText("待检测")
+            self.info_table.item(1, 1).setText("待检测")
+            self.info_table.item(2, 1).setText("待检测")
             return
 
         if suffix in IMG_EXTS:
@@ -348,7 +363,9 @@ class SegmentationWindow(QMainWindow):
             self.select_roi()
             self.paused = True
             self.status_label.setText(f"已加载图片: {path.name}")
-            self.info_label.setText("图片模式已就绪")
+            self.info_table.item(0, 1).setText("待检测")
+            self.info_table.item(1, 1).setText("待检测")
+            self.info_table.item(2, 1).setText("待检测")
             return
 
         QMessageBox.warning(self, "提示", "不支持的输入类型")
@@ -459,8 +476,12 @@ class SegmentationWindow(QMainWindow):
             self.info_table.item(row, 4).setText(f"{det.score:.3f}")
 
 
-        self.original_label.setPixmap(cv_to_qpixmap(crop).scaled(self.original_label.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation))
-        self.seg_label.setPixmap(cv_to_qpixmap(seg).scaled(self.seg_label.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        self.original_label.setPixmap(cv_to_qpixmap(crop).scaled(
+            self.original_label.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation
+        ))
+        self.seg_label.setPixmap(cv_to_qpixmap(seg).scaled(
+            self.seg_label.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation
+        ))
 
         if self.source_type == "video" and self.frame_count > 1:
             self.seek_guard = True
