@@ -1,0 +1,92 @@
+cff-version: 1.2.0
+title: SmartTrap
+message: >-
+  If you use this software, please cite us through this
+  publication: Selin, M., Ciarlo, A., Pesce, G., Bengtsson,
+  L., Camunas-Soler, J., Rajan, V. S., ... & Volpe, G.
+  (2025). SmartTrap: Automated Precision Experiments with
+  Optical Tweezers. arXiv preprint arXiv:2505.05290,
+  https://doi.org/10.48550/arXiv.2505.05290
+type: software
+authors:
+  - given-names: Martin
+    family-names: Selin
+    email: martin.selin@physics.gu.se
+    affiliation: >-
+      Physics Department, University of Gothenburg, 41296
+      Gothenburg, Sweden
+    orcid: 'https://orcid.org/0009-0006-2247-0750'
+  - given-names: Antonio
+    family-names: Ciarlo
+    email: antonio.ciarlo@physics.gu.se
+    affiliation: >-
+      Physics Department, University of Gothenburg, 41296
+      Gothenburg, Sweden
+    orcid: 'https://orcid.org/0000-0002-4029-7668'
+  - given-names: Giuseppe
+    family-names: Pesce
+    affiliation: >-
+      Department of Neuroscience, Reproductive Sciences and
+      Dentistry, Università degli studi di Napoli “Federico
+      II”, 80131, Naples, Italy
+    orcid: 'https://orcid.org/0000-0001-5616-8599'
+  - given-names: Lars
+    family-names: Bengtsson
+    affiliation: >-
+      Physics Department, University of Gothenburg, 41296
+      Gothenburg, Sweden
+  - given-names: Joan
+    family-names: Camunas-Soler
+    affiliation: >-
+      Department of Medical Biochemistry and Cell Biology,
+      Institute of Biomedicine, University of Gothenburg,
+      Gothenburg 405 30, Sweden
+  - given-names: 'Vinoth Sundar '
+    family-names: Rajan
+    affiliation: >-
+      Department of Life Sciences, Chalmers University of
+      Technology, 41296 Gothenburg, Sweden
+  - given-names: Fredrik
+    family-names: Westerlund
+    affiliation: >-
+      Department of Life Sciences, Chalmers University of
+      Technology, 41296 Gothenburg, Sweden
+  - given-names: L. Marcus
+    family-names: Wilhelmsson
+    affiliation: >-
+      Department of Chemistry and Chemical Engineering,
+      Chalmers University of Technology, 41296 Gothenburg,
+      Sweden
+  - given-names: Isabel
+    family-names: Pastor
+    affiliation: >-
+      Small Biosystems Lab, Condensed Matter Physics
+      Department, University of Barcelona, 08028 Barcelona,
+      Spain
+  - given-names: Felix
+    family-names: Ritort
+    affiliation: >-
+      Small Biosystems Lab, Condensed Matter Physics
+      Department, University of Barcelona, 08028 Barcelona,
+      Spain
+  - given-names: Steven
+    family-names: B. Smith
+    affiliation: >-
+      Steven B. Smith Engineering, Los Lunas, New Mexico,
+      USA
+  - given-names: Carlos
+    family-names: Bustamante
+    affiliation: >-
+      Department of Molecular and Cell Biology, University
+      of California, Berkeley, Berkeley, CA 94720, USA
+  - given-names: Giovanni
+    family-names: Volpe
+    affiliation: >-
+      Physics Department, University of Gothenburg, 412 96
+      Gothenburg, Sweden
+identifiers:
+  - type: doi
+    value: 10.48550/arXiv.2505.05290
+    description: >-
+      SmartTrap: Automated Precision Experiments with
+      Optical Tweezers

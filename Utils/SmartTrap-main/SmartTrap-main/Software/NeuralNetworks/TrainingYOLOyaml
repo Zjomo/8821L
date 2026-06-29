@@ -1,0 +1,9 @@
+path: ../datasets/ # dataset root dir
+train: [LargeLowNoiseSimData/TrainingData/images, PipettesAndParticle-11/train/images] # training images (relative to 'path') 
+val: PipettesAndParticle-11/valid/images #ValidationData/images # validation images (relative to 'path') 
+test: PipettesAndParticle-11/test/images # test images (optional) 
+
+# Classes
+names:
+  0: particle
+  1: pipette

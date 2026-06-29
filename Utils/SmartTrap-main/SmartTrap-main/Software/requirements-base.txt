@@ -1,0 +1,49 @@
+# =========================
+# Base requirements (no torch/vision/cupy)
+# =========================
+
+# --- Base scientific/data ---
+numpy>=1.23.5
+Pillow>=9.4.0
+matplotlib>=3.3
+scikit-image
+pandas>=1.1.4
+scipy>=1.4.1
+openpyxl>=3.1.5 # Added this after some testing
+h5py>=3.1.0
+# --- GUI ---
+pyqt6
+pyqtgraph
+
+# --- Video & image ---
+opencv-python>=4.1.1
+sk-video
+
+# --- Cameras & instruments ---
+pypylon
+nicelib
+Instrumental-lib
+pyvisa
+pyserial
+pipython
+
+# --- System utils ---
+gitpython>=3.1.30
+psutil
+PyYAML>=5.3.1
+requests>=2.23.0
+setuptools>=65.5.1
+wheel>=0.38.0
+
+# --- ML / YOLO stack (sans torch/vision) ---
+ultralytics>=8.0.232
+yolov5
+thop>=0.1.1
+tqdm>=4.64.0
+seaborn>=0.11.0
+
+# --- Windows-only dependency for Thorlabs cameras ---
+pywin32; platform_system == "Windows"
+
+# pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu126
+# Needs to be run before everything works to ensure compatability.
