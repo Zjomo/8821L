@@ -10,11 +10,14 @@
 Focus/
 ├── __init__.py             # 包导出
 ├── config.py               # AutofocusConfig 数据类（全部聚焦相关参数）
-├── metrics.py              # FocusMetricsCalculator（10 项聚焦指标计算 + 截图）
+├── metrics.py              # FocusMetricsCalculator（14 项聚焦指标计算 + 截图）
 ├── scorer.py               # FocusScorer（FocusScore 加权评分 + 参考基线）
 ├── z_axis.py               # ZAxisController（Newport 8742 Picomotor 控制）
+├── search.py               # 常用对焦搜索策略（爬坡 / 全扫 / 曲线拟合 / 黄金分割）
+├── simulator.py            # 无硬件模拟器（虚拟 Z 轴 + 模拟显微图像）
 ├── controller.py           # AutofocusController（触发判断 + 闭环补焦搜索）
-└── run_autofocus.py        # 独立运行示例脚本
+├── run_autofocus.py        # 独立运行示例脚本
+└── main.py                 # 闭环主程序（定时循环 / 参考建立 / 结果保存）
 ```
 
 ---
@@ -39,9 +42,28 @@ cd AutoZoom
 python Focus/run_autofocus.py
 ```
 
+或使用闭环主程序：
+
+```bash
+# 建立参考基线
+python Focus/main.py --build-ref --output output/session_1
+
+# 闭环运行 20 轮，每轮间隔 5 秒
+python Focus/main.py --cycles 20 --interval 5 --output output/session_1
+
+# 无硬件完全模拟模式（虚拟聚焦搜索）
+python Focus/main.py --demo-sim --cycles 10 --peak-z 50 --blur-scale 0.3
+
+# 模拟模式 + Z 轴漂移（每轮自动偏离 3 步）
+python Focus/main.py --demo-sim --cycles 20 --drift-rate 3
+
+# 使用曲线拟合策略
+python Focus/main.py --demo-sim --strategy curve_fit --cycles 10
+```
+
 示例脚本将：
 1. 截取屏幕指定区域
-2. 计算 10 项聚焦指标（整图 + ROI）
+2. 计算 14 项聚焦指标（整图 + ROI）
 3. 建立聚焦参考基线
 4. 计算 FocusScore_ratio
 5. 评估补焦触发条件
@@ -64,6 +86,10 @@ python Focus/run_autofocus.py
 | `focus_weight_tenengrad` | `0.25` | Tenengrad 权重 |
 | `focus_weight_brenner` | `0.25` | Brenner 权重 |
 | `focus_weight_red_blue` | `0.15` | 红蓝比权重 |
+| `focus_weight_modified_laplacian` | `0.0` | 改进 Laplacian（SML）权重 |
+| `focus_weight_dct_energy` | `0.0` | DCT 高频能量权重 |
+| `focus_weight_smd` | `0.0` | 灰度差分和（SMD）权重 |
+| `focus_weight_entropy` | `0.0` | 直方图熵权重 |
 | `autofocus_enabled` | `True` | 启用自动补焦 |
 | `autofocus_focus_trigger_ratio` | `0.90` | FocusScore 触发阈值 |
 | `autofocus_focus_trigger_count` | `3` | 连续触发次数 |
@@ -73,10 +99,15 @@ python Focus/run_autofocus.py
 | `z_settle_time_s` | `0.20` | 移动后稳定等待时间 (s) |
 | `z_max_iter` | `40` | 最大搜索迭代 |
 | `z_patience` | `3` | 连续无进步耐心轮数 |
+| `z_search_strategy` | `"hill_climb"` | 搜索策略 |
+| `z_sweep_range_steps` | `100` | 全扫/拟合/黄金分割半范围 |
+| `z_curve_fit_points` | `7` | 曲线拟合采样点数 |
+| `z_golden_section_tol` | `3` | 黄金分割收敛容差（步数） |
+| `z_adaptive_step_decay` | `1.0` | 爬坡步长衰减系数（1.0 不衰减） |
 
 ### 2. `metrics.py` — FocusMetricsCalculator
 
-聚焦指标计算核心。对一张 RGB 图像同时计算以下 10 项指标：
+聚焦指标计算核心。对一张 RGB 图像同时计算以下 14 项指标：
 
 | 指标 | 含义 | 计算方式 |
 |------|------|----------|
@@ -90,6 +121,10 @@ python Focus/run_autofocus.py
 | `brightness_mean` | 亮度均值 | 灰度均值 |
 | `brightness_std` | 亮度标准差 | 灰度标准差 |
 | `red_blue_ratio` | 红蓝比 | R 通道均值 / B 通道均值 |
+| `modified_laplacian` | 改进 Laplacian / SML | 二阶导数绝对值均值 |
+| `dct_energy` | DCT 高频能量比 | DCT 去低频后高频能量 / 总能量 |
+| `smd` | 灰度差分和 | 相邻像素绝对差均值 |
+| `entropy` | 直方图熵 | 灰度直方图香农熵 |
 
 **核心方法：**
 
@@ -144,13 +179,14 @@ z.move_relative(-50)      # 反向 50 步
 
 #### 闭环搜索算法 (`run_closed_loop`)
 
-```
-1. 记录初始 FocusScore
-2. 试探 +z 方向，若分数提升则继续；否则试探 -z
-3. 沿提升方向递进搜索，每次移动后截图评估
-4. 连续无进步达到 patience 或达到目标值则停止
-5. 回退到搜索过程中的最佳位置
-```
+通过 `cfg.z_search_strategy` 选择策略（默认 `hill_climb`）：
+
+| 策略 | 说明 |
+|------|------|
+| `hill_climb` | 试探方向 → 沿提升方向递进 → 回退最佳位置；支持自适应步长衰减 |
+| `full_sweep` | 在 `[-z_sweep_range_steps, +z_sweep_range_steps]` 等间距全扫描 |
+| `curve_fit` | 等间距采样后用抛物线拟合预测峰值，再局部微调 |
+| `golden_section` | 粗扫确定峰值区间，再用黄金分割法细化 |
 
 #### 一站式接口 (`check_and_autofocus`)
 
@@ -159,6 +195,42 @@ result = controller.check_and_autofocus(cycle_index=1, save_dir="output")
 # 内部完成: 截图 → 评分 → 判断 → 闭环搜索 → 最终截图
 ```
 
+### 6. `search.py` — 搜索策略
+
+可插拔的搜索策略实现，供 `AutofocusController.run_closed_loop()` 调用：
+
+- **`HillClimbSearch`** — 方向试探 + 递进 + 回退最佳位置。
+- **`FullSweepSearch`** — 全范围扫描，适合首次标定或聚焦曲线未知。
+- **`CurveFitSearch`** — 抛物线拟合焦点曲线，预测峰值后局部微调。
+- **`GoldenSectionSearch`** — 粗扫 bracket + 黄金分割细化，适合单峰聚焦曲线。
+- **`create_search(strategy, cfg, move_fn, measure_fn, log_fn)`** — 工厂函数。
+
+### 7. `simulator.py` — 无硬件模拟器
+
+在没有真实 Z 轴和显微镜图像时，提供完整的聚焦演示环境：
+
+- **`VirtualZAxis`** — 虚拟 Z 轴控制器，记录位置、支持相对移动。
+- **`ImageGenerator`** — 根据虚拟 Z 位置生成模拟显微图像：
+  - 内置图案：`cells`（类细胞）、`grid`（棋盘格）、`dots`（点阵）、`random`（随机纹理）
+  - 支持加载外部基准图片（`--base-image`）
+  - 使用 Gaussian blur 模拟离焦效果：`blur_radius = abs(z - peak_z) * blur_scale`
+- **`FocusSimulator`** — 整合虚拟 Z 轴和图像生成，替代真实截图和硬件控制。
+- **`create_demo_environment()`** — 快速创建演示环境，返回已注入模拟器的组件。
+
+模拟参数（`main.py --demo-sim` 专属）：
+
+| 参数 | 默认值 | 说明 |
+|------|--------|------|
+| `--peak-z` | `50` | 聚焦曲线峰值位置（虚拟 Z 步数） |
+| `--blur-scale` | `0.3` | 模糊系数：离焦程度 = \|z - peak_z\| × blur_scale |
+| `--initial-z` | `0` | 起始虚拟 Z 位置 |
+| `--drift-rate` | `0` | 每轮 Z 轴自动漂移步数（模拟真实漂移） |
+| `--focus-degrade` | `0` | 每轮峰值移动步数（模拟样品沉降） |
+| `--pattern` | `cells` | 模拟图像图案类型 |
+| `--sim-image-size` | `400 400` | 模拟图像尺寸 |
+| `--noise-level` | `0.02` | 噪声水平 |
+| `--base-image` | 无 | 外部基准图片路径 |
+
 ---
 
 ## 评分公式
@@ -166,8 +238,8 @@ result = controller.check_and_autofocus(cycle_index=1, save_dir="output")
 ```
 FocusScore_ratio = weighted_mean(metric_current / metric_ref)
 
-其中 metric ∈ {highfreq_ratio, tenengrad, brenner, red_blue_ratio}
-权重: 0.35 / 0.25 / 0.25 / 0.15 (可配置)
+其中 metric ∈ {highfreq_ratio, tenengrad, brenner, red_blue_ratio, modified_laplacian, dct_energy, smd, entropy}
+默认权重: 0.35 / 0.25 / 0.25 / 0.15 / 0 / 0 / 0 / 0（新增指标默认权重为 0，需在配置中启用）
 
 每个分量的 ratio 限幅 [0.0, 2.5] 防止异常值
 ```

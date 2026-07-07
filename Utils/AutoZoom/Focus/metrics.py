@@ -72,6 +72,10 @@ FOCUS_METRIC_NAMES = [
     "brightness_mean",
     "brightness_std",
     "red_blue_ratio",
+    "modified_laplacian",
+    "dct_energy",
+    "smd",
+    "entropy",
 ]
 
 FOCUS_SUMMARY_KEYS = (
@@ -553,6 +557,43 @@ class FocusMetricsCalculator:
         b_mean = float(np.mean(rgb[:, :, 2]))
         red_blue_ratio = float(r_mean / (b_mean + eps))
 
+        # ---- 新增常用聚焦指标 ----
+        try:
+            dxx = cv2.Sobel(gray, cv2.CV_64F, 2, 0, ksize=3)
+            dyy = cv2.Sobel(gray, cv2.CV_64F, 0, 2, ksize=3)
+            modified_laplacian = float(np.mean(np.abs(dxx) + np.abs(dyy)))
+        except Exception:
+            modified_laplacian = None
+
+        try:
+            h_dct, w_dct = gray.shape
+            dct_input = gray.astype(np.float32)
+            # cv2.dct 对任意尺寸均支持，但 2 的幂次更高效
+            dct = cv2.dct(dct_input)
+            power_dct = dct * dct
+            yy_d, xx_d = np.ogrid[:h_dct, :w_dct]
+            low_radius_dct = max(1.0, float(self.cfg.focus_fft_low_radius_ratio) * min(h_dct, w_dct))
+            high_mask_dct = np.sqrt((yy_d) ** 2 + (xx_d) ** 2) > low_radius_dct
+            total_energy_dct = float(np.sum(power_dct))
+            dct_energy = float(np.sum(power_dct[high_mask_dct]) / (total_energy_dct + eps))
+        except Exception:
+            dct_energy = None
+
+        try:
+            smd = (
+                float(np.mean(np.abs(gray[:, 1:] - gray[:, :-1])))
+                + float(np.mean(np.abs(gray[1:, :] - gray[:-1, :])))
+            ) / 2.0
+        except Exception:
+            smd = None
+
+        try:
+            hist, _ = np.histogram(gray_u8, bins=256, range=(0, 256), density=True)
+            p = hist[hist > 0]
+            entropy = float(-np.sum(p * np.log2(p))) if p.size else 0.0
+        except Exception:
+            entropy = None
+
         values = {
             "tenengrad": tenengrad,
             "laplacian_var": laplacian_var,
@@ -564,35 +605,57 @@ class FocusMetricsCalculator:
             "brightness_mean": brightness_mean,
             "brightness_std": brightness_std,
             "red_blue_ratio": red_blue_ratio,
+            "modified_laplacian": modified_laplacian,
+            "dct_energy": dct_energy,
+            "smd": smd,
+            "entropy": entropy,
         }
         return {k: self.safe_float(v) for k, v in values.items()}
 
     def _capture_usb_frame(self) -> np.ndarray:
         """从 USB 相机读取一帧 RGB 图像，会复用已打开的 _usb_source。"""
+        # 优先使用项目自定义的 UCCFrameSource；如果不可用，回退到 OpenCV
         try:
             from SpotZoom import UCCFrameSource
+            has_ucc = True
         except Exception as exc:
-            raise ImportError(f"无法导入 UCCFrameSource: {exc}")
+            UCCFrameSource = None
+            has_ucc = False
 
-        if self._usb_source is None or not self._usb_source.is_healthy():
-            if self._usb_source is not None:
-                try:
-                    self._usb_source.release()
-                except Exception:
-                    pass
-            pixel_format = self.cfg.usb_pixel_format
-            if pixel_format is not None:
-                pixel_format = pixel_format.upper()
-                if pixel_format == "AUTO":
-                    pixel_format = None
-            self._usb_source = UCCFrameSource(
-                device_index=int(self.cfg.usb_device_index),
-                resolution=self.cfg.usb_resolution.upper() if self.cfg.usb_resolution else "AUTO",
-                pixel_format=pixel_format,
-            )
+        if has_ucc:
+            if self._usb_source is None or not self._usb_source.is_healthy():
+                if self._usb_source is not None:
+                    try:
+                        self._usb_source.release()
+                    except Exception:
+                        pass
+                pixel_format = self.cfg.usb_pixel_format
+                if pixel_format is not None:
+                    pixel_format = pixel_format.upper()
+                    if pixel_format == "AUTO":
+                        pixel_format = None
+                self._usb_source = UCCFrameSource(
+                    device_index=int(self.cfg.usb_device_index),
+                    resolution=self.cfg.usb_resolution.upper() if self.cfg.usb_resolution else "AUTO",
+                    pixel_format=pixel_format,
+                )
 
-        frame_bgr = self._usb_source.grab_frame()
-        if frame_bgr is None or frame_bgr.size == 0:
+            frame_bgr = self._usb_source.grab_frame()
+            if frame_bgr is None or frame_bgr.size == 0:
+                raise RuntimeError("USB 相机帧采集失败")
+            return cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
+
+        # OpenCV 回退
+        if cv2 is None:
+            raise ImportError("需要安装 opencv-python：pip install opencv-python")
+        if self._usb_source is None:
+            self._usb_source = cv2.VideoCapture(int(self.cfg.usb_device_index), cv2.CAP_DSHOW)
+            if not self._usb_source.isOpened():
+                self._usb_source.release()
+                self._usb_source = None
+                raise RuntimeError(f"无法打开 USB 相机索引 {self.cfg.usb_device_index}")
+        ret, frame_bgr = self._usb_source.read()
+        if not ret or frame_bgr is None or frame_bgr.size == 0:
             raise RuntimeError("USB 相机帧采集失败")
         return cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
 

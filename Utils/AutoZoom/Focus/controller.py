@@ -19,6 +19,7 @@ import numpy as np
 from .config import AutofocusConfig
 from .metrics import FocusMetricsCalculator
 from .scorer import FocusScorer
+from .search import create_search
 from .z_axis import ZAxisController
 
 logger = logging.getLogger(__name__)
@@ -142,10 +143,11 @@ class AutofocusController:
         """
         开环 Z 轴 + 图像反馈的闭环补焦。
 
-        算法：
-          1. 先试探 +z 方向，若分数提升则继续；否则试探 -z；
-          2. 沿提升方向递进搜索，直到目标、最大步数或无进步；
-          3. 回退到搜索过程中的最佳位置。
+        根据 cfg.z_search_strategy 选择搜索策略：
+          - hill_climb    : 试探方向 + 沿方向递进 + 回退最佳位置（原有算法，新增自适应步长）
+          - full_sweep    : 在 [-range, range] 全扫描并回到最佳位置
+          - curve_fit     : 等间距采样 + 抛物线拟合峰值 + 局部微调
+          - golden_section: 粗扫 bracket + 黄金分割细化
 
         参数
         ----------
@@ -167,182 +169,46 @@ class AutofocusController:
         self.autofocus_event_counter += 1
         event_id = self.autofocus_event_counter
         target = float(self.cfg.autofocus_stop_ratio)
-        probe_steps = max(1, int(self.cfg.z_probe_steps))
-        search_steps = max(1, int(self.cfg.z_search_steps))
-        settle_s = max(0.0, float(self.cfg.z_settle_time_s))
         min_improve = max(0.0, float(self.cfg.z_min_improve_ratio))
         max_iter = max(1, int(self.cfg.z_max_iter))
         max_total_steps = max(1, int(self.cfg.z_max_total_steps))
         patience = max(1, int(self.cfg.z_patience))
+        strategy = str(self.cfg.z_search_strategy or "hill_climb")
 
         self._log(
-            f"========== 闭环补焦 #{event_id} 开始: target={target}, "
-            f"probe={probe_steps}, search={search_steps} =========="
+            f"========== 闭环补焦 #{event_id} 开始: strategy={strategy}, target={target} =========="
         )
 
         self.z_axis.connect()
 
-        # 获取初始分数
-        if initial_focus_score is None:
-            live = self.metrics_calc.capture_live()
-            initial_score, _ = self.scorer.score_ratio(
-                live.get("roi_metrics")
-            )
-        else:
-            initial_score = FocusMetricsCalculator.safe_float(
-                initial_focus_score
-            )
+        initial_score = FocusMetricsCalculator.safe_float(initial_focus_score)
 
-        if initial_score is None:
-            return {"ok": False, "reason": "no_focus_reference"}
+        def move_fn(delta: int) -> None:
+            self.z_axis.move_relative(delta)
 
-        best_score = float(initial_score)
-        best_pos = 0
-        current_pos = 0
-        history = [
-            {
-                "iter": 0,
-                "relative_z_steps": 0,
-                "score": best_score,
-                "phase": "start",
-            }
-        ]
-
-        if best_score >= target:
-            self._log(
-                f"[补焦] 初始 FocusScore={best_score:.4f} >= {target}，无需移动"
-            )
-            return {
-                "ok": True,
-                "reason": "already_above_target",
-                "best_score": best_score,
-                "best_relative_z_steps": 0,
-                "history": history,
-            }
-
-        def measure_score(phase: str, iteration: int) -> Optional[float]:
-            if settle_s > 0:
-                time.sleep(settle_s)
+        def measure_fn(_phase: str, _iteration: int) -> Tuple[Optional[float], Optional[Dict[str, float]]]:
             live = self.metrics_calc.capture_live()
             score, comp = self.scorer.score_ratio(live.get("roi_metrics"))
-            history.append(
-                {
-                    "iter": iteration,
-                    "relative_z_steps": current_pos,
-                    "score": score,
-                    "component_ratios": comp,
-                    "phase": phase,
-                }
-            )
-            if score is not None:
-                self._log(
-                    f"[补焦-{phase}] iter={iteration}, z={current_pos}, "
-                    f"score={score:.4f}"
-                )
-            else:
-                self._log(
-                    f"[补焦-{phase}] iter={iteration}, z={current_pos}, score=None"
-                )
-            return score
+            return score, comp
 
-        # ---- 试探方向 ----
-        direction = None
-        self.z_axis.move_relative(+probe_steps)
-        current_pos += probe_steps
-        score_plus = measure_score("probe_plus", 1)
+        search = create_search(strategy, self.cfg, move_fn, measure_fn, self._log)
+        result = search.search(
+            initial_score=initial_score,
+            target=target,
+            max_total_steps=max_total_steps,
+            max_iter=max_iter,
+            patience=patience,
+            min_improve=min_improve,
+        )
 
-        if score_plus is not None and score_plus > best_score * (1.0 + min_improve):
-            direction = +1
-            best_score = float(score_plus)
-            best_pos = current_pos
-        else:
-            # 回到原点，试反方向
-            self.z_axis.move_relative(-probe_steps)
-            current_pos -= probe_steps
-            if settle_s > 0:
-                time.sleep(settle_s)
-
-            self.z_axis.move_relative(-probe_steps)
-            current_pos -= probe_steps
-            score_minus = measure_score("probe_minus", 2)
-
-            if score_minus is not None and score_minus > best_score * (1.0 + min_improve):
-                direction = -1
-                best_score = float(score_minus)
-                best_pos = current_pos
-            else:
-                if current_pos != 0:
-                    self.z_axis.move_relative(-current_pos)
-                    current_pos = 0
-                    if settle_s > 0:
-                        time.sleep(settle_s)
-                self._log("[补焦] 双向试探均无明显提升，停止")
-                return {
-                    "ok": True,
-                    "reason": "both_directions_no_improve",
-                    "initial_score": initial_score,
-                    "best_score": best_score,
-                    "best_relative_z_steps": 0,
-                    "history": history,
-                }
-
-        # ---- 沿方向递进搜索 ----
-        no_improve_count = 0
-        iteration = 3
-        while iteration <= max_iter:
-            if best_score >= target:
-                self._log(
-                    f"[补焦] best_score={best_score:.4f} >= target={target}，停止"
-                )
-                break
-            if abs(current_pos) >= max_total_steps:
-                self._log(f"[补焦] 达最大步数 |{current_pos}| >= {max_total_steps}，停止")
-                break
-
-            step = int(direction * search_steps)
-            self.z_axis.move_relative(step)
-            current_pos += step
-            score = measure_score("search", iteration)
-
-            if score is not None and score > best_score * (1.0 + min_improve):
-                best_score = float(score)
-                best_pos = current_pos
-                no_improve_count = 0
-            else:
-                no_improve_count += 1
-
-            if no_improve_count >= patience:
-                self._log(f"[补焦] 连续 {no_improve_count} 次无提升，停止")
-                break
-            iteration += 1
-
-        # ---- 回退到最佳位置 ----
-        delta_back = best_pos - current_pos
-        if delta_back != 0:
-            self._log(
-                f"[补焦] 回退到最佳位置: best_pos={best_pos}, "
-                f"current_pos={current_pos}, delta={delta_back}"
-            )
-            self.z_axis.move_relative(delta_back)
-            current_pos = best_pos
-            if settle_s > 0:
-                time.sleep(settle_s)
-
-        ok = best_score >= min(target, float(self.cfg.autofocus_focus_trigger_ratio))
+        ok = bool(result.get("ok"))
+        best_score = result.get("best_score")
+        best_pos = result.get("best_relative_z_steps")
         self._log(
             f"========== 闭环补焦 #{event_id} 结束: ok={ok}, "
             f"best_score={best_score:.4f}, best_z={best_pos} =========="
         )
-        return {
-            "ok": bool(ok),
-            "reason": "done",
-            "initial_score": float(initial_score),
-            "best_score": float(best_score),
-            "best_relative_z_steps": int(best_pos),
-            "final_relative_z_steps": int(current_pos),
-            "target": target,
-            "history": history,
-        }
+        return result
 
     # ================================================================
     # 一站式接口：Step 4.5 截图 → 判断 → 补焦 → 最终截图

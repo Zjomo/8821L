@@ -2,6 +2,7 @@ import sys
 import os
 import glob
 import time
+import logging
 import traceback
 from pathlib import Path
 from typing import Optional, Tuple
@@ -13,7 +14,7 @@ from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QPushButton, QLineEdit, QComboBox, QSpinBox,
     QTextBrowser, QProgressBar, QTabWidget, QFileDialog,
-    QMessageBox, QGroupBox, QGridLayout, QListWidget, QScrollArea,
+    QMessageBox, QGroupBox, QGridLayout, QListWidget, QListWidgetItem, QScrollArea,
     QSizePolicy, QSplitter, QSlider, QCheckBox
 )
 from PyQt6.QtCore import Qt, QThread, pyqtSignal, QObject, QPoint, QRect, QTimer
@@ -23,6 +24,71 @@ from ultralytics import YOLO
 import torch
 
 import dataset_utils
+
+# 项目根目录：当前文件位于 .../8821L/Utils/ADOTOP/YoloUI/yolo_seg_gui.py
+YOLO_UI_ROOT = Path(__file__).resolve().parent
+PROJECT_ROOT = YOLO_UI_ROOT.parent.parent.parent
+
+# 训练 / 预测 / 评估结果统一保存到 Models 下
+MODELS_ROOT = PROJECT_ROOT / "Utils" / "ADOTOP" / "Models"
+TRAIN_ROOT = MODELS_ROOT / "Train"
+PREDICT_ROOT = MODELS_ROOT / "Predict"
+EVAL_ROOT = MODELS_ROOT / "Eval"
+
+
+def _ts():
+    """统一时间戳格式：YYYYMMDD_HHMMSS。"""
+    return time.strftime("%Y%m%d_%H%M%S")
+
+
+def _unique_dir(parent, prefix):
+    """在 parent 下生成 prefix_YYYYMMDD_HHMMSS 目录，若冲突则追加 _1/_2..."""
+    parent = Path(parent)
+    parent.mkdir(parents=True, exist_ok=True)
+    ts = _ts()
+    d = parent / f"{prefix}_{ts}"
+    if not d.exists():
+        return d
+    i = 1
+    while True:
+        d = parent / f"{prefix}_{ts}_{i}"
+        if not d.exists():
+            return d
+        i += 1
+
+
+def _latest_best_pt():
+    """返回 Models/Train 下最新的 weights/best.pt 路径，找不到返回空字符串。"""
+    if not TRAIN_ROOT.exists():
+        return ""
+    best_pts = list(TRAIN_ROOT.rglob("weights/best.pt"))
+    if not best_pts:
+        return ""
+    latest = max(best_pts, key=lambda x: x.stat().st_mtime)
+    return str(latest)
+
+
+def _rel(p):
+    """将项目根目录下的绝对路径转换为相对路径，便于日志阅读。"""
+    try:
+        return str(Path(p).relative_to(PROJECT_ROOT))
+    except ValueError:
+        return str(p)
+
+
+class _ProjectPathFilter(logging.Filter):
+    """将 ultralytics 等日志中的项目根目录绝对路径替换为相对路径 '.\\...'。"""
+    def filter(self, record):
+        msg = record.getMessage()
+        root_str = str(PROJECT_ROOT)
+        if root_str in msg:
+            record.msg = msg.replace(root_str, ".")
+            record.args = ()
+        return True
+
+
+# 对 ultralytics 日志进行路径精简
+logging.getLogger("ultralytics").addFilter(_ProjectPathFilter())
 
 # ------------------------------------------------------------------
 # Helpers
@@ -35,6 +101,16 @@ def cv2_to_qpixmap(cv_img):
     bytes_per_line = ch * w
     qt_img = QImage(rgb.data, w, h, bytes_per_line, QImage.Format.Format_RGB888)
     return QPixmap.fromImage(qt_img)
+
+
+def resolve_device(device):
+    """将 UI 中的 'auto' / '0' 解析为当前环境可用的设备；无 CUDA 时自动回退到 cpu。"""
+    if device == "auto":
+        return "0" if torch.cuda.is_available() else "cpu"
+    if isinstance(device, str) and device.isdigit():
+        return device if torch.cuda.is_available() else "cpu"
+    return device
+
 
 # ------------------------------------------------------------------
 # 重定向 stdout 到 UI
@@ -65,24 +141,22 @@ class TrainThread(QThread):
 
     def run(self):
         try:
-            import torch
-            dev = self.device
-            if dev == "auto":
-                dev = "0" if torch.cuda.is_available() else "cpu"
+            dev = resolve_device(self.device)
             model = YOLO(self.model_path)
+            train_dir = _unique_dir(TRAIN_ROOT, "train")
             model.train(
                 data=self.data_yaml,
                 epochs=self.epochs,
                 imgsz=self.imgsz,
                 batch=self.batch,
                 device=dev,
-                project="runs/segment",
-                name="gui_train",
+                project=str(train_dir.parent),
+                name=train_dir.name,
                 exist_ok=True,
                 verbose=True,
             )
-            best = os.path.join("runs", "segment", "gui_train", "weights", "best.pt")
-            self.finished_train.emit(True, os.path.abspath(best))
+            best = str(model.trainer.best)
+            self.finished_train.emit(True, best)
         except Exception as e:
             self.finished_train.emit(False, str(e))
 
@@ -105,7 +179,7 @@ class PredictThread(QThread):
     def _cleanup_old_projects(self, base_dir, keep=3):
         try:
             import shutil
-            dirs = sorted([d for d in os.listdir(base_dir) if d.startswith("predict_gui_") and os.path.isdir(os.path.join(base_dir, d))])
+            dirs = sorted([d for d in os.listdir(base_dir) if d.startswith("predict_") and os.path.isdir(os.path.join(base_dir, d))])
             for d in dirs[:-keep]:
                 shutil.rmtree(os.path.join(base_dir, d))
         except Exception as e:
@@ -115,16 +189,13 @@ class PredictThread(QThread):
         try:
             model = YOLO(self.weights)
             import shutil
-            base_tmp = r"E:\jupyter file\2_Optics\8821L\Utils\YoloUI\tmp_predict_gui"
-            os.makedirs(base_tmp, exist_ok=True)
-            self._cleanup_old_projects(base_tmp, keep=3)
+            base_tmp = _unique_dir(PREDICT_ROOT, "predict")
+            base_tmp.mkdir(parents=True, exist_ok=True)
+            self._cleanup_old_projects(str(PREDICT_ROOT), keep=3)
 
-            # 每次预测使用唯一时间戳目录，彻底避免命名冲突
-            tmp_project = os.path.join(base_tmp, f"predict_gui_{time.strftime('%Y%m%d_%H%M%S')}_{int(time.time()*1000)%1000}")
-            os.makedirs(tmp_project, exist_ok=True)
-
-            self.debug_info.emit(f"预测临时目录: {tmp_project}")
-            self.debug_info.emit(f"输入源: {self.sources}")
+            tmp_project = base_tmp
+            self.debug_info.emit(f"预测结果目录: {_rel(tmp_project)}")
+            self.debug_info.emit(f"输入源: {[_rel(s) for s in self.sources]}")
 
             results = model.predict(
                 source=self.sources,
@@ -144,7 +215,7 @@ class PredictThread(QThread):
             else:
                 save_dir = os.path.join(tmp_project, "predict")
 
-            self.debug_info.emit(f"YOLO save_dir: {save_dir}")
+            self.debug_info.emit(f"YOLO save_dir: {_rel(save_dir)}")
 
             # 确保文件已写入
             if not os.path.exists(save_dir):
@@ -171,7 +242,7 @@ class PredictThread(QThread):
                     except Exception as e:
                         self.debug_info.emit(f"回退查找失败: {e}")
                     out.append((s, fallback))
-                    self.debug_info.emit(f"回退查找: {s} -> {fallback}")
+                    self.debug_info.emit(f"回退查找: {_rel(s)} -> {_rel(fallback)}")
 
             self.result_ready.emit(out)
         except Exception as e:
@@ -200,6 +271,7 @@ class VideoThread(QThread):
     def run(self):
         try:
             model = YOLO(self.weights)
+            dev = resolve_device(self.device)
             cap = cv2.VideoCapture(self.video_path)
             if not cap.isOpened():
                 self.error.emit("无法打开视频文件")
@@ -224,7 +296,7 @@ class VideoThread(QThread):
                 if not ret:
                     break
                 orig = frame.copy()
-                result = model.predict(source=frame, device=self.device, verbose=False, show_boxes=False, show_labels=False, show_conf=False)[0]
+                result = model.predict(source=frame, device=dev, verbose=False, show_boxes=False, show_labels=False, show_conf=False)[0]
                 plotted = result.plot(boxes=False, labels=False, probs=False)
                 self.frame_ready.emit(orig, plotted, frame_idx, total)
                 frame_idx += 1
@@ -263,6 +335,7 @@ class ROIScreenThread(QThread):
         try:
             import pyautogui
             model = YOLO(self.weights)
+            dev = resolve_device(self.device)
             interval_ms = max(50, int(1000 / self.fps))
             while self._running:
                 while self._paused and self._running:
@@ -278,7 +351,7 @@ class ROIScreenThread(QThread):
                     time.sleep(interval_ms / 1000.0)
                     continue
                 orig = frame.copy()
-                result = model.predict(source=frame, device=self.device, verbose=False, show_boxes=False, show_labels=False, show_conf=False)[0]
+                result = model.predict(source=frame, device=dev, verbose=False, show_boxes=False, show_labels=False, show_conf=False)[0]
                 plotted = result.plot(boxes=False, labels=False, probs=False)
                 self.frame_ready.emit(orig, plotted)
                 time.sleep(interval_ms / 1000.0)
@@ -364,9 +437,9 @@ class MainWindow(QMainWindow):
         self.redirector = StreamRedirector()
         self.redirector.text_written.connect(self._append_log)
 
-        completed_best = r"E:\jupyter file\2_Optics\8821L\Utils\YoloUI\runs\segment\fore_back_70\weights\best.pt"
+        completed_best = _latest_best_pt()
         for le in [self.le_predict_weights, self.le_video_weights, self.le_roi_weights]:
-            if os.path.exists(completed_best):
+            if completed_best and os.path.exists(completed_best):
                 le.setText(completed_best)
 
     # ======================== 通用 ========================
@@ -423,7 +496,7 @@ class MainWindow(QMainWindow):
 
         gl.addWidget(QLabel("输出目录:"), 3, 0)
         self.le_ds_out = QLineEdit()
-        self.le_ds_out.setText(r"E:\jupyter file\2_Optics\8821L\Utils\YoloUI\Dataset\my_dataset")
+        self.le_ds_out.setText(str(YOLO_UI_ROOT / "Dataset" / "my_dataset"))
         gl.addWidget(self.le_ds_out, 3, 1)
         btn3 = QPushButton("浏览...")
         btn3.clicked.connect(lambda: self._browse_dir(self.le_ds_out, "选择输出目录"))
@@ -521,8 +594,7 @@ class MainWindow(QMainWindow):
         gl2 = QGridLayout(gb_data)
         gl2.addWidget(QLabel("数据集目录 (含 data.yaml):"), 0, 0)
         self.le_data = QLineEdit()
-        default = r"E:\jupyter file\2_Optics\8821L\Utils\YoloUI\Fore_BackGround_70_export"
-        self.le_data.setText(default)
+        self.le_data.setText(str(YOLO_UI_ROOT / "Dataset" / "Fore_BackGround_70_export"))
         gl2.addWidget(self.le_data, 0, 1)
         btn2 = QPushButton("浏览...")
         btn2.clicked.connect(lambda: self._browse_dir(self.le_data, "选择数据集根目录"))
@@ -539,6 +611,8 @@ class MainWindow(QMainWindow):
         self.sb_batch = QSpinBox(); self.sb_batch.setRange(1, 64); self.sb_batch.setValue(8); gl3.addWidget(self.sb_batch, 1, 1)
         gl3.addWidget(QLabel("Device:"), 1, 2)
         self.cb_device = QComboBox(); self.cb_device.addItems(["auto", "cpu", "0"]); gl3.addWidget(self.cb_device, 1, 3)
+        if not torch.cuda.is_available():
+            self.cb_device.setCurrentText("cpu")
         gl3.addWidget(QLabel("无 val 自动拆分:"), 2, 0)
         self.chk_auto_val = QCheckBox("从 train 划分 15% 作为 val")
         self.chk_auto_val.setChecked(True)
@@ -988,13 +1062,28 @@ class MainWindow(QMainWindow):
             return None
         h_img, w_img = self._roi_image_cv.shape[:2]
         pm = self._roi_pixmap
-        scaled = pm.scaled(self.lbl_roi_select.size(), Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+        label_w = self.lbl_roi_select.width()
+        label_h = self.lbl_roi_select.height()
+        scaled = pm.scaled(label_w, label_h, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+        # QLabel 默认居中对齐，计算 pixmap 在 label 中的偏移
+        offset_x = (label_w - scaled.width()) // 2
+        offset_y = (label_h - scaled.height()) // 2
         scale_x = w_img / scaled.width()
         scale_y = h_img / scaled.height()
-        x1 = max(0, int(roi_rect.x() * scale_x))
-        y1 = max(0, int(roi_rect.y() * scale_y))
-        x2 = min(w_img, int((roi_rect.x() + roi_rect.width()) * scale_x))
-        y2 = min(h_img, int((roi_rect.y() + roi_rect.height()) * scale_y))
+        # 将 ROI 从 label 坐标转换到 pixmap 坐标，再映射到原图坐标
+        px = roi_rect.x() - offset_x
+        py = roi_rect.y() - offset_y
+        px2 = (roi_rect.x() + roi_rect.width()) - offset_x
+        py2 = (roi_rect.y() + roi_rect.height()) - offset_y
+        # 限制在 pixmap 范围内
+        px = max(0, min(px, scaled.width()))
+        py = max(0, min(py, scaled.height()))
+        px2 = max(0, min(px2, scaled.width()))
+        py2 = max(0, min(py2, scaled.height()))
+        x1 = int(px * scale_x)
+        y1 = int(py * scale_y)
+        x2 = int(px2 * scale_x)
+        y2 = int(py2 * scale_y)
         if x2 <= x1 or y2 <= y1:
             return None
         return (x1, y1, x2, y2)
@@ -1014,7 +1103,7 @@ class MainWindow(QMainWindow):
         try:
             model = YOLO(weights)
             crop = self._roi_image_cv[y1:y2, x1:x2]
-            result = model.predict(source=crop, device=self.cb_device.currentText(), verbose=False, show_boxes=False, show_labels=False, show_conf=False)[0]
+            result = model.predict(source=crop, device=resolve_device(self.cb_device.currentText()), verbose=False, show_boxes=False, show_labels=False, show_conf=False)[0]
             plotted = result.plot(boxes=False, labels=False, probs=False)
             self.lbl_roi_result.setPixmap(cv2_to_qpixmap(plotted).scaledToWidth(500, Qt.TransformationMode.SmoothTransformation))
             self.lbl_roi_info.setText(f"ROI 分割完成: [{x1},{y1},{x2},{y2}]")
@@ -1038,7 +1127,7 @@ class MainWindow(QMainWindow):
         self.btn_roi_screen_pause.setText("暂停")
         self.btn_roi_screen_stop.setEnabled(True)
 
-        self.roi_screen_thread = ROIScreenThread(weights, (x1, y1, x2 - x1, y2 - y1), self.cb_device.currentText())
+        self.roi_screen_thread = ROIScreenThread(weights, (x1, y1, x2 - x1, y2 - y1), resolve_device(self.cb_device.currentText()))
         self.roi_screen_thread.frame_ready.connect(self._on_roi_screen_frame)
         self.roi_screen_thread.finished_screen.connect(self._on_roi_screen_finished)
         self.roi_screen_thread.error.connect(self._on_roi_screen_error)
@@ -1090,12 +1179,12 @@ class MainWindow(QMainWindow):
         btn_eval.clicked.connect(self._browse_eval_dir)
         left.addWidget(btn_eval)
 
-        btn_scan = QPushButton("扫描 runs/segment")
+        btn_scan = QPushButton("扫描 Models")
         btn_scan.clicked.connect(self._scan_runs)
         left.addWidget(btn_scan)
 
         self.lw_eval = QListWidget()
-        self.lw_eval.currentTextChanged.connect(self._on_eval_dir_changed)
+        self.lw_eval.currentItemChanged.connect(self._on_eval_dir_changed)
         left.addWidget(self.lw_eval)
 
         left.addWidget(QLabel("可用图表:"))
@@ -1123,20 +1212,39 @@ class MainWindow(QMainWindow):
             self._load_eval_dir(d)
 
     def _scan_runs(self):
-        base = os.path.join(os.getcwd(), "runs", "segment")
-        if not os.path.exists(base):
-            QMessageBox.information(self, "提示", f"未找到 {base}"); return
-        dirs = [os.path.join(base, d) for d in os.listdir(base) if os.path.isdir(os.path.join(base, d))]
         self.lw_eval.clear()
-        for d in sorted(dirs, key=os.path.getmtime, reverse=True):
-            self.lw_eval.addItem(d)
+        MODELS_ROOT.mkdir(parents=True, exist_ok=True)
+        candidates = [
+            "results.png", "confusion_matrix.png", "confusion_matrix_normalized.png",
+            "F1_curve.png", "PR_curve.png", "P_curve.png", "R_curve.png",
+            "labels.jpg", "labels_correlogram.jpg",
+        ]
+        result_dirs = []
+        for type_dir in sorted(MODELS_ROOT.iterdir()):
+            if not type_dir.is_dir():
+                continue
+            for ts_dir in sorted(type_dir.iterdir()):
+                if not ts_dir.is_dir():
+                    continue
+                if any((ts_dir / c).exists() for c in candidates):
+                    result_dirs.append(ts_dir)
+        if not result_dirs:
+            QMessageBox.information(self, "提示", f"在 {_rel(MODELS_ROOT)} 下未找到含评估图表的目录"); return
+        for d in sorted(result_dirs, key=lambda x: x.stat().st_mtime, reverse=True):
+            item = QListWidgetItem(_rel(d))
+            item.setData(Qt.ItemDataRole.UserRole, str(d))
+            self.lw_eval.addItem(item)
 
-    def _on_eval_dir_changed(self, path):
+    def _on_eval_dir_changed(self, current, previous):
+        if current is None:
+            return
+        path = current.data(Qt.ItemDataRole.UserRole)
         if path:
             self._load_eval_dir(path)
 
     def _load_eval_dir(self, path):
-        self.le_eval_dir.setText(path)
+        path = str(Path(path).resolve())
+        self.le_eval_dir.setText(_rel(path))
         self.lw_images.clear()
         if not os.path.isdir(path):
             return
@@ -1146,12 +1254,14 @@ class MainWindow(QMainWindow):
             "labels.jpg", "labels_correlogram.jpg",
         ]
         for c in candidates:
-            p = os.path.join(path, c)
-            if os.path.exists(p):
-                self.lw_images.addItem(p)
+            p = Path(path) / c
+            if p.exists():
+                item = QListWidgetItem(c)
+                item.setData(Qt.ItemDataRole.UserRole, str(p))
+                self.lw_images.addItem(item)
 
     def _show_eval_image(self, item):
-        path = item.text()
+        path = item.data(Qt.ItemDataRole.UserRole) or item.text()
         pm = QPixmap(path)
         if not pm.isNull():
             pm = pm.scaled(self.lbl_eval_img.size(), Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)

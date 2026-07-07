@@ -53,6 +53,10 @@ class FocusScorer:
             "tenengrad": float(self.cfg.focus_weight_tenengrad),
             "brenner": float(self.cfg.focus_weight_brenner),
             "red_blue_ratio": float(self.cfg.focus_weight_red_blue),
+            "modified_laplacian": float(self.cfg.focus_weight_modified_laplacian),
+            "dct_energy": float(self.cfg.focus_weight_dct_energy),
+            "smd": float(self.cfg.focus_weight_smd),
+            "entropy": float(self.cfg.focus_weight_entropy),
         }
         total = sum(max(0.0, float(v)) for v in weights.values())
         if total <= 1e-12:
@@ -61,6 +65,10 @@ class FocusScorer:
                 "tenengrad": 0.3,
                 "brenner": 0.3,
                 "red_blue_ratio": 0.0,
+                "modified_laplacian": 0.0,
+                "dct_energy": 0.0,
+                "smd": 0.0,
+                "entropy": 0.0,
             }
         return {
             k: max(0.0, float(v)) / total for k, v in weights.items()

@@ -105,7 +105,7 @@ AutoZoom/
 ### 安装依赖
 
 ```bash
-pip install ultralytics pyautogui pyvisa pylablib pyserial numpy matplotlib pillow openpyxl opencv-python
+pip install ultralytics pyautogui pyvisa pylablib pyserial numpy matplotlib pillow openpyxl opencv-python PySide6==6.6.0
 ```
 
 ### 运行
@@ -127,3 +127,52 @@ python measurement_with_focus_roi_metrics.py
 5. 点击 **运行完整循环测量** — 开始自动闭环测量
 6. 实时观察 GUI 日志、角度变化曲线和峰值变化曲线
 7. 测量完成后，数据自动保存至 `measurement_output/save/MM.DD/` 目录
+
+
+
+
+
+# TODO🎯
+
+### 2026-7-6
+
+1、梳理原项目--基本流程：  ✔
+
+```
+	（1）自定义位置，截取屏幕指定区域
+    （2）针对截取图片，计算10项聚焦指标（整图&ROI）
+    （3）建立聚焦参考基线
+    （4）再计算FocusScore_ratio
+     即手动调整显微镜至聚焦状态，连续截图n次（默认5次）
+     每次计算 10项聚焦指标
+     对每项指标取 n次的均值，并存入roi_metric_ref
+     后续，将"当前图片的实时评分" 与 "聚焦图片的最佳评分"roi_metric_ref进行比较
+     即为 FocusScore_ratio
+    （5）评估补焦触发条件
+     自动补焦的高层编排器
+
+```
+
+2、基于开源项目的尝试 	✔
+
+ ```
+ DeepFocu：Micro-Manager 2.0gamma API + java + python-grpc + imageJ，显微镜自动对焦步骤理解，步骤：
+      0. 补充java环境
+      1. 加载标定曲线 (.pickle)
+      2. 用户在 ImageJ 选 ROI（或自动 2D/3D ROI）
+      3. 在当前 Z 位置拍第一张图，发给 Python
+      4. Python 用 U-Net 计算 focus map
+      5. 用黄金分割搜索决定下一个 Z 位置
+      6. Java 移动 Z 轴，拍新图，回传
+      7. 重复直到采集到 max_iter 张图
+      8. 对采集到的小样本做曲线相关，估计每个像素的最佳 Z
+      9. 对 ROI 内所有像素的最佳 Z 做 MeanShift 聚类，得到最终最佳 Z
+      10. 移动 Z 轴到最终位置
+  【由于该项目年代较为久远，故不浪费时间进行理解与复现，直接使用当前最前沿 or 最落地的技术栈来实现】
+ 
+ ```
+
+3、补充了对应的qt UI界面（一般直接基于项目解析后，再基于PYQT生成UI界面即可，但注意强调新增的模块只仅次于XXX项目目录内）	✔
+
+4、优化UI界面的四种画面通信方式	✔
+

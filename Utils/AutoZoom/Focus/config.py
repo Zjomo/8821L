@@ -56,6 +56,12 @@ class AutofocusConfig:
     focus_weight_brenner: float = 0.25
     focus_weight_red_blue: float = 0.15
 
+    # 新增常用聚焦指标权重（默认 0，手动启用）
+    focus_weight_modified_laplacian: float = 0.0
+    focus_weight_dct_energy: float = 0.0
+    focus_weight_smd: float = 0.0
+    focus_weight_entropy: float = 0.0
+
     # -------------------- 自动补焦触发阈值 --------------------
     autofocus_enabled: bool = True
     """是否启用自动补焦"""
@@ -99,6 +105,22 @@ class AutofocusConfig:
 
     z_patience: int = 3
     """连续无进步的耐心轮数"""
+
+    # -------------------- 搜索策略（新增） --------------------
+    z_search_strategy: str = "hill_climb"
+    """搜索策略：hill_climb / full_sweep / golden_section / curve_fit"""
+
+    z_sweep_range_steps: int = 100
+    """全扫/拟合策略的半范围（步数）"""
+
+    z_curve_fit_points: int = 7
+    """曲线拟合策略的采样点数（奇数 >= 5）"""
+
+    z_golden_section_tol: int = 3
+    """黄金分割搜索收敛容差（步数）"""
+
+    z_adaptive_step_decay: float = 1.0
+    """爬坡策略中步长衰减系数（1.0 表示不衰减；<1.0 时每次无进步会缩小步长）"""
 
     # -------------------- 参考建立 --------------------
     focus_reference_capture_count: int = 5

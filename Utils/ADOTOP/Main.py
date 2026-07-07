@@ -13,6 +13,7 @@ from PyQt6.QtGui import QPixmap, QImage, QPainter, QPen, QColor, QPalette
 from PyQt6.QtWidgets import (
     QApplication,
     QComboBox,
+    QDialog,
     QFileDialog,
     QFormLayout,
     QGroupBox,
@@ -312,7 +313,7 @@ class RoiSelectLabel(QLabel):
         self._update_display()
 
 
-class ScreenRoiDialog(QWidget):
+class ScreenRoiDialog(QDialog):
     def __init__(self, screenshot: np.ndarray, parent=None):
         super().__init__(parent)
         self.setWindowTitle("划取屏幕ROI区域")
@@ -340,12 +341,6 @@ class ScreenRoiDialog(QWidget):
     def _on_roi_selected(self, rect):
         self.roi_rect = rect
         self.btn_ok.setEnabled(True)
-
-    def accept(self):
-        super().accept()
-
-    def reject(self):
-        super().reject()
 
 
 # ============================================================
@@ -472,7 +467,7 @@ class ForegroundPage(QWidget):
         img = cv2.cvtColor(np.array(shot), cv2.COLOR_RGB2BGR)
         dlg = ScreenRoiDialog(img, self)
         dlg.resize(1000, 700)
-        if dlg.exec() == QWidget.DialogCode.Accepted and dlg.roi_rect is not None:
+        if dlg.exec() == QDialog.DialogCode.Accepted and dlg.roi_rect is not None:
             self._roi = dlg.roi_rect
             x, y, w, h = self._roi
             self.lbl_roi.setText(f"({x}, {y}, {w}, {h})")
