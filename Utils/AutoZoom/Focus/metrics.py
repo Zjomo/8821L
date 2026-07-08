@@ -100,6 +100,7 @@ class FocusMetricsCalculator:
     def __init__(self, cfg: AutofocusConfig):
         self.cfg = cfg
         self._usb_source = None
+        self._video_source = None
 
     def close(self) -> None:
         """释放 USB 相机等资源。"""
@@ -109,6 +110,12 @@ class FocusMetricsCalculator:
             except Exception:
                 pass
             self._usb_source = None
+        if self._video_source is not None:
+            try:
+                self._video_source.release()
+            except Exception:
+                pass
+            self._video_source = None
 
     @staticmethod
     def _find_window_rect(
@@ -612,6 +619,31 @@ class FocusMetricsCalculator:
         }
         return {k: self.safe_float(v) for k, v in values.items()}
 
+    def _capture_local_video_frame(self) -> np.ndarray:
+        """从本地视频文件读取一帧 RGB 图像，循环播放。"""
+        if cv2 is None:
+            raise ImportError("需要安装 opencv-python：pip install opencv-python")
+
+        video_path = self.cfg.local_video_path
+        if not video_path or not Path(video_path).exists():
+            raise RuntimeError(f"视频文件不存在: {video_path}")
+
+        if self._video_source is None:
+            self._video_source = cv2.VideoCapture(video_path)
+            if not self._video_source.isOpened():
+                self._video_source = None
+                raise RuntimeError(f"无法打开视频文件: {video_path}")
+
+        ret, frame_bgr = self._video_source.read()
+        if not ret or frame_bgr is None or frame_bgr.size == 0:
+            # 视频播放完毕，循环到开头
+            self._video_source.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            ret, frame_bgr = self._video_source.read()
+            if not ret or frame_bgr is None or frame_bgr.size == 0:
+                raise RuntimeError("视频文件帧读取失败")
+
+        return cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
+
     def _capture_usb_frame(self) -> np.ndarray:
         """从 USB 相机读取一帧 RGB 图像，会复用已打开的 _usb_source。"""
         # 优先使用项目自定义的 UCCFrameSource；如果不可用，回退到 OpenCV
@@ -661,7 +693,11 @@ class FocusMetricsCalculator:
 
     def capture_live(self) -> Dict[str, Any]:
         """截图并计算整图/ROI 指标，不保存图片。"""
-        if self.cfg.capture_mode == "window_roi":
+        if self.cfg.capture_mode == "local_video_file":
+            image_rgb = self._capture_local_video_frame()
+            height, width = image_rgb.shape[:2]
+            left, top = 0, 0
+        elif self.cfg.capture_mode == "window_roi":
             image_rgb, capture_rect = self._capture_window_region(
                 self.cfg.window_title,
                 match_mode=getattr(self.cfg, "window_match_mode", "contains"),
@@ -719,7 +755,15 @@ class FocusMetricsCalculator:
         roi_path = save_dir / roi_filename
 
         _log = on_log or logger.info
-        if self.cfg.capture_mode == "window_roi":
+        if self.cfg.capture_mode == "local_video_file":
+            image_rgb = self._capture_local_video_frame()
+            height, width = image_rgb.shape[:2]
+            left, top = 0, 0
+            _log(
+                f"[聚焦] 本地视频 capture video_path={self.cfg.local_video_path}, "
+                f"rect=({left}, {top}, {width}, {height})"
+            )
+        elif self.cfg.capture_mode == "window_roi":
             image_rgb, capture_rect = self._capture_window_region(
                 self.cfg.window_title,
                 match_mode=getattr(self.cfg, "window_match_mode", "contains"),

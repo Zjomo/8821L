@@ -43,6 +43,9 @@ class AutofocusConfig:
     usb_pixel_format: Optional[str] = None
     """USB 相机像素格式：AUTO / MJPG / YUY2 / YUYV / UYVY"""
 
+    local_video_path: str = ""
+    """本地视频文件路径（local_video_file 模式使用）"""
+
     # -------------------- 聚焦指标计算参数 --------------------
     focus_fft_low_radius_ratio: float = 0.10
     """FFT 高频能量计算时，低频圆盘半径 = ratio * min(h, w)"""

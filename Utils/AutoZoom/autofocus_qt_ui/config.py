@@ -41,3 +41,6 @@ DEFAULT_TRIGGER_COUNT: int = 3
 
 # 默认搜索策略
 DEFAULT_SEARCH_STRATEGY: str = "hill_climb"
+
+# 默认本地视频文件路径
+DEFAULT_LOCAL_VIDEO_PATH: str = ""

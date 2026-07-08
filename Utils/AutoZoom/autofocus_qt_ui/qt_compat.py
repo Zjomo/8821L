@@ -6,6 +6,7 @@ from __future__ import annotations
 import sys
 
 try:
+    from PySide6 import QtCore, QtGui
     from PySide6.QtCore import (
         QObject,
         Qt,
@@ -14,11 +15,13 @@ try:
         Signal,
         Slot,
     )
-    from PySide6.QtGui import QAction, QImage, QPixmap, QPainter, QPen, QColor, QFont, QCursor
+    from PySide6.QtGui import QAction, QImage, QPixmap, QPainter, QPen, QColor, QFont, QCursor, QIcon
     from PySide6.QtWidgets import (
         QApplication,
         QCheckBox,
         QComboBox,
+        QDialog,
+        QDialogButtonBox,
         QDoubleSpinBox,
         QFileDialog,
         QFormLayout,
@@ -28,6 +31,8 @@ try:
         QHBoxLayout,
         QLabel,
         QLineEdit,
+        QListWidget,
+        QListWidgetItem,
         QMainWindow,
         QMessageBox,
         QPushButton,
@@ -35,6 +40,7 @@ try:
         QProgressBar,
         QScrollArea,
         QSizePolicy,
+        QSlider,
         QSpinBox,
         QSplitter,
         QTabWidget,
@@ -46,6 +52,7 @@ try:
     QT_VERSION = "PySide6"
 
 except ImportError:
+    from PySide2 import QtCore, QtGui
     from PySide2.QtCore import (
         QObject,
         Qt,
@@ -54,11 +61,13 @@ except ImportError:
         Signal,
         Slot,
     )
-    from PySide2.QtGui import QAction, QImage, QPixmap, QPainter, QPen, QColor, QFont, QCursor
+    from PySide2.QtGui import QAction, QImage, QPixmap, QPainter, QPen, QColor, QFont, QCursor, QIcon
     from PySide2.QtWidgets import (
         QApplication,
         QCheckBox,
         QComboBox,
+        QDialog,
+        QDialogButtonBox,
         QDoubleSpinBox,
         QFileDialog,
         QFormLayout,
@@ -68,6 +77,8 @@ except ImportError:
         QHBoxLayout,
         QLabel,
         QLineEdit,
+        QListWidget,
+        QListWidgetItem,
         QMainWindow,
         QMessageBox,
         QPushButton,
@@ -75,6 +86,7 @@ except ImportError:
         QProgressBar,
         QScrollArea,
         QSizePolicy,
+        QSlider,
         QSpinBox,
         QSplitter,
         QTabWidget,

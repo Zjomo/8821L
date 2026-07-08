@@ -306,9 +306,9 @@ THEMES: Dict[str, Theme] = {
 }
 
 
-def get_theme(name: str = "dark") -> Theme:
-    """按名称获取主题，默认 dark。"""
-    return THEMES.get(name, THEMES["dark"])
+def get_theme(name: str = "light") -> Theme:
+    """按名称获取主题，默认 light。"""
+    return THEMES.get(name, THEMES["light"])
 
 
 def available_themes() -> Dict[str, str]:

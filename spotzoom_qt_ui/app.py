@@ -308,6 +308,58 @@ def analyze_spot(frame: np.ndarray) -> Optional[dict]:
     }
 
 
+def compute_spot_profile(frame: np.ndarray, cx: float, cy: float) -> Optional[Dict]:
+    """计算光斑在质心位置的水平/垂直 RGB 剖面图。
+
+    Parameters
+    ----------
+    frame : np.ndarray
+        BGR 格式图像。
+    cx, cy : float
+        光斑质心坐标。
+
+    Returns
+    -------
+    dict or None
+        {
+            "horizontal": {"x": np.ndarray, "r": ..., "g": ..., "b": ...},
+            "vertical":   {"y": np.ndarray, "r": ..., "g": ..., "b": ...},
+        }
+    """
+    if frame is None or frame.size == 0:
+        return None
+    if len(frame.shape) != 3 or frame.shape[2] < 3:
+        return None
+
+    h, w = frame.shape[:2]
+    cx_int = int(round(cx))
+    cy_int = int(round(cy))
+    cx_int = max(0, min(cx_int, w - 1))
+    cy_int = max(0, min(cy_int, h - 1))
+
+    rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+    # 水平线：y = cy_int，x 从 0 到 w-1
+    horizontal = rgb[cy_int, :].astype(np.float64)
+    # 垂直线：x = cx_int，y 从 0 到 h-1
+    vertical = rgb[:, cx_int].astype(np.float64)
+
+    return {
+        "horizontal": {
+            "x": np.arange(w),
+            "r": horizontal[:, 0],
+            "g": horizontal[:, 1],
+            "b": horizontal[:, 2],
+        },
+        "vertical": {
+            "y": np.arange(h),
+            "r": vertical[:, 0],
+            "g": vertical[:, 1],
+            "b": vertical[:, 2],
+        },
+    }
+
+
 class SpotCurveWidget(QWidget):
     """光斑位置历史曲线绘制控件（XYCurve）。"""
 
@@ -405,6 +457,156 @@ class SpotCurveWidget(QWidget):
         painter.drawText(60, 16, "Y 位置")
 
         painter.end()
+
+
+class SpotProfileWidget(QWidget):
+    """光斑 RGB 剖面图绘制控件（水平线 y=cy 与垂直线 x=cx）。"""
+
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
+        super().__init__(parent)
+        self.profile: Optional[Dict] = None
+        self.setMinimumSize(360, 240)
+        self.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Expanding,
+        )
+
+    def set_profile(self, profile: Optional[Dict]) -> None:
+        self.profile = profile
+        self.update()
+
+    def clear_profile(self) -> None:
+        self.profile = None
+        self.update()
+
+    def paintEvent(self, event) -> None:
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+
+        w, h = self.width(), self.height()
+        painter.fillRect(self.rect(), QColor("#1a1a2e"))
+
+        if self.profile is None:
+            painter.setPen(QColor("#888"))
+            font = QFont("Microsoft YaHei", 10)
+            painter.setFont(font)
+            painter.drawText(self.rect(), Qt.AlignCenter, "无剖面数据")
+            painter.end()
+            return
+
+        margin = 28
+        gap = 12
+        plot_h = max(40, (h - margin * 2 - gap) // 2)
+        plot_w = max(80, w - margin * 2)
+
+        self._draw_sub_profile(
+            painter,
+            margin,
+            margin,
+            plot_w,
+            plot_h,
+            self.profile.get("horizontal", {}),
+            "水平剖面 (y=质心)",
+            "x (像素)",
+        )
+        self._draw_sub_profile(
+            painter,
+            margin,
+            margin + plot_h + gap,
+            plot_w,
+            plot_h,
+            self.profile.get("vertical", {}),
+            "垂直剖面 (x=质心)",
+            "y (像素)",
+        )
+
+        painter.end()
+
+    def _draw_sub_profile(
+        self,
+        painter: QPainter,
+        px: int,
+        py: int,
+        pw: int,
+        ph: int,
+        data: Dict,
+        title: str,
+        x_label: str,
+    ) -> None:
+        painter.fillRect(px, py, pw, ph, QColor("#111118"))
+        pen_border = QPen(QColor("#333"))
+        pen_border.setWidth(1)
+        painter.setPen(pen_border)
+        painter.drawRect(px, py, pw, ph)
+
+        pen_grid = QPen(QColor("#222"))
+        pen_grid.setWidth(1)
+        painter.setPen(pen_grid)
+        for i in range(px, px + pw, max(1, pw // 8)):
+            painter.drawLine(i, py, i, py + ph)
+        for i in range(py, py + ph, max(1, ph // 4)):
+            painter.drawLine(px, i, px + pw, i)
+
+        axis_key = "x" if "x" in data else "y"
+        xs = data.get(axis_key)
+        if xs is None or len(xs) < 2:
+            painter.setPen(QColor("#888"))
+            font = QFont("Microsoft YaHei", 9)
+            painter.setFont(font)
+            painter.drawText(px, py, pw, ph, Qt.AlignCenter, "数据不足")
+            return
+
+        r = data.get("r")
+        g = data.get("g")
+        b = data.get("b")
+        if r is None or g is None or b is None:
+            return
+
+        max_val = max(
+            float(np.max(r)), float(np.max(g)), float(np.max(b)), 1.0
+        )
+        margin_y = max_val * 0.1
+        y_max = max_val + margin_y
+        y_min = -margin_y
+        y_range = y_max - y_min if y_max != y_min else 1.0
+        n = len(xs)
+
+        colors = {
+            "r": QColor("#FF5252"),
+            "g": QColor("#69F0AE"),
+            "b": QColor("#448AFF"),
+        }
+        labels = {"r": "R", "g": "G", "b": "B"}
+
+        for ch in ("r", "g", "b"):
+            vals = data.get(ch)
+            if vals is None or len(vals) != n:
+                continue
+            pen = QPen(colors[ch])
+            pen.setWidth(1)
+            painter.setPen(pen)
+            pts = []
+            for i in range(n):
+                x = px + int((i / max(n - 1, 1)) * (pw - 1))
+                y = py + ph - 1 - int(
+                    ((float(vals[i]) - y_min) / y_range) * (ph - 1)
+                )
+                pts.append(QPointF(x, y))
+            for i in range(len(pts) - 1):
+                painter.drawLine(pts[i], pts[i + 1])
+
+        painter.setPen(QColor("#CCC"))
+        font = QFont("Microsoft YaHei", 8)
+        painter.setFont(font)
+        painter.drawText(px + 4, py + 13, title)
+        painter.drawText(px + pw - 90, py + ph - 4, x_label)
+        painter.drawText(px + 4, py + ph - 4, f"max={max_val:.0f}")
+
+        legend_x = px + pw - 60
+        legend_y = py + 13
+        for idx, ch in enumerate(("r", "g", "b")):
+            painter.setPen(colors[ch])
+            painter.drawText(legend_x + idx * 18, legend_y, labels[ch])
 
 
 class ErrorDistributionWidget(QWidget):
@@ -1316,8 +1518,11 @@ class SpotZoomQtMainWindow(QMainWindow):
         form = QFormLayout(capture_group)
 
         self.autozoom_capture_mode = QComboBox()
-        self.autozoom_capture_mode.addItems(["screen_region", "window_roi", "usb_camera"])
-        self.autozoom_capture_mode.currentTextChanged.connect(self._on_autozoom_capture_mode_changed)
+        self.autozoom_capture_mode.addItem("屏幕区域", "screen_region")
+        self.autozoom_capture_mode.addItem("窗口 ROI", "window_roi")
+        self.autozoom_capture_mode.addItem("USB 相机", "usb_camera")
+        self.autozoom_capture_mode.addItem("导入视频", "video_file")
+        self.autozoom_capture_mode.currentIndexChanged.connect(self._on_autozoom_capture_mode_changed)
 
         self.autozoom_window_title = AutoZoomWindowComboBox()
         self.autozoom_window_title.setEditable(True)
@@ -1347,6 +1552,20 @@ class SpotZoomQtMainWindow(QMainWindow):
         pad_row.addStretch(1)
         pad_wrap = QWidget()
         pad_wrap.setLayout(pad_row)
+
+        # 视频文件配置
+        self.autozoom_video_group = QGroupBox("视频文件配置")
+        video_form = QFormLayout(self.autozoom_video_group)
+        self.autozoom_video_path = QLineEdit()
+        self.autozoom_video_path.setPlaceholderText("选择视频文件路径")
+        self.autozoom_video_path.setReadOnly(True)
+        self.autozoom_video_browse = QPushButton("浏览...")
+        self.autozoom_video_browse.clicked.connect(self._select_autozoom_video_file)
+        video_path_row = QHBoxLayout()
+        video_path_row.addWidget(self.autozoom_video_path, 1)
+        video_path_row.addWidget(self.autozoom_video_browse)
+        video_form.addRow("视频路径", video_path_row)
+        self.autozoom_video_group.setVisible(False)
 
         # USB 相机配置
         self.autozoom_usb_group = QGroupBox("USB 相机配置")
@@ -1378,6 +1597,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         form.addRow("采集次数", self.autozoom_ref_count)
         form.addRow("采集间隔(s)", self.autozoom_ref_sleep)
         left_layout.addWidget(capture_group)
+        left_layout.addWidget(self.autozoom_video_group)
         left_layout.addWidget(self.autozoom_usb_group)
 
         roi_group = QGroupBox("ROI 区域（在右侧预览图中拖拽框选）")
@@ -1607,7 +1827,7 @@ class SpotZoomQtMainWindow(QMainWindow):
             from Utils.AutoZoom.Focus.controller import AutofocusController
 
             cfg = AutofocusConfig(
-                capture_mode=self.autozoom_capture_mode.currentText() if hasattr(self, "autozoom_capture_mode") else "screen_region",
+                capture_mode=self.autozoom_capture_mode.currentData() if hasattr(self, "autozoom_capture_mode") else "screen_region",
                 window_title=self._autozoom_window_title_value(),
                 window_match_mode=self.autozoom_window_match_mode.currentText() if hasattr(self, "autozoom_window_match_mode") else "contains",
                 window_padding=(
@@ -1651,7 +1871,7 @@ class SpotZoomQtMainWindow(QMainWindow):
             from Utils.AutoZoom.Focus.controller import AutofocusController
 
             cfg = AutofocusConfig(
-                capture_mode=self.autozoom_capture_mode.currentText() if hasattr(self, "autozoom_capture_mode") else "screen_region",
+                capture_mode=self.autozoom_capture_mode.currentData() if hasattr(self, "autozoom_capture_mode") else "screen_region",
                 window_title=self._autozoom_window_title_value(),
                 window_match_mode=self.autozoom_window_match_mode.currentText() if hasattr(self, "autozoom_window_match_mode") else "contains",
                 window_padding=(
@@ -1696,7 +1916,7 @@ class SpotZoomQtMainWindow(QMainWindow):
             from Utils.AutoZoom.Focus.metrics import FocusMetricsCalculator
 
             cfg = AutofocusConfig(
-                capture_mode=self.autozoom_capture_mode.currentText() if hasattr(self, "autozoom_capture_mode") else "screen_region",
+                capture_mode=self.autozoom_capture_mode.currentData() if hasattr(self, "autozoom_capture_mode") else "screen_region",
                 window_title=self._autozoom_window_title_value(),
                 window_match_mode=self.autozoom_window_match_mode.currentText() if hasattr(self, "autozoom_window_match_mode") else "contains",
                 window_padding=(
@@ -1782,6 +2002,83 @@ class SpotZoomQtMainWindow(QMainWindow):
             except Exception as exc:
                 self._append_log(f"[AutoZoom] USB 相机释放异常: {exc}")
 
+    def _select_autozoom_video_file(self) -> None:
+        """弹出文件对话框选择视频文件。"""
+        if not hasattr(self, "autozoom_video_path"):
+            return
+        path, _ = QFileDialog.getOpenFileName(
+            self,
+            "选择视频文件",
+            "",
+            "视频文件 (*.mp4 *.avi *.mov *.mkv *.wmv);;所有文件 (*.*)",
+        )
+        if path:
+            self.autozoom_video_path.setText(path)
+            self._append_log(f"[AutoZoom] 已选择视频文件: {path}")
+
+    def _open_autozoom_video_source(self) -> Optional[cv2.VideoCapture]:
+        """根据当前视频文件路径打开 cv2.VideoCapture，失败时弹窗并返回 None。"""
+        if not hasattr(self, "autozoom_video_path"):
+            QMessageBox.warning(self, "AutoZoom", "未配置视频文件路径")
+            return None
+        path = self.autozoom_video_path.text().strip()
+        if not path:
+            QMessageBox.warning(self, "AutoZoom", "请先选择视频文件")
+            return None
+        try:
+            cap = cv2.VideoCapture(path)
+            if not cap.isOpened():
+                raise RuntimeError(f"无法打开视频文件: {path}")
+            self._append_log(f"[AutoZoom] 视频文件已打开: {path}")
+            return cap
+        except Exception as exc:
+            self._append_log(f"[AutoZoom] 视频文件打开失败: {exc}")
+            QMessageBox.warning(self, "AutoZoom", f"视频文件打开失败:\n{exc}")
+            return None
+
+    def _close_autozoom_video_source(self, cap: Optional[cv2.VideoCapture]) -> None:
+        """安全释放视频文件资源。"""
+        if cap is not None:
+            try:
+                cap.release()
+                self._append_log("[AutoZoom] 视频文件已释放")
+            except Exception as exc:
+                self._append_log(f"[AutoZoom] 视频文件释放异常: {exc}")
+
+    def _grab_autozoom_video_frame(
+        self,
+        cap: Optional[cv2.VideoCapture] = None,
+        auto_release: bool = True,
+    ) -> Tuple[Optional[np.ndarray], Optional[cv2.VideoCapture]]:
+        """从视频文件读取下一帧 RGB 图像；到末尾时自动循环。
+
+        返回 (rgb_image, cap)。如果传入了 cap 则复用，否则临时打开并在
+        auto_release=True 时自动释放。
+        """
+        opened_here = False
+        if cap is None:
+            cap = self._open_autozoom_video_source()
+            opened_here = True
+        if cap is None:
+            return None, None
+        try:
+            ret, frame_bgr = cap.read()
+            if not ret or frame_bgr is None or frame_bgr.size == 0:
+                cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                ret, frame_bgr = cap.read()
+                if not ret or frame_bgr is None or frame_bgr.size == 0:
+                    raise RuntimeError("视频文件读取帧为空")
+            rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
+            return rgb, cap
+        except Exception as exc:
+            self._append_log(f"[AutoZoom] 视频文件读帧失败: {exc}")
+            if opened_here or auto_release:
+                self._close_autozoom_video_source(cap)
+            return None, None
+        finally:
+            if (opened_here or auto_release) and cap is not None:
+                self._close_autozoom_video_source(cap)
+
     def _grab_autozoom_usb_frame(
         self,
         source: Optional[UCCFrameSource] = None,
@@ -1813,18 +2110,22 @@ class SpotZoomQtMainWindow(QMainWindow):
             if (opened_here or auto_release) and source is not None:
                 self._close_autozoom_usb_source(source)
 
-    def _on_autozoom_capture_mode_changed(self, mode: str) -> None:
+    def _on_autozoom_capture_mode_changed(self, _index: int) -> None:
         """根据采集模式切换相关控件的可见性。"""
+        mode = self.autozoom_capture_mode.currentData() if hasattr(self, "autozoom_capture_mode") else "screen_region"
         is_window = mode == "window_roi"
         is_usb = mode == "usb_camera"
+        is_video = mode == "video_file"
         if hasattr(self, "autozoom_window_title"):
             self.autozoom_window_title.setVisible(is_window)
         if hasattr(self, "autozoom_window_match_mode"):
             self.autozoom_window_match_mode.setVisible(is_window)
         if hasattr(self, "autozoom_window_padding_left"):
-            self.autozoom_window_padding_left.parentWidget().setVisible(not is_usb)
+            self.autozoom_window_padding_left.parentWidget().setVisible(not is_usb and not is_video)
         if hasattr(self, "autozoom_usb_group"):
             self.autozoom_usb_group.setVisible(is_usb)
+        if hasattr(self, "autozoom_video_group"):
+            self.autozoom_video_group.setVisible(is_video)
 
     def _refresh_autozoom_window_list(self) -> None:
         """枚举当前可见窗口并刷新下拉框。"""
@@ -1867,7 +2168,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         if not text.strip():
             return
         if hasattr(self, "autozoom_capture_mode"):
-            idx = self.autozoom_capture_mode.findText("window_roi")
+            idx = self.autozoom_capture_mode.findData("window_roi")
             if idx >= 0:
                 self.autozoom_capture_mode.setCurrentIndex(idx)
         self._sync_autozoom_window_title_history()
@@ -1892,7 +2193,7 @@ class SpotZoomQtMainWindow(QMainWindow):
 
     def _capture_reference_frame(self) -> None:
         """抓拍当前数据源的一帧完整图像，供用户框选 ROI。"""
-        mode = self.autozoom_capture_mode.currentText() if hasattr(self, "autozoom_capture_mode") else "screen_region"
+        mode = self.autozoom_capture_mode.currentData() if hasattr(self, "autozoom_capture_mode") else "screen_region"
         self._append_log(f"[AutoZoom] 抓拍参考帧 (mode={mode})...")
         try:
             if mode == "usb_camera":
@@ -1923,7 +2224,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         """根据当前界面控件构造 AutofocusConfig，用于预览/抓拍。"""
         from Utils.AutoZoom.Focus.config import AutofocusConfig
         return AutofocusConfig(
-            capture_mode=self.autozoom_capture_mode.currentText() if hasattr(self, "autozoom_capture_mode") else "screen_region",
+            capture_mode=self.autozoom_capture_mode.currentData() if hasattr(self, "autozoom_capture_mode") else "screen_region",
             window_title=self._autozoom_window_title_value(),
             window_match_mode=self.autozoom_window_match_mode.currentText() if hasattr(self, "autozoom_window_match_mode") else "contains",
             window_padding=(
@@ -1943,10 +2244,14 @@ class SpotZoomQtMainWindow(QMainWindow):
         if getattr(self, "_autozoom_roi_preview_running", False):
             return
         try:
-            mode = self.autozoom_capture_mode.currentText() if hasattr(self, "autozoom_capture_mode") else "screen_region"
+            mode = self.autozoom_capture_mode.currentData() if hasattr(self, "autozoom_capture_mode") else "screen_region"
             if mode == "usb_camera":
                 self._autozoom_roi_preview_usb_source = self._open_autozoom_usb_source()
                 if self._autozoom_roi_preview_usb_source is None:
+                    return
+            elif mode == "video_file":
+                self._autozoom_roi_preview_video_source = self._open_autozoom_video_source()
+                if self._autozoom_roi_preview_video_source is None:
                     return
 
             self.autozoom_preview_label.set_reference_mode(False)
@@ -1982,6 +2287,10 @@ class SpotZoomQtMainWindow(QMainWindow):
         if usb_source is not None:
             self._close_autozoom_usb_source(usb_source)
             self._autozoom_roi_preview_usb_source = None
+        video_source = getattr(self, "_autozoom_roi_preview_video_source", None)
+        if video_source is not None:
+            self._close_autozoom_video_source(video_source)
+            self._autozoom_roi_preview_video_source = None
         self._append_log("[AutoZoom] 停止 ROI 实时预览")
 
     def _update_autozoom_roi_preview(self) -> None:
@@ -1989,7 +2298,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         if not getattr(self, "_autozoom_roi_preview_running", False):
             return
         try:
-            mode = self.autozoom_capture_mode.currentText() if hasattr(self, "autozoom_capture_mode") else "screen_region"
+            mode = self.autozoom_capture_mode.currentData() if hasattr(self, "autozoom_capture_mode") else "screen_region"
             roi_rgb = None
             tenengrad = 0.0
 
@@ -2018,6 +2327,34 @@ class SpotZoomQtMainWindow(QMainWindow):
                 gx = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=3)
                 gy = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=3)
                 tenengrad = float((gx ** 2 + gy ** 2).sum())
+            elif mode == "video_file":
+                cap = getattr(self, "_autozoom_roi_preview_video_source", None)
+                if cap is None or not cap.isOpened():
+                    self.autozoom_preview_info.setText("状态: 视频文件异常，尝试重开...")
+                    if cap is not None:
+                        self._close_autozoom_video_source(cap)
+                    self._autozoom_roi_preview_video_source = self._open_autozoom_video_source()
+                    cap = self._autozoom_roi_preview_video_source
+                    if cap is None:
+                        return
+                ret, frame_bgr = cap.read()
+                if not ret or frame_bgr is None or frame_bgr.size == 0:
+                    cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                    ret, frame_bgr = cap.read()
+                    if not ret or frame_bgr is None or frame_bgr.size == 0:
+                        return
+                full_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
+                x, y, w, h = self._autozoom_roi_value()
+                fh, fw = full_rgb.shape[:2]
+                x = max(0, min(x, fw - 1))
+                y = max(0, min(y, fh - 1))
+                w = max(1, min(w, fw - x))
+                h = max(1, min(h, fh - y))
+                roi_rgb = full_rgb[y : y + h, x : x + w].copy()
+                gray = cv2.cvtColor(roi_rgb, cv2.COLOR_RGB2GRAY)
+                gx = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=3)
+                gy = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=3)
+                tenengrad = float((gx ** 2 + gy ** 2).sum())
             else:
                 cfg = self._get_autozoom_cfg_for_preview()
                 from Utils.AutoZoom.Focus.metrics import FocusMetricsCalculator
@@ -2032,7 +2369,12 @@ class SpotZoomQtMainWindow(QMainWindow):
             qt_image = QImage(roi_rgb.data, w, h, w * 3, QImage.Format_RGB888)
             pixmap = QPixmap.fromImage(qt_image.copy())
             self.autozoom_preview_label.set_preview_pixmap(pixmap)
-            source_name = "USB" if mode == "usb_camera" else "窗口"
+            if mode == "usb_camera":
+                source_name = "USB"
+            elif mode == "video_file":
+                source_name = "视频"
+            else:
+                source_name = "窗口"
             info_text = f"状态: {source_name} 实时预览 {w}x{h} | tenengrad={tenengrad:.2f}"
             self.autozoom_preview_info.setText(info_text)
         except Exception as exc:
@@ -2304,7 +2646,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         )
         ucc_top_layout.addWidget(self._ucc_preview_label, 3)
 
-        # 右侧：XY 曲线 + 参数表
+        # 右侧：XY 曲线 + 参数表 + RGB 剖面图
         ucc_right_layout = QVBoxLayout()
 
         # XY 曲线
@@ -2333,6 +2675,13 @@ class SpotZoomQtMainWindow(QMainWindow):
             self._ucc_param_table.setItem(i, 1, QTableWidgetItem("--"))
         ucc_param_layout.addWidget(self._ucc_param_table)
         ucc_right_layout.addWidget(ucc_param_group, 1)
+
+        # RGB 剖面图 (Profile)
+        ucc_profile_group = QGroupBox("光斑 RGB 剖面图 (Profile)")
+        ucc_profile_layout = QVBoxLayout(ucc_profile_group)
+        self._ucc_profile_widget = SpotProfileWidget()
+        ucc_profile_layout.addWidget(self._ucc_profile_widget)
+        ucc_right_layout.addWidget(ucc_profile_group, 2)
 
         ucc_top_layout.addLayout(ucc_right_layout, 2)
         ucc_preview_layout.addLayout(ucc_top_layout)
@@ -4024,6 +4373,7 @@ class SpotZoomQtMainWindow(QMainWindow):
 
         # 清空分析数据
         self._ucc_curve_widget.clear_history()
+        self._ucc_profile_widget.clear_profile()
         for i in range(self._ucc_param_table.rowCount()):
             self._ucc_param_table.setItem(i, 1, QTableWidgetItem("--"))
 
@@ -4060,6 +4410,7 @@ class SpotZoomQtMainWindow(QMainWindow):
         self._ucc_preview_info.setStyleSheet("color: #888;")
         # 清空分析数据
         self._ucc_curve_widget.clear_history()
+        self._ucc_profile_widget.clear_profile()
         for i in range(self._ucc_param_table.rowCount()):
             self._ucc_param_table.setItem(i, 1, QTableWidgetItem("--"))
         self._append_log("UCC 实时预览已停止")
@@ -4157,6 +4508,11 @@ class SpotZoomQtMainWindow(QMainWindow):
                 offset_x = cx - w / 2.0
                 offset_y = cy - h / 2.0
                 self._ucc_curve_widget.append(offset_x, offset_y)
+
+                # 计算并更新 RGB 剖面图（基于原始 BGR 帧）
+                profile = compute_spot_profile(self._ucc_preview_last_frame, cx, cy)
+                if profile is not None:
+                    self._ucc_profile_widget.set_profile(profile)
 
                 # 更新参数表
                 self._ucc_param_table.setItem(0, 1, QTableWidgetItem(f"{spot['min_val']:.1f}, {spot['peak']:.1f}"))
