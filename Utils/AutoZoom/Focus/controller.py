@@ -19,7 +19,7 @@ import numpy as np
 from .config import AutofocusConfig
 from .metrics import FocusMetricsCalculator
 from .scorer import FocusScorer
-from .search import create_search
+from .search import create_search, FocusSearchStopped
 from .z_axis import ZAxisController
 
 logger = logging.getLogger(__name__)
@@ -60,6 +60,7 @@ class AutofocusController:
         self.z_axis = z_axis
 
         self.on_log: LogCallback = None
+        self.should_stop: Optional[Callable[[], bool]] = None
 
         # 补焦状态
         self.autofocus_event_counter: int = 0
@@ -191,15 +192,29 @@ class AutofocusController:
             score, comp = self.scorer.score_ratio(live.get("roi_metrics"))
             return score, comp
 
-        search = create_search(strategy, self.cfg, move_fn, measure_fn, self._log)
-        result = search.search(
-            initial_score=initial_score,
-            target=target,
-            max_total_steps=max_total_steps,
-            max_iter=max_iter,
-            patience=patience,
-            min_improve=min_improve,
+        search = create_search(
+            strategy, self.cfg, move_fn, measure_fn, self._log, self.should_stop
         )
+        try:
+            result = search.search(
+                initial_score=initial_score,
+                target=target,
+                max_total_steps=max_total_steps,
+                max_iter=max_iter,
+                patience=patience,
+                min_improve=min_improve,
+            )
+        except FocusSearchStopped:
+            self._log(f"========== 闭环补焦 #{event_id} 被用户停止 ==========")
+            return {
+                "ok": False,
+                "reason": "stopped_by_user",
+                "initial_score": FocusMetricsCalculator.safe_float(initial_score),
+                "best_score": FocusMetricsCalculator.safe_float(initial_score),
+                "best_relative_z_steps": 0,
+                "final_relative_z_steps": 0,
+                "history": search.history,
+            }
 
         ok = bool(result.get("ok"))
         best_score = result.get("best_score")

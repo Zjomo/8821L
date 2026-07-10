@@ -27,6 +27,13 @@ from .config import AutofocusConfig
 MoveFn = Callable[[int], None]
 MeasureFn = Callable[[str, int], Tuple[Optional[float], Optional[Dict[str, float]]]]
 LogFn = Callable[[str], None]
+ShouldStopFn = Callable[[], bool]
+
+
+class FocusSearchStopped(Exception):
+    """用户点击停止时抛出，用于快速中断搜索。"""
+
+    pass
 
 
 class BaseFocusSearch:
@@ -38,17 +45,29 @@ class BaseFocusSearch:
         move_fn: MoveFn,
         measure_fn: MeasureFn,
         log_fn: LogFn,
+        should_stop: Optional[ShouldStopFn] = None,
     ):
         self.cfg = cfg
         self.move_fn = move_fn
         self.measure_fn = measure_fn
         self.log_fn = log_fn
+        self.should_stop = should_stop
 
         self.pos = 0
         self.history: List[Dict[str, Any]] = []
         self._cache: Dict[int, Tuple[Optional[float], Optional[Dict[str, float]]]] = {}
 
+    def _check_stop(self, phase: str = "") -> None:
+        """若用户请求停止则抛出 FocusSearchStopped。"""
+        if self.should_stop is not None and self.should_stop():
+            msg = "用户停止"
+            if phase:
+                msg = f"[{phase}] {msg}"
+            self.log_fn(f"[补焦] {msg}")
+            raise FocusSearchStopped(msg)
+
     def _move(self, delta: int) -> None:
+        self._check_stop("move")
         delta = int(round(delta))
         if delta == 0:
             return
@@ -58,7 +77,11 @@ class BaseFocusSearch:
     def _settle(self) -> None:
         settle_s = max(0.0, float(getattr(self.cfg, "z_settle_time_s", 0.0)))
         if settle_s > 0:
-            time.sleep(settle_s)
+            # 将长时间 sleep 拆分为小段，便于响应停止
+            deadline = time.time() + settle_s
+            while time.time() < deadline:
+                self._check_stop("settle")
+                time.sleep(min(0.05, deadline - time.time()))
 
     def _measure(
         self,
@@ -67,6 +90,7 @@ class BaseFocusSearch:
         use_cache: bool = False,
     ) -> Tuple[Optional[float], Optional[Dict[str, float]]]:
         """在 self.pos 处测量分数。可选缓存，避免同一位置重复拍照。"""
+        self._check_stop(phase)
         if use_cache and self.pos in self._cache:
             score, comp = self._cache[self.pos]
         else:
@@ -199,6 +223,7 @@ class HillClimbSearch(BaseFocusSearch):
         no_improve_count = 0
         iteration = 4
         while iteration <= max_iter:
+            self._check_stop("hill_climb")
             if best_score >= target:
                 self.log_fn(
                     f"[补焦] best_score={best_score:.4f} >= target={target}，停止"
@@ -294,6 +319,7 @@ class FullSweepSearch(BaseFocusSearch):
 
         iteration = 1
         for pos in positions:
+            self._check_stop("full_sweep")
             if pos == 0:
                 continue
             if abs(pos) > max_total_steps:
@@ -377,6 +403,7 @@ class CurveFitSearch(BaseFocusSearch):
         measured: List[Tuple[int, Optional[float]]] = [(0, initial_score)]
         iteration = 1
         for pos in positions:
+            self._check_stop("curve_sample")
             if pos == 0:
                 continue
             score, _ = self._goto(pos, "curve_sample", iteration, use_cache=True)
@@ -431,6 +458,7 @@ class CurveFitSearch(BaseFocusSearch):
         no_improve = 0
         refine_patience = max(1, patience)
         while iteration <= max_iter and no_improve < refine_patience:
+            self._check_stop("curve_refine")
             candidates = [
                 (best_pos + refine_step, "refine_plus"),
                 (best_pos - refine_step, "refine_minus"),
@@ -518,6 +546,7 @@ class GoldenSectionSearch(BaseFocusSearch):
         samples: Dict[int, float] = {0: float(initial_score)}
         iteration = 1
         for pos in positions:
+            self._check_stop("bracket")
             if pos == 0:
                 continue
             if abs(pos) > max_total_steps:
@@ -607,6 +636,7 @@ class GoldenSectionSearch(BaseFocusSearch):
         inner_iter = 0
         max_inner = max_iter - iteration
         while (c - a) > tol and inner_iter < max_inner:
+            self._check_stop("golden_section")
             if f1 < f2:
                 a = x1
                 x1 = x2
@@ -654,13 +684,14 @@ def create_search(
     move_fn: MoveFn,
     measure_fn: MeasureFn,
     log_fn: LogFn,
+    should_stop: Optional[ShouldStopFn] = None,
 ) -> BaseFocusSearch:
     """根据策略名创建搜索器。"""
     strategy = (strategy or "hill_climb").lower().strip()
     if strategy == "full_sweep":
-        return FullSweepSearch(cfg, move_fn, measure_fn, log_fn)
+        return FullSweepSearch(cfg, move_fn, measure_fn, log_fn, should_stop)
     if strategy == "curve_fit":
-        return CurveFitSearch(cfg, move_fn, measure_fn, log_fn)
+        return CurveFitSearch(cfg, move_fn, measure_fn, log_fn, should_stop)
     if strategy == "golden_section":
-        return GoldenSectionSearch(cfg, move_fn, measure_fn, log_fn)
-    return HillClimbSearch(cfg, move_fn, measure_fn, log_fn)
+        return GoldenSectionSearch(cfg, move_fn, measure_fn, log_fn, should_stop)
+    return HillClimbSearch(cfg, move_fn, measure_fn, log_fn, should_stop)

@@ -88,6 +88,29 @@ class AutofocusConfig:
     z_axis: int = 1
     z_speed: int = 100
     z_accel: int = 100
+
+    # Picomotor 控制器连接参数（解决 conn=0 硬编码导致的连接失败）
+    z_picomotor_conn: int = 0
+    """控制器索引（对应 Newport.Picomotor8742 的 conn 参数）"""
+
+    z_picomotor_backend: str = "auto"
+    """连接后端：auto / pyusb / serial"""
+
+    z_picomotor_timeout: float = 5.0
+    """连接/通信超时（秒）"""
+
+    z_picomotor_multiaddr: bool = False
+    """是否启用多地址模式"""
+
+    z_picomotor_scan: bool = True
+    """是否扫描可用轴"""
+
+    z_picomotor_velocity: Optional[int] = None
+    """电机速度（None 时使用 z_speed）"""
+
+    z_picomotor_acceleration: Optional[int] = None
+    """电机加速度（None 时使用 z_accel）"""
+
     z_probe_steps: int = 10
     """试探步数"""
 

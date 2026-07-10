@@ -86,3 +86,110 @@
 - 默认不删除 legacy 代码路径，先并行新旧两策略，降低联机风险。
 - 第一期仅做 **P/PI 控制 + 耦合矩阵补偿**；不在首版引入 MPC/LQG。
 - Z 轴逻辑在 `dual_detector_4axis` 策略中完全旁路，但保留原驱动代码用于兼容其他场景。
+
+---
+
+## AutoZoom Focus：Picomotor 连接失败 & 停止按钮失效修复
+
+### Summary
+针对 AutoZoom `autofocus_qt_ui` 点击 **“启动闭环”** 后报 `error connecting to the Picomotor controller`，以及点击 **“停止”** 无响应两个问题，进行闭环补焦链路的健壮性修复。
+
+### Root Cause
+1. **Picomotor 连接失败**：`Utils/AutoZoom/Focus/z_axis.py` 中 `ZAxisController.connect()` 硬编码 `Newport.Picomotor8742(conn=0)`，无法适配多控制器或多 USB 索引场景；当实际设备不在索引 0 时直接连接失败。
+2. **停止按钮无响应**：补焦搜索策略（`Focus/search.py`）长时间执行电机移动/等待，没有检查用户停止请求；`AutofocusWorker` 仅能在轮询间隔处退出，无法在搜索中途响应停止。
+
+### Implementation Changes
+1. **配置扩展（`Utils/AutoZoom/Focus/config.py`）**
+   - 新增 `z_picomotor_conn`：控制器索引（默认 0）。
+   - 新增 `z_picomotor_backend`：连接后端 `auto/pyusb/serial`。
+   - 新增 `z_picomotor_timeout` / `z_picomotor_multiaddr` / `z_picomotor_scan`。
+   - 新增 `z_picomotor_velocity` / `z_picomotor_acceleration`（可选覆盖）。
+
+2. **Z 轴控制器修复（`Utils/AutoZoom/Focus/z_axis.py`）**
+   - `connect()` 改用 `self.cfg.z_picomotor_conn` 等配置参数构造 `Picomotor8742`。
+   - `check_available()` 校验 `conn` 是否超出检测到的设备数量，给出可操作的错误提示。
+   - 连接失败时保留原始异常并提示检查 USB/索引/占用。
+
+3. **UI 控件（`Utils/AutoZoom/autofocus_qt_ui/app.py`）**
+   - 在“补焦参数”区域增加 **Z 控制器索引** 与 **Z 控制器后端** 输入。
+   - `_collect_args()` / `_build_config()` 将新参数传入 `AutofocusConfig`。
+   - `_stop_loop()` 等待工作线程最多 2 秒，超时后强制清理 UI 状态。
+
+4. **可中断搜索（`Utils/AutoZoom/Focus/search.py`）**
+   - `BaseFocusSearch` 新增 `should_stop` 回调与 `FocusSearchStopped` 异常。
+   - 在 `_move`、`_settle`、`_measure`、`_goto` 及四大策略主循环中检查停止请求。
+   - `create_search()` 透传 `should_stop`。
+
+5. **Controller 与 Worker 联动（`Utils/AutoZoom/Focus/controller.py`、`Utils/AutoZoom/autofocus_qt_ui/worker.py`）**
+   - `AutofocusController` 新增 `should_stop` 回调。
+   - `run_closed_loop()` 捕获 `FocusSearchStopped`，返回 `reason="stopped_by_user"`。
+   - `AutofocusWorker._run_loop()` 注册 `controller.should_stop = lambda: not self._state.running`。
+
+### Test Plan
+1. **配置单测**：验证新增 Picomotor 字段默认值与覆盖值。
+2. **Z 轴连接单测**：验证 `_conn_kwargs()` 不再硬编码；`check_available()` 对越界索引返回明确错误。
+3. **搜索停止单测**：四大策略在 `should_stop=True` 时立即抛出 `FocusSearchStopped`；`_settle` 长睡眠可被中断。
+4. **Controller 停止单测**：`run_closed_loop()` 被中断后返回 `stopped_by_user` 而不崩溃。
+5. **Worker 停止单测**：`stop_loop()` 将 `running` 置为 `False`。
+6. **回归测试**：重新跑通 `Utils/AutoZoom/test_final_crash_fix.py` 确保主线程截图安全路径未被破坏。
+
+### Test Results
+- `python Utils/AutoZoom/test_picomotor_and_stop.py`：全部通过。
+- `python Utils/AutoZoom/test_final_crash_fix.py`：全部通过。
+
+### Files Modified
+- `Utils/AutoZoom/Focus/config.py`
+- `Utils/AutoZoom/Focus/z_axis.py`
+- `Utils/AutoZoom/Focus/search.py`
+- `Utils/AutoZoom/Focus/controller.py`
+- `Utils/AutoZoom/autofocus_qt_ui/app.py`
+- `Utils/AutoZoom/autofocus_qt_ui/worker.py`
+- `Utils/AutoZoom/test_picomotor_and_stop.py`（新增）
+- `PLAN.md`
+
+---
+
+## AutoZoom Focus：闭环结束后无法重启 & 默认参数调整
+
+### Summary
+针对 AutoZoom `autofocus_qt_ui` 的三个新需求进行修复：
+1. 点击 **“启动闭环”** 循环结束后，无法再次启动闭环或建立参考；
+2. 默认补焦间隔改为 **1.5 秒**；
+3. 默认循环次数改为 **30 次**。
+
+### Root Cause
+1. **无法再次启动**：`AutofocusThread` 默认 `run()` 会启动事件循环且永不退出，worker 完成后底层 QThread 仍在运行；`_on_loop_finished()` 未显式等待线程结束并释放引用，导致下一次 `_start_loop()` 可能误判线程仍在运行，或 QThread 在销毁时仍运行而崩溃。
+2. **默认参数不符合需求**：`Utils/AutoZoom/autofocus_qt_ui/config.py` 中 `DEFAULT_CYCLES=20`、`DEFAULT_INTERVAL_S=5.0`，与用户要求的 30 次、1.5 秒不一致。
+
+### Implementation Changes
+1. **默认参数调整**
+   - `Utils/AutoZoom/autofocus_qt_ui/config.py`：`DEFAULT_CYCLES` 改为 `30`，`DEFAULT_INTERVAL_S` 改为 `1.5`。
+   - `Utils/AutoZoom/autofocus_qt_ui/worker.py`：fallback 间隔默认值同步改为 `1.5`。
+
+2. **线程生命周期修复（`Utils/AutoZoom/autofocus_qt_ui/worker.py`）**
+   - `AutofocusThread` 中连接 `worker.finished -> self.quit`，worker 完成后立即退出线程事件循环，确保线程正常终止。
+
+3. **UI 状态重置（`Utils/AutoZoom/autofocus_qt_ui/app.py`）**
+   - `_start_loop()` 启动新线程前，若存在上次已完成但未释放的线程，则 `wait()` 并清空引用，避免影响重启。
+   - `_on_loop_finished()` 中等待线程彻底结束并设置 `self._thread = None`；日志新增 `循环结束，可再次建立参考或启动闭环`。
+   - 新增 `_build_and_start_thread()` 方法，统一封装线程构建与启动逻辑，便于 UI 和测试复用。
+
+### Test Plan
+1. **默认参数单测**：验证 `DEFAULT_CYCLES=30`、`DEFAULT_INTERVAL_S=1.5`，且 UI 控件初始值正确。
+2. **循环结束后重启单测**：启动 1 轮闭环，等待自然结束，验证 `start_btn`、`build_ref_btn` 可用，`stop_btn` 禁用，日志包含“循环结束”。
+3. **连续两次启动单测**：连续启动两次闭环，第二次也能正常结束且 UI 状态正确。
+4. **回归测试**：
+   - `python Utils/AutoZoom/test_picomotor_and_stop.py`
+   - `python Utils/AutoZoom/test_final_crash_fix.py`
+
+### Test Results
+- `python Utils/AutoZoom/test_loop_restart_and_defaults.py`：全部通过。
+- `python Utils/AutoZoom/test_picomotor_and_stop.py`：全部通过。
+- `python Utils/AutoZoom/test_final_crash_fix.py`：全部通过。
+
+### Files Modified
+- `Utils/AutoZoom/autofocus_qt_ui/config.py`
+- `Utils/AutoZoom/autofocus_qt_ui/worker.py`
+- `Utils/AutoZoom/autofocus_qt_ui/app.py`
+- `Utils/AutoZoom/test_loop_restart_and_defaults.py`（新增）
+- `PLAN.md`

@@ -132,7 +132,7 @@ class AutofocusWorker(QObject):
         output_root.mkdir(parents=True, exist_ok=True)
         save_dir = output_root / "cycles"
         cycles = int(self._args.get("cycles", 0))
-        interval = max(0.0, float(self._args.get("interval", 5.0)))
+        interval = max(0.0, float(self._args.get("interval", 1.5)))
 
         self.status_changed.emit(True, 0, cycles)
         self.log.emit(
@@ -147,6 +147,9 @@ class AutofocusWorker(QObject):
         try:
             # 将 controller 的日志回调改为 worker 信号，杜绝后台线程直接调用 Qt GUI
             self._controller.on_log = self.log.emit
+
+            # 注册停止回调，使用户点击“停止”时能立即中断补焦搜索
+            self._controller.should_stop = lambda: not self._state.running
 
             # 安全措施：屏幕区域模式下，将所有截图操作委托给主线程
             if self._controller.metrics_calc.cfg.capture_mode == "screen_region":
@@ -306,6 +309,8 @@ class AutofocusThread(QThread):
         self.worker = AutofocusWorker()
         self.worker.moveToThread(self)
         self.started.connect(self.worker.start_loop)
+        # worker 结束后退出线程事件循环，确保线程正常终止并被安全销毁
+        self.worker.finished.connect(self.quit)
 
     def configure(
         self,

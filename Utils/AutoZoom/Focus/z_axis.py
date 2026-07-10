@@ -10,7 +10,7 @@ Z 轴 (Newport 8742 Picomotor) 控制模块。
 from __future__ import annotations
 
 import logging
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from .config import AutofocusConfig
 
@@ -48,6 +48,16 @@ class ZAxisController:
         self.cfg = cfg
         self.controller: Optional[Newport.Picomotor8742] = None
 
+    def _conn_kwargs(self) -> Dict[str, Any]:
+        """从配置中提取连接参数，避免硬编码。"""
+        return {
+            "conn": int(self.cfg.z_picomotor_conn),
+            "backend": str(self.cfg.z_picomotor_backend or "auto"),
+            "timeout": float(self.cfg.z_picomotor_timeout),
+            "multiaddr": bool(self.cfg.z_picomotor_multiaddr),
+            "scan": bool(self.cfg.z_picomotor_scan),
+        }
+
     def connect(self) -> "ZAxisController":
         """
         连接 Newport 8742 控制器。
@@ -73,9 +83,21 @@ class ZAxisController:
         if num_devices <= 0:
             raise RuntimeError("未检测到 Newport Picomotor 控制器")
 
-        self.controller = Newport.Picomotor8742(conn=0)
+        conn_kwargs = self._conn_kwargs()
+        logger.info(f"[Z轴] 正在连接: {conn_kwargs}")
         try:
-            logger.info(f"[Z轴] 设备ID：{self.controller.get_id()}")
+            self.controller = Newport.Picomotor8742(**conn_kwargs)
+        except Exception as e:
+            raise RuntimeError(
+                f"连接 Picomotor 控制器失败 (conn={conn_kwargs['conn']}): {e}\n"
+                f"请检查：1) USB 是否插好；2) 控制器索引是否正确；"
+                f"3) 是否有其他程序占用该控制器。"
+            ) from e
+
+        try:
+            device_id = self.controller.get_id()
+            axes = self.controller.axes()
+            logger.info(f"[Z轴] 设备ID：{device_id}, 可用轴：{axes}")
         except Exception:
             pass
 
@@ -89,8 +111,16 @@ class ZAxisController:
             return
         try:
             axis = int(self.cfg.z_axis)
-            speed = int(self.cfg.z_speed)
-            accel = int(self.cfg.z_accel)
+            speed = int(
+                self.cfg.z_picomotor_velocity
+                if self.cfg.z_picomotor_velocity is not None
+                else self.cfg.z_speed
+            )
+            accel = int(
+                self.cfg.z_picomotor_acceleration
+                if self.cfg.z_picomotor_acceleration is not None
+                else self.cfg.z_accel
+            )
             self.controller.setup_velocity(
                 axis=axis, speed=speed, accel=accel
             )
@@ -162,6 +192,13 @@ class ZAxisController:
             num_devices = Newport.get_usb_devices_number_picomotor()
             if num_devices <= 0:
                 return False, "未检测到 Newport Picomotor 控制器，请检查USB连接"
+            conn = int(self.cfg.z_picomotor_conn)
+            if conn >= num_devices:
+                return (
+                    False,
+                    f"控制器索引 {conn} 超出范围（共 {num_devices} 个设备），"
+                    f"请调整 'Z 控制器索引' 为 0~{num_devices - 1}",
+                )
             return True, None
         except Exception as e:
             return False, f"检测 Z 轴控制器失败: {e}"

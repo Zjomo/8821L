@@ -25,8 +25,8 @@ DEFAULT_CAPTURE_AREA: tuple[int, int, int, int] = (116, 98, 1112, 886)
 DEFAULT_FOCUS_ROI: tuple[int, int, int, int] = (0, 0, 300, 300)
 
 # 默认循环参数
-DEFAULT_CYCLES: int = 20
-DEFAULT_INTERVAL_S: float = 5.0
+DEFAULT_CYCLES: int = 30
+DEFAULT_INTERVAL_S: float = 1.5
 
 # 默认 Z 轴参数
 DEFAULT_Z_ENABLED: bool = True

@@ -115,6 +115,8 @@ class UiRuntimeArgs:
     interval: float = DEFAULT_INTERVAL_S
     z_enabled: bool = DEFAULT_Z_ENABLED
     z_axis: int = DEFAULT_Z_AXIS
+    z_picomotor_conn: int = 0
+    z_picomotor_backend: str = "auto"
     autofocus_enabled: bool = True
     trigger_ratio: float = DEFAULT_TRIGGER_RATIO
     stop_ratio: float = 0.95
@@ -370,6 +372,22 @@ class AutofocusMainWindow(QMainWindow):
         self.z_axis_spin.setValue(DEFAULT_Z_AXIS)
         focus_layout.addRow("Z 轴号:", self.z_axis_spin)
 
+        self.z_picomotor_conn_spin = QSpinBox()
+        self.z_picomotor_conn_spin.setRange(0, 31)
+        self.z_picomotor_conn_spin.setValue(0)
+        self.z_picomotor_conn_spin.setToolTip(
+            "Newport 8742 控制器索引（conn），0 表示第一个 USB 设备。"
+            "若连接报错请尝试切换此值。"
+        )
+        focus_layout.addRow("Z 控制器索引:", self.z_picomotor_conn_spin)
+
+        self.z_picomotor_backend_combo = QComboBox()
+        self.z_picomotor_backend_combo.addItems(["auto", "pyusb", "serial"])
+        self.z_picomotor_backend_combo.setToolTip(
+            "pylablib 连接后端，auto 自动选择。"
+        )
+        focus_layout.addRow("Z 控制器后端:", self.z_picomotor_backend_combo)
+
         layout.addWidget(self.focus_group)
 
         self.loop_group = QGroupBox("循环参数")
@@ -614,6 +632,8 @@ class AutofocusMainWindow(QMainWindow):
         args.interval = self.interval_spin.value()
         args.z_enabled = self.z_enabled_check.isChecked()
         args.z_axis = self.z_axis_spin.value()
+        args.z_picomotor_conn = self.z_picomotor_conn_spin.value()
+        args.z_picomotor_backend = self.z_picomotor_backend_combo.currentText().strip()
         args.autofocus_enabled = self.autofocus_check.isChecked()
         args.trigger_ratio = self.trigger_ratio_spin.value()
         args.stop_ratio = self.stop_ratio_spin.value()
@@ -1075,6 +1095,8 @@ class AutofocusMainWindow(QMainWindow):
             "focus_roi": args.focus_roi,
             "z_enabled": args.z_enabled,
             "z_axis": args.z_axis,
+            "z_picomotor_conn": args.z_picomotor_conn,
+            "z_picomotor_backend": args.z_picomotor_backend,
             "autofocus_enabled": args.autofocus_enabled,
             "autofocus_focus_trigger_ratio": args.trigger_ratio,
             "autofocus_stop_ratio": args.stop_ratio,
@@ -1124,6 +1146,15 @@ class AutofocusMainWindow(QMainWindow):
         if self._thread is not None and self._thread.isRunning():
             QMessageBox.information(self, "提示", "循环已在运行中")
             return
+
+        # 清理上一次已完成但未释放的线程对象，确保可以重新启动
+        if self._thread is not None:
+            try:
+                self._thread.wait(500)
+            except Exception:
+                pass
+            self._disconnect_worker_signals()
+            self._thread = None
 
         # 停止屏幕实时预览，避免与后台线程争抢截图资源导致闪退
         self._stop_screen_preview()
@@ -1185,6 +1216,36 @@ class AutofocusMainWindow(QMainWindow):
         self._thread.start()
         self.log("已启动自动聚焦闭环")
 
+    def _build_and_start_thread(
+        self,
+        controller: AutofocusController,
+        cfg: AutofocusConfig,
+        runtime_args: Dict[str, Any],
+    ) -> Any:
+        """构建并启动 AutofocusThread（供测试调用）。"""
+        from .worker import AutofocusThread
+
+        thread = AutofocusThread(self)
+        thread.configure(
+            cfg=cfg,
+            args=runtime_args,
+            controller=controller,
+            simulator=None,
+        )
+        thread.worker.preview_updated.connect(self._on_preview_updated)
+        thread.worker.metrics_updated.connect(self._on_metrics_updated)
+        thread.worker.score_updated.connect(self._on_score_updated)
+        thread.worker.log.connect(self.log)
+        thread.worker.status_changed.connect(self._on_status_changed)
+        thread.worker.finished.connect(self._on_loop_finished)
+        thread.worker.error.connect(self._on_loop_error)
+        thread.worker.capture_requested.connect(self._on_worker_capture)
+
+        self._set_controls_running(True)
+        thread.start()
+        self.log("已启动自动聚焦闭环")
+        return thread
+
     def _pause_loop(self) -> None:
         if self._thread is None or not self._thread.isRunning():
             return
@@ -1201,6 +1262,17 @@ class AutofocusMainWindow(QMainWindow):
         if self._thread is not None and self._thread.isRunning():
             self._thread.worker.stop_loop()
             self.log("正在停止...")
+            # 最多等待 2 秒让线程自然结束；若仍在运行则强制终止并清理 UI
+            if self._thread.wait(2000):
+                self._disconnect_worker_signals()
+                self._set_controls_running(False)
+                self.status_label.setText("已停止")
+                self.log("闭环已停止")
+            else:
+                self._disconnect_worker_signals()
+                self._set_controls_running(False)
+                self.status_label.setText("停止超时")
+                self.log("警告：停止请求超时，线程可能仍在收尾")
 
     @Slot(np.ndarray)
     def _on_preview_updated(self, image: np.ndarray) -> None:
@@ -1234,8 +1306,16 @@ class AutofocusMainWindow(QMainWindow):
     def _on_loop_finished(self) -> None:
         self._disconnect_worker_signals()
         self._set_controls_running(False)
+        # 等待线程彻底结束并释放引用，避免影响下一次启动
+        if self._thread is not None:
+            try:
+                self._thread.wait(1000)
+            except Exception:
+                pass
+            self._thread = None
         self.status_label.setText("完成")
         self.log("闭环运行结束")
+        self.log("循环结束，可再次建立参考或启动闭环")
 
     def _disconnect_worker_signals(self) -> None:
         """断开当前 worker 的所有信号连接，防止旧信号残留。"""
