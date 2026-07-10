@@ -55,6 +55,7 @@ class AutofocusWorker(QObject):
     status_changed = Signal(bool, int, int)
     finished = Signal()
     error = Signal(str)
+    capture_requested = Signal()  # 请求主线程截图（避免后台线程调用 GUI API 崩溃）
 
     def __init__(self, parent: Optional[QObject] = None) -> None:
         super().__init__(parent)
@@ -63,6 +64,7 @@ class AutofocusWorker(QObject):
         self._simulator: Optional[Any] = None
         self._cfg: Optional[Any] = None
         self._args: Optional[Dict[str, Any]] = None
+        self._captured_image: Optional[np.ndarray] = None
 
     def configure(
         self,
@@ -75,6 +77,22 @@ class AutofocusWorker(QObject):
         self._args = args
         self._controller = controller
         self._simulator = simulator
+
+    def set_captured_image(self, image: Optional[np.ndarray]) -> None:
+        """接收主线程捕获的截图。"""
+        self._captured_image = image
+
+    def _request_capture(self) -> Optional[np.ndarray]:
+        """请求主线程截图并等待结果（避免后台线程直接调用 GUI API）。"""
+        self._captured_image = None
+        self.capture_requested.emit()
+        timeout = 3.0
+        start = time.time()
+        while self._captured_image is None and time.time() - start < timeout:
+            if not self._state.running:
+                return None
+            time.sleep(0.02)
+        return self._captured_image
 
     def start_loop(self) -> None:
         self._state.running = True
@@ -121,7 +139,71 @@ class AutofocusWorker(QObject):
             f"启动闭环：cycles={'无限' if cycles <= 0 else cycles}, interval={interval}s"
         )
 
+        # 用布尔标志跟踪 monkey-patch 状态，避免 dir() 的不确定性
+        monkey_patched = False
+        original_capture_live = None
+        original_capture_and_save = None
+
         try:
+            # 将 controller 的日志回调改为 worker 信号，杜绝后台线程直接调用 Qt GUI
+            self._controller.on_log = self.log.emit
+
+            # 安全措施：屏幕区域模式下，将所有截图操作委托给主线程
+            if self._controller.metrics_calc.cfg.capture_mode == "screen_region":
+                original_capture_live = self._controller.metrics_calc.capture_live
+                original_capture_and_save = self._controller.metrics_calc.capture_and_save
+                worker_self = self
+
+                def safe_capture_live():
+                    image = worker_self._request_capture()
+                    if image is not None:
+                        roi = worker_self._controller.metrics_calc.clamp_roi(
+                            tuple(worker_self._controller.metrics_calc.cfg.focus_roi), image.shape
+                        )
+                        x, y, rw, rh = roi
+                        roi_rgb = image[y : y + rh, x : x + rw].copy()
+                        full_metrics = worker_self._controller.metrics_calc.compute_for_image(image)
+                        roi_metrics = worker_self._controller.metrics_calc.compute_for_image(roi_rgb)
+                        return {
+                            "ok": True,
+                            "full_rgb": image,
+                            "roi_rgb": roi_rgb,
+                            "full": full_metrics,
+                            "roi_metrics": roi_metrics,
+                        }
+                    # 主线程截图超时，返回错误结果（绝不 fallback 到后台线程调用 pyautogui）
+                    worker_self.log.emit("[警告] 主线程截图超时，返回空结果")
+                    return {"ok": False, "full_rgb": None, "roi_rgb": None, "full": {}, "roi_metrics": {}}
+
+                def safe_capture_and_save(cycle_index, save_dir, on_log=None):
+                    image = worker_self._request_capture()
+                    if image is None:
+                        # 主线程截图超时，返回错误结果（绝不 fallback 到后台线程调用 pyautogui）
+                        worker_self.log.emit("[警告] 主线程截图超时，返回空结果")
+                        return {"ok": False, "cycle_index": cycle_index, "full": {}, "roi_metrics": {}}
+                    left, top, width, height = [int(v) for v in worker_self._controller.metrics_calc.cfg.capture_area]
+                    roi = worker_self._controller.metrics_calc.clamp_roi(
+                        tuple(worker_self._controller.metrics_calc.cfg.focus_roi), image.shape
+                    )
+                    x, y, rw, rh = roi
+                    roi_rgb = image[y : y + rh, x : x + rw].copy()
+                    full_metrics = worker_self._controller.metrics_calc.compute_for_image(image)
+                    roi_metrics = worker_self._controller.metrics_calc.compute_for_image(roi_rgb)
+                    return {
+                        "ok": True,
+                        "cycle_index": cycle_index,
+                        "capture_area": [left, top, width, height],
+                        "roi": roi,
+                        "full": full_metrics,
+                        "roi_metrics": roi_metrics,
+                        "full_rgb": image,
+                        "roi_rgb": roi_rgb,
+                    }
+
+                self._controller.metrics_calc.capture_live = safe_capture_live
+                self._controller.metrics_calc.capture_and_save = safe_capture_and_save
+                monkey_patched = True
+
             while self._state.running:
                 while self._state.paused and self._state.running:
                     time.sleep(0.1)
@@ -139,9 +221,10 @@ class AutofocusWorker(QObject):
                 self.log.emit(f"========== 第 {cycle} 轮 ==========")
                 self.status_changed.emit(True, cycle, cycles)
 
+                # save_dir=None 强制走 capture_live（已被 monkey-patch 到主线程安全采集）
                 result = self._controller.check_and_autofocus(
                     cycle_index=cycle,
-                    save_dir=str(cycle_save_dir),
+                    save_dir=None,
                 )
 
                 score = result.get("focus_score_ratio") if isinstance(result, dict) else None
@@ -169,6 +252,19 @@ class AutofocusWorker(QObject):
             logger.exception("autofocus loop failed")
             self.error.emit(f"闭环运行异常：{exc}")
         finally:
+            # 恢复原始方法（使用布尔标志，避免 dir() 跨实现差异）
+            if monkey_patched and self._controller is not None:
+                mc = self._controller.metrics_calc
+                if original_capture_live is not None:
+                    try:
+                        mc.capture_live = original_capture_live
+                    except Exception:
+                        pass
+                if original_capture_and_save is not None:
+                    try:
+                        mc.capture_and_save = original_capture_and_save
+                    except Exception:
+                        pass
             self._cleanup()
             self.status_changed.emit(False, self._state.cycle_index, cycles)
             self.finished.emit()

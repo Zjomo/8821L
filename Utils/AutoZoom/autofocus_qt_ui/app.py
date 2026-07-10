@@ -20,6 +20,16 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+# ============================================================
+# 预加载 llvmlite：必须在 PyQt6 之前加载，避免 Qt 修改 DLL 搜索路径
+# 后导致 llvmlite.dll 加载失败 (WinError 1114)。
+# 即使加载失败也不影响程序启动（仅 Z 轴电机控制不可用）。
+# ============================================================
+try:
+    import llvmlite.binding  # noqa: F401
+except Exception:
+    pass
+
 import numpy as np
 
 from .qt_compat import (
@@ -125,10 +135,12 @@ class AutofocusMainWindow(QMainWindow):
         self._thread: Optional[AutofocusThread] = None
         self._controller: Optional[AutofocusController] = None
         self._simulator: Optional[FocusSimulator] = None
+        self._reference_data: Optional[Dict[str, Any]] = None  # 建立参考后保存，供闭环使用
 
         # 视频播放器状态
         self._video_capture: Optional[Any] = None  # cv2.VideoCapture
         self._video_timer: Optional[QTimer] = None
+        self._screen_timer: Optional[QTimer] = None  # 屏幕区域实时采集定时器
         self._video_playing: bool = False
         self._video_fps: float = 30.0
         self._video_frame_count: int = 0
@@ -386,8 +398,18 @@ class AutofocusMainWindow(QMainWindow):
         btn_layout = QHBoxLayout()
         self.build_ref_btn = QPushButton("建立参考")
         self.build_ref_btn.setObjectName("primary")
+        self.build_ref_btn.setToolTip(
+            "抓取当前画面作为清晰聚焦的参考基准。\n"
+            "程序会多次采集并计算最优聚焦指标，\n"
+            "作为后续自动聚焦的对比目标。"
+        )
         self.start_btn = QPushButton("启动闭环")
         self.start_btn.setObjectName("primary")
+        self.start_btn.setToolTip(
+            "开始自动聚焦循环：\n"
+            "每轮自动截图 → 对比参考基准 →\n"
+            "若偏离则自动调节 Z 轴恢复清晰聚焦。"
+        )
         self.pause_btn = QPushButton("暂停")
         self.stop_btn = QPushButton("停止")
         self.stop_btn.setObjectName("danger")
@@ -558,6 +580,21 @@ class AutofocusMainWindow(QMainWindow):
         self.video_browse_btn.setEnabled(False)
         self._set_video_controls_visible(False)
 
+        # 屏幕模式：默认截图区域和 ROI 设为全屏分辨率
+        try:
+            screen = QApplication.primaryScreen()
+            if screen is not None:
+                size = screen.size()
+                sw, sh = size.width(), size.height()
+                self.capture_area_edit.setText(f"0, 0, {sw}, {sh}")
+                self.focus_roi_edit.setText(f"0, 0, {sw}, {sh}")
+            else:
+                self.capture_area_edit.setText(", ".join(str(v) for v in DEFAULT_CAPTURE_AREA))
+                self.focus_roi_edit.setText(", ".join(str(v) for v in DEFAULT_FOCUS_ROI))
+        except Exception:
+            self.capture_area_edit.setText(", ".join(str(v) for v in DEFAULT_CAPTURE_AREA))
+            self.focus_roi_edit.setText(", ".join(str(v) for v in DEFAULT_FOCUS_ROI))
+
     def _collect_args(self) -> UiRuntimeArgs:
         args = UiRuntimeArgs()
         args.output = self.output_edit.text().strip() or DEFAULT_OUTPUT_DIR
@@ -627,6 +664,10 @@ class AutofocusMainWindow(QMainWindow):
         self._set_video_controls_visible(is_video)
         self.load_preview_btn.setVisible(not is_video)
 
+        # 切换非屏幕模式时，停止屏幕实时预览
+        if not is_screen:
+            self._stop_screen_preview()
+
         # 资源下拉框变更时同步到对应编辑框
         self.resource_combo.currentIndexChanged.connect(
             self._on_resource_selected, type=Qt.UniqueConnection
@@ -678,8 +719,16 @@ class AutofocusMainWindow(QMainWindow):
             self.usb_device_spin.setValue(data)
 
     def _load_preview(self) -> None:
+        """加载预览：屏幕模式启动实时采集，其他模式单帧捕获。"""
+        args = self._collect_args()
+
+        # 屏幕模式：启动/停止实时采集
+        if args.capture_mode == "screen_region":
+            self._toggle_screen_preview()
+            return
+
+        # 其他模式：单帧捕获
         try:
-            args = self._collect_args()
             cfg = self._build_config(args)
             metrics_calc = FocusMetricsCalculator(cfg)
 
@@ -688,8 +737,6 @@ class AutofocusMainWindow(QMainWindow):
                 image = metrics_calc._capture_local_video_frame()
             else:
                 live = metrics_calc.capture_live()
-                # capture_live 返回的图像字段为 roi_rgb / full_rgb
-                # 注意：不能用 or 直接判断 numpy 数组，会触发 ambiguous truth value 错误
                 image = live.get("roi_rgb")
                 if image is None:
                     image = live.get("full_rgb")
@@ -704,6 +751,52 @@ class AutofocusMainWindow(QMainWindow):
         except Exception as exc:
             self.log(f"加载预览失败：{exc}")
             QMessageBox.warning(self, "预览失败", str(exc))
+
+    def _toggle_screen_preview(self) -> None:
+        """启动/停止屏幕区域实时采集。"""
+        if self._screen_timer is not None and self._screen_timer.isActive():
+            self._stop_screen_preview()
+            return
+        self._start_screen_preview()
+
+    def _start_screen_preview(self) -> None:
+        """启动屏幕区域实时采集定时器。"""
+        try:
+            import pyautogui  # noqa: F811
+        except ImportError:
+            self.log("屏幕采集需要 pyautogui：pip install pyautogui")
+            return
+
+        self._screen_timer = QTimer(self)
+        self._screen_timer.timeout.connect(self._capture_screen_frame)
+        self._screen_timer.start(100)  # 10 FPS
+        self.load_preview_btn.setText("停止预览")
+        self.log("屏幕实时预览已启动")
+
+    def _stop_screen_preview(self) -> None:
+        """停止屏幕区域实时采集。"""
+        if self._screen_timer is not None:
+            self._screen_timer.stop()
+            self._screen_timer = None
+        self.load_preview_btn.setText("加载预览")
+        self.log("屏幕实时预览已停止")
+
+    def _capture_screen_frame(self) -> None:
+        """捕获一帧屏幕画面并更新预览。"""
+        try:
+            import pyautogui  # noqa: F811
+            args = self._collect_args()
+            left, top, width, height = [int(v) for v in args.capture_area]
+            screenshot = pyautogui.screenshot(region=(left, top, width, height))
+            image = np.asarray(screenshot.convert("RGB"))
+            image = self._apply_roi_crop(image)
+            self.preview_label.set_preview_image(image)
+            self._last_preview_image = image
+            self._track_spot_on_frame(image)
+            self._compute_and_update_profile()
+            self._update_video_metrics(image)
+        except Exception:
+            pass  # 静默处理，避免定时器中断
 
     def _on_roi_selected(self, x: int, y: int, w: int, h: int) -> None:
         self.focus_roi_edit.setText(f"{x}, {y}, {w}, {h}")
@@ -999,11 +1092,16 @@ class AutofocusMainWindow(QMainWindow):
         cfg = self._build_config(args)
         metrics_calc = FocusMetricsCalculator(cfg)
         scorer = FocusScorer(cfg, metrics_calc)
+        # 注入已保存的参考数据（建立参考 → 启动闭环之间共享）
+        if self._reference_data is not None:
+            scorer.focus_reference = self._reference_data
+            scorer.focus_reference_ready = True
         z_axis = ZAxisController(cfg)
         controller = AutofocusController(cfg, scorer, metrics_calc, z_axis)
         return controller, None
 
     def _build_reference(self) -> None:
+        self._stop_screen_preview()
         try:
             args = self._collect_args()
             controller, _ = self._build_controller(args)
@@ -1013,6 +1111,8 @@ class AutofocusMainWindow(QMainWindow):
             controller.on_log = self.log
             ref = controller.build_reference(output_root=ref_dir)
             count = ref.get("capture_count", 0)
+            # 保存参考数据，供后续闭环使用（controller 在 _start_loop 中会新建）
+            self._reference_data = controller.scorer.focus_reference
             self.log(f"参考基线建立完成：{count} 次采集")
             QMessageBox.information(self, "完成", f"参考基线已建立\n采集次数：{count}")
         except Exception as exc:
@@ -1025,6 +1125,9 @@ class AutofocusMainWindow(QMainWindow):
             QMessageBox.information(self, "提示", "循环已在运行中")
             return
 
+        # 停止屏幕实时预览，避免与后台线程争抢截图资源导致闪退
+        self._stop_screen_preview()
+
         args = self._collect_args()
         try:
             controller, simulator = self._build_controller(args)
@@ -1033,13 +1136,31 @@ class AutofocusMainWindow(QMainWindow):
             QMessageBox.critical(self, "错误", f"初始化失败：{exc}")
             return
 
+        # 检测 Z 轴电机连接状态，无电机时提前警告
+        if args.z_enabled:
+            ok, err_msg = controller.z_axis.check_available()
+            if not ok:
+                self.log(f"[Z轴] {err_msg}")
+                reply = QMessageBox.warning(
+                    self,
+                    "Z 轴电机未连接",
+                    f"{err_msg}\n\n闭环将继续运行并监控 FocusScore，"
+                    "但触发补焦时 Z 轴移动将失败。\n\n是否继续？",
+                    QMessageBox.Yes | QMessageBox.No,
+                    QMessageBox.Yes,
+                )
+                if reply == QMessageBox.No:
+                    self.log("用户取消启动闭环")
+                    return
+                self.log("用户选择在无电机状态下继续运行闭环")
+            else:
+                self.log("[Z轴] 电机连接检测通过")
+
         runtime_args = {
             "output": args.output,
             "cycles": args.cycles,
             "interval": args.interval,
         }
-
-        controller.on_log = self.log
 
         self._thread = AutofocusThread(self)
         self._thread.configure(
@@ -1056,6 +1177,7 @@ class AutofocusMainWindow(QMainWindow):
         self._thread.worker.status_changed.connect(self._on_status_changed)
         self._thread.worker.finished.connect(self._on_loop_finished)
         self._thread.worker.error.connect(self._on_loop_error)
+        self._thread.worker.capture_requested.connect(self._on_worker_capture)
 
         self._set_controls_running(True)
         self.score_plot.set_thresholds(args.trigger_ratio, args.stop_ratio)
@@ -1110,12 +1232,53 @@ class AutofocusMainWindow(QMainWindow):
 
     @Slot()
     def _on_loop_finished(self) -> None:
+        self._disconnect_worker_signals()
         self._set_controls_running(False)
         self.status_label.setText("完成")
         self.log("闭环运行结束")
 
+    def _disconnect_worker_signals(self) -> None:
+        """断开当前 worker 的所有信号连接，防止旧信号残留。"""
+        if self._thread is None or self._thread.worker is None:
+            return
+        try:
+            w = self._thread.worker
+            w.preview_updated.disconnect(self._on_preview_updated)
+            w.metrics_updated.disconnect(self._on_metrics_updated)
+            w.score_updated.disconnect(self._on_score_updated)
+            w.log.disconnect(self.log)
+            w.status_changed.disconnect(self._on_status_changed)
+            w.finished.disconnect(self._on_loop_finished)
+            w.error.disconnect(self._on_loop_error)
+            w.capture_requested.disconnect(self._on_worker_capture)
+        except Exception:
+            pass  # 可能已经断开
+
+    def _on_worker_capture(self) -> None:
+        """响应后台线程的截图请求（在主线程安全执行 pyautogui）。"""
+        if self._thread is None or self._thread.worker is None:
+            return
+        try:
+            import pyautogui
+            args = self._collect_args()
+            left, top, width, height = [int(v) for v in args.capture_area]
+            if width <= 0 or height <= 0:
+                self.log("[错误] 截图区域无效，使用默认区域")
+                self._thread.worker.set_captured_image(None)
+                return
+            screenshot = pyautogui.screenshot(region=(left, top, width, height))
+            image = np.asarray(screenshot.convert("RGB"))
+            self._thread.worker.set_captured_image(image)
+        except Exception as e:
+            logger.warning(f"主线程截图失败: {e}")
+            try:
+                self._thread.worker.set_captured_image(None)
+            except Exception:
+                pass
+
     @Slot(str)
     def _on_loop_error(self, message: str) -> None:
+        self._disconnect_worker_signals()
         self._set_controls_running(False)
         self.status_label.setText("错误")
         self.log(f"错误：{message}")
@@ -1527,6 +1690,7 @@ class AutofocusMainWindow(QMainWindow):
         if self._thread is not None and self._thread.isRunning():
             self._thread.worker.stop_loop()
             self._thread.wait(2000)
+        self._stop_screen_preview()
         self._close_video_player()
         event.accept()
 

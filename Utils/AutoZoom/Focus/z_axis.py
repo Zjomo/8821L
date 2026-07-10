@@ -14,12 +14,23 @@ from typing import Optional
 
 from .config import AutofocusConfig
 
-try:
-    from pylablib.devices import Newport
-except ImportError:
-    Newport = None
-
 logger = logging.getLogger(__name__)
+
+# pylablib 延迟导入：避免触发 llvmlite DLL 加载失败（仅在连接时才导入）
+Newport = None
+
+
+def _import_newport():
+    """懒加载 pylablib.devices.Newport，仅在需要连接电机时调用。"""
+    global Newport
+    if Newport is not None:
+        return Newport
+    try:
+        from pylablib.devices import Newport as _Newport
+        Newport = _Newport
+        return Newport
+    except ImportError:
+        return None
 
 
 class ZAxisController:
@@ -46,7 +57,7 @@ class ZAxisController:
             logger.info("[Z轴] 已连接")
             return self
 
-        if Newport is None:
+        if _import_newport() is None:
             raise ImportError(
                 "需要安装 pylablib 才能控制 Newport 8742：pip install pylablib"
             )
@@ -54,7 +65,10 @@ class ZAxisController:
         if not self.cfg.z_enabled:
             raise RuntimeError("Z 轴补焦未启用 (z_enabled=False)")
 
-        num_devices = Newport.get_usb_devices_number_picomotor()
+        try:
+            num_devices = Newport.get_usb_devices_number_picomotor()
+        except Exception as e:
+            raise RuntimeError(f"检测 Z 轴控制器失败: {e}") from e
         logger.info(f"[Z轴] 检测到 Newport Picomotor 数量：{num_devices}")
         if num_devices <= 0:
             raise RuntimeError("未检测到 Newport Picomotor 控制器")
@@ -128,3 +142,26 @@ class ZAxisController:
     @property
     def is_connected(self) -> bool:
         return self.controller is not None
+
+    def check_available(self) -> tuple[bool, Optional[str]]:
+        """
+        检测 Z 轴控制器是否可用（不实际建立连接）。
+
+        返回:
+          - (True, None): 可用（z_enabled=False 也算可用，不会实际移动）
+          - (False, error_msg): 不可用，返回错误信息
+        """
+        if not self.cfg.z_enabled:
+            # Z 轴未启用，不会移动，不报错
+            return True, None
+
+        if _import_newport() is None:
+            return False, "缺少依赖 pylablib: pip install pylablib"
+
+        try:
+            num_devices = Newport.get_usb_devices_number_picomotor()
+            if num_devices <= 0:
+                return False, "未检测到 Newport Picomotor 控制器，请检查USB连接"
+            return True, None
+        except Exception as e:
+            return False, f"检测 Z 轴控制器失败: {e}"
