@@ -193,3 +193,52 @@
 - `Utils/AutoZoom/autofocus_qt_ui/app.py`
 - `Utils/AutoZoom/test_loop_restart_and_defaults.py`（新增）
 - `PLAN.md`
+
+---
+
+## AutoZoom Focus：实时预览基准图对比 & 2x2 闭环回顾弹窗
+
+### Summary
+为 AutoZoom `autofocus_qt_ui` 增加两项可视化能力：
+1. **启动闭环后**，实时预览区域左右并排显示 **基准图** 与 **实时图**，方便人眼直观比较聚焦状态；
+2. **闭环自然结束后**，自动弹出 **2x2 图像变化回顾弹窗**，展示基准图、早期、中期、末期四个阶段的 ROI 图像。
+
+### Implementation Changes
+1. **保存基准图像（`Utils/AutoZoom/Focus/scorer.py`）**
+   - `build_reference()` 在建立参考基线时，把第一张采集到的 `roi_rgb` / `full_rgb` 存入 `focus_reference`，供 UI 调用。
+
+2. **预览对比控件（`Utils/AutoZoom/autofocus_qt_ui/widgets.py`）**
+   - `RoiPreviewLabel` 新增 `set_reference_image()`、`set_comparison_mode()`。
+   - 对比模式下 `paintEvent` 左右并排绘制基准图与实时图，并分别标注“基准图”“实时图”。
+   - 实时图区域继续绘制 ROI 框，保持原有交互能力。
+   - 新增 `LoopSummaryDialog`：2x2 网格弹窗，自动从快照中挑选基准图、早期、中期、末期 4 张图像。
+
+3. **主窗口集成（`Utils/AutoZoom/autofocus_qt_ui/app.py`）**
+   - `_build_reference()` 完成后将基准 ROI 图像保存到 `self._reference_image` 并设置到预览控件。
+   - `_start_loop()` 与 `_build_and_start_thread()` 启动时开启对比模式（若已有基准图）。
+   - `_on_preview_updated()` 每轮采集时把 `(cycle, roi_rgb)` 追加到 `self._loop_snapshots`。
+   - `_on_loop_finished()` 异步调用 `_show_loop_summary_dialog()`，以非阻塞方式展示 2x2 弹窗。
+   - `_on_loop_error()` 退出对比模式。
+
+### Test Plan
+1. **基准图保存单测**：验证 `build_reference()` 返回的 `focus_reference` 包含 `roi_rgb`。
+2. **对比模式单测**：验证 `RoiPreviewLabel` 进入对比模式后同时保存基准图和实时图的 pixmap。
+3. **弹窗图像挑选单测**：验证 `LoopSummaryDialog._select_images()` 始终返回 4 张图像，且第一张为基准图、最后一张为末期。
+4. **集成单测**：运行闭环后验证 `self._loop_snapshots` 已收集、`_summary_dialog` 已创建并显示。
+5. **回归测试**：
+   - `python Utils/AutoZoom/test_loop_restart_and_defaults.py`
+   - `python Utils/AutoZoom/test_picomotor_and_stop.py`
+   - `python Utils/AutoZoom/test_final_crash_fix.py`
+
+### Test Results
+- `python Utils/AutoZoom/test_preview_comparison_and_summary.py`：全部通过。
+- `python Utils/AutoZoom/test_loop_restart_and_defaults.py`：全部通过。
+- `python Utils/AutoZoom/test_picomotor_and_stop.py`：全部通过。
+- `python Utils/AutoZoom/test_final_crash_fix.py`：全部通过。
+
+### Files Modified
+- `Utils/AutoZoom/Focus/scorer.py`
+- `Utils/AutoZoom/autofocus_qt_ui/widgets.py`
+- `Utils/AutoZoom/autofocus_qt_ui/app.py`
+- `Utils/AutoZoom/test_preview_comparison_and_summary.py`（新增）
+- `PLAN.md`

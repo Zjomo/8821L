@@ -94,7 +94,13 @@ from .config import (
     DEFAULT_Z_ENABLED,
 )
 from .detectors import detect_windows, detect_usb_cameras
-from .widgets import FocusScorePlot, MetricsTable, RoiPreviewLabel, RgbProfilePlot
+from .widgets import (
+    FocusScorePlot,
+    MetricsTable,
+    RoiPreviewLabel,
+    RgbProfilePlot,
+    LoopSummaryDialog,
+)
 from .worker import AutofocusThread
 from .themes import Theme, get_theme, available_themes
 
@@ -138,6 +144,9 @@ class AutofocusMainWindow(QMainWindow):
         self._controller: Optional[AutofocusController] = None
         self._simulator: Optional[FocusSimulator] = None
         self._reference_data: Optional[Dict[str, Any]] = None  # 建立参考后保存，供闭环使用
+        self._reference_image: Optional[np.ndarray] = None  # 基准 ROI 图像
+        self._loop_snapshots: List[Tuple[int, np.ndarray]] = []  # 闭环过程截图 (cycle, roi_rgb)
+        self._summary_dialog: Optional[LoopSummaryDialog] = None  # 当前打开的回顾弹窗
 
         # 视频播放器状态
         self._video_capture: Optional[Any] = None  # cv2.VideoCapture
@@ -1135,6 +1144,8 @@ class AutofocusMainWindow(QMainWindow):
             count = ref.get("capture_count", 0)
             # 保存参考数据，供后续闭环使用（controller 在 _start_loop 中会新建）
             self._reference_data = controller.scorer.focus_reference
+            self._reference_image = ref.get("roi_rgb")
+            self.preview_label.set_reference_image(self._reference_image)
             self.log(f"参考基线建立完成：{count} 次采集")
             QMessageBox.information(self, "完成", f"参考基线已建立\n采集次数：{count}")
         except Exception as exc:
@@ -1213,6 +1224,9 @@ class AutofocusMainWindow(QMainWindow):
         self._set_controls_running(True)
         self.score_plot.set_thresholds(args.trigger_ratio, args.stop_ratio)
         self.score_plot.clear()
+        # 启动对比模式：若已建立参考，则左右显示基准图与实时图
+        self.preview_label.set_comparison_mode(self._reference_image is not None)
+        self._loop_snapshots.clear()
         self._thread.start()
         self.log("已启动自动聚焦闭环")
 
@@ -1242,6 +1256,8 @@ class AutofocusMainWindow(QMainWindow):
         thread.worker.capture_requested.connect(self._on_worker_capture)
 
         self._set_controls_running(True)
+        self.preview_label.set_comparison_mode(self._reference_image is not None)
+        self._loop_snapshots.clear()
         thread.start()
         self.log("已启动自动聚焦闭环")
         return thread
@@ -1279,6 +1295,9 @@ class AutofocusMainWindow(QMainWindow):
         self.preview_label.set_preview_image(image)
         self._last_preview_image = image
         self._compute_and_update_profile()
+        # 记录当前轮次的 ROI 图像，用于循环结束后的 2x2 变化回顾
+        cycle = self._thread.worker._state.cycle_index if self._thread is not None else 0
+        self._loop_snapshots.append((cycle, image.copy()))
 
     @Slot(dict, dict)
     def _on_metrics_updated(self, full: dict, roi: dict) -> None:
@@ -1313,9 +1332,12 @@ class AutofocusMainWindow(QMainWindow):
             except Exception:
                 pass
             self._thread = None
+        self.preview_label.set_comparison_mode(False)
         self.status_label.setText("完成")
         self.log("闭环运行结束")
         self.log("循环结束，可再次建立参考或启动闭环")
+        # 异步弹出 2x2 变化过程回顾弹窗，避免阻塞 finished 信号和测试
+        QTimer.singleShot(0, self._show_loop_summary_dialog)
 
     def _disconnect_worker_signals(self) -> None:
         """断开当前 worker 的所有信号连接，防止旧信号残留。"""
@@ -1360,9 +1382,29 @@ class AutofocusMainWindow(QMainWindow):
     def _on_loop_error(self, message: str) -> None:
         self._disconnect_worker_signals()
         self._set_controls_running(False)
+        self.preview_label.set_comparison_mode(False)
         self.status_label.setText("错误")
         self.log(f"错误：{message}")
         QMessageBox.critical(self, "运行错误", message)
+
+    def _show_loop_summary_dialog(self) -> None:
+        """循环结束后以非阻塞方式展示 2x2 图像变化回顾弹窗。"""
+        try:
+            if self._summary_dialog is not None:
+                try:
+                    self._summary_dialog.close()
+                except Exception:
+                    pass
+                self._summary_dialog = None
+            self._summary_dialog = LoopSummaryDialog(
+                snapshots=self._loop_snapshots,
+                reference_image=self._reference_image,
+                parent=self,
+            )
+            self._summary_dialog.show()
+        except Exception as exc:
+            logger.exception("show loop summary dialog failed")
+            self.log(f"[警告] 弹窗展示失败：{exc}")
 
     def _set_controls_running(self, running: bool) -> None:
         self.start_btn.setEnabled(not running)

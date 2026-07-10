@@ -29,6 +29,11 @@ from .qt_compat import (
     QWidget,
     QVBoxLayout,
     QHBoxLayout,
+    QDialog,
+    QGridLayout,
+    QPushButton,
+    QScrollArea,
+    QSizePolicy,
 )
 
 from .themes import Theme, get_theme
@@ -55,6 +60,9 @@ class RoiPreviewLabel(QLabel):
         self.setMouseTracking(True)
         self._pixmap: Optional[QPixmap] = None
         self._original_image: Optional[np.ndarray] = None
+        self._reference_image: Optional[np.ndarray] = None
+        self._reference_pixmap: Optional[QPixmap] = None
+        self._comparison_mode: bool = False
         self._reference_mode = False
         self._drawing = False
         self._start_pos: Optional[Tuple[int, int]] = None
@@ -120,32 +128,63 @@ class RoiPreviewLabel(QLabel):
             self.update()
             return
 
+        self._original_image = image.copy()
+        self._pixmap = self._array_to_pixmap(image, self._available_single_size())
+
+        # 自动初始化剖面线位置到图像中心
+        h, w = image.shape[:2]
+        if self._cross_hair_x is None or self._cross_hair_y is None:
+            self._cross_hair_x = w // 2
+            self._cross_hair_y = h // 2
+
+        self.update()
+
+    def set_reference_image(self, image: Optional[np.ndarray]) -> None:
+        """设置基准图；传入 None 则清除。"""
+        if image is None or image.size == 0:
+            self._reference_image = None
+            self._reference_pixmap = None
+            self.update()
+            return
+        self._reference_image = image.copy()
+        self._reference_pixmap = self._array_to_pixmap(image, self._available_single_size())
+        self.update()
+
+    def set_comparison_mode(self, enabled: bool) -> None:
+        """启用/禁用基准图与实时图左右对比模式。"""
+        self._comparison_mode = bool(enabled)
+        if self._original_image is not None:
+            self._pixmap = self._array_to_pixmap(self._original_image, self._available_single_size())
+        if self._reference_image is not None:
+            self._reference_pixmap = self._array_to_pixmap(self._reference_image, self._available_single_size())
+        self.update()
+
+    def _available_single_size(self) -> Tuple[int, int]:
+        """对比模式下单张图可用的尺寸；非对比模式返回整个控件尺寸。"""
+        if self._comparison_mode:
+            return (max(1, self.width() // 2 - 8), max(1, self.height() - 16))
+        return (self.width(), self.height())
+
+    @staticmethod
+    def _array_to_pixmap(image: np.ndarray, target_size: Tuple[int, int]) -> QPixmap:
+        """将 numpy 图像转换为按目标尺寸等比缩放后的 QPixmap。"""
         h, w = image.shape[:2]
         if image.ndim == 2:
             image = np.stack([image] * 3, axis=-1)
         elif image.shape[2] == 4:
             image = image[:, :, :3]
 
-        self._original_image = image.copy()
-
-        # OpenCV 默认 BGR，转换为 RGB 用于 QImage
         rgb = image[:, :, ::-1] if image.shape[2] == 3 else image
         rgb = np.ascontiguousarray(rgb)
         bytes_per_line = 3 * w
         qimage = QImage(rgb.data, w, h, bytes_per_line, QImage.Format_RGB888)
         pixmap = QPixmap.fromImage(qimage.copy())
 
+        target_w, target_h = target_size
         scaled = pixmap.scaled(
-            self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation
+            target_w, target_h, Qt.KeepAspectRatio, Qt.SmoothTransformation
         )
-        self._pixmap = scaled
-
-        # 自动初始化剖面线位置到图像中心
-        if self._cross_hair_x is None or self._cross_hair_y is None:
-            self._cross_hair_x = w // 2
-            self._cross_hair_y = h // 2
-
-        self.update()
+        return scaled
 
     def clear_preview(self) -> None:
         self._pixmap = None
@@ -193,7 +232,29 @@ class RoiPreviewLabel(QLabel):
         painter.setRenderHint(QPainter.Antialiasing)
         painter.fillRect(self.rect(), QColor(theme.bg_secondary))
 
-        if self._pixmap is not None:
+        if self._comparison_mode and self._reference_pixmap is not None:
+            # 左右对比：左侧基准图，右侧实时图
+            ref_pix = self._reference_pixmap
+            live_pix = self._pixmap
+
+            gap = 8
+            total_w = ref_pix.width() + (live_pix.width() if live_pix is not None else 0) + gap
+            x = (self.width() - total_w) // 2
+            y = (self.height() - ref_pix.height()) // 2
+
+            painter.drawPixmap(x, y, ref_pix)
+            self._draw_image_label(painter, x, y, ref_pix.width(), "基准图", theme)
+
+            if live_pix is not None:
+                live_x = x + ref_pix.width() + gap
+                live_y = (self.height() - live_pix.height()) // 2
+                painter.drawPixmap(live_x, live_y, live_pix)
+                self._draw_image_label(painter, live_x, live_y, live_pix.width(), "实时图", theme)
+
+            # 绘制 ROI（仅针对实时图区域）
+            if live_pix is not None:
+                self._draw_roi_on_comparison(painter, live_x, live_y, live_pix)
+        elif self._pixmap is not None:
             x = (self.width() - self._pixmap.width()) // 2
             y = (self.height() - self._pixmap.height()) // 2
             painter.drawPixmap(x, y, self._pixmap)
@@ -279,6 +340,45 @@ class RoiPreviewLabel(QLabel):
             int(rw * scale_x),
             int(rh * scale_y),
         )
+
+    def _draw_image_label(
+        self,
+        painter: QPainter,
+        x: int,
+        y: int,
+        width: int,
+        label: str,
+        theme: Theme,
+    ) -> None:
+        """在图像左上角绘制半透明标签。"""
+        painter.setPen(QColor(theme.text_primary))
+        painter.setFont(QFont("Microsoft YaHei", 10, QFont.Bold))
+        text_rect = painter.boundingRect(x + 4, y + 4, width - 8, 20, Qt.AlignLeft, label)
+        painter.fillRect(text_rect.adjusted(-2, -2, 2, 2), QColor(0, 0, 0, 160))
+        painter.setPen(QColor(255, 255, 255))
+        painter.drawText(text_rect, Qt.AlignLeft, label)
+
+    def _draw_roi_on_comparison(
+        self,
+        painter: QPainter,
+        pix_x: int,
+        pix_y: int,
+        pixmap: QPixmap,
+    ) -> None:
+        """在对比模式的实时图区域绘制 ROI。"""
+        if self._roi is None or self._original_image is None:
+            return
+        scale_x = pixmap.width() / self._original_image.shape[1]
+        scale_y = pixmap.height() / self._original_image.shape[0]
+        rx, ry, rw, rh = self._roi
+        dx = int(rx * scale_x) + pix_x
+        dy = int(ry * scale_y) + pix_y
+        dw = int(rw * scale_x)
+        dh = int(rh * scale_y)
+        pen = QPen(QColor(self._theme.roi_border))
+        pen.setWidth(2)
+        painter.setPen(pen)
+        painter.drawRect(dx, dy, dw, dh)
 
     def _is_near_line(self, ex: int, ey: int) -> Optional[str]:
         """判断鼠标是否靠近某条剖面线，返回 'h' / 'v' / None。"""
@@ -870,3 +970,168 @@ class RgbProfilePlot(QWidget):
         painter.drawText(px - 30, py + plot_h, f"{v_min:.0f}")
         painter.drawText(px, py + plot_h + 16, "0")
         painter.drawText(px + plot_w - 16, py + plot_h + 16, f"{n}")
+
+
+class LoopSummaryDialog(QDialog):
+    """
+    闭环结束后弹出的 2x2 图像变化回顾弹窗。
+
+    从采集到的快照中自动挑选：
+      - 基准图（若有）
+      - 循环早期
+      - 循环中期
+      - 循环末期
+    以 2x2 网格展示，帮助人眼快速回顾聚焦变化过程。
+    """
+
+    def __init__(
+        self,
+        snapshots: List[Tuple[int, np.ndarray]],
+        reference_image: Optional[np.ndarray] = None,
+        parent: Optional[QWidget] = None,
+    ) -> None:
+        super().__init__(parent)
+        self.setWindowTitle("闭环聚焦变化回顾")
+        self.resize(900, 700)
+        self._theme = get_theme("light")
+        self._build_ui(snapshots, reference_image)
+
+    def _build_ui(
+        self,
+        snapshots: List[Tuple[int, np.ndarray]],
+        reference_image: Optional[np.ndarray],
+    ) -> None:
+        layout = QVBoxLayout(self)
+        layout.setSpacing(12)
+        layout.setContentsMargins(16, 16, 16, 16)
+
+        # 标题
+        title = QLabel("2x2 聚焦变化过程")
+        title.setAlignment(Qt.AlignCenter)
+        title.setStyleSheet(
+            f"font-size: 16px; font-weight: bold; color: {self._theme.text_primary};"
+        )
+        layout.addWidget(title)
+
+        # 2x2 图像网格
+        grid = QGridLayout()
+        grid.setSpacing(12)
+        images = self._select_images(snapshots, reference_image)
+        positions = [(0, 0), (0, 1), (1, 0), (1, 1)]
+        for (cycle, img, label), (row, col) in zip(images, positions):
+            card = self._build_image_card(img, label, cycle)
+            grid.addWidget(card, row, col)
+        layout.addLayout(grid, 1)
+
+        # 关闭按钮
+        btn_layout = QHBoxLayout()
+        btn_layout.addStretch()
+        close_btn = QPushButton("关闭")
+        close_btn.setMinimumWidth(100)
+        close_btn.clicked.connect(self.accept)
+        btn_layout.addWidget(close_btn)
+        btn_layout.addStretch()
+        layout.addLayout(btn_layout)
+
+    def _select_images(
+        self,
+        snapshots: List[Tuple[int, np.ndarray]],
+        reference_image: Optional[np.ndarray],
+    ) -> List[Tuple[int, np.ndarray, str]]:
+        """挑选 4 张最具代表性的图像：基准、早期、中期、末期。"""
+        result: List[Tuple[int, np.ndarray, str]] = []
+        has_ref = reference_image is not None
+        if has_ref:
+            result.append((0, reference_image, "基准图"))
+
+        if not snapshots:
+            # 没有快照时，用基准图占位
+            while len(result) < 4 and has_ref:
+                result.append((0, reference_image, "基准图"))
+            return result
+
+        # 按轮次排序并去重（保留每个轮次第一次出现的图像）
+        seen_cycles: set = set()
+        ordered: List[Tuple[int, np.ndarray]] = []
+        for cycle, img in snapshots:
+            if cycle not in seen_cycles:
+                ordered.append((cycle, img))
+                seen_cycles.add(cycle)
+        ordered.sort(key=lambda x: x[0])
+
+        need = 4 - len(result)
+        n = len(ordered)
+        if need <= 0:
+            return result[:4]
+
+        if n == 1:
+            picks = [ordered[0]]
+        elif n == 2:
+            picks = [ordered[0], ordered[-1]]
+        elif n == 3:
+            if need == 1:
+                picks = [ordered[-1]]
+            elif need == 2:
+                picks = [ordered[0], ordered[-1]]
+            else:
+                picks = [ordered[0], ordered[1], ordered[-1]]
+        else:
+            if need == 1:
+                picks = [ordered[-1]]
+            elif need == 2:
+                picks = [ordered[0], ordered[-1]]
+            elif need == 3:
+                picks = [ordered[0], ordered[n // 2], ordered[-1]]
+            else:
+                # 无基准图时：早期、1/3、2/3、末期
+                picks = [
+                    ordered[0],
+                    ordered[n // 3],
+                    ordered[2 * n // 3],
+                    ordered[-1],
+                ]
+
+        labels = ["早期", "过程 1", "过程 2", "末期"]
+        for i, (cycle, img) in enumerate(picks[:need]):
+            result.append((cycle, img, labels[i]))
+
+        # 兜底补齐 4 张
+        while len(result) < 4 and ordered:
+            cycle, img = ordered[-1]
+            result.append((cycle, img, "末期"))
+        return result[:4]
+
+    def _build_image_card(
+        self,
+        image: np.ndarray,
+        label: str,
+        cycle: int,
+    ) -> QWidget:
+        """构建单张图像卡片（含标签）。"""
+        card = QWidget()
+        card.setStyleSheet(
+            f"background-color: {self._theme.bg_secondary}; "
+            f"border: 1px solid {self._theme.border}; border-radius: 4px;"
+        )
+        layout = QVBoxLayout(card)
+        layout.setContentsMargins(8, 8, 8, 8)
+        layout.setSpacing(6)
+
+        title = QLabel(f"{label}  第 {cycle} 轮" if cycle > 0 else label)
+        title.setStyleSheet(
+            f"color: {self._theme.text_primary}; font-weight: bold; border: none;"
+        )
+        title.setAlignment(Qt.AlignCenter)
+        layout.addWidget(title)
+
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setStyleSheet("border: none; background-color: transparent;")
+        preview = RoiPreviewLabel()
+        preview.setAlignment(Qt.AlignCenter)
+        preview.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        preview.setMinimumSize(280, 220)
+        preview.set_preview_image(image)
+        scroll.setWidget(preview)
+        layout.addWidget(scroll, 1)
+        return card

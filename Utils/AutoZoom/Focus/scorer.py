@@ -211,6 +211,9 @@ class FocusScorer:
             "roi_metric_ref": ref_values,
             "reference_dir": str(ref_dir) if ref_dir else None,
             "focus_score_ref": 1.0,
+            # 保存第一张 ROI 图像作为基准图，供 UI 实时对比使用
+            "roi_rgb": live.get("roi_rgb"),
+            "full_rgb": live.get("full_rgb"),
         }
         self.focus_reference_ready = True
 
