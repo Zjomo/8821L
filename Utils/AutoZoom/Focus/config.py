@@ -69,14 +69,23 @@ class AutofocusConfig:
     autofocus_enabled: bool = True
     """是否启用自动补焦"""
 
-    autofocus_focus_trigger_ratio: float = 0.90
-    """FocusScore_ratio 低于此值开始计数"""
+    autofocus_focus_trigger_ratio: float = 0.95
+    """FocusScore_ratio 低于此值开始计数；默认 0.95"""
 
     autofocus_focus_trigger_count: int = 3
     """连续 N 轮低于触发值则启动补焦"""
 
     autofocus_stop_ratio: float = 0.95
-    """闭环补焦的目标 FocusScore_ratio，达到即停止"""
+    """闭环补焦的目标 FocusScore_ratio，达到即停止；也称为目标阈值"""
+
+    autofocus_passive_mode: bool = False
+    """被动补焦模式：触发后连续搜索，直到分数回到触发阈值以上（或达到最大尝试次数）"""
+
+    autofocus_passive_max_attempts: int = 10
+    """被动补焦单轮最大连续尝试次数"""
+
+    autofocus_passive_consecutive_good: int = 3
+    """被动补焦模式下，FocusScore 连续多少轮大于触发阈值后自动停止循环"""
 
     # -------------------- SHG 补焦触发阈值（可选） --------------------
     autofocus_shg_trigger_ratio: float = 0.90

@@ -91,9 +91,12 @@ python Focus/main.py --demo-sim --strategy curve_fit --cycles 10
 | `focus_weight_smd` | `0.0` | 灰度差分和（SMD）权重 |
 | `focus_weight_entropy` | `0.0` | 直方图熵权重 |
 | `autofocus_enabled` | `True` | 启用自动补焦 |
-| `autofocus_focus_trigger_ratio` | `0.90` | FocusScore 触发阈值 |
+| `autofocus_focus_trigger_ratio` | `0.95` | FocusScore 触发阈值 |
 | `autofocus_focus_trigger_count` | `3` | 连续触发次数 |
-| `autofocus_stop_ratio` | `0.95` | 补焦目标值 |
+| `autofocus_stop_ratio` | `0.95` | 补焦目标值；闭环搜索达到该 FocusScore_ratio 即停止 |
+| `autofocus_passive_mode` | `False` | 被动补焦模式：勾选后忽略循环轮数，按间隔运行 |
+| `autofocus_passive_max_attempts` | `10` | 被动模式下单轮最大连续补焦尝试次数 |
+| `autofocus_passive_consecutive_good` | `3` | 被动模式下 FocusScore 连续达标轮数，达到后停止 |
 | `z_probe_steps` | `10` | 试探步数 |
 | `z_search_steps` | `10` | 搜索步数 |
 | `z_settle_time_s` | `0.20` | 移动后稳定等待时间 (s) |
@@ -195,7 +198,17 @@ result = controller.check_and_autofocus(cycle_index=1, save_dir="output")
 # 内部完成: 截图 → 评分 → 判断 → 闭环搜索 → 最终截图
 ```
 
-### 6. `search.py` — 搜索策略
+### 6. 被动补焦模式说明
+
+在 UI 的“循环参数”中勾选 **启用被动补焦** 后，工作线程进入被动模式：
+
+- **忽略循环轮数**：不再受 `cycles` 限制，仅按“间隔”参数周期性运行。
+- **每轮执行一次补焦判断**：调用 `check_and_autofocus()`，若 FocusScore 低于触发阈值，控制器内部会执行一次闭环搜索；若高于触发阈值，则仅监测不移动。
+- **连续达标停止**：当 FocusScore 连续 `autofocus_passive_consecutive_good` 轮大于触发阈值时，自动停止循环。
+- **手动停止**：点击“停止”按钮可随时中断循环。
+- **自动补焦禁用时退化为主动模式**：若 `autofocus_enabled=False`，即使勾选了被动模式，也按主动模式受 `cycles` 限制。
+
+### 7. `search.py` — 搜索策略
 
 可插拔的搜索策略实现，供 `AutofocusController.run_closed_loop()` 调用：
 
@@ -245,8 +258,49 @@ FocusScore_ratio = weighted_mean(metric_current / metric_ref)
 ```
 
 - `FocusScore_ratio ≈ 1.0` 表示当前聚焦状态与参考一致
-- `FocusScore_ratio < 0.9` 提示聚焦退化，可能需要补焦
+- `FocusScore_ratio < 0.95` 提示聚焦退化，可能需要补焦
 - `FocusScore_ratio ≥ 0.95` 视为聚焦已恢复
+
+---
+
+## FocusScore_ratio 含义与使用注意事项
+
+### 1. FocusScore_ratio 是否只与图像清晰度相关，与参考图中的物体形状关系不大？
+
+**不是完全无关。**
+`FocusScore_ratio` 是若干聚焦指标的加权均值：
+
+```
+FocusScore_ratio = Σ(w_i · metric_i_current / metric_i_ref)
+```
+
+默认指标 `highfreq_ratio`、`tenengrad`、`brenner` 主要反映高频能量和梯度，与清晰度高度相关；但 `red_blue_ratio` 反映的是颜色通道比例，和清晰度无关。更关键的是，所有指标都基于 ROI 内的实际图像内容计算。如果参考图像与当前图像的 **物体形状、位置、照明、对比度** 发生变化，即使光学焦点未变，指标比值也会变化。因此，在样品稳定、照明一致、ROI 内容不变的情况下，FocusScore_ratio 主要反映清晰度；在样品形貌或 ROI 内容变化时，它会受到内容变化的干扰。
+
+### 2. 大于 1 是否说明当前图像相较于之前还更加清晰？
+
+**通常是的，但不绝对。**
+参考建立时把各指标均值作为分母，理论上参考对应 `ratio = 1.0`。当前值大于 1 意味着加权后的清晰度量高于参考。但可能由以下非聚焦因素导致：
+
+- 噪声或对比度增强；
+- 样品结构变化引入更多边缘；
+- 过曝、照明增强；
+- 某些指标被限幅到 `[0, 2.5]`，极端值被截断。
+
+因此 `>1` 只能作为“当前 ROI 看起来比参考更清晰”的统计指示，不能等同于光学聚焦绝对更优。
+
+### 3. 是否存在 BUG 或需要注意的地方？
+
+1. **ratio 限幅导致失真**  
+   `score_ratio()` 把每个分量限幅在 `[0, 2.5]`。若参考值很小或当前值极大，比值被截断，可能掩盖真实退化或异常。
+
+2. **参考值接近零时分母不稳定**  
+   当某个参考指标接近 0 或为 `None` 时，该分量被直接跳过。若所有加权分量都失效，分数返回 `None`，此时不会触发补焦，UI 上表现为无分数。
+
+3. **触发阈值与目标阈值的关系**  
+   触发阈值用于判断是否需要补焦，目标阈值（`autofocus_stop_ratio`）用于闭环搜索停止。两者通常保持一致（默认均为 0.95），若目标阈值显著高于触发阈值，搜索可能在未达到目标时就因策略限制而结束。
+
+4. **被动补焦模式的连续移动风险**  
+   被动模式会在分数未恢复时连续调用补焦搜索，务必通过 `autofocus_passive_max_attempts` 限制最大尝试次数，避免 Z 轴无限震荡或机械行程超限。
 
 ---
 

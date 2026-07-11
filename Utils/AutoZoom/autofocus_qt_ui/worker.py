@@ -207,6 +207,17 @@ class AutofocusWorker(QObject):
                 self._controller.metrics_calc.capture_and_save = safe_capture_and_save
                 monkey_patched = True
 
+            # 被动模式仅在自动补焦启用时生效；否则退化为主动模式，受 cycles 限制
+            passive_mode = (
+                getattr(self._cfg, "autofocus_passive_mode", False)
+                and self._cfg.autofocus_enabled
+            )
+            trigger_ratio = float(self._cfg.autofocus_focus_trigger_ratio)
+            passive_consecutive_good = max(
+                1, int(getattr(self._cfg, "autofocus_passive_consecutive_good", 3))
+            )
+            consecutive_good_count = 0
+
             while self._state.running:
                 while self._state.paused and self._state.running:
                     time.sleep(0.1)
@@ -214,15 +225,17 @@ class AutofocusWorker(QObject):
                     break
 
                 self._state.cycle_index += 1
-                if cycles > 0 and self._state.cycle_index > cycles:
+                cycle = self._state.cycle_index
+
+                # 主动模式才受循环轮数限制；被动模式忽略 cycles
+                if not passive_mode and cycles > 0 and cycle > cycles:
                     break
 
-                cycle = self._state.cycle_index
                 cycle_save_dir = save_dir / f"cycle_{cycle:04d}"
                 cycle_save_dir.mkdir(parents=True, exist_ok=True)
 
                 self.log.emit(f"========== 第 {cycle} 轮 ==========")
-                self.status_changed.emit(True, cycle, cycles)
+                self.status_changed.emit(True, cycle, 0 if passive_mode else cycles)
 
                 # save_dir=None 强制走 capture_live（已被 monkey-patch 到主线程安全采集）
                 result = self._controller.check_and_autofocus(
@@ -238,13 +251,35 @@ class AutofocusWorker(QObject):
                     self.score_updated.emit(cycle, score)
                     self.log.emit(f"第 {cycle} 轮 FocusScore_ratio = {score:.4f}")
 
+                # 被动补焦：统计连续达标轮数，达标 n 轮后自动停止
+                if passive_mode and self._cfg.autofocus_enabled and score is not None:
+                    if score > trigger_ratio:
+                        consecutive_good_count += 1
+                        self.log.emit(
+                            f"[被动补焦] 分数达标 {score:.4f} > {trigger_ratio}, "
+                            f"连续达标 {consecutive_good_count}/{passive_consecutive_good}"
+                        )
+                        if consecutive_good_count >= passive_consecutive_good:
+                            self.log.emit(
+                                f"[被动补焦] 连续达标 {passive_consecutive_good} 轮，停止循环"
+                            )
+                            break
+                    else:
+                        consecutive_good_count = 0
+                        self.log.emit(
+                            f"[被动补焦] 分数未达标 {score:.4f} <= {trigger_ratio}，"
+                            "本轮已触发补焦，进入常规等待"
+                        )
+
                 if self._simulator is not None:
                     virtual_z = self._simulator.virtual_z_axis.get_position()
                     self._state.virtual_z = virtual_z
                     self.log.emit(f"虚拟 Z 位置 = {virtual_z}")
                     self._simulator.next_cycle()
 
-                if cycles <= 0 or cycle < cycles:
+                # 被动模式或主动模式非最后一轮时等待间隔
+                should_wait = passive_mode or cycles <= 0 or cycle < cycles
+                if self._state.running and should_wait:
                     self.log.emit(f"等待 {interval}s 后进行下一轮...")
                     slept = 0.0
                     while slept < interval and self._state.running and not self._state.paused:

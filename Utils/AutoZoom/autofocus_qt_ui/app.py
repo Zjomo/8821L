@@ -86,7 +86,11 @@ from .config import (
     DEFAULT_FOCUS_ROI,
     DEFAULT_INTERVAL_S,
     DEFAULT_OUTPUT_DIR,
+    DEFAULT_PASSIVE_CONSECUTIVE_GOOD,
+    DEFAULT_PASSIVE_MAX_ATTEMPTS,
+    DEFAULT_PASSIVE_MODE,
     DEFAULT_SEARCH_STRATEGY,
+    DEFAULT_STOP_RATIO,
     DEFAULT_TRIGGER_COUNT,
     DEFAULT_TRIGGER_RATIO,
     DEFAULT_WINDOW_TITLE,
@@ -125,8 +129,11 @@ class UiRuntimeArgs:
     z_picomotor_backend: str = "auto"
     autofocus_enabled: bool = True
     trigger_ratio: float = DEFAULT_TRIGGER_RATIO
-    stop_ratio: float = 0.95
+    stop_ratio: float = DEFAULT_STOP_RATIO
     trigger_count: int = DEFAULT_TRIGGER_COUNT
+    passive_mode: bool = DEFAULT_PASSIVE_MODE
+    passive_max_attempts: int = DEFAULT_PASSIVE_MAX_ATTEMPTS
+    passive_consecutive_good: int = DEFAULT_PASSIVE_CONSECUTIVE_GOOD
     search_strategy: str = DEFAULT_SEARCH_STRATEGY
     demo_sim: bool = False
 
@@ -364,7 +371,11 @@ class AutofocusMainWindow(QMainWindow):
         self.stop_ratio_spin = QDoubleSpinBox()
         self.stop_ratio_spin.setRange(0.1, 1.0)
         self.stop_ratio_spin.setSingleStep(0.05)
-        self.stop_ratio_spin.setValue(0.95)
+        self.stop_ratio_spin.setValue(DEFAULT_STOP_RATIO)
+        self.stop_ratio_spin.setToolTip(
+            "闭环补焦搜索停止并认为聚焦已恢复时的 FocusScore_ratio；\n"
+            "达到该值即停止 Z 轴移动，也称为目标阈值。"
+        )
         focus_layout.addRow("目标阈值:", self.stop_ratio_spin)
 
         self.trigger_count_spin = QSpinBox()
@@ -412,6 +423,31 @@ class AutofocusMainWindow(QMainWindow):
         self.interval_spin.setSingleStep(0.5)
         self.interval_spin.setValue(DEFAULT_INTERVAL_S)
         loop_layout.addRow("间隔 (s):", self.interval_spin)
+
+        self.passive_check = QCheckBox("启用被动补焦")
+        self.passive_check.setChecked(DEFAULT_PASSIVE_MODE)
+        self.passive_check.setToolTip(
+            "开启后，当本轮 FocusScore 低于触发阈值时，\n"
+            "后台会连续进行补焦，直到分数回升到触发阈值以上\n"
+            "或达到下方设置的最大连续次数。"
+        )
+        loop_layout.addRow("", self.passive_check)
+
+        self.passive_attempts_spin = QSpinBox()
+        self.passive_attempts_spin.setRange(1, 50)
+        self.passive_attempts_spin.setValue(DEFAULT_PASSIVE_MAX_ATTEMPTS)
+        self.passive_attempts_spin.setToolTip(
+            "被动补焦模式下，单轮分数未达标时连续补焦的最大尝试次数/安全上限。"
+        )
+        loop_layout.addRow("最大连续补焦次数:", self.passive_attempts_spin)
+
+        self.passive_good_spin = QSpinBox()
+        self.passive_good_spin.setRange(1, 100)
+        self.passive_good_spin.setValue(DEFAULT_PASSIVE_CONSECUTIVE_GOOD)
+        self.passive_good_spin.setToolTip(
+            "被动补焦模式下，FocusScore 连续多少轮超过触发阈值后自动停止循环。"
+        )
+        loop_layout.addRow("连续达标次数:", self.passive_good_spin)
 
         self.output_edit = QLineEdit(DEFAULT_OUTPUT_DIR)
         self.output_btn = QPushButton("浏览...")
@@ -601,6 +637,8 @@ class AutofocusMainWindow(QMainWindow):
         self.zoom_combo.currentTextChanged.connect(self._on_zoom_changed)
         self.detect_spots_btn.clicked.connect(self._on_detect_spots)
 
+        self.passive_check.stateChanged.connect(self._on_passive_changed)
+
     def _apply_default_values(self) -> None:
         self._on_mode_changed(0)
         self.video_path_edit.setEnabled(False)
@@ -621,6 +659,15 @@ class AutofocusMainWindow(QMainWindow):
         except Exception:
             self.capture_area_edit.setText(", ".join(str(v) for v in DEFAULT_CAPTURE_AREA))
             self.focus_roi_edit.setText(", ".join(str(v) for v in DEFAULT_FOCUS_ROI))
+
+        # 根据被动模式初始状态禁用/启用循环轮数
+        self._on_passive_changed(self.passive_check.checkState())
+
+    def _on_passive_changed(self, state) -> None:
+        """被动模式开关变化时禁用/启用循环轮数。"""
+        from autofocus_qt_ui.qt_compat import Qt
+        is_passive = (state == Qt.Checked)
+        self.cycles_spin.setEnabled(not is_passive)
 
     def _collect_args(self) -> UiRuntimeArgs:
         args = UiRuntimeArgs()
@@ -647,6 +694,9 @@ class AutofocusMainWindow(QMainWindow):
         args.trigger_ratio = self.trigger_ratio_spin.value()
         args.stop_ratio = self.stop_ratio_spin.value()
         args.trigger_count = self.trigger_count_spin.value()
+        args.passive_mode = self.passive_check.isChecked()
+        args.passive_max_attempts = self.passive_attempts_spin.value()
+        args.passive_consecutive_good = self.passive_good_spin.value()
         args.search_strategy = self.strategy_combo.currentText()
         args.demo_sim = False
         return args
@@ -1110,6 +1160,9 @@ class AutofocusMainWindow(QMainWindow):
             "autofocus_focus_trigger_ratio": args.trigger_ratio,
             "autofocus_stop_ratio": args.stop_ratio,
             "autofocus_focus_trigger_count": args.trigger_count,
+            "autofocus_passive_mode": args.passive_mode,
+            "autofocus_passive_max_attempts": args.passive_max_attempts,
+            "autofocus_passive_consecutive_good": args.passive_consecutive_good,
             "z_search_strategy": args.search_strategy,
             "usb_device_index": args.usb_device,
         }
@@ -1413,7 +1466,11 @@ class AutofocusMainWindow(QMainWindow):
         self.pause_btn.setEnabled(running)
         self.pause_btn.setText("暂停")
         self.mode_combo.setEnabled(not running)
-        self.cycles_spin.setEnabled(not running)
+        # 被动模式下循环轮数始终禁用；停止运行后根据被动状态恢复
+        if running:
+            self.cycles_spin.setEnabled(False)
+        else:
+            self.cycles_spin.setEnabled(not self.passive_check.isChecked())
 
     def _choose_output_dir(self) -> None:
         path = QFileDialog.getExistingDirectory(self, "选择输出目录", self.output_edit.text())
