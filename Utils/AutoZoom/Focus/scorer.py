@@ -238,3 +238,94 @@ class FocusScorer:
             f"red_blue_ref={ref_values.get('red_blue_ratio')}"
         )
         return self.focus_reference
+
+    def build_reference_from_image(
+        self,
+        image_rgb: np.ndarray,
+        output_root: Optional[Path] = None,
+        on_log: Optional[callable] = None,
+    ) -> Dict[str, Any]:
+        """
+        以单张 RGB 图像建立聚焦参考。
+
+        与 build_reference() 不同，这里不再多次实时采集，而是直接把输入图像的
+        ROI 区域指标作为参考，适用于“手动截图即基准图”的场景。
+
+        参数
+        ----------
+        image_rgb : np.ndarray
+            整张 RGB 图像。
+        output_root : Path, optional
+            保存参考截图的根目录。
+        on_log : callable, optional
+            日志回调。
+
+        返回
+        -------
+        focus_reference dict
+        """
+        _log = on_log or logger.info
+        _log("[聚焦参考] 从单张图像建立参考")
+
+        if image_rgb is None or image_rgb.size == 0:
+            raise ValueError("image_rgb 不能为空")
+
+        roi = self.metrics_calc.clamp_roi(
+            tuple(self.cfg.focus_roi), image_rgb.shape
+        )
+        x, y, rw, rh = roi
+        roi_rgb = image_rgb[y : y + rh, x : x + rw].copy()
+        roi_metrics = self.metrics_calc.compute_for_image(roi_rgb)
+
+        ref_dir = None
+        if output_root is not None:
+            ref_dir = (
+                Path(output_root)
+                / "focus_reference"
+                / datetime.now().strftime("%Y%m%d_%H%M%S")
+            )
+            ref_dir.mkdir(parents=True, exist_ok=True)
+            try:
+                from PIL import Image as PILImage
+
+                PILImage.fromarray(image_rgb).save(
+                    ref_dir / "reference_full.png"
+                )
+                PILImage.fromarray(roi_rgb).save(
+                    ref_dir / "reference_roi.png"
+                )
+            except Exception:
+                pass
+
+        self.focus_reference = {
+            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "capture_count": 1,
+            "roi": list(roi),
+            "roi_metric_ref": roi_metrics,
+            "reference_dir": str(ref_dir) if ref_dir else None,
+            "focus_score_ref": 1.0,
+            "roi_rgb": roi_rgb,
+            "full_rgb": image_rgb,
+        }
+        self.focus_reference_ready = True
+
+        if ref_dir is not None:
+            try:
+                ref_csv = ref_dir / "focus_reference_metrics.csv"
+                with ref_csv.open("w", encoding="utf-8-sig", newline="") as f:
+                    writer = csv.writer(f)
+                    writer.writerow(["metric", "reference_mean"])
+                    for name in FOCUS_METRIC_NAMES:
+                        writer.writerow([name, roi_metrics.get(name)])
+                _log(f"[聚焦参考] 参考指标已保存：{ref_csv}")
+            except Exception as e:
+                _log(f"[聚焦参考] 保存 CSV 失败：{e}")
+
+        _log(
+            "[聚焦参考] 单图参考建立完成："
+            f"highfreq_ref={roi_metrics.get('highfreq_ratio')}, "
+            f"tenengrad_ref={roi_metrics.get('tenengrad')}, "
+            f"brenner_ref={roi_metrics.get('brenner')}, "
+            f"red_blue_ref={roi_metrics.get('red_blue_ratio')}"
+        )
+        return self.focus_reference

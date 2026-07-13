@@ -120,13 +120,16 @@ except Exception:
     from logic.actual_nano_boundary_following_sam2VideoAB_xyStep_detailed_pathfix import ActualNanoBoundaryFollower
 from logic.rule_ac_fixed import RuleACConfig, RuleACOverlapController
 
+from Focus.config import AutofocusConfig
+from spectrum_autofocus_loop import SpectrumAutofocusLoop
+
 
 @dataclass
 class MeasurementConfig:
     # 硬件模式："real" 连接 Newport / Thorlabs / LabVIEW；"virtual" 不连接任何真实硬件。
     # virtual 模式保留完整测量主逻辑、标定、Step1/Step7/Step9、角度检测与保存字段；
     # 只是把硬件动作替换为日志成功返回，把光谱仪替换为虚拟光谱或回放光谱。
-    hardware_mode: str = str(_cfg("hardware_mode", "virtual"))
+    hardware_mode: str = str(_cfg("hardware_mode", "real"))
     virtual_spectrum_mode: str = str(_cfg("virtual_spectrum_mode", "gaussian"))  # gaussian / replay_csv
     virtual_spectrum_replay_csv: str = str(_cfg("virtual_spectrum_replay_csv", ""))
     virtual_spectrum_points: int = int(_cfg("virtual_spectrum_points", 1024))
@@ -160,7 +163,7 @@ class MeasurementConfig:
 
     save_root: str = str(_cfg("save_root", "measurement_output"))
 
-    light_port: str = str(_cfg("light_port", "COM17"))
+    light_port: str = str(_cfg("light_port", "COM20"))
 
     rigol_visa: str = str(_cfg("rigol_visa", "USB0::0x1AB1::0x0641::DG4E192200870::INSTR"))
     rigol_timeout_ms: int = int(_cfg("rigol_timeout_ms", 3000))
@@ -179,7 +182,7 @@ class MeasurementConfig:
     ch2_delay_s: float = float(_cfg("ch2_delay_s", 0.0))
 
     # 角度检测：使用 YOLO-OBB，方式与第二个代码一致：固定截图区域 -> OBB 四角 -> 最长边角度。
-    angle_model_path: str = str(_cfg("angle_model_path", r"runs/obb/bn_up_obb/weights/best.pt"))
+    angle_model_path: str = str(_cfg("angle_model_path", r".\vision\best_wan12.2.pt"))
     capture_area: Tuple[int, int, int, int] = tuple(_cfg("capture_area", (116, 100, 1112, 850)))  # type: ignore
     angle_output_dir: str = str(_cfg("angle_output_dir", "outputs/captured_frames"))
     angle_conf: float = float(_cfg("angle_conf", 0.5))
@@ -12446,7 +12449,7 @@ class MeasurementWorkflow:
         Step 1：角度检测一次，得到 current_angle
         Step 2：生成保存路径
         Step 3：照明光 OFF，并按 stable_wait_ms 等待稳定
-        Step 4：LabVIEW 光谱采集
+        Step 4：LabVIEW 光谱采集【停2min，】
         Step 5：照明光 ON
         Step 5.5：保存本轮数据；保存角度使用 Step1 的 YOLO-OBB baseline 原始角度。
         Step 6：打开激光
@@ -13062,6 +13065,11 @@ class MeasurementWorkflowGUI:
         self.rule_ab_active_follower: Optional[ActualNanoBoundaryFollower] = None
         self.rule_ab_controller_stop_requested = False
 
+        # 光谱补焦循环状态
+        self.spectrum_autofocus_loop: Optional[SpectrumAutofocusLoop] = None
+        self.spectrum_autofocus_thread: Optional[threading.Thread] = None
+        self.spectrum_autofocus_stop_requested = False
+
         self.fig: Optional[Figure] = None
         self.ax_fit_peak = None
         self.ax_raw = None
@@ -13594,6 +13602,68 @@ class MeasurementWorkflowGUI:
         ttk.Button(rule_buttons, text="停止1/2轴运动", command=self.stop_step9_stage12_thread).grid(row=1, column=0, columnspan=4, padx=4, pady=3, sticky="ew")
         ttk.Label(rule_frame, textvariable=self.rule_module_status_var, wraplength=450).grid(
             row=17, column=0, columnspan=4, padx=4, pady=(4, 0), sticky="w"
+        )
+
+        # =====================================================
+        # 左侧 9：光谱补焦循环
+        # =====================================================
+        saf_frame = ttk.LabelFrame(
+            left_inner,
+            text="9. 光谱补焦循环",
+            padding=10,
+            style="Panel.TLabelframe",
+        )
+        saf_frame.pack(fill=tk.X, padx=4, pady=(0, 8))
+
+        self.saf_roi_var = tk.StringVar(value="0,0,300,300")
+        self.saf_output_dir_var = tk.StringVar(value="focus_output")
+        self.saf_status_var = tk.StringVar(value="光谱补焦循环：未启动")
+        self.saf_max_cycles_var = tk.IntVar(value=0)
+
+        saf_frame.columnconfigure(1, weight=1)
+        ttk.Label(saf_frame, text="Focus ROI(x,y,w,h)").grid(
+            row=0, column=0, padx=4, pady=4, sticky="w"
+        )
+        ttk.Entry(saf_frame, textvariable=self.saf_roi_var).grid(
+            row=0, column=1, padx=4, pady=4, sticky="ew"
+        )
+        ttk.Button(saf_frame, text="选择ROI", command=self.select_saf_roi_thread).grid(
+            row=0, column=2, padx=4, pady=4, sticky="ew"
+        )
+
+        ttk.Label(saf_frame, text="输出目录").grid(
+            row=1, column=0, padx=4, pady=4, sticky="w"
+        )
+        ttk.Entry(saf_frame, textvariable=self.saf_output_dir_var).grid(
+            row=1, column=1, padx=4, pady=4, sticky="ew"
+        )
+
+        ttk.Label(saf_frame, text="最大轮数(0=无限)").grid(
+            row=2, column=0, padx=4, pady=4, sticky="w"
+        )
+        ttk.Entry(saf_frame, textvariable=self.saf_max_cycles_var, width=10).grid(
+            row=2, column=1, padx=4, pady=4, sticky="w"
+        )
+
+        saf_buttons = ttk.Frame(saf_frame)
+        saf_buttons.grid(row=3, column=0, columnspan=3, padx=2, pady=4, sticky="ew")
+        saf_buttons.columnconfigure(0, weight=1)
+        saf_buttons.columnconfigure(1, weight=1)
+        ttk.Button(
+            saf_buttons,
+            text="开始光谱补焦循环",
+            command=self.start_spectrum_autofocus_loop_thread,
+            style="Primary.TButton",
+        ).grid(row=0, column=0, padx=4, pady=3, sticky="ew")
+        ttk.Button(
+            saf_buttons,
+            text="停止光谱补焦循环",
+            command=self.stop_spectrum_autofocus_loop,
+            style="Danger.TButton",
+        ).grid(row=0, column=1, padx=4, pady=3, sticky="ew")
+
+        ttk.Label(saf_frame, textvariable=self.saf_status_var, wraplength=450).grid(
+            row=4, column=0, columnspan=3, padx=4, pady=(4, 0), sticky="w"
         )
 
         # =====================================================
@@ -14697,7 +14767,7 @@ class MeasurementWorkflowGUI:
 
     def build_config_from_ui(self) -> MeasurementConfig:
         return MeasurementConfig(
-            hardware_mode=str(self.hardware_mode_var.get()).strip() or "virtual",
+            hardware_mode=str(self.hardware_mode_var.get()).strip() or "real",
             virtual_spectrum_mode=str(self.virtual_spectrum_mode_var.get()).strip() or "gaussian",
             virtual_spectrum_replay_csv=str(self.virtual_spectrum_replay_csv_var.get()).strip(),
 
@@ -16257,6 +16327,9 @@ class MeasurementWorkflowGUI:
         self.rule_ab_only_stop_requested = True
         self.rule_ab_controller_stop_requested = True
 
+        # 停止光谱补焦循环
+        self.spectrum_autofocus_stop_requested = True
+
         # 立即停止当前 RuleAB 的 Stage34，避免等待循环自然结束。
         self._stop_active_rule_ab_stage(reason="停止测量按钮")
 
@@ -16270,7 +16343,7 @@ class MeasurementWorkflowGUI:
 
             self.workflow.request_stop()
         self.set_var(self.flow_status_var, "流程状态：已请求停止")
-        self.log("[GUI] 已请求停止测量 / 单独A推动B / Step9 1/2轴")
+        self.log("[GUI] 已请求停止测量 / 单独A推动B / Step9 1/2轴 / 光谱补焦循环")
 
     def _stop_active_rule_ab_stage(self, reason: str = "用户请求") -> bool:
         """
@@ -17456,6 +17529,135 @@ class MeasurementWorkflowGUI:
 
         except Exception as e:
             self.log(f"[GUI] 关闭全部设备失败：{e}")
+
+    # --------------------------------------------------------
+    # 光谱补焦循环
+    # --------------------------------------------------------
+
+    def _parse_focus_roi(self, text: str) -> Tuple[int, int, int, int]:
+        """解析 Focus ROI 字符串为整数元组。"""
+        try:
+            parts = [p.strip() for p in str(text).split(",")]
+            if len(parts) != 4:
+                raise ValueError("格式应为 x,y,w,h")
+            return tuple(int(p) for p in parts)  # type: ignore
+        except Exception as e:
+            self.log(f"[光谱补焦] ROI 解析失败({text})：{e}，使用默认值")
+            return (0, 0, 300, 300)
+
+    def _make_saf_config(self) -> AutofocusConfig:
+        """根据 GUI 当前值构造 AutofocusConfig。"""
+        capture_area = tuple(
+            int(v) for v in self._parse_focus_roi(self.capture_area_var.get())
+        )
+        focus_roi = self._parse_focus_roi(self.saf_roi_var.get())
+        return AutofocusConfig(
+            capture_mode="screen_region",
+            capture_area=capture_area,
+            focus_roi=focus_roi,
+        )
+
+    def select_saf_roi_thread(self):
+        self.run_in_thread(self.select_saf_roi)
+
+    def select_saf_roi(self):
+        """交互式选择 Focus ROI 并建立参考；同时将 ROI 同步为新的截图区域。"""
+        try:
+            wf = self.ensure_workflow()
+            current_capture_area = self.parse_capture_area()
+            cfg = self._make_saf_config()
+            loop = SpectrumAutofocusLoop(
+                workflow=wf,
+                cfg=cfg,
+                output_dir=self.saf_output_dir_var.get().strip() or "focus_output",
+                on_log=self.log,
+                should_stop=lambda: False,
+            )
+            roi = loop.select_focus_roi_interactively()
+
+            # 将相对 ROI 转换为新的屏幕截图区域，Focus ROI 归一化为 (0,0,w,h)
+            new_capture_area, new_focus_roi = (
+                SpectrumAutofocusLoop.roi_to_screen_capture_area(
+                    current_capture_area, roi
+                )
+            )
+
+            # 同步回 GUI 输入框
+            self.capture_area_var.set(",".join(str(v) for v in new_capture_area))
+            self.saf_roi_var.set(",".join(str(v) for v in new_focus_roi))
+
+            # 同步 loop 与 workflow 配置
+            loop.cfg.capture_area = new_capture_area
+            loop.cfg.focus_roi = new_focus_roi
+            wf.cfg.capture_area = new_capture_area
+
+            # 清除已建参考，确保启动时按新的 capture_area 重新截图建立参考
+            loop._reference_image = None
+            loop._reference_ready = False
+            loop._metrics_calc = None
+            loop._scorer = None
+
+            self.spectrum_autofocus_loop = loop
+            self.set_var(
+                self.saf_status_var,
+                f"ROI 已选择：{new_focus_roi}，截图区域已同步为 {new_capture_area}，启动时将重建参考",
+            )
+        except Exception as e:
+            self.log(f"[光谱补焦] 选择 ROI 失败：{e}")
+            self.log(traceback.format_exc())
+
+    def start_spectrum_autofocus_loop_thread(self):
+        if self.spectrum_autofocus_thread is not None and self.spectrum_autofocus_thread.is_alive():
+            messagebox.showwarning("正在运行", "光谱补焦循环已在运行中。")
+            return
+        self.spectrum_autofocus_stop_requested = False
+        self.spectrum_autofocus_thread = self.run_in_thread(
+            self.start_spectrum_autofocus_loop
+        )
+
+    def start_spectrum_autofocus_loop(self):
+        """启动光谱补焦循环后台线程。"""
+        try:
+            self.set_var(self.saf_status_var, "光谱补焦循环：运行中")
+            wf = self.ensure_workflow()
+            cfg = self._make_saf_config()
+
+            # 复用已选择 ROI 的 loop 实例，否则新建
+            if (
+                self.spectrum_autofocus_loop is not None
+                and self.spectrum_autofocus_loop._roi_selected
+            ):
+                loop = self.spectrum_autofocus_loop
+                loop.cfg = cfg
+                loop.output_dir = Path(
+                    self.saf_output_dir_var.get().strip() or "focus_output"
+                )
+            else:
+                loop = SpectrumAutofocusLoop(
+                    workflow=wf,
+                    cfg=cfg,
+                    output_dir=self.saf_output_dir_var.get().strip()
+                    or "focus_output",
+                    on_log=self.log,
+                    should_stop=lambda: self.spectrum_autofocus_stop_requested,
+                )
+                self.spectrum_autofocus_loop = loop
+
+            loop.should_stop = lambda: self.spectrum_autofocus_stop_requested
+            loop.run(max_cycles=int(self.saf_max_cycles_var.get()))
+
+            self.set_var(self.saf_status_var, "光谱补焦循环：已结束")
+        except Exception as e:
+            self.log(f"[光谱补焦] 运行失败：{e}")
+            self.log(traceback.format_exc())
+            self.set_var(self.saf_status_var, "光谱补焦循环：运行失败")
+        finally:
+            self.spectrum_autofocus_thread = None
+
+    def stop_spectrum_autofocus_loop(self):
+        self.spectrum_autofocus_stop_requested = True
+        self.set_var(self.saf_status_var, "光谱补焦循环：已请求停止")
+        self.log("[光谱补焦] 已请求停止")
 
 
 # ============================================================

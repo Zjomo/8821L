@@ -68,7 +68,24 @@ AutoZoom/
 - 低于阈值时自动触发 Newport Picomotor Z 轴闭环寻焦
 - 支持 SHG（二次谐波）信号强度作为补焦触发条件
 
-### 4. 光谱数据处理
+### 4. 光谱补焦循环 (Spectrum Autofocus Loop)
+
+在 `0_measurement_workflow_real_virtual_same_detection_6.25.py` 的 GUI 左侧新增“9. 光谱补焦循环”控制区，实现光谱测量与被动补焦的长时间自动循环：
+
+1. **手动框选 ROI**：点击“选择 ROI”，在弹出的 OpenCV 窗口中拖拽矩形选择关注区域；该截图同时作为后续补焦的基准图，并建立 Focus 参考基线。
+2. **测光谱**：自动执行 `关照明 → LabVIEW 采集光谱 → 开照明 → 保存数据`。
+3. **等待 2 分钟**。
+4. **被动补焦检测**：按默认参数启动被动补焦（触发阈值 0.95、目标阈值 0.95、连续触发次数 3、hill_climb 策略、Z 轴号 1、间隔 1 秒、最大连续补焦 10 次、连续达标 5 次）。
+   - 若 FocusScore 未达标，自动调用 Z 轴闭环搜索恢复聚焦；
+   - 若 FocusScore 已达标，仅监测并在连续达标后进入下一轮；
+   - 可随时点击“停止光谱补焦循环”优雅退出。
+5. **循环**：补焦检测完成后自动回到第 2 步继续测光谱。
+
+输出目录默认 `focus_output/`，每轮保存光谱摘要、FocusScore 历史 CSV 与 FocusScore 曲线 PNG。
+
+核心逻辑封装在 [`spectrum_autofocus_loop.py`](spectrum_autofocus_loop.py)，主 GUI 仅做最小集成；对应测试见 [`test_spectrum_autofocus_loop.py`](test_spectrum_autofocus_loop.py)。
+
+### 5. 光谱数据处理
 
 - 从 LabVIEW 经 TCP 接收原始光谱数据
 - 高点滤除（剔除高于阈值的数据点）
@@ -131,6 +148,16 @@ python measurement_with_focus_roi_metrics.py
 7. 测量完成后，数据自动保存至 `measurement_output/save/MM.DD/` 目录
 
 # TODO🎯
+
+### 2026-7-13
+
+1、光谱补焦循环					✔
+
+- 在 `0_measurement_workflow_real_virtual_same_detection_6.25.py` 新增“9. 光谱补焦循环”控制区（选择 ROI、开始/停止循环、状态显示）。
+- 新增独立模块 `spectrum_autofocus_loop.py`，封装 ROI 交互选择、单图参考建立、光谱测量、被动补焦检测、FocusScore 曲线保存。
+- `Focus/scorer.py` 新增 `build_reference_from_image()`，支持以单张已有图像建立 Focus 参考基线。
+- 新增测试 `test_spectrum_autofocus_loop.py`，9 个用例全部通过。
+- 回归测试 `test_passive_mode.py` 全部通过，GUI 文件通过 `py_compile` 语法检查。
 
 ### 2026-7-11
 
