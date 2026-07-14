@@ -1,0 +1,21 @@
+{
+  "settings_version": "0.0.6",
+  "datasets_dir": "E:\\predict_model\\2026\\26-06\\06.02\\datasets",
+  "weights_dir": "weights",
+  "runs_dir": "runs",
+  "uuid": "685a89950da492de20666600e42cfbab7cece4486381217b6780273af0895899",
+  "sync": true,
+  "api_key": "",
+  "openai_api_key": "",
+  "clearml": true,
+  "comet": true,
+  "dvc": true,
+  "hub": true,
+  "mlflow": true,
+  "neptune": true,
+  "raytune": true,
+  "tensorboard": false,
+  "wandb": false,
+  "vscode_msg": true,
+  "openvino_msg": true
+}

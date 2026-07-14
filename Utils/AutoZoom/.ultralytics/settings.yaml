@@ -1,0 +1,17 @@
+settings_version: 0.0.4
+datasets_dir: E:\CWB\8821L\Utils\AutoZoom\datasets
+weights_dir: weights
+runs_dir: runs
+uuid: 578cd6124ae9ee24ea02f87f76cc8f4251c6e8db19cad940b41b5464658f7387
+sync: true
+api_key: ''
+openai_api_key: ''
+clearml: true
+comet: true
+dvc: true
+hub: true
+mlflow: true
+neptune: true
+raytune: true
+tensorboard: true
+wandb: true

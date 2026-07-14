@@ -2624,6 +2624,22 @@ class MeasurementWorkflow:
 
         self.log("========== 等待 LabVIEW READY ==========")
 
+        # 先等待 LabVIEW 真实建立 TCP 连接（start_server_async 只是启动监听，
+        # 还需等 LabVIEW 客户端连上来）。
+        t0_conn = time.time()
+        timeout_conn = 60.0
+        while True:
+            if self.stop_requested:
+                raise RuntimeError("stop_requested")
+            if getattr(server, "is_connected", False):
+                break
+            if time.time() - t0_conn > timeout_conn:
+                raise RuntimeError(
+                    "LabVIEW 在 60 秒内未连接到 TCP Server，"
+                    "请检查 LabVIEW 客户端是否已启动并尝试连接 127.0.0.1:65432。"
+                )
+            time.sleep(0.1)
+
         # 优先使用外部 Server 已实现的方法。
         for name in ("wait_ready", "wait_for_ready", "wait_labview_ready", "wait_client_ready"):
             method = getattr(server, name, None)
@@ -2632,6 +2648,14 @@ class MeasurementWorkflow:
                     result = method()
                 except TypeError:
                     result = method(timeout=None)
+
+                # 关键修复：必须确认返回结果表示成功，才把 labview_ready 置为 True。
+                if isinstance(result, dict) and not result.get("ok", True):
+                    reason = result.get("reason", "unknown")
+                    raise RuntimeError(
+                        f"LabVIEW 等待 READY 失败（{name}() 返回 ok=False）：{reason}"
+                    )
+
                 self.context["labview_ready"] = True
                 self.log(f"[TCP] LabVIEW READY：由 {name}() 返回")
                 self.notify_update()
