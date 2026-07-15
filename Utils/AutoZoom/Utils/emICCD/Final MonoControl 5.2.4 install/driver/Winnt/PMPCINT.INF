@@ -1,0 +1,67 @@
+[Version]
+Signature=$CHICAGO$
+Class=DataAcquisition
+ClassGuid={C9F6E6EA-4A14-4009-9443-880BFBACD1FE}
+Provider=%MFGNAME%
+DriverVer=2/08/2000,3,0
+;copyright 2000 roper scientific
+
+[Manufacturer]
+%MFGNAME%=DeviceList
+
+[DestinationDirs]
+DefaultDestDir=10,System32\Drivers
+
+[SourceDisksFiles]
+PMPCINT.sys=1
+
+[SourceDisksFiles.x86]
+PMPCINT.sys=1
+
+[SourceDisksNames]
+1="RS Install",,,
+
+[DeviceList]
+%DESCRIPTION%=DriverInstall.NTx86,PCI\VEN_10E8&DEV_81E6
+
+[ClassInstall32]
+AddReg=ClassAddReg
+
+[ClassAddReg]
+HKR,,,,"DataAcquisition"
+
+;------------------------------------------------------------------------------
+;  Windows 2000 Sections
+;------------------------------------------------------------------------------
+[DriverInstall.NTx86]
+CopyFiles=DriverCopyFiles
+
+[DriverCopyFiles]
+PMPCINT.sys,,,2
+
+[DriverInstall.NTx86.Services]
+AddService=PMPCINT,2,DriverService.NTx86
+
+[DriverService.NTx86]
+ServiceType=1
+StartType=1
+ErrorControl=1
+ServiceBinary=%10%\system32\drivers\PMPCINT.sys
+
+
+[DriverInstall.NTx86.HW]
+AddReg=DriverHwAddReg
+
+[DriverHwAddReg]
+HKR,,FriendlyName,,%FRIENDLYNAME%
+
+
+;------------------------------------------------------------------------------
+;  String Definitions
+;------------------------------------------------------------------------------
+
+[Strings]
+MFGNAME="Roper Scientific"
+DESCRIPTION="RS PM PCI Interface"
+FRIENDLYNAME="Roper Scientific PM PCI Interface"
+

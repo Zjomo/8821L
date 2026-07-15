@@ -1,0 +1,5 @@
+[modGen]
+version  = 7
+
+[dfir]
+specify = ModGen\niInstr Basic Elements v1 Assert Constant Specify Dfir.vi

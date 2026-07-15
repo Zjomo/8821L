@@ -1,0 +1,33 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: Setup_Example - Win32 Debug--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating temporary file "C:\DOCUME~1\KFLANA~2.000\LOCALS~1\Temp\RSP3F9.tmp" with contents
+[
+/nologo /MLd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /Fp"Debug/Setup_Example.pch" /Yu"stdafx.h" /Fo"Debug/" /Fd"Debug/" /FD /GZ /c 
+"E:\OEM_DLL\ARC_FilterWheel_SDK\VC++_Examples\Setup_Example\Setup_Example.cpp"
+]
+Creating command line "cl.exe @C:\DOCUME~1\KFLANA~2.000\LOCALS~1\Temp\RSP3F9.tmp" 
+Creating temporary file "C:\DOCUME~1\KFLANA~2.000\LOCALS~1\Temp\RSP3FA.tmp" with contents
+[
+kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /incremental:yes /pdb:"Debug/Setup_Example.pdb" /debug /machine:I386 /out:"Debug/Setup_Example.exe" /pdbtype:sept 
+".\Debug\Setup_Example.obj"
+".\Debug\StdAfx.obj"
+]
+Creating command line "link.exe @C:\DOCUME~1\KFLANA~2.000\LOCALS~1\Temp\RSP3FA.tmp"
+<h3>Output Window</h3>
+Compiling...
+Setup_Example.cpp
+Linking...
+
+
+
+<h3>Results</h3>
+Setup_Example.exe - 0 error(s), 0 warning(s)
+</pre>
+</body>
+</html>

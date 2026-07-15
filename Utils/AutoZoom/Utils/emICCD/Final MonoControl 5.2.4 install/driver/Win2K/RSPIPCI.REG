@@ -1,0 +1,10 @@
+REGEDIT4
+
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\rspipci]
+"npages"=dword:000007d0
+"Type"=dword:00000001
+"Start"=dword:00000001
+"ErrorControl"=dword:00000001
+"ImagePath"=hex(2):73,79,73,74,65,6d,33,32,5c,64,72,69,76,65,72,73,5c,72,73,70,\
+  69,70,63,69,2e,73,79,73,00
+

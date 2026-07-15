@@ -1,0 +1,7 @@
+[modGen]
+version  = 7
+specifyComponent = Assert_ModGen\niRFRIO Assert Specify Component.vi
+emitCode = Assert_ModGen\niRFRIO Assert Emit Code.vi
+
+[dfir]
+specify = Assert_ModGen\niRFRIO Assert Specify Dfir.vi
