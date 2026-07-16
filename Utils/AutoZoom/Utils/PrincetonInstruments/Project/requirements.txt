@@ -1,0 +1,20 @@
+# Princeton Instruments 光谱仪 Python 控制
+# 安装：pip install -r requirements.txt
+
+# 核心依赖
+numpy>=1.21.0
+scipy>=1.7.0
+
+# UI 依赖（PyQt6 或 PyQt5 二选一，代码会自动检测可用绑定）
+# 标准 Python 推荐：
+PyQt6>=6.4.0
+# Anaconda 环境若 PyQt6 DLL 加载失败，可改用：
+# PyQt5>=5.15.0
+pyqtgraph>=0.13.0
+
+# 测试依赖
+pytest>=7.0.0
+pytest-qt>=4.0.0
+
+# 可选：xlsx 横坐标读取
+openpyxl>=3.0.0

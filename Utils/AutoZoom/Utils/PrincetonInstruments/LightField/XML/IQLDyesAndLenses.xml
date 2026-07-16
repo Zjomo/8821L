@@ -1,0 +1,73 @@
+<?xml version="1.0" ?>
+<Schema xmlns="urn:schemas-microsoft-com:xml-data"
+	      xmlns:dt="urn:schemas-microsoft-com:datatypes">
+
+<AttributeType name="name"/>
+
+<ElementType name="Name"/>
+<ElementType name="Description"/>
+<ElementType name="ControllerName"/>
+<ElementType name="ComponentName"/>
+<ElementType name="ComponentType"/>
+<ElementType name="ComponentInstance"/>
+<ElementType name="Component">
+  <element type="Name"/>
+  <element type="ComponentType"/>
+  <element type="ComponentInstance"/>
+  <element type="ControllerName"/>
+</ElementType>
+<ElementType name="Count"/>
+<ElementType name="Components">
+  <element type="Count"/>
+  <group minOccurs="0" maxOccurs="*">
+    <element type="Component"/>
+  </group>
+</ElementType>
+<ElementType name="Shutters">
+  <element type="Count"/>
+  <group minOccurs="0" maxOccurs="*">
+    <element type="Component"/>
+  </group>
+</ElementType>
+<ElementType name="CompPosition">
+<ElementType name="ComponentPosition">
+  <element type="Name"/>
+  <element type="ComponentType"/>
+  <element type="ComponentInstance"/>
+  <element type="ControllerName"/>
+  <element type="ComponentPosition"/>
+</ElementType>
+<ElementType name="ComponentPositions">
+  <element type="Count"/>
+  <group minOccurs="0" maxOccurs="*">
+    <element type="ComponentPosition" />
+  </group>
+</ElementType>
+<ElementType name="CompIndex"/>
+<ElementType name="ObsModeCompPosition">
+  <element type="CompPosition"/>
+  <element type="CompIndex"/>
+  <element type="ComponentType"/>
+</ElementType>
+<ElementType name="ObsModeCompPositions">
+  <element type="Count"/>
+  <group minOccurs="0" maxOccurs="*">
+    <element type="ObsModeCompPosition" />
+  </group>
+</ElementType>
+
+<ElementType name="ObservationMode" content="eltOnly">
+  <element type="Name" />
+  <element type="Position" />
+  <element type="Components" />
+  <element type="ActiveShutters" />
+  <element type="ObsModeCompPositions" />
+</ElementType>
+<ElementType name="ObservationModes">
+  <element type="Count"/>
+  <group minOccurs="0" maxOccurs="*">
+    <element type="ObservationMode" />
+  </group>
+</ElementType>
+
+</Schema>

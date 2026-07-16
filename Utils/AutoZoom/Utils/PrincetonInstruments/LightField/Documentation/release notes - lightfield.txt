@@ -1,0 +1,853 @@
+=========================================
+LightField 6.12.3.2007 - July 2020
+=========================================
+
+New Features
+- TPIR-785 and TPIR-785 HR supported.
+- IntelliCal SWIR QTH lamp supported.
+- Added cluster defects to default blemish definition files for NIRvana family cameras.
+
+Improvements
+- FERGIE 785 laser can now provide measured wavelength of laser.
+- FERGIE QTH lamp opening time sped up.
+- Updated accesssory sample to support all accessories.
+- NIRvana HS improved readout time calculation accuracy.
+- Fixed a problem with wavelength calibration across different turrets.
+- Improved default offset when adding a grating in the Spectrometer Offsets add-in.
+
+=========================================
+LightField 6.11.4.2003 - March 2020
+=========================================
+
+New Features
+- NIRvana HS supported.
+- SOPHIA 2048 13.5µm-2 supported.
+- Added the ability to correct 'star' defects in blemish correction.
+
+Improvements
+- Improved device detection for FERGIE lasers.
+- Optimized the speed of blemish correction.
+- Simplified the creation and editing of blemish definition files.
+- Improved validation when applying blemish correction in post process.
+- Fixed a bug where wavelength calibration would use the wrong grating groove density in some cases.
+- Fixed a bug where automation could not set online formulas.
+
+=========================================
+LightField 6.10.1.1903 - March 2019
+=========================================
+
+New Features
+- FERGIE 532 laser supported.
+
+Improvements
+- PI-MTE cameras are now properly detected.
+- Fixed software binning of data files originating from step and glue experiments.
+- Batch export now properly skips corrupt data files.
+- Graph display improvements.
+- Improved performance for add-ins that access data online.
+- Enhanced add-in data acquisition samples.
+- Added another Python data acquisition sample.
+
+=========================================
+LightField 6.9.1.1812 - December 2018
+=========================================
+
+New Features
+- SOPHIA 4096 supported.
+
+Improvements
+- Data files are automatically opened when post-processed.
+- Fixed a problem browsing folders that contain no data files.
+- Fixed accuracy issues around wavelength calibration of spectrographs with multiple exit ports.
+- Sped up post-processing of data files originating from step and glue experiments.
+- Experiment settings are automatically scrolled into view when expanded.
+
+=========================================
+LightField 6.8.1.1810 - October 2018
+=========================================
+
+New Features
+- FERGIE-ISO-81 supported.
+
+Improvements
+- USB3 cameras have more accurate readout time calculations; particularly at high speeds.
+- ProEM-HS 1KB-10µm image quality improved.
+- USB cameras no longer have the potential to crash Windows if plugged into the wrong port on newer machines.
+- The center wavelength at zero-order can now always be entered as '0-order' regardless of wavelength units. Note '0' can still be used for units where that makes sense.
+- When working in electron volts, absolute wavenumbers or relative wavenumbers, avoided confusing graphs by plotting only the wavelengths corresponding to positive nanometers.
+- Exporting data will now prefer to use the laser line in the file over that in application options.
+- Calibration units can now be selected directly from the export dialog where applicable.
+- Fixed a problem where the reported grating could be wrong if the application was started while the spectrograph was homing after being powered on.
+- Improved standard calibration with low density gratings.
+- Improved robustness against Windows updates.
+- Improved robustness and application recovery when the application is forced to shut down.
+- Clarified the difference between measured frame rates and estimated frame rates.
+
+=========================================
+LightField 6.7.1.1804 - April 2018
+=========================================
+
+New Features
+- Added the ability to export to CSV files in a format that matches the computer's Windows Region and Language settings.
+- Added the ability to export to CSV files using a tab to separate fields.
+- Spectrometer Gratings and Offsets add-in can be used to add a turret or change gratings in a turret for IsoPlane spectrometers.
+- Added an automation sample that shows how to acquire data with multiple cameras using multiple instances of LightField.
+
+Improvements
+- Windows Secure Boot supported.
+- USB3 cameras will no longer hang an application if acquiring for an extended period of time with a fast frame rate.
+- PI-MAX4 2048 demo cameras now have correct vertical shift rate.
+- Removed byte order marker in exported CSV files to maximize compatibility with other software.
+- Time Lapse and Repeat Experiment add-ins no longer cover other applications when running.
+
+=========================================
+LightField 6.6.3.1802 - February 2018
+=========================================
+
+New Features
+- PI-MTE3 supported.
+- Added the ability to search data file information and saved experiments when loading an experiment.
+- Added the ability to save data file information as formatted text (fixed-width font recommended).
+- Spectrometer Gratings and Offsets add-in can be used to add a turret or change gratings in a turret for HRS and Spectra Pro spectrometers.
+- Added a relative start time to the Repeat Experiment and Time Lapse add-ins.
+- Added the ability to repeat an experiment immediately in the Repeat Experiment add-in.
+
+Improvements
+- Improved the workflow for changing a grating in FERGIE instruments through the Spectrometer Gratings and Offsets add-in.
+- Made minor improvements in usability for the Repeat Experiment and Time Lapse add-ins.
+
+=========================================
+LightField 6.5.1.1711 - November 2017
+=========================================
+
+New Features
+- FERGIE now reports failure in the grating drive.
+- FERGIE Smile Correction Add-in now provided.
+- Python automation samples to control LightField are now provided.
+
+Improvements
+- KURO now supports exposure times in 50 microsecond increments.
+- NIRvana-LN now supports a minimum NDRO period of 0.5 seconds when running 250 kHz and 1 millisecond increments always.
+- Gigabit Ethernet cameras properly handle long exposure times.
+- Reduced memory consumption and sped up exporting data to CSV.
+- Fixed a problem where the spectrometer grating/offsets add-in would allow the user to select no coating when changing a grating.
+- Added more add-in/automation control over data viewers.
+
+=========================================
+LightField 6.4.1.1709 - September 2017
+=========================================
+
+New Features
+- BLAZE 100B supported.
+- BLAZE 400HR supported.
+- BLAZE 100HR supported.
+- BLAZE 400BR LD supported.
+- SOPHIA 2048 13.5µm supported.
+- HRS-500 supported.
+- HRS-750 supported.
+- LightField is now FIPS compliant.
+- Extended ability to acquire 1,000,000 frames to 1,000,000,000 frames.
+- Added live data acquisition performance metrics when running an experiment.
+- Added reporting of live display lag when the application cannot keep pace with high speed experiments.
+
+Improvements
+- FERGIE 256/FT camera's sensor temperature set point can now be set lower to -60°C.
+- KURO cameras can now reach higher frame rates using small regions of interest (for newer cameras going forward).
+- PI-MAX4 1024i will now acquire correctly in the scenario where pre-trigger was previously used before switching to internal triggering.
+- Fixed LightField Data Workspace licensing.
+- Fixed IntelliCal intensity calibration for KURO cameras.
+- Fixed a bug where an add-in could only update the first frame of a file in some scenarios.
+
+=========================================
+LightField 6.3.1.1705 - May 2017
+=========================================
+
+New Features
+- BLAZE supported.
+- KURO 2048 and 1608 supported.
+- HRS supported.
+- Added Vincent CS90 external shutter support via the Shutter Configuration add-in.
+
+Improvements
+- Fixed potential lock-up during step & glue intensity calibration.
+- Fixed scale-to-maximum and scale-to-unity normalization when applying intensity calibration during step & glue.
+- Fixed multiple FERGIE accessories with multiple LightField instances.
+- Fixed potential issue detecting FERGIE accessories on some laptops.
+- Made usage of left/right margins of sensor consistent across all cameras.
+- Fixed potential lock-up when opening the Spectrometer Gratings and Offsets add-in dialog.
+- Improved Spectrometer Gratings and Offsets add-in with FERGIE instruments.
+- Updated MATLAB automation samples to retrieve wavelengths when acquiring.
+
+=========================================
+LightField 6.2.3.1702 - February 2017
+=========================================
+
+New Features
+- KURO supported.
+
+Improvements
+- Gigabit Ethernet camera detection has improved for scenarios using multiple cameras with multiple network cards.
+- Sped up orientation correction.
+- Fixed a problem running the application via Remote Desktop.
+- Fixed a potential problem where Step & Glue might hang.
+- Fixed a potential crash when the application starts if it crashed hard previously (e.g. hard shutdown via Windows Update or lost power).
+- Fixed a potential crash if exporting data to the root directory of a mapped drive.
+- "Waiting for the first live frame" no longer appears if the application is hidden by automation and data is acquired.
+- Fixed issue where some GigE cameras with slow ADC rates and particular ROIs would cause LightField to incorrectly stop the experiment prematurely. 
+- Fixed readout time for NIRvana and NIRvana-LN.
+
+=========================================
+LightField 6.1.2.1701 - January 2017
+=========================================
+
+New Features
+- FERGIE supported.
+- FERGIE accessories supported.
+- FERGIE gratings can be changed via an add-in.
+
+Improvements
+- ProEM-HS EM gain calibration accuracy improved in high speeds.
+- USB3 cameras no longer crash if reconnected to a different USB port when the camera is open.
+- Applied spectrometer calibration information such as focal length and inclusion angle are now accessible in the user interface and file information.
+- Fixed issue where data could be corrupted if acquired at high speed and processed with an online formula.
+- New version of the add-in API.
+- Add-ins can now access data in modified files that have not been saved yet.
+
+=========================================
+LightField 6.0.4.1611 - November 2016
+=========================================
+
+Improvements
+- SOPHIA potential hardware failures will now always be detected even after the USB3 cable has been reconnected.
+- Fixed crash if an IntelliCal intensity light source was plugged into a spectrometer that was then plugged into a USB3 port under Windows 7.
+- Fixed an issue where add-ins that show a dialog via the application or data workspace toolbar could unexpectedly close.
+- Fixed potential crash due to add-in deactivation when the application was closing in Windows 8/8.1/10.
+- Improved application robustness against crashing add-ins.
+- Decreased drag sensitivity when clicking in Image Viewer to place a cursor.
+- Fixed issue where drawing selection area in Graph Viewer could occasionally result in a crash. 
+
+=========================================
+LightField 6.0.3.1609 - September 2016
+=========================================
+
+New Features
+- ProEM-HS 1KB-10µm supported.
+- SOPHIA supported.
+- Multiple regions of interest can now be set in dual port readout.
+- Demo cameras now simulate sensor temperature changes (inaccurately) to ease development without hardware.
+- IntelliCal intensity calibration normalization control added.
+
+Improvements
+- Windows 10 is now supported.
+- Gigabit Ethernet cameras have less overhead between acquisitions.
+- NIRvana-LN now has improved image quality when run at 250 kHz.
+- PI-MAX4 512EM pixel pitch has potential for better accuracy.
+- More data acquisition errors added.
+- Fixed support for Insight EFP.
+- Some experiment settings have been relocated to new Gating, Trigger In and Trigger Out groups.
+- Fixed Camera Timing Dashboard to correctly display Kinetics readout.
+- It is no longer possible to prematurely run an experiment when loading a step and glue experiment.
+- Fixed post processing data extraction to correctly extract files that were the result of step and glue.
+- Experiments created in a newer version of LightField will be able to be rolled back for use in older versions of the software.
+- Fixed the Spectrometer Offsets add-in to work properly when adjusting each grating offset one at a time.
+- Developing add-ins using a Gigabit Ethernet camera requires modifying a time out (via an environment variable) when debugging.
+- Matlab automation can now manipulate experiment settings of enum type.
+
+=========================================
+LightField 5.3.1.1510 - October 2015
+=========================================
+
+Improvements
+- PI-MAX4 external trigger no longer times out during data acquisition.
+
+=========================================
+LightField 5.3.0.1509 - September 2015
+=========================================
+
+Improvements
+- PI-MTE now runs connected to a controller that supports 2 MHz ADC Speed.
+- PI-MTE now properly recognizes 50 kHz ADC Speed.
+- PI-MAX4 AUX delay is now correct for MCP Gating cameras.
+- PIXIS cameras are correctly reprogrammed if power cycled while open.
+- Gigabit Ethernet cameras are correctly reprogrammed if power cycled while open.
+- Fixed potential crash when opening multiple cameras in multiple application instances immediately after they are detected.
+- Fixed crash when using two different versions of the library and connecting a camera only supported in the newer version.
+- Gigabit Ethernet cameras report more accurate data acquisition errors.
+- Fixed the disabling of computer monitors during an experiment for Windows 8 and newer.
+- Fixed crash in IntelliCal for large computer monitors.
+- Fixed rare crash that could occur when changing spectrometer gratings.
+- Fixed crash that could occur when opening multiple files via Windows Explorer and at least one file error occurs.
+
+=========================================
+LightField 5.2.0.1507 - July 2015
+=========================================
+
+New Features
+- Microsoft Surface Pro 3 supported.
+
+Improvements
+- ProEM(+) 1600 default adc speed corrected to 100 kHz.
+- ProEM original cameras can be opened again.
+- Independent data viewer windows can now be maximized.
+- Improved drag-and-drop layout of data viewers.
+- Blemish corrections are properly processed in the case of using a v2.0 blemish definition file with no cluster defects defined.
+- The application prevents the computer from sleeping or hibernating automatically as needed.
+- Single finger interaction with touch screens added in some controls to allow scrolling.
+- Time Lapse and Repeat Experiment add-ins prevent the computer from sleeping or hibernating automatically to help ensure successful acquisitions.
+- Fixed MATLAB automation samples when acquiring multiple frames.
+- Fixed an issue with exporting 32 bit integer data type files to Origin, MP4 and AVI.
+- The IsValid method on the IExperiment interface will now properly work to validate Pulse type objects when using V3 Dll’s.
+
+=========================================
+LightField 5.1.0.1506 - June 2015
+=========================================
+
+New Features
+- Time Lapse and Repeat Experiment add-ins have been added.
+- Added introduction documentation for automating LightField via LabVIEW or MATLAB.
+
+Improvements
+- PI-MTE now properly waits for triggers in readout per trigger.
+- PI-MTE can now acquire a very small region of interest (less than 256 pixels).
+- Quad-RO cleaning now cleans the entire row.
+- Quad-RO data is correctly decoded.
+- ProEM-HS firmware is automatically upgraded to improve image quality for speeds 20 MHz or greater.
+- ProEM-HS firmware is automatically upgraded to address a metadata issue at 30 MHz speed.
+- PI-MTE no longer reads the sensor temperature while acquiring to minimize the chance of a data overrun.
+- Finding the center wavelength before performing wavelength calibration is now properly supported.
+- Scrolling within the graph has been improved.
+- Fixed the spectrometer offsets add-in to work properly in the case the camera is set in imaging mode.
+- Fixed an issue in add-ins/automation where regions of interest positions were normalized when read from a file.
+- Fixed potential crash in add-ins/automation when capturing data from another thread.
+- Fixed an issue where post process frame cross section did not return data when filtering on start frame.
+
+=========================================
+LightField 5.0.5.1504 - April 2015
+=========================================
+
+New Features
+- PI-MTE supported.
+- ProEM-HS 1024 supported.
+- PyLoN 2KF supported.
+- PI-MAX4 1024i pre-trigger features added (for newer cameras going forward).
+- New look and feel to increase productivity and decrease light-blinding/light-scatter from computer monitors.
+- Added formulas to process data online or as a post-process.
+- LabVIEW and MATLAB automation samples to control LightField are now provided.
+- Added online data cross-sections, including frame cross-sections for tracking intensity versus time.
+- The first few frames can now be discarded as they are acquired.
+- Data can be exported as it is being acquired.
+- Added MP4, Origin and Igor export file formats.
+- An experiment can now be loaded from a previously acquired data file.
+- Saved experiments can now be compared.
+- Added running experiment status e-mail notifications.
+- New orthographic views of the hardware devices allow for simpler interaction in experiment setup.
+- Additional information about experiments are now tracked such as last modified and last ran.
+- Opened data files can now be positioned via docking or floating windows.
+- Data file information can be compared.
+- Data viewers can be synchronized in terms of panning, zooming, scrolling, data selection, etc.
+
+Improvements
+- Sped up time to open a camera after initial open.
+- Auto-incremented file names now only increment at the end of the experiment and only if data has been saved.
+- Acquiring data directly to a network drive has been optimized and gracefully handles network errors.
+- Changed frame combination averaging to use floating point instead of integer truncation for some data formats.
+- Calibration status has been added to the status bar.
+- Any experiment setting can now be added to the setting dock.
+- Experiment settings can be added to or removed from the setting dock with a click instead of a drag and drop.
+- Optimized memory usage when running experiments to increase success rate for computers that cannot keep up with the experiment.
+- Improved experiment progress indicators to track intermediate frames when processing across frames.
+- Improved error details for invalid blemish definition files when correcting blemishes online.
+- Improved warning details for experiment settings.
+- Improved experiment setting search.
+- Experiment setting shorcut keys are now shown for reference as a pop-up near the setting search.
+- Added potential IntelliCal intensity calibration improvement when targeting NIR wavelengths.
+- Improved usability for overlaying or stacking spectral data.
+- Hardware keys are now plug 'n playable.
+- Addressed problem that may have caused hardware detection issues with intensity calibration lamps in some scenarios.
+- Sped up application start-up time.
+- Sped up time needed to start and stop an experiment (most useful in automated scenarios).
+- Fixed potential hang when closing the application from automation.
+- Acquire New Background/Flatfield File will take average of 5 frames or use value in Exposures per Frame (whichever is greater).
+- All licenses now allow LightField to be run via remote desktop.
+
+=========================================
+LightField 4.10.1.1411 - November 2014
+=========================================
+
+New Features
+- ProEM-HS supported.
+
+Improvements
+- PI-MAX4 1024EM family kinetic frame rates improved.
+- Improved bias stability for new Pixis 1300x1340 cameras using the new configuration.
+- Fixed potential crash with some IsoPlanes when committing offsets with the Spectrometer Offsets add-in.
+- Fixed some situations where extra frames were created when performing a frame cross section.
+- Fixed some scenarios where linking devices after loading experiments did not work properly.
+
+=========================================
+LightField 4.9.0.1409 - September 2014
+=========================================
+
+New Features
+- PyLon 1300R and 2048F supported (note: this invalidates software demo cameras of this type).
+- Previous versions of LightField can now be downloaded directly from the version history dialog.
+
+Improvements
+- Gigabit eithernet cameras' readout time accuracy for kinetics improved.
+- Prevented the application from hanging in some scenarios where gratings were changed in step and glue.
+- Fixed potential deadlock when calling back into LightField from an automation event.
+- Supports IsoPlane 320 with newest firmware.
+- Fixed issue where where external triggering and Take One Look would crash.
+
+=========================================
+LightField 4.8.0.1408 - August 2014
+=========================================
+
+New Features
+- NIRvana-LN supported.
+- PyLon 2048B supported (note: this invalidates software demo cameras of this type).
+- IsoPlane 160 supported.
+- Spectrometer Offsets add-in now available to correct the offsets per grating when mounting a camera.
+
+Improvements
+- PI-MAX4 1024EM readout time accuracy improved.
+- Pylon-IR readout time accuracy improved.
+- ProEM(+) EM gain calibration accuracy improved.
+- PIXIS image quality improved for long exposure times.
+- Fixed blemish correction in the case that the image is horizontally flipped.
+- Improved IntelliCal broad calibration accuracy in the case where only a single peak is detected at a particular center wavelength.
+- Fixed step and glue when used with summing or averaging frames.
+- Fixed a crash that could occur if step and glue was unselected while the wavelength range was invalid.
+- Fixed a rare crash that could occur when LightField automatically selected the View tab for the first time when acquiring data.
+- Fixed add-ins that acquire data using the Capture method with high frame rates.
+- Add-ins that show modal dialogs are now correctly associated with the LightField application window.
+- Fixed issue where some SPEs would not properly export to TIFF format.
+- Fixed issue where some international character sets used in file naming were not supported during export.
+- Fixed automation API versions 2-4 to work with 32-bit programs.
+
+=========================================
+LightField 4.7.2.1403 - March 2014
+=========================================
+
+Improvements
+- NIRvana SI renamed to NIRvana ST.
+- Fixed crash when using holographic gratings.
+- Phase Modulation Sorting add-in now supports ability to sort as a complete cycle, meaning that a cycle can begin and end on zero.
+
+=========================================
+LightField 4.7.1.1402 - February 2014
+=========================================
+
+New Features
+- PI-MAX4 1024EM family supported.
+- PI-MAX4 2048 family supported.
+- NIRvana SI supported.
+
+Improvements
+- PyLoN cameras configured to drive shutters now default to the appropriate shutter close delay.
+- PIXIS 2048 now handles all custom cleaning settings correctly.
+- Gigabit ethernet cameras now have correct time stamps for very long exposure times (i.e. several hours).
+- Progress is now shown for slow frame rate experiments that start on a single trigger.
+- Fixed IntelliCal reference peak shapes.
+- Exporting to SPC file format now protects against unsupported file names.
+- The Phase MOdulation Sorting add-in now checks to see if RF modulation is actually enabled.
+
+=========================================
+LightField 4.6.1.1309 - September 2013
+=========================================
+
+Improvements
+- Fixed internal error generated by NIRvana cameras.
+
+=========================================
+LightField 4.6.0.1309 - September 2013
+=========================================
+
+New Features
+- PI-MAX4 1024f supported.
+- Added Visual Basic .NET add-in samples.
+- Added tools to ease add-in development with Visual Studio.
+- Added full customization for phase modulation for PI-MAX4 RF cameras.
+- Added phase modulation frame sorting add-in for ordering randomized phase modulations.
+
+Improvements
+- PI-MAX4 readout rate calculations have improved in accuracy.
+- ProEM readout rate calculations have improved in accuracy.
+- Spectrometer settings are properly updated if the spectrometer is power cycled.
+- Fixed potential crash when stopping step & glue experiments early.
+- Fixed add-in experiment setting API with respect to validation.
+
+=========================================
+LightField 4.5.3.1307 - July 2013
+=========================================
+
+Improvements
+- PI-MAX4 readout rate calculations have improved in accuracy.
+- PI-MAX4 external trigger threshold has improved in accuracy.
+- Readout time has improved in accuracy for kinetics, spectra kinetics and DIF readout control modes.
+- PI-MAX4 RF cameras now reliably stay in phase.
+- PI-MAX4 EM cameras could potentially return an unexpected error when changing readout control modes.
+- Sped up frame cross sections and data extraction particularly for spectral data.
+- Fixed exporting via add-ins.
+- Fixed potential crash if disconnecting a camera while waiting for a trigger.
+- Fixed IntelliCal calibration for LS-785 instruments.
+- Fixed potential crash when loading a step & glue experiment.
+
+=========================================
+LightField 4.5.2.1304 - April 2013
+=========================================
+
+New Features
+- PyLoN-IR 2.2 supported.
+- PI-MAX4 512EM family supported.
+- Data can now be exported as one file per frame for most file formats.
+- Data can now be exported to CSV in a two-dimensional format (matrix).
+- LightField can now open a batch of files using windows explorer Send To.
+- LightField can send diagnostic information to Princeton Instruments when an error is encountered.
+
+Improvements
+- PIXIS image quality improved in the first column with horizontal binning.
+- PyLoN image quality improved in kinetics with vertical binning.
+- ProEM(+) cameras can now clean before exposure when acquisition is started via single trigger.
+- PI-MAX4 readout time calculations improved.
+- ProEM(+) spectra kinetics region was off by two rows on the sensor.
+- ProEM(+) can now correctly overscan when using electron multiplication.
+- PyLoN 1300 serial register cleaning is irrelevant when pixel bias correction is enabled.
+- Gigabit Ethernet cameras will now be configured to use EBUS Universal driver instead of the High Performance driver.
+- Windows 8 is now supported.
+- Improved IntelliCal calibrations with IsoPlane spectrographs against cameras with varying offsets.
+- Improved IntelliCal broad calibrations in the case where an acquisition in the set failed to see enough peaks.
+- Improved IntelliCal auto-exposure speed in the case of saturation.
+- Added additional lines to the Mercury reference spectra.
+- The naming of exported files is improved and is now consistent across all file formats and export features.
+- Files can now be contrast adjusted (auto scaled) across all frames when exporting to AVI.
+- Frame cross section data file sizes have shrunk to the correct size.
+- LightField is now more robust when accessing/creating files on a network with complex user permissions.
+- Fixed issue where LightField could crash when opening multiple files simultaneously from Windows Explorer.
+- Can click on Horizontal or Vertical Cross Section graphs in the Image Viewer to move a selection box or cursor.
+- Can click on Frames Cross Section in Image Viewer or Graph Viewer to navigate between frames.
+- Peak finding is now contextual via pixel selection and allows more control over the amount of information displayed.
+- Fixed issue where running for extended period of time with Online Statistics window open could cause a crash.
+- Extended the LightField Add-in/Automation API.  See add-in and automation manual for details.
+
+=========================================
+LightField 4.4.1.1301 - January 2013
+=========================================
+
+New Features
+- ProEM+ 1600 vertical shift rates changed to improve bias flatness.
+
+Improvements
+- PyLoN single row kinetics corrected.
+- Fixed application crash if an add-in crashes while the application is starting.
+- Added imaging full row option for high speed ProEM add-in.
+- Fixed shutter configuration add-in for PyLoN-IR cameras.
+
+=========================================
+LightField 4.4.0.1212 - December 2012
+=========================================
+
+New Features
+- Cluster defects can now be corrected.
+- PyLoN and PyLoN-IR cameras can be configured to drive other supported shutters via a new shutter configuration add-in.
+- LightField can recover data lost after a crash that occurred while running an experiment.
+
+Improvements
+- PI-MAX3/4 gating accuracy improved around minimum gate delay in some cases.
+- IntelliCal auto-exposure sped up.
+- IntelliCal displays more information on the progress of the calibration.
+- Internal spectrometer shutters are now recognized on newer spectrometers and can be used to determine better default shutter closing delays.
+- Fixed possible crash if too many files were opened.
+- LightField can now automatically restart and recover from a crash.
+- LightField can now automatically close during an application upgrade or Windows log-off/shut down when possible.
+- Add-ins can now access metadata while the camera is acquiring.
+
+=========================================
+LightField 4.3.0.1209 - September 2012
+=========================================
+
+New Features
+- PyLoN-IR supported.
+- PyLoN 2K supported.
+- PyLoN 256 vertical shift rates changed to improve bias flatness.
+- PI-MAX4 SR and HRf photocathodes supported.
+- Data files can be exported to AVI.
+- Add-ins can now display data in the Data Workspace.
+
+Improvements
+- IntelliCal reference spectrum is now automatically removed when displayed in situations where it does not apply.
+- IntelliCal reference spectrum intensity is now rescaled at the beginning of each acquisition to facilitate easier comparison.
+- IntelliCal now only permits wavelength calibration with the IntelliCal light source.
+- The automatic selection of wavelengths in IntelliCal Broad Calibration has been improved.
+- IntelliCal accuracy has been improved particularly with Broad Calibration, PI-MAX3/4 cameras, and/or PI Mercury calibration references.
+- Removed IntelliCal wavelength calibration via secondary emission reference files.
+- Selection bars in the graph display can now be moved and/or resized.
+- A region of interest can now be created via selection in the display from within the setting dock.
+- Frame cross sections now work regardless of image size and number of frames.
+- Aesthetics for grid view controls in add-ins has improved.
+
+=========================================
+LightField 4.2.5.1208 - August 2012
+=========================================
+
+New Features
+- PI-MAX4 1024x256 supported  (note: this invalidates software demo cameras of type PI-MAX4 1024s).
+- PI-MAX4 picosecond gating supported.
+- ProEM and PyLoN clean until trigger feature is optimized for speed to minimize smearing.
+
+Improvements
+- PIMAX4-RF now properly reprogrammed when power cycled while open.
+- Sub-nanosecond gating has been renamed to picosecond gating.
+- Fixed crash caused by setting Exposures per Frame and Number of Frames to invalid values for a PI-MAX3/4 in a particular order.
+
+=========================================
+LightField 4.2.4.1206 - June 2012
+=========================================
+
+New Features
+- PI-MAX4 1024s supported  (note: this invalidates software demo cameras of type PI-MAX4 1024x256).
+- PyLoN 256 supported (note: this invalidates software demo cameras of this type).
+- IntelliCal and standard calibration with PIoNIR supported.
+- Data exported to SPC can now contain experiment setup information.
+
+Improvements
+- ProEM 1024 and ProEM+ 1024 were shifted by four rows when operating in Frame Transfer.
+- DIF Shift per Trigger now operates properly when triggered during the first phosphor decay delay of a DIF pair.
+- PIMAX4-RF now properly handles a phase sequence and software accumulations in all cases.
+- Fixed hang caused by using automation with an expired license.
+- Added more error checking when exporting.
+- Fixed problem caused in viewer when showing a reference spectrum immediately after aligning the spectrometer.
+- Improved horizontal scrolling in the graph display.
+- Improved Broad IntelliCal results when data at some wavelengths do not contain sufficiently spread out peaks.
+
+=========================================
+LightField 4.2.3.1205 - May 2012
+=========================================
+
+New Features
+- ProEM+ 1024 supported.
+- PyLoN 1300 supported (note: this invalidates software demo cameras of this type).
+- Standard wavelength calibration now allows selection of any applicable peak.
+
+Improvements
+- ProEM+ 512 performance improved running low noise at 5 MHz.
+- ProEM+ 1600 readout rate improved running EM with customized sensor geared for high spectral rates.
+- Added an animation describing how the High Speed ProEM add-in works.
+- Fixed issues running under Windows user accounts that have custom network mappings to particular operating system folders.
+- Fixed issue where image correction reference images would not be saved if the experiment data directory was set to a network location.
+- Fixed exporting unsigned 32-bit data to CSV.
+- Added recommendations for user-chosen center wavelengths when running Broad IntelliCal.
+- Broad IntelliCal now correctly displays the wavelength range acquired while auto-exposure is searching for a good exposure.
+
+=========================================
+LightField 4.2.2.1205 - May 2012
+=========================================
+
+New Features
+- PI-MAX4 supported (including RF Modulation).
+- ProEM+ supported.
+- IsoPlane supported.
+- PI-MAX gate tracking matches hardware precision of ten picoseconds.
+- Made more functionality available to add-ins such as experiment status, One Look, export and much more.
+- Made more functionality available to automation such as application window positioning and automating LightField with command line options.
+- Added ability to override wavelengths chosen by Broad IntelliCal.
+- Added median and despeckle filters for cosmic ray removal.
+- Added High Speed ProEM add-in to ease setup for extremely fast frame rates.
+- Can now restore experiment to default through experiment menu.
+- Added reminder when using a trial version and provided more license information.
+
+Improvements
+- Fixed small memory leaks after closing a gigabit ethernet camera.
+- PI-MAX slow gating cameras no longer have potential to fail to open due to gate width calibration.
+- PI-MAX3 second AUX delay fixed for Readout per Trigger DIF.
+- Added the ability to export more file information into CSV, SPC, FITS and TIFF.
+- Removed extra space in exported FITS file name.
+- Fixed issues due to user accounts containing symbols.
+- Differentiated sample add-ins to streamline user interface and improved add-in application toolbar aesthetics.
+- Sped up appearance of splash screen.
+- Made add-in/automation functionality more robust and improved performance (particularly in display).
+- Enhanced IntelliSense for more rapid development of add-in/automation programs.
+- Fixed miscellaneous issues caused by French culture formatting.
+- Improved export to CSV performance.
+- Fixed issues caused by controlling spectrometers through the serial port instead of USB.
+- Improved IntelliCal with PI-MAX cameras with limited vision due to intensifier diameter.
+- IntelliCal now displays the resulting physical parameters of the spectrometer after calibrating.
+- Fixed issue where a hardware key can fail over time on some computers.
+- Made calibrations Exit port specific.
+- Changed timing of feature to load the application without loading default experiment.  Now press and hold the Shift key prior to starting LightField.
+- Added SPE 3.0 documentation.
+
+=========================================
+LightField 4.1.3.1201 - January 2012
+=========================================
+
+Improvements
+- PyLoN performance improved.
+- ProEM EM gain fixed.
+- ProEM and PyLoN no longer have potential bias issues with pixel bias correction disabled.
+- PyLoN no longer has potential shutter fault when enabling/disabling the shutter.
+- IntelliCal no longer improperly flips the spectrum when finding center wavelength with a camera that is mounted to the spectrometer's side port.
+- Fixed issue when switching to 900, 1800 or 3600 groove gratings when center wavelength currently exceeded the range of that grating.
+- Removed extra space at the end of exported file names.
+- Frame cross sections are no longer displayed horizontally-flipped if they were the result of horizontally-flipped data.
+- Fixed crash when collecting data under a windows account that had an ampersand (or other non-alphanumeric characters) in the user name.
+- Fixed an issue where scrolling would stop when using a mouse wheel over the experiment setting stack.
+
+=========================================
+LightField 4.1.2.1112 - December 2011
+=========================================
+
+New Features
+- PIoNIR supported.
+- ProEM and PyLoN can now start on single trigger.
+- Can now copy data as text from the image display to the clipboard.
+- More pseudo-coloring options for the image display.
+- Added manual control of horizontal and vertical axes for the graph display.
+- Add-ins can now control which devices are in an experiment.
+- Add-ins can inspect more about setting capabilities.
+- Add-ins can now contain their own display controls.
+- Files can be exported in a batch.
+- X-axis calibration of frame cross section results can be exported.
+- Files can be exported into a directory of the user's choice.
+- Auto-scale contrast can be set to full scale in the image display.
+- Contrast can be manually set in the image display.
+- Auto-scaling the first acquired frame can be disabled.
+- ProEM 1600 now supports Shutter Mode of Open Before Trigger when in Full Frame Readout Mode.
+
+Improvements
+- PyLoN performance improved.
+- PI-MAX3 provides warnings/errors against repetition rate limits.
+- PI-MAX3 1024i now defaults to single port, 8 MHz speed, and 5 Hz trigger frequency.
+- ProEM 1600 images properly in high speed, low noise.
+- ProEM 1600 images properly when changing only vertical shift rate in EM.
+- ProEM 1600 Final Section Height default value changed to 4.
+- PIMAX3 is initialized with the proper trigger polarity.
+- PIMAX3 sub-nanosecond gating properly gates between 1-3 ns gate widths.
+- Relocated Readout Ports Utilized setting to ADC section.
+- Improved wavelength calibration with PI-MAX3.
+- Add-ins that modify settings now wait until completed if settings take time (e.g. as changing a grating).
+- Acquiring background and flatfield files now uses blemish correction.
+- Improved speed of online blemish correction.
+- Added minimum and maximum intensity ranges for the image display cross sections.
+- IntelliCal intensity calibration no longer normalizes data within the range 0-1.
+- Statistics and file information now have keyboard shortcuts.
+- Application version now saved in data files.
+- Laser line now saved and editable in data files.
+
+=========================================
+LightField 4.0.7.1111 - November 2011
+=========================================
+
+New Features
+- Added support for the Insight EFP.
+
+Improvements
+- Better performance for PyLoN.
+- ProEM 1600 permits open-before-trigger shuttering in full frame readout.
+- Hardware keys properly licensed.
+- Better support for Spectra Pro 2750 series spectrometers.
+- Better IntelliCal wavelength calibrations with PIMax3 1024i.
+- Detector angle now correctly displayed in degrees.
+
+=========================================
+LightField 4.0.6.1108 - August 2011
+=========================================
+
+New Features
+- Added the ability to show a Z cross section from Graph Viewer for multi-image data.
+- Cross Sections optionally displayed for all Image Viewers.
+- AddIns and Automation added to LightField.
+- The ability to calibrate EM Gain for ProEMs in the field has been added.
+- Support for PIMax3 cameras.
+- Support for PyLon cameras.
+- Added an Automatic Expose feature for IntelliCal.
+- PIXIS 1300BR and 2048BR eXcelon added.
+- ProEMs allow more control over serial register cleaning.
+- Take One Look added to allow Preview of a single frame.
+- Run Duration now allows Preview Infinite or Preview Sequence.
+- Pixel Bias Correction for ProEMs.
+- The ability to add and collapse settings has been added to the Setting Dock.
+- Sequence progression indicator (for Sequential Gating with PIMax3) added when running with Infinite Run Duration.
+- Software Accumulation sub-progress indicator added.
+- Some settings display indicator allowing setting to be reset to its default value.
+- Keyboard shortcut for Background Acquisition has been added.
+- Ability to Create ROI From Selection.  Create a single Custom ROI from a selection area drawn in the Experiment Viewer.
+- Intensity Calibration (IntelliCal required).
+- Secondary Emission Reference spectrum calibration (IntelliCal required).
+- Step and Glue.
+- Data Cross Section and Extraction Post Processes added.
+- Can now perform post processes on converted legacy SPE files.
+- CSV Export allows exporting to the supported wavelength types.
+- Ability to display calibration using metadata associated with frames.
+- Added to Application Options the ability to elect to have background, flatfield and secondary emissions reference files automatically overwrite, prompt, or always write to a new file.
+
+Improvements
+- Improved IntelliCal functionality.
+- Rows Binned dropdown now shows maximum row value as a selection.
+- DATE_OBS and EXPTIME re-added to FITS export.
+- ROIs can now have calibration applied.
+- Always Autoscale setting will remain sticky when switching back and forth between Image and Graph Viewers.
+- Resolved issue where Legacy SPE files could not be opened in UTC+ time zones.
+- Data cursor precision on Graph now displays a set number of decimal places depending upon the calibration unit selected.
+- More info on Legacy SPE files displayed in File Info.
+- When Active Area Height<default value, LightField will take multiple frames when doing Intensity Calibration, Find Center Wavelength or Capture ROI Reference file.  This is done so that the reference file that is captured and used is accurate.
+- Ability to save File Info as XML has been added.
+- Ability to enter Notes into the File Info area of SPE files has been added.
+- Existing keystroke shortcuts have been tweaked, and some new ones have been added.  Please check Help for details.
+
+Known Issues
+- The LightField install executable should NOT be run over a network.  It should be copied to a local place and run from there.
+- Computers must be current with Windows updates.  Some of the LightField pre-reqs may not be able to be installed if the computer is not current.
+- When installing Lightfield the user must always say yes to all prompts to reboot.
+- VPN should not be run while acquiring in LightField.
+- If older PIMax3 camera has a TG version < 1.51, the user will be required to contact PI technical support to upgrade the firmware.
+- PIMax3 1024x256 defaults to displaying images in a Flip Horizontal, Flip Vertical orientation.  LightField will not automatically correct this orientation.
+
+=========================================
+LightField 3.2.1.1103 - March 2011
+=========================================
+
+Improvements
+- Fix to address issue with balancing for ProEM cameras ONLY.
+
+=========================================
+LightField 3.2.0.1011 - November 2010
+=========================================
+
+New Features
+- SpectraKinetics Readout Mode now available for Frame Transfer cameras.
+- New Clean Before Expose setting is available for cameras that have Frame Transfer readout mode.  Setting is only relevant when in Full Frame mode.
+- Support for new ProEM cameras.
+- Support for new Pixis cameras.
+- LightField User Guide added to the install.
+- Output Signal of "Ready for Start" renamed to "Acquiring".
+- Trigger Response setting of "Expose Per Trigger Pair" renamed to "Expose While Trigger Level".
+- Firmware updater modified to be able to run without parameters. See PI_update.pdf for more information.
+- Updated drivers for Pixis and QuadRO cameras.
+
+Improvements
+- Shutter Mode of Normal is no longer available when running in Kinetics mode and Trigger Response is a triggered mode.
+- Frame Rate of demo cameras better approximates real hardware.
+- Fixed X axis for Electron Volts and Absolute Wavenumbers.
+- UAC level and user group no longer affect the ability to upgrade camera firmware from within LightField.
+- Serial register cleaning setting applied to ProEMs only where appropriate.
+- Fix to address slow down in app after 20 minutes of use with statistics.
+- Cameras that were disconnected while in Experiment Devices area no longer appear as Occupied in other instances of LightField.
+- Timestamping and Frame Tracking for ProEM vastly improved.
+- Improved overall support for ProEM cameras.  Many ProEM related issues have been addressed.
+
+=========================================
+LightField 3.1.1.1006 - June 2010
+=========================================
+
+New Features
+- Princeton Instruments LightField event source was added.  Should LightField crash, you can now go to the Event Viewer/Windows Logs/Application and look for Source=Princeton Instruments LightField.  This info will aid in troubleshooting.
+- LF now includes the ability to Check for Updates.  This will happen on startup of the app, or on demand by selecting Check for Updates from the Application menu.
+- Peak finding style names changed.
+
+Improvements
+- Changing Gain online with a ProEM no longer causes data to stop coming.
+- ProEM firmware updated to address issues.
+- Peak finding changed to note fewer peaks in noisy data.
+- Corrected issues with opening read only SPEs in LightField.
+- Addressed a lag in the displayed data after several minutes of running an experiment with a Pixis camera.

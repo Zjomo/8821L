@@ -1,7 +1,0 @@
-REGEDIT4
-
-[HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services\VxD\PIVXDPCI]
-"Npages"=dword:000007d0
-"NumControllers"=dword:00000001
-"StaticVxD"="pivxdpci.vxd"
-

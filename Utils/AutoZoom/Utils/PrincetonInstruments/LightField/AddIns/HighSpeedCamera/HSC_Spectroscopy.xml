@@ -1,0 +1,354 @@
+<CameraHighSpeedSettings>
+  <Models>
+    <Model>ProEM: 512BK</Model>
+    <Model>ProEM+: 512BK</Model>
+    <Model>ProEM: 512BK eXcelon</Model>
+    <Model>ProEM+: 512BK eXcelon</Model>
+    <Setting name="Camera.ReadoutControl.Mode"                       valueFormat="Full Frame"           type="ReadoutControlMode" value="FullFrame"></Setting>
+    <Setting name="Camera.ReadoutControl.VerticalShiftRate"          valueFormat="450 ns"               type="Double"             value="0.45"></Setting>
+    <Setting name="Camera.Adc.Speed"                                 valueFormat="10 MHz"               type="Double"             value="10.00" displayNameFormat="ADC {0}"></Setting>
+    <Setting name="Camera.Adc.Quality"                               valueFormat="Electron Multiplied"  type="AdcQuality"         value="ElectronMultiplied"></Setting>
+    <Setting name="Camera.Adc.CorrectPixelBias"                                                         type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.TopMargin"        valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.BottomMargin"     valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.MaskedArea.Height"           valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.MaskedArea.TopMargin"        valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.MaskedArea.BottomMargin"     valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.Secondary.MaskedArea.Height" valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.Secondary.ActiveArea.Height" valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.LeftMargin"       valueFormat="{0} pixels"           type="Int32"              value="28"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.Width"            valueFormat="{0} pixels"           type="Int32"              value="512"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.RightMargin"      valueFormat="{0} pixels"           type="Int32"              value="28"></Setting>
+    <Setting name="Camera.Sensor.Cleaning.CleanUntilTrigger"                                            type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Sensor.Cleaning.CleanSerialRegister"                                          type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Sensor.Cleaning.CleanBeforeExposure"                                          type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.ShutterTiming.ClosingDelay"                valueFormat="{0} ms"               type="Double"             value="0" displayNameFormat="Shutter {0}"></Setting>
+    <Setting name="Camera.ShutterTiming.OpeningDelay"                valueFormat="{0} ms"               type="Double"             value="0" displayNameFormat="Shutter {0}"></Setting>
+    <Setting name="Camera.ShutterTiming.Mode"                        valueFormat="Always Open"          type="ShutterTimingMode"  value="AlwaysOpen"></Setting>
+    <Setting name="Camera.ShutterTiming.ExposureTime"                valueFormat="10 &#x00b5;s"          type="Double"             value="0.01"></Setting>
+    <Setting name="Camera.Acquisition.FrameTracking.Enabled"                                            type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Acquisition.TimeStamping.Stamps"           valueFormat="None"                 type="TimeStamps"         value="None"></Setting>
+    <Setting name="Camera.ReadoutControl.RegionsOfInterest.Selection" valueFormat="Rows Binned"         type="RegionsOfInterestSelection" value="LineSensor"></Setting>
+  </Models>
+  <Models>
+    <Model>ProEM: 512B</Model>
+    <Model>ProEM+: 512B</Model>
+    <Model>ProEM: 512B eXcelon</Model>
+    <Model>ProEM+: 512B eXcelon</Model>
+    <Setting name="Camera.ReadoutControl.Mode"                        valueFormat="Full Frame"           type="ReadoutControlMode" value="FullFrame"></Setting>
+    <Setting name="Camera.ReadoutControl.VerticalShiftRate"           valueFormat="450 ns"               type="Double"             value="0.45"></Setting>
+    <Setting name="Camera.Adc.Speed"                                  valueFormat="10 MHz"               type="Double"             value="10.00" displayNameFormat="ADC {0}"></Setting>
+    <Setting name="Camera.Adc.Quality"                                valueFormat="Electron Multiplied"  type="AdcQuality"         value="ElectronMultiplied"></Setting>
+    <Setting name="Camera.Adc.CorrectPixelBias"                                                          type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.TopMargin"         valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.BottomMargin"      valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.MaskedArea.Height"            valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.MaskedArea.TopMargin"         valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.MaskedArea.BottomMargin"      valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.LeftMargin"        valueFormat="{0} pixels"           type="Int32"              value="28"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.Width"             valueFormat="{0} pixels"           type="Int32"              value="512"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.RightMargin"       valueFormat="{0} pixels"           type="Int32"              value="28"></Setting>
+    <Setting name="Camera.Sensor.Cleaning.CleanUntilTrigger"                                             type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Sensor.Cleaning.CleanSerialRegister"                                           type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Sensor.Cleaning.CleanBeforeExposure"                                           type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.ShutterTiming.ClosingDelay"                 valueFormat="{0} ms"               type="Double"             value="0" displayNameFormat="Shutter {0}"></Setting>
+    <Setting name="Camera.ShutterTiming.OpeningDelay"                 valueFormat="{0} ms"               type="Double"             value="0" displayNameFormat="Shutter {0}"></Setting>
+    <Setting name="Camera.ShutterTiming.Mode"                         valueFormat="Always Open"          type="ShutterTimingMode"  value="AlwaysOpen"></Setting>
+    <Setting name="Camera.ShutterTiming.ExposureTime"                 valueFormat="10 &#x00b5;s"          type="Double"             value="0.01"></Setting>
+    <Setting name="Camera.Acquisition.FrameTracking.Enabled"                                             type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Acquisition.TimeStamping.Stamps"            valueFormat="None"                 type="TimeStamps"         value="None"></Setting>
+    <Setting name="Camera.ReadoutControl.RegionsOfInterest.Selection" valueFormat="Rows Binned"          type="RegionsOfInterestSelection" value="LineSensor"></Setting>
+  </Models>
+  <Models>
+    <Model>ProEM: 1024B</Model>
+    <Model>ProEM+: 1024B</Model>
+    <Model>ProEM: 1024B eXcelon</Model>
+    <Model>ProEM+: 1024B eXcelon</Model>
+    <Setting name="Camera.ReadoutControl.Mode"                        valueFormat="Full Frame"           type="ReadoutControlMode" value="FullFrame"></Setting>
+    <Setting name="Camera.ReadoutControl.VerticalShiftRate"           valueFormat="800 ns"               type="Double"             value="0.80"></Setting>
+    <Setting name="Camera.Adc.Speed"                                  valueFormat="10 MHz"               type="Double"             value="10.00" displayNameFormat="ADC {0}"></Setting>
+    <Setting name="Camera.Adc.Quality"                                valueFormat="Electron Multiplied"  type="AdcQuality"         value="ElectronMultiplied"></Setting>
+    <Setting name="Camera.Adc.CorrectPixelBias"                                                          type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.TopMargin"         valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.BottomMargin"      valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.MaskedArea.Height"            valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.MaskedArea.TopMargin"         valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.MaskedArea.BottomMargin"      valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.LeftMargin"        valueFormat="{0} pixels"           type="Int32"              value="32"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.Width"             valueFormat="{0} pixels"           type="Int32"              value="1024"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.RightMargin"       valueFormat="{0} pixels"           type="Int32"              value="32"></Setting>
+    <Setting name="Camera.Sensor.Cleaning.CleanUntilTrigger"                                             type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Sensor.Cleaning.CleanSerialRegister"                                           type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Sensor.Cleaning.CleanBeforeExposure"                                           type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.ShutterTiming.ClosingDelay"                 valueFormat="{0} ms"               type="Double"             value="0" displayNameFormat="Shutter {0}"></Setting>
+    <Setting name="Camera.ShutterTiming.OpeningDelay"                 valueFormat="{0} ms"               type="Double"             value="0" displayNameFormat="Shutter {0}"></Setting>
+    <Setting name="Camera.ShutterTiming.Mode"                         valueFormat="Always Open"          type="ShutterTimingMode"  value="AlwaysOpen"></Setting>
+    <Setting name="Camera.ShutterTiming.ExposureTime"                 valueFormat="10 &#x00b5;s"          type="Double"             value="0.01"></Setting>
+    <Setting name="Camera.Acquisition.FrameTracking.Enabled"                                             type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Acquisition.TimeStamping.Stamps"            valueFormat="None"                 type="TimeStamps"         value="None"></Setting>
+    <Setting name="Camera.ReadoutControl.RegionsOfInterest.Selection" valueFormat="Rows Binned"          type="RegionsOfInterestSelection" value="LineSensor"></Setting>
+  </Models>
+  <Models>
+    <Model>ProEM: 1600&#x207D;&#x00B2;&#x207E;B</Model>    
+    <Model>ProEM: 1600&#x207D;&#x00B2;&#x207E;B eXcelon</Model>
+    <Model>ProEM: 1600&#x207D;&#x2074;&#x207E;B</Model>
+    <Model>ProEM: 1600&#x207D;&#x2074;&#x207E;B eXcelon</Model>
+    <Setting name="Camera.ReadoutControl.Mode"                        valueFormat="Full Frame"           type="ReadoutControlMode" value="FullFrame"></Setting>
+    <Setting name="Camera.ReadoutControl.VerticalShiftRate"           valueFormat="{0:F1} &#x00b5;s"      type="Double"             value="1.50"></Setting>
+    <Setting name="Camera.Adc.Speed"                                  valueFormat="{0:F2} MHz"           type="Double"             value="6.67" displayNameFormat="ADC {0}"></Setting>
+    <Setting name="Camera.Adc.Quality"                                valueFormat="Electron Multiplied"  type="AdcQuality"         value="ElectronMultiplied"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.TopMargin"         valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.BottomMargin"      valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Cleaning.CleanUntilTrigger"                                             type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Sensor.Cleaning.CleanSerialRegister"                                           type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.ShutterTiming.ClosingDelay"                 valueFormat="{0} ms"               type="Double"             value="0" displayNameFormat="Shutter {0}"></Setting>
+    <Setting name="Camera.ShutterTiming.OpeningDelay"                 valueFormat="{0} ms"               type="Double"             value="0" displayNameFormat="Shutter {0}"></Setting>
+    <Setting name="Camera.ShutterTiming.Mode"                         valueFormat="Always Open"          type="ShutterTimingMode"  value="AlwaysOpen"></Setting>
+    <Setting name="Camera.ShutterTiming.ExposureTime"                 valueFormat="10 &#x00b5;s"          type="Double"             value="0.01"></Setting>
+    <Setting name="Camera.Acquisition.FrameTracking.Enabled"                                             type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Acquisition.TimeStamping.Stamps"            valueFormat="None"                 type="TimeStamps"         value="None"></Setting>
+    <Setting name="Camera.ReadoutControl.RegionsOfInterest.Selection" valueFormat="Rows Binned"          type="RegionsOfInterestSelection" value="LineSensor"></Setting>
+  </Models>
+  <Models>    
+    <Model>ProEM+: 1600&#x207D;&#x00B2;&#x207E;B</Model>
+    <Model>ProEM+: 1600&#x207D;&#x00B2;&#x207E;B eXcelon</Model>
+    <Setting name="Camera.ReadoutControl.Mode"                        valueFormat="Full Frame"           type="ReadoutControlMode" value="FullFrame"></Setting>
+    <Setting name="Camera.ReadoutControl.VerticalShiftRate"           valueFormat="2 &#x00b5;s"           type="Double"             value="2.0"></Setting>
+    <Setting name="Camera.Adc.Speed"                                  valueFormat="8 MHz"                type="Double"             value="8.0" displayNameFormat="ADC {0}"></Setting>
+    <Setting name="Camera.Adc.Quality"                                valueFormat="Electron Multiplied"  type="AdcQuality"         value="ElectronMultiplied"></Setting>
+    <Setting name="Camera.Adc.CorrectPixelBias"                                                          type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.TopMargin"         valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.BottomMargin"      valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Cleaning.CleanUntilTrigger"                                             type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Sensor.Cleaning.CleanSerialRegister"                                           type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.ShutterTiming.ClosingDelay"                 valueFormat="{0} ms"               type="Double"             value="0" displayNameFormat="Shutter {0}"></Setting>
+    <Setting name="Camera.ShutterTiming.OpeningDelay"                 valueFormat="{0} ms"               type="Double"             value="0" displayNameFormat="Shutter {0}"></Setting>
+    <Setting name="Camera.ShutterTiming.Mode"                         valueFormat="Always Open"          type="ShutterTimingMode"  value="AlwaysOpen"></Setting>
+    <Setting name="Camera.ShutterTiming.ExposureTime"                 valueFormat="10 &#x00b5;s"          type="Double"             value="0.01"></Setting>
+    <Setting name="Camera.Acquisition.FrameTracking.Enabled"                                             type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Acquisition.TimeStamping.Stamps"            valueFormat="None"                 type="TimeStamps"         value="None"></Setting>
+    <Setting name="Camera.ReadoutControl.RegionsOfInterest.Selection" valueFormat="Rows Binned"          type="RegionsOfInterestSelection" value="LineSensor"></Setting>
+  </Models>
+  <Models>
+    <Model>ProEM+: 1600&#x207D;&#x2074;&#x207E;B</Model>
+    <Model>ProEM+: 1600&#x207D;&#x2074;&#x207E;B eXcelon</Model>
+    <Setting name="Camera.ReadoutControl.Mode"                        valueFormat="Full Frame"           type="ReadoutControlMode" value="FullFrame"></Setting>
+    <Setting name="Camera.ReadoutControl.VerticalShiftRate"           valueFormat="3 &#x00b5;s"           type="Double"             value="3.0"></Setting>
+    <Setting name="Camera.Adc.Speed"                                  valueFormat="8 MHz"                type="Double"             value="8.0" displayNameFormat="ADC {0}"></Setting>
+    <Setting name="Camera.Adc.Quality"                                valueFormat="Electron Multiplied"  type="AdcQuality"         value="ElectronMultiplied"></Setting>
+    <Setting name="Camera.Adc.CorrectPixelBias"                                                          type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.TopMargin"         valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.BottomMargin"      valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Cleaning.CleanUntilTrigger"                                             type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Sensor.Cleaning.CleanSerialRegister"                                           type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.ShutterTiming.ClosingDelay"                 valueFormat="{0} ms"               type="Double"             value="0" displayNameFormat="Shutter {0}"></Setting>
+    <Setting name="Camera.ShutterTiming.OpeningDelay"                 valueFormat="{0} ms"               type="Double"             value="0" displayNameFormat="Shutter {0}"></Setting>
+    <Setting name="Camera.ShutterTiming.Mode"                         valueFormat="Always Open"          type="ShutterTimingMode"  value="AlwaysOpen"></Setting>
+    <Setting name="Camera.ShutterTiming.ExposureTime"                 valueFormat="10 &#x00b5;s"          type="Double"             value="0.01"></Setting>
+    <Setting name="Camera.Acquisition.FrameTracking.Enabled"                                             type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Acquisition.TimeStamping.Stamps"            valueFormat="None"                 type="TimeStamps"         value="None"></Setting>
+    <Setting name="Camera.ReadoutControl.RegionsOfInterest.Selection" valueFormat="Rows Binned"          type="RegionsOfInterestSelection" value="LineSensor"></Setting>
+  </Models>
+  <Models>
+    <Model>PI-MAX4: 512EM</Model>
+    <Model>PI-MAX4: 512B/EM</Model>  
+    <Setting name="Camera.ReadoutControl.Mode"                        valueFormat="Full Frame"                type="ReadoutControlMode" value="FullFrame"></Setting>
+    <Setting name="Camera.ReadoutControl.Accumulations"                                                       type="Int64"              value="1"></Setting>
+    <Setting name="Camera.Adc.Speed"                                  valueFormat="10 MHz"                    type="Double"             value="10.00" displayNameFormat="ADC {0}"></Setting>
+    <Setting name="Camera.Adc.Quality"                                valueFormat="Electron Multiplied"       type="AdcQuality"         value="ElectronMultiplied"></Setting>
+    <Setting name="Camera.Adc.CorrectPixelBias"                                                               type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.TopMargin"         valueFormat="{0} rows"                  type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.BottomMargin"      valueFormat="{0} rows"                  type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.MaskedArea.Height"            valueFormat="{0} rows"                  type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.MaskedArea.TopMargin"         valueFormat="{0} rows"                  type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.MaskedArea.BottomMargin"      valueFormat="{0} rows"                  type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.LeftMargin"        valueFormat="{0} pixels"                type="Int32"              value="28"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.Width"             valueFormat="{0} pixels"                type="Int32"              value="512"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.RightMargin"       valueFormat="{0} pixels"                type="Int32"              value="28"></Setting>
+    <Setting name="Camera.Sensor.Cleaning.CleanUntilTrigger"                                                  type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Sensor.Cleaning.CleanSerialRegister"                                                type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Acquisition.FrameTracking.Enabled"                                                  type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Acquisition.TimeStamping.Stamps"            valueFormat="None"                      type="TimeStamps"         value="None"></Setting>    
+    <Setting name="Camera.Acquisition.GateTracking.Enabled"                                                   type="Boolean"            value ="false"></Setting>
+    <Setting name="Camera.Intensifier.Gating.Mode"                                                            type="GatingMode"         value ="Repetitive"></Setting>
+    <Setting name="Camera.Intensifier.PhosphorDecayDelay"             valueFormat="0 &#x00b5;s"               type="Double"             value ="0"></Setting>
+    <Setting name="Camera.Intensifier.PhosphorDecayDelayResolution"   valueFormat="&#x00b5;s"                 type="Double"             value ="0.100"></Setting>
+    <Setting name="Camera.Intensifier.Gating.RepetitiveGate"          valueFormat="1 &#x00b5;s, 1 &#x00b5;s"  type="Pulse"              value ="1e3,1e3"></Setting>
+    <Setting name="Camera.HardwareIO.AuxOutput"                       valueFormat="1 &#x00b5;s, 1 &#x00b5;s"  type="Pulse"              value ="1e3,1e3"></Setting>
+    <Setting name="Camera.HardwareIO.SyncMaster.Enabled"                                                      type="Boolean"            value ="false"></Setting>
+    <Setting name="Camera.HardwareIO.Trigger.Frequency"               valueFormat="1 MHz"                     type="Double"             value ="1000000"></Setting>
+    <Setting name="Camera.HardwareIO.Trigger.Source"                                                          type="TriggerSource"      value ="Internal"></Setting>
+    <Setting name="Camera.ReadoutControl.RegionsOfInterest.Selection" valueFormat="Rows Binned"               type="RegionsOfInterestSelection" value="LineSensor"></Setting>  
+  </Models>
+  <Models>
+    <Model>PI-MAX4: 1024EM</Model>
+    <Model>PI-MAX4: 1024B/EM</Model>
+    <Setting name="Camera.ReadoutControl.Mode"                        valueFormat="Full Frame"                type="ReadoutControlMode" value="FullFrame"></Setting>
+    <Setting name="Camera.ReadoutControl.Accumulations"                                                       type="Int64"              value="1"></Setting>
+    <Setting name="Camera.Adc.Speed"                                  valueFormat="10 MHz"                    type="Double"             value="10.00" displayNameFormat="ADC {0}"></Setting>
+    <Setting name="Camera.Adc.Quality"                                valueFormat="Electron Multiplied"       type="AdcQuality"         value="ElectronMultiplied"></Setting>
+    <Setting name="Camera.Adc.CorrectPixelBias"                                                               type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.TopMargin"         valueFormat="{0} rows"                  type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.BottomMargin"      valueFormat="{0} rows"                  type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.MaskedArea.Height"            valueFormat="{0} rows"                  type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.MaskedArea.TopMargin"         valueFormat="{0} rows"                  type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.MaskedArea.BottomMargin"      valueFormat="{0} rows"                  type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.LeftMargin"        valueFormat="{0} pixels"                type="Int32"              value="32"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.Width"             valueFormat="{0} pixels"                type="Int32"              value="1024"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.RightMargin"       valueFormat="{0} pixels"                type="Int32"              value="32"></Setting>
+    <Setting name="Camera.Sensor.Cleaning.CleanUntilTrigger"                                                  type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Sensor.Cleaning.CleanSerialRegister"                                                type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Acquisition.FrameTracking.Enabled"                                                  type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Acquisition.TimeStamping.Stamps"            valueFormat="None"                      type="TimeStamps"         value="None"></Setting>
+    <Setting name="Camera.Acquisition.GateTracking.Enabled"                                                   type="Boolean"            value ="false"></Setting>
+    <Setting name="Camera.Intensifier.Gating.Mode"                                                            type="GatingMode"         value ="Repetitive"></Setting>
+    <Setting name="Camera.Intensifier.PhosphorDecayDelay"             valueFormat="0 &#x00b5;s"               type="Double"             value ="0"></Setting>
+    <Setting name="Camera.Intensifier.PhosphorDecayDelayResolution"   valueFormat="&#x00b5;s"                 type="Double"             value ="0.100"></Setting>
+    <Setting name="Camera.Intensifier.Gating.RepetitiveGate"          valueFormat="1 &#x00b5;s, 1 &#x00b5;s"  type="Pulse"              value ="1e3,1e3"></Setting>
+    <Setting name="Camera.HardwareIO.AuxOutput"                       valueFormat="1 &#x00b5;s, 1 &#x00b5;s"  type="Pulse"              value ="1e3,1e3"></Setting>
+    <Setting name="Camera.HardwareIO.SyncMaster.Enabled"                                                      type="Boolean"            value ="false"></Setting>
+    <Setting name="Camera.HardwareIO.Trigger.Frequency"               valueFormat="1 MHz"                     type="Double"             value ="1000000"></Setting>
+    <Setting name="Camera.HardwareIO.Trigger.Source"                                                          type="TriggerSource"      value ="Internal"></Setting>
+    <Setting name="Camera.ReadoutControl.RegionsOfInterest.Selection" valueFormat="Rows Binned"               type="RegionsOfInterestSelection" value="LineSensor"></Setting>
+  </Models>
+  <Models>
+    <Model>ProEM-HS: 512B</Model>
+    <Model>ProEM-HS: 512B eXcelon</Model>
+    <Model>ProEM-HS: 512B-2</Model>
+    <Model>ProEM-HS: 512B eXcelon-2</Model>
+    <Setting name="Camera.ReadoutControl.Mode"                        valueFormat="Full Frame"           type="ReadoutControlMode" value="FullFrame"></Setting>
+    <Setting name="Camera.ReadoutControl.VerticalShiftRate"           valueFormat="300 ns"               type="Double"             value="0.300"></Setting>
+    <Setting name="Camera.Adc.Speed"                                  valueFormat="20 MHz"               type="Double"             value="20.00" displayNameFormat="ADC {0}"></Setting>
+    <Setting name="Camera.Adc.Quality"                                valueFormat="Electron Multiplied"  type="AdcQuality"         value="ElectronMultiplied"></Setting>
+    <Setting name="Camera.Adc.CorrectPixelBias"                                                          type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.TopMargin"         valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.BottomMargin"      valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.MaskedArea.Height"            valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.MaskedArea.TopMargin"         valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.MaskedArea.BottomMargin"      valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.LeftMargin"        valueFormat="{0} pixels"           type="Int32"              value="28"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.Width"             valueFormat="{0} pixels"           type="Int32"              value="512"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.RightMargin"       valueFormat="{0} pixels"           type="Int32"              value="28"></Setting>
+    <Setting name="Camera.Sensor.Cleaning.CleanUntilTrigger"                                             type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Sensor.Cleaning.CleanSerialRegister"                                           type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Sensor.Cleaning.CleanBeforeExposure"                                           type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.ShutterTiming.ClosingDelay"                 valueFormat="{0} ms"               type="Double"             value="0" displayNameFormat="Shutter {0}"></Setting>
+    <Setting name="Camera.ShutterTiming.OpeningDelay"                 valueFormat="{0} ms"               type="Double"             value="0" displayNameFormat="Shutter {0}"></Setting>
+    <Setting name="Camera.ShutterTiming.Mode"                         valueFormat="Always Open"          type="ShutterTimingMode"  value="AlwaysOpen"></Setting>
+    <Setting name="Camera.ShutterTiming.ExposureTime"                 valueFormat="10 &#x00b5;s"          type="Double"             value="0.01"></Setting>
+    <Setting name="Camera.Acquisition.FrameTracking.Enabled"                                             type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Acquisition.TimeStamping.Stamps"            valueFormat="None"                 type="TimeStamps"         value="None"></Setting>
+    <Setting name="Camera.ReadoutControl.RegionsOfInterest.Selection" valueFormat="Rows Binned"          type="RegionsOfInterestSelection" value="LineSensor"></Setting>
+  </Models>
+  <Models>    
+    <Model>ProEM-HS: 512BK</Model>
+    <Model>ProEM-HS: 512BK eXcelon</Model>
+    <Setting name="Camera.ReadoutControl.Mode"                       valueFormat="Full Frame"           type="ReadoutControlMode" value="FullFrame"></Setting>
+    <Setting name="Camera.ReadoutControl.VerticalShiftRate"          valueFormat="300 ns"               type="Double"             value="0.300"></Setting>
+    <Setting name="Camera.Adc.Speed"                                 valueFormat="20 MHz"               type="Double"             value="20.00" displayNameFormat="ADC {0}"></Setting>
+    <Setting name="Camera.Adc.Quality"                               valueFormat="Electron Multiplied"  type="AdcQuality"         value="ElectronMultiplied"></Setting>
+    <Setting name="Camera.Adc.CorrectPixelBias"                                                         type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.TopMargin"        valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.BottomMargin"     valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.MaskedArea.Height"           valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.MaskedArea.TopMargin"        valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.MaskedArea.BottomMargin"     valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.Secondary.MaskedArea.Height" valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.Secondary.ActiveArea.Height" valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.LeftMargin"       valueFormat="{0} pixels"           type="Int32"              value="28"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.Width"            valueFormat="{0} pixels"           type="Int32"              value="512"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.RightMargin"      valueFormat="{0} pixels"           type="Int32"              value="28"></Setting>
+    <Setting name="Camera.Sensor.Cleaning.CleanUntilTrigger"                                            type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Sensor.Cleaning.CleanSerialRegister"                                          type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Sensor.Cleaning.CleanBeforeExposure"                                          type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.ShutterTiming.ClosingDelay"                valueFormat="{0} ms"               type="Double"             value="0" displayNameFormat="Shutter {0}"></Setting>
+    <Setting name="Camera.ShutterTiming.OpeningDelay"                valueFormat="{0} ms"               type="Double"             value="0" displayNameFormat="Shutter {0}"></Setting>
+    <Setting name="Camera.ShutterTiming.Mode"                        valueFormat="Always Open"          type="ShutterTimingMode"  value="AlwaysOpen"></Setting>
+    <Setting name="Camera.ShutterTiming.ExposureTime"                valueFormat="10 &#x00b5;s"          type="Double"             value="0.01"></Setting>
+    <Setting name="Camera.Acquisition.FrameTracking.Enabled"                                            type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Acquisition.TimeStamping.Stamps"           valueFormat="None"                 type="TimeStamps"         value="None"></Setting>
+    <Setting name="Camera.ReadoutControl.RegionsOfInterest.Selection" valueFormat="Rows Binned"         type="RegionsOfInterestSelection" value="LineSensor"></Setting>
+  </Models>
+  <Models>
+    <Model>ProEM-HS: 1024B</Model>
+    <Model>ProEM-HS: 1024B eXcelon</Model>
+    <Model>ProEM-HS: 1024B-2</Model>
+    <Model>ProEM-HS: 1024B eXcelon-2</Model>
+    <Setting name="Camera.ReadoutControl.Mode"                        valueFormat="Full Frame"           type="ReadoutControlMode" value="FullFrame"></Setting>
+    <Setting name="Camera.ReadoutControl.VerticalShiftRate"           valueFormat="700 ns"               type="Double"             value="0.70"></Setting>
+    <Setting name="Camera.Adc.Speed"                                  valueFormat="30 MHz"               type="Double"             value="30.00" displayNameFormat="ADC {0}"></Setting>
+    <Setting name="Camera.Adc.Quality"                                valueFormat="Electron Multiplied"  type="AdcQuality"         value="ElectronMultiplied"></Setting>
+    <Setting name="Camera.Adc.CorrectPixelBias"                                                          type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.TopMargin"         valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.BottomMargin"      valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.MaskedArea.Height"            valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.MaskedArea.TopMargin"         valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.MaskedArea.BottomMargin"      valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.LeftMargin"        valueFormat="{0} pixels"           type="Int32"              value="32"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.Width"             valueFormat="{0} pixels"           type="Int32"              value="1024"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.RightMargin"       valueFormat="{0} pixels"           type="Int32"              value="32"></Setting>
+    <Setting name="Camera.Sensor.Cleaning.CleanUntilTrigger"                                             type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Sensor.Cleaning.CleanSerialRegister"                                           type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Sensor.Cleaning.CleanBeforeExposure"                                           type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.ShutterTiming.ClosingDelay"                 valueFormat="{0} ms"               type="Double"             value="0" displayNameFormat="Shutter {0}"></Setting>
+    <Setting name="Camera.ShutterTiming.OpeningDelay"                 valueFormat="{0} ms"               type="Double"             value="0" displayNameFormat="Shutter {0}"></Setting>
+    <Setting name="Camera.ShutterTiming.Mode"                         valueFormat="Always Open"          type="ShutterTimingMode"  value="AlwaysOpen"></Setting>
+    <Setting name="Camera.ShutterTiming.ExposureTime"                 valueFormat="10 &#x00b5;s"         type="Double"             value="0.01"></Setting>
+    <Setting name="Camera.Acquisition.FrameTracking.Enabled"                                             type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Acquisition.TimeStamping.Stamps"            valueFormat="None"                 type="TimeStamps"         value="None"></Setting>
+    <Setting name="Camera.ReadoutControl.RegionsOfInterest.Selection" valueFormat="Rows Binned"          type="RegionsOfInterestSelection" value="LineSensor"></Setting>
+  </Models>
+  <Models>
+    <Model>ProEM-HS: 1024B-3</Model>
+    <Model>ProEM-HS: 1024B eXcelon-3</Model>
+    <Setting name="Camera.ReadoutControl.Mode"                        valueFormat="Full Frame"           type="ReadoutControlMode" value="FullFrame"></Setting>
+    <Setting name="Camera.ReadoutControl.VerticalShiftRate"           valueFormat="700 ns"               type="Double"             value="0.70"></Setting>
+    <Setting name="Camera.Adc.Speed"                                  valueFormat="20 MHz"               type="Double"             value="20.00" displayNameFormat="ADC {0}"></Setting>
+    <Setting name="Camera.Adc.Quality"                                valueFormat="Electron Multiplied"  type="AdcQuality"         value="ElectronMultiplied"></Setting>
+    <Setting name="Camera.Adc.CorrectPixelBias"                                                          type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.TopMargin"         valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.BottomMargin"      valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.MaskedArea.Height"            valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.MaskedArea.TopMargin"         valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.MaskedArea.BottomMargin"      valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.LeftMargin"        valueFormat="{0} pixels"           type="Int32"              value="32"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.Width"             valueFormat="{0} pixels"           type="Int32"              value="1024"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.RightMargin"       valueFormat="{0} pixels"           type="Int32"              value="32"></Setting>
+    <Setting name="Camera.Sensor.Cleaning.CleanUntilTrigger"                                             type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Sensor.Cleaning.CleanSerialRegister"                                           type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Sensor.Cleaning.CleanBeforeExposure"                                           type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.ShutterTiming.ClosingDelay"                 valueFormat="{0} ms"               type="Double"             value="0" displayNameFormat="Shutter {0}"></Setting>
+    <Setting name="Camera.ShutterTiming.OpeningDelay"                 valueFormat="{0} ms"               type="Double"             value="0" displayNameFormat="Shutter {0}"></Setting>
+    <Setting name="Camera.ShutterTiming.Mode"                         valueFormat="Always Open"          type="ShutterTimingMode"  value="AlwaysOpen"></Setting>
+    <Setting name="Camera.ShutterTiming.ExposureTime"                 valueFormat="10 &#x00b5;s"         type="Double"             value="0.01"></Setting>
+    <Setting name="Camera.Acquisition.FrameTracking.Enabled"                                             type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Acquisition.TimeStamping.Stamps"            valueFormat="None"                 type="TimeStamps"         value="None"></Setting>
+    <Setting name="Camera.ReadoutControl.RegionsOfInterest.Selection" valueFormat="Rows Binned"          type="RegionsOfInterestSelection" value="LineSensor"></Setting>
+  </Models>
+  <Models>
+    <Model>ProEM-HS: 1KB-10&#x00B5;m</Model>
+    <Model>ProEM-HS: 1KB eXcelon-10&#x00B5;m</Model>
+    <Setting name="Camera.ReadoutControl.Mode"                        valueFormat="Full Frame"           type="ReadoutControlMode" value="FullFrame"></Setting>
+    <Setting name="Camera.ReadoutControl.VerticalShiftRate"           valueFormat="800 ns"               type="Double"             value="0.80"></Setting>
+    <Setting name="Camera.Adc.Speed"                                  valueFormat="36.67 MHz"            type="Double"             value="36.67" displayNameFormat="ADC {0}"></Setting>
+    <Setting name="Camera.Adc.CorrectPixelBias"                                                          type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.TopMargin"         valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.BottomMargin"      valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.MaskedArea.Height"            valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.MaskedArea.TopMargin"         valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.MaskedArea.BottomMargin"      valueFormat="{0} rows"             type="Int32"              value="0"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.LeftMargin"        valueFormat="{0} pixels"           type="Int32"              value="40"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.Width"             valueFormat="{0} pixels"           type="Int32"              value="1024"></Setting>
+    <Setting name="Camera.Sensor.Layout.ActiveArea.RightMargin"       valueFormat="{0} pixels"           type="Int32"              value="40"></Setting>
+    <Setting name="Camera.Sensor.Cleaning.CleanUntilTrigger"                                             type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Sensor.Cleaning.CleanSerialRegister"                                           type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Sensor.Cleaning.CleanBeforeExposure"                                           type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.ShutterTiming.ClosingDelay"                 valueFormat="{0} ms"               type="Double"             value="0" displayNameFormat="Shutter {0}"></Setting>
+    <Setting name="Camera.ShutterTiming.OpeningDelay"                 valueFormat="{0} ms"               type="Double"             value="0" displayNameFormat="Shutter {0}"></Setting>
+    <Setting name="Camera.ShutterTiming.Mode"                         valueFormat="Always Open"          type="ShutterTimingMode"  value="AlwaysOpen"></Setting>
+    <Setting name="Camera.ShutterTiming.ExposureTime"                 valueFormat="10 &#x00b5;s"         type="Double"             value="0.01"></Setting>
+    <Setting name="Camera.Acquisition.FrameTracking.Enabled"                                             type="Boolean"            value="false"></Setting>
+    <Setting name="Camera.Acquisition.TimeStamping.Stamps"            valueFormat="None"                 type="TimeStamps"         value="None"></Setting>
+    <Setting name="Camera.ReadoutControl.RegionsOfInterest.Selection" valueFormat="Rows Binned"          type="RegionsOfInterestSelection" value="LineSensor"></Setting>
+  </Models>
+</CameraHighSpeedSettings>

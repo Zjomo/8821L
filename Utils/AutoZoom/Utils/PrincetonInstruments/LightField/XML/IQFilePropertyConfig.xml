@@ -1,0 +1,844 @@
+<FilePropertyConfig xmlns="x-schema:../xml/IQFileProperties.xml">
+  <Name>Default</Name>
+  <Description>Default mapping of file format properties to image and frame properties. Note: Any property data can be added to the Description property, regardless of data type.</Description>
+  <Count>3</Count>
+  <FilePropertyCollection collectionType="NumericID">
+    <Name>TIFF</Name>
+    <Description>Default mapping of TIFF format tags. Note that some TIFF tags used for proper image data decoding will never be copied to image or frame properties.</Description>
+    <Count>10</Count>
+    <FilePropertyInfo propertyType="String" isStandard="true">
+      <Name>DocumentName</Name>
+      <Description>Image Title</Description>
+      <Identifier>269</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>Title</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String" isStandard="true">
+      <Name>ImageDescription</Name>
+      <Description>Image Description</Description>
+      <Identifier>270</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>Description</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String" isStandard="true">
+      <Name>Camera Make</Name>
+      <Description>Camera make (manufacturer)</Description>
+      <Identifier>271</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>Make</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String" isStandard="true">
+      <Name>Camera Model</Name>
+      <Description>Camera model</Description>
+      <Identifier>272</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>Model</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Integer">
+      <Name>MinSampleValue</Name>
+      <Description>Minimum sample value (or minimum intensity)</Description>
+      <Identifier>280</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>MinSampleValue</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Integer">
+      <Name>MaxSampleValue</Name>
+      <Description>Maximum sample value (or maximum intensity)</Description>
+      <Identifier>281</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>MaxSampleValue</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String">
+      <Name>PageName</Name>
+      <Description>Document page name</Description>
+      <Identifier>285</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>PageName</Property>
+      <IsImageProperty>0</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Double">
+      <Name>XPosition</Name>
+      <Description>Document X position</Description>
+      <Identifier>286</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>XPosition</Property>
+      <IsImageProperty>0</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Double">
+      <Name>YPosition</Name>
+      <Description>Document Y position</Description>
+      <Identifier>287</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>YPosition</Property>
+      <IsImageProperty>0</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String" isStandard="true">
+      <Name>HostComputer</Name>
+      <Description>Host computer</Description>
+      <Identifier>316</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>HostComputer</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+  </FilePropertyCollection>
+  <FilePropertyCollection collectionType="NumericID">
+    <Name>EXIF</Name>
+    <Description>Default mapping of EXIF format tags, from either TIFF or JPEG.</Description>
+    <Count>70</Count>
+    <FilePropertyInfo propertyType="String">
+      <Name>Exif Version</Name>
+      <Description>4-digit Exif version number</Description>
+      <Identifier>36864</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>ExifVersion</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String">
+      <Name>Flashpix Version</Name>
+      <Description>4-digit Flashpix version number</Description>
+      <Identifier>40960</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>FlashpixVersion</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String" isStandard="true">
+      <Name>DocumentName</Name>
+      <Description>Image Title</Description>
+      <Identifier>269</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>Title</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String" isStandard="true">
+      <Name>ImageDescription</Name>
+      <Description>Image Description</Description>
+      <Identifier>270</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>Description</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String" isStandard="true">
+      <Name>Camera Make</Name>
+      <Description>Camera make (manufacturer)</Description>
+      <Identifier>271</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>Make</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String" isStandard="true">
+      <Name>Camera Model</Name>
+      <Description>Camera model</Description>
+      <Identifier>272</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>Model</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String" isStandard="true">
+      <Name>Software</Name>
+      <Description>Creating software</Description>
+      <Identifier>305</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>Software</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Date" isStandard="true">
+      <Name>DateTime</Name>
+      <Description>Document date and time</Description>
+      <Identifier>306</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>Date</Property>
+      <IsImageProperty>0</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String" isStandard="true">
+      <Name>Artist</Name>
+      <Description>Creator of the image</Description>
+      <Identifier>315</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>Artist</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String" isStandard="true">
+      <Name>HostComputer</Name>
+      <Description>Host computer</Description>
+      <Identifier>316</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>HostComputer</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String" isStandard="true">
+      <Name>Copyright</Name>
+      <Description>Photographer and Editor copyrights (null separated)</Description>
+      <Identifier>33432</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>Copyright</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Integer">
+      <Name>ColorSpace</Name>
+      <Description>Color space information</Description>
+      <Identifier>40961</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>ColorSpace</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String">
+      <Name>ComponentsConfiguration</Name>
+      <Description>Meaning of each component</Description>
+      <Identifier>37121</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>ComponentsConfiguration</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Double">
+      <Name>CompressedBitsPerPixel</Name>
+      <Description>Image compression mode</Description>
+      <Identifier>37122</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>CompressedBitsPerPixel</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Integer">
+      <Name>PixelXDimension</Name>
+      <Description>Valid image width</Description>
+      <Identifier>40962</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>PixelXDimension</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Integer">
+      <Name>PixelYDimension</Name>
+      <Description>Valid image height</Description>
+      <Identifier>40963</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>PixelYDimension</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Date">
+      <Name>DateTimeOriginal</Name>
+      <Description>Date and time original image was generated</Description>
+      <Identifier>36867</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>DateTimeOriginal</Property>
+      <IsImageProperty>0</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Date">
+      <Name>DateTimeDigitized</Name>
+      <Description>Date and time image was digitized</Description>
+      <Identifier>36868</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>DateTimeDigitized</Property>
+      <IsImageProperty>0</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String">
+      <Name>SubSecTime</Name>
+      <Description>The fractional portion of the time in seconds</Description>
+      <Identifier>37520</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>SubSecTime</Property>
+      <IsImageProperty>0</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String">
+      <Name>SubSecTimeOriginal</Name>
+      <Description>The fractional portion of the original time in seconds</Description>
+      <Identifier>37521</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>SubSecTimeOriginal</Property>
+      <IsImageProperty>0</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String">
+      <Name>SubSecTimeDigitized</Name>
+      <Description>The fractional portion of the digitized time in seconds</Description>
+      <Identifier>37522</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>SubSecTimeDigitized</Property>
+      <IsImageProperty>0</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Double">
+      <Name>ExposureTime</Name>
+      <Description>Capture Exposure in seconds</Description>
+      <Identifier>33434</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>ExposureTime</Property>
+      <IsImageProperty>0</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Double">
+      <Name>FNumber</Name>
+      <Description>Capture F stop number</Description>
+      <Identifier>33437</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>FNumber</Property>
+      <IsImageProperty>0</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Integer">
+      <Name>ExposureProgram</Name>
+      <Description>Exposure program</Description>
+      <Identifier>34850</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>ExposureProgram</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String">
+      <Name>SpectralSensitivity</Name>
+      <Description>Spectral sensitivity</Description>
+      <Identifier>34852</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>SpectralSensitivity</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Integer">
+      <Name>ISOSpeedRatings</Name>
+      <Description>ISO speed ratings</Description>
+      <Identifier>34855</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>ISOSpeedRatings</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String">
+      <Name>OECF</Name>
+      <Description>Optoelectric conversion factor</Description>
+      <Identifier>34856</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>OECF</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Double">
+      <Name>ShutterSpeedValue</Name>
+      <Description>Camera Shutter speed</Description>
+      <Identifier>37377</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>ShutterSpeedValue</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Double">
+      <Name>ApertureValue</Name>
+      <Description>Lens aperture</Description>
+      <Identifier>37378</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>ApertureValue</Property>
+      <IsImageProperty>0</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Double">
+      <Name>BrightnessValue</Name>
+      <Description>Capture Brightness</Description>
+      <Identifier>37379</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>BrightnessValue</Property>
+      <IsImageProperty>0</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Double">
+      <Name>ExposureBiasValue</Name>
+      <Description>Capture exposure bias</Description>
+      <Identifier>37380</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>ExposureBiasValue</Property>
+      <IsImageProperty>0</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Double">
+      <Name>MaxApertureValue</Name>
+      <Description>Maximum lens aperture</Description>
+      <Identifier>37381</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>MaxApertureValue</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Double">
+      <Name>SubjectDistance</Name>
+      <Description>Capture Subject distance</Description>
+      <Identifier>37382</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>SubjectDistance</Property>
+      <IsImageProperty>0</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Integer">
+      <Name>MeteringMode</Name>
+      <Description>Metering mode</Description>
+      <Identifier>37383</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>MeteringMode</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Integer">
+      <Name>LightSource</Name>
+      <Description>Light source</Description>
+      <Identifier>37384</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>LightSource</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Integer">
+      <Name>Flash</Name>
+      <Description>Flash</Description>
+      <Identifier>37385</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>Flash</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Double">
+      <Name>FocalLength</Name>
+      <Description>Lens focal length</Description>
+      <Identifier>37386</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>FocalLength</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Integer">
+      <Name>SubjectArea</Name>
+      <Description>Subject area (multiple integers)</Description>
+      <Identifier>37396</Identifier>
+      <FilePropertySupport>Ignore</FilePropertySupport>
+      <Property>SubjectArea</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Unknown">
+      <Name>MakerNote</Name>
+      <Description>Manufacturer notes, usually a binary directory of additional tags in mfgr-specific format</Description>
+      <Identifier>37500</Identifier>
+      <FilePropertySupport>Ignore</FilePropertySupport>
+      <Property>MakerNote</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String">
+      <Name>UserComment</Name>
+      <Description>User comments or Keywords</Description>
+      <Identifier>37510</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>Description</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String">
+      <Name>RelatedSoundFile</Name>
+      <Description>Related audio file</Description>
+      <Identifier>40964</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>RelatedSoundFile</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Double">
+      <Name>FlashEnergy</Name>
+      <Description>Flash energy</Description>
+      <Identifier>41483</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>FlashEnergy</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Unknown">
+      <Name>SpatialFrequencyResponse</Name>
+      <Description>Spatial frequence response</Description>
+      <Identifier>41484</Identifier>
+      <FilePropertySupport>Ignore</FilePropertySupport>
+      <Property>SpatialFrequencyResponse</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Double">
+      <Name>FocalPlaneXResolution</Name>
+      <Description>Focal plane X resolution</Description>
+      <Identifier>41486</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>FocalPlaneXResolution</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Double">
+      <Name>FocalPlaneYResolution</Name>
+      <Description>Focal plane Y resolution</Description>
+      <Identifier>41487</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>FocalPlaneYResolution</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Integer">
+      <Name>FocalPlaneResolutionUnit</Name>
+      <Description>Focal plane resolution unit</Description>
+      <Identifier>41488</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>FocalPlaneResolutionUnit</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Integer">
+      <Name>SubjectLocation</Name>
+      <Description>Subject location (2 integers)</Description>
+      <Identifier>41492</Identifier>
+      <FilePropertySupport>Ignore</FilePropertySupport>
+      <Property>SubjectLocation</Property>
+      <IsImageProperty>0</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Double">
+      <Name>ExposureIndex</Name>
+      <Description>Exposure index</Description>
+      <Identifier>41493</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>ExposureIndex</Property>
+      <IsImageProperty>0</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Integer">
+      <Name>SensingMethod</Name>
+      <Description>Sensing method</Description>
+      <Identifier>41495</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>SensingMethod</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String">
+      <Name>FileSource</Name>
+      <Description>File source</Description>
+      <Identifier>41728</Identifier>
+      <FilePropertySupport>Ignore</FilePropertySupport>
+      <Property>FileSource</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String">
+      <Name>SceneType</Name>
+      <Description>Scene type</Description>
+      <Identifier>41729</Identifier>
+      <FilePropertySupport>Ignore</FilePropertySupport>
+      <Property>SceneType</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String">
+      <Name>CFAPattern</Name>
+      <Description>CFA pattern</Description>
+      <Identifier>41730</Identifier>
+      <FilePropertySupport>Ignore</FilePropertySupport>
+      <Property>CFAPattern</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Integer">
+      <Name>CustomRendered</Name>
+      <Description>Custom image processing</Description>
+      <Identifier>41985</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>CustomRendered</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Integer">
+      <Name>ExposureMode</Name>
+      <Description>Exposure mode</Description>
+      <Identifier>41986</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>ExposureMode</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Integer">
+      <Name>WhiteBalance</Name>
+      <Description>White balance</Description>
+      <Identifier>41987</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>WhiteBalance</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Double">
+      <Name>Digital zoom ratio</Name>
+      <Description>Digital zoom ratio</Description>
+      <Identifier>41988</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>DigitalZoomRatio</Property>
+      <IsImageProperty>0</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Integer">
+      <Name>FocalLengthIn35mmFile</Name>
+      <Description>Focal length in 35mm film</Description>
+      <Identifier>41989</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>FocalLengthIn35mmFile</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Integer">
+      <Name>SceneCaptureType</Name>
+      <Description>Scene capture type</Description>
+      <Identifier>41990</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>SceneCaptureType</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Integer">
+      <Name>Gain control</Name>
+      <Description>Gain control</Description>
+      <Identifier>41991</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>GainControl</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Integer">
+      <Name>Contrast</Name>
+      <Description>Contrast</Description>
+      <Identifier>41992</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>Contrast</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Integer">
+      <Name>Saturation</Name>
+      <Description>Saturation</Description>
+      <Identifier>41993</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>Saturation</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Integer">
+      <Name>Sharpness</Name>
+      <Description>Sharpness</Description>
+      <Identifier>41994</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>Sharpness</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String">
+      <Name>Device settings description</Name>
+      <Description>Device settings description</Description>
+      <Identifier>41995</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>CaptDeviceSpecialDesc</Property>
+      <IsImageProperty>0</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Integer">
+      <Name>SubjectDistanceRange</Name>
+      <Description>Capture Subject distance range</Description>
+      <Identifier>41996</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>SubjectDistanceRange</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Integer">
+      <Name>OriginalImageWidth</Name>
+      <Description>Original image width, probably CCD size</Description>
+      <Identifier>4097</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>OriginalImageWidth</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Integer">
+      <Name>OriginalImageHeight</Name>
+      <Description>Original image height, probably CCD size</Description>
+      <Identifier>4098</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>OriginalImageHeight</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String">
+      <Name>ImageUniqueID</Name>
+      <Description>Unique Image ID</Description>
+      <Identifier>42016</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>InitialSignature</Property>
+      <IsImageProperty>0</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Integer">
+      <Name>ExifIFD</Name>
+      <Description>Exif IFD offset</Description>
+      <Identifier>34665</Identifier>
+      <FilePropertySupport>Ignore</FilePropertySupport>
+      <Property>ExifIFD</Property>
+      <IsImageProperty>0</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Integer">
+      <Name>InteroperabilityIFD</Name>
+      <Description>Interoperability IFD offset</Description>
+      <Identifier>40965</Identifier>
+      <FilePropertySupport>Ignore</FilePropertySupport>
+      <Property>InteroperabilityIFD</Property>
+      <IsImageProperty>0</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Integer">
+      <Name>GPSIFD</Name>
+      <Description>GPS IFD Offset</Description>
+      <Identifier>34853</Identifier>
+      <FilePropertySupport>Ignore</FilePropertySupport>
+      <Property>GPSIFD</Property>
+      <IsImageProperty>0</IsImageProperty>
+    </FilePropertyInfo>
+  </FilePropertyCollection>
+  <FilePropertyCollection collectionType="NumericID">
+    <Name>Adobe IPTC</Name>
+    <Description>Default mapping of IPTC record 2 information from Adobe Image Resource Blocks.</Description>
+    <Count>23</Count>
+    <FilePropertyInfo propertyType="String">
+      <Name>ObjectName</Name>
+      <Description>Primary subject of the photo</Description>
+      <Identifier>5</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>Title</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String">
+      <Name>EditStatus</Name>
+      <Description>Status of the photo</Description>
+      <Identifier>7</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>EditStatus</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String">
+      <Name>Urgency</Name>
+      <Description>Status of the photo</Description>
+      <Identifier>10</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>Urgency</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String">
+      <Name>Category</Name>
+      <Description>IPTC category</Description>
+      <Identifier>15</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>Category</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String">
+      <Name>SupplementalCategories</Name>
+      <Description>Supplemental IPTC categories, comma separated</Description>
+      <Identifier>20</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>SupplementalCategories</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String">
+      <Name>FixtureIdentifier</Name>
+      <Description>Identifies object data that recurs often and predicably.</Description>
+      <Identifier>22</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>ObjectIdentifier</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String">
+      <Name>Keywords</Name>
+      <Description>Subject keywords, comma separated</Description>
+      <Identifier>25</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>Keywords</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String">
+      <Name>ContentLocationCode</Name>
+      <Description>ISO code for the country or geographical location referenced by the content of the object.</Description>
+      <Identifier>26</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>LocationCode</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String">
+      <Name>ContentLocationName</Name>
+      <Description>Name of the country or geographical location referenced by the content of the object.</Description>
+      <Identifier>26</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>LocationName</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String">
+      <Name>SpecialInstructions</Name>
+      <Description>Special instructions</Description>
+      <Identifier>40</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>Instructions</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="Date">
+      <Name>DateCreated</Name>
+      <Description>Date the photo was created</Description>
+      <Identifier>55</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>DateCreated</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String">
+      <Name>Byline</Name>
+      <Description>Photo byline</Description>
+      <Identifier>80</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>Creator</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String">
+      <Name>BylineTitle</Name>
+      <Description>Photo byline title</Description>
+      <Identifier>85</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>CreatorsJobtitle</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String">
+      <Name>City</Name>
+      <Description>City in which the photo was captured</Description>
+      <Identifier>90</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>City</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String">
+      <Name>State</Name>
+      <Description>State or province in which the photo was captured</Description>
+      <Identifier>95</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>ProvinceState</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String">
+      <Name>Country</Name>
+      <Description>Country in which the photo was captured</Description>
+      <Identifier>101</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>Country</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String">
+      <Name>OriginalTransmissionReference</Name>
+      <Description>Original transmission reference</Description>
+      <Identifier>103</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>JobIdentifier</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String">
+      <Name>Headline</Name>
+      <Description>Suggested headline</Description>
+      <Identifier>105</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>Headline</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String">
+      <Name>Credits</Name>
+      <Description>Photo credits</Description>
+      <Identifier>110</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>Provider</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String">
+      <Name>Source</Name>
+      <Description>Photo source</Description>
+      <Identifier>115</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>Source</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String">
+      <Name>Copyright</Name>
+      <Description>Photo copyright information</Description>
+      <Identifier>116</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>CopyrightNotice</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String">
+      <Name>Description</Name>
+      <Description>Photo description</Description>
+      <Identifier>120</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>Caption</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+    <FilePropertyInfo propertyType="String">
+      <Name>CaptionWriter</Name>
+      <Description>Author of the photo caption</Description>
+      <Identifier>122</Identifier>
+      <FilePropertySupport>Normal</FilePropertySupport>
+      <Property>CaptionWriter</Property>
+      <IsImageProperty>1</IsImageProperty>
+    </FilePropertyInfo>
+  </FilePropertyCollection>
+</FilePropertyConfig>

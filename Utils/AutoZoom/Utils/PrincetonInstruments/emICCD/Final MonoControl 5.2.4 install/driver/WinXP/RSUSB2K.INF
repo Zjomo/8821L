@@ -1,0 +1,89 @@
+;
+[Version]
+; copyright 2001 Andrew Pargeter & Associates
+;this install will only on Win2k and Win XP!
+Signature="$Windows NT$"
+Class=DataAcquisition
+ClassGUID="{5EF56559-AECB-4ff3-90A9-EFD3D004DBC9}"
+Provider=%APA%
+DriverVer=02/08/2003,1.5
+
+[Manufacturer]
+%APA%=APA
+
+[DestinationDirs]
+; Destination dirs have to be this way (not just 12) as per DDK info on USB
+DefaultDestDir=10,System32\Drivers
+APAUSB.SysFiles=10,System32\Drivers
+APAUSB.DllFiles=10,System32
+
+[APAUSB.SysFiles]
+apausb.sys
+
+[APAUSB.DLLFiles]
+apausbprop.dll
+
+;[SourceDisksFiles]
+;apausb.sys=1
+;apausbprop.dll=1
+
+;[SourceDisksNames]
+;1=%InstallDisk%,,,
+
+[ControlFlags]
+;ExcludeFromSelect=*
+ExcludeFromSelect=USB\VID_0BD7&PID_A010
+
+;Win2k+ only
+[ClassInstall32]
+;DelFiles=APAUSB.SysFiles,APAUSB.DllFiles
+;Copyfiles=APAUSB.SysFiles,APAUSB.DllFiles
+AddReg=ClassInstall32.AddReg
+
+;Win2k+ only
+[ClassInstall32.AddReg]
+HKR,,,0,%ClassDesc%
+HKR,,Icon,,-20
+HKR,,EnumPropPages32,,"apausbprop.dll,PropPageProvider" 
+
+[APA]
+%USB\VID_0BD7&PID_A010.DeviceDesc%=APAUSB, USB\VID_0BD7&PID_A010
+%USB\VID_04B4&PID_8613.DeviceDesc%=APAUSB, USB\VID_04B4&PID_8613
+;%USB\VID_0BD7&PID_1002.DeviceDesc%=APAUSB, USB\VID_0BD7&PID_1002
+
+;Win2k+ only
+[APAUSB.NT]
+;CopyFiles=APAUSB.DllFiles,APAUSB.SysFiles
+
+;Win2k+ only
+[APAUSB.NT.Services]
+AddService = APAUSB, 0x00000002, APAUSB.AddService
+
+;Win2k+ only
+[APAUSB.AddService]
+DisplayName    = %APAUSB.SvcDesc%
+ServiceType    = 1                  ; SERVICE_KERNEL_DRIVER
+StartType      = 3                  ; SERVICE_DEMAND_START  
+ErrorControl   = 1                  ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %10%\System32\Drivers\apausb.sys
+AddReg=APAUSB.AddReg
+
+[APAUSB.AddReg]
+HKR,,ClassGUID,0,%APAClassGUID%
+HKR,%ConfigKey%,MaxTransfer,0x00010001,3604480
+HKR,%ConfigKey%,AuthKey,c64c5d38770c864f,%AuthKey%
+HKR,%ConfigKey%,RenumOnHibernate,0x00010001,0
+
+;------------------------ Strings ----------------------------;
+
+[Strings]
+APA="Andrew Pargeter & Associates."
+ConfigKey="Vid_0bd7&Pid_A010"
+USB\VID_0BD7&PID_A010.DeviceDesc="Roper Scientific USB2 Interface"
+USB\VID_04B4&PID_8613.DeviceDesc="Roper Scientific USB2 (FIRMWARE Missing)"
+;USB\VID_0BD7&PID_1002.DeviceDesc="APA Sample Device"
+APAUSB.SvcDesc="APA Generic USB Driver"
+;InstallDisk="USBDriverInstallationDisk"
+ClassDesc="Data Acquisition"
+APAClassGUID="{5EF56559-AECB-4ff3-90A9-EFD3D004DBC9}"
+AuthKey="c64c5d38770c864f"

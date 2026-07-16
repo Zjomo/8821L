@@ -1,0 +1,11 @@
+REGEDIT4
+
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\pi_pci]
+"npages"=dword:000007d0
+"timerflag"=dword:00000001
+"Group"="Extended Base"
+"Start"=dword:00000000
+"Type"=dword:00000001
+"ErrorControl"=dword:00000001
+
+

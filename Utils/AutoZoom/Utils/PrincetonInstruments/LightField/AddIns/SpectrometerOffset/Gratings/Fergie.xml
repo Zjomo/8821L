@@ -1,0 +1,72 @@
+﻿<Gratings>
+  <!-- Common gratings -->
+  <Grating DisplayName="1200 g/mm 550 blaze" Ruling="HOLOGRAPHIC" Grooves="1200.0" Blazing="550"></Grating>
+  <Grating DisplayName="1180 g/mm 750 blaze" Ruling="HOLOGRAPHIC" Grooves="1180.0" Blazing="750"></Grating>
+  <Grating DisplayName="600 g/mm 750 blaze" Ruling="HOLOGRAPHIC"  Grooves="600.0"  Blazing="750"></Grating>
+  <Grating DisplayName="295 g/mm 575 blaze" Ruling="HOLOGRAPHIC"  Grooves="295.0"  Blazing="575"></Grating>
+  <Grating DisplayName="1800 g/mm 250 blaze" Ruling="HOLOGRAPHIC" Grooves="1800.0" Blazing="250"></Grating>
+  <!-- Separator-->
+  <Grating DisplayName="Separator" Ruling="HOLOGRAPHIC" Grooves="0" Blazing="0"></Grating>
+  <!-- Not so common gratings -->
+  <Grating DisplayName="147.5 g/mm 550 blaze" Ruling="HOLOGRAPHIC" Grooves="147.5" Blazing="550"></Grating>
+  <Grating DisplayName="150 g/mm 300 blaze" Ruling="HOLOGRAPHIC" Grooves="150" Blazing="300"></Grating>
+  <Grating DisplayName="150 g/mm 1100 blaze" Ruling="HOLOGRAPHIC" Grooves="150" Blazing="1100"></Grating>
+  <Grating DisplayName="295 g/mm 270 blaze" Ruling="HOLOGRAPHIC" Grooves="295" Blazing="270"></Grating>
+  <Grating DisplayName="295 g/mm 575 blaze" Ruling="HOLOGRAPHIC" Grooves="295" Blazing="575"></Grating>
+  <Grating DisplayName="295 g/mm 650 blaze" Ruling="HOLOGRAPHIC" Grooves="295" Blazing="650"></Grating>
+  <Grating DisplayName="300 g/mm 320 blaze" Ruling="HOLOGRAPHIC" Grooves="300" Blazing="320"></Grating>
+  <Grating DisplayName="300 g/mm 400 blaze" Ruling="HOLOGRAPHIC" Grooves="300" Blazing="400"></Grating>
+  <Grating DisplayName="300 g/mm 500 blaze" Ruling="HOLOGRAPHIC" Grooves="300" Blazing="500"></Grating>
+  <Grating DisplayName="300 g/mm 550 blaze" Ruling="HOLOGRAPHIC" Grooves="300" Blazing="550"></Grating>
+  <Grating DisplayName="300 g/mm 1000 blaze" Ruling="HOLOGRAPHIC" Grooves="300" Blazing="1000"></Grating>
+  <Grating DisplayName="590 g/mm 250 blaze" Ruling="HOLOGRAPHIC" Grooves="590" Blazing="250"></Grating>
+  <Grating DisplayName="590 g/mm 420 blaze" Ruling="HOLOGRAPHIC" Grooves="590" Blazing="420"></Grating>
+  <Grating DisplayName="590 g/mm 500 blaze" Ruling="HOLOGRAPHIC" Grooves="590" Blazing="500"></Grating>
+  <Grating DisplayName="590 g/mm 1200 blaze" Ruling="HOLOGRAPHIC" Grooves="590" Blazing="1200"></Grating>
+  <Grating DisplayName="600 g/mm 240 blaze" Ruling="HOLOGRAPHIC" Grooves="600" Blazing="240"></Grating>
+  <Grating DisplayName="600 g/mm 275 blaze" Ruling="HOLOGRAPHIC" Grooves="600" Blazing="275"></Grating>
+  <Grating DisplayName="600 g/mm 300 blaze" Ruling="HOLOGRAPHIC" Grooves="600" Blazing="300"></Grating>
+  <Grating DisplayName="600 g/mm 340 blaze" Ruling="HOLOGRAPHIC" Grooves="600" Blazing="340"></Grating>
+  <Grating DisplayName="600 g/mm 420 blaze" Ruling="HOLOGRAPHIC" Grooves="600" Blazing="420"></Grating>
+  <Grating DisplayName="600 g/mm 500 blaze" Ruling="HOLOGRAPHIC" Grooves="600" Blazing="500"></Grating>
+  <Grating DisplayName="600 g/mm 750 blaze" Ruling="HOLOGRAPHIC" Grooves="600" Blazing="750"></Grating>
+  <Grating DisplayName="600 g/mm 900 blaze" Ruling="HOLOGRAPHIC" Grooves="600" Blazing="900"></Grating>
+  <Grating DisplayName="600 g/mm 1000 blaze" Ruling="HOLOGRAPHIC" Grooves="600" Blazing="1000"></Grating>
+  <Grating DisplayName="600 g/mm 1050 blaze" Ruling="HOLOGRAPHIC" Grooves="600" Blazing="1050"></Grating>
+  <Grating DisplayName="900 g/mm 550 blaze" Ruling="HOLOGRAPHIC" Grooves="900" Blazing="550"></Grating>
+  <Grating DisplayName="1180 g/mm 190 blaze" Ruling="HOLOGRAPHIC" Grooves="1180" Blazing="190"></Grating>
+  <Grating DisplayName="1180 g/mm 240 blaze" Ruling="HOLOGRAPHIC" Grooves="1180" Blazing="240"></Grating>
+  <Grating DisplayName="1180 g/mm 275 blaze" Ruling="HOLOGRAPHIC" Grooves="1180" Blazing="275"></Grating>
+  <Grating DisplayName="1180 g/mm 300 blaze" Ruling="HOLOGRAPHIC" Grooves="1180" Blazing="300"></Grating>
+  <Grating DisplayName="1180 g/mm 325 blaze" Ruling="HOLOGRAPHIC" Grooves="1180" Blazing="325"></Grating>
+  <Grating DisplayName="1180 g/mm 450 blaze" Ruling="HOLOGRAPHIC" Grooves="1180" Blazing="450"></Grating>
+  <Grating DisplayName="1180 g/mm 500 blaze" Ruling="HOLOGRAPHIC" Grooves="1180" Blazing="500"></Grating>
+  <Grating DisplayName="1180 g/mm 600 blaze" Ruling="HOLOGRAPHIC" Grooves="1180" Blazing="600"></Grating>
+  <Grating DisplayName="1180 g/mm 700 blaze" Ruling="HOLOGRAPHIC" Grooves="1180" Blazing="700"></Grating>
+  <Grating DisplayName="1180 g/mm 750 blaze" Ruling="HOLOGRAPHIC" Grooves="1180" Blazing="750"></Grating>
+  <Grating DisplayName="1200 g/mm 225 blaze" Ruling="HOLOGRAPHIC" Grooves="1200" Blazing="225"></Grating>
+  <Grating DisplayName="1200 g/mm 250 blaze" Ruling="HOLOGRAPHIC" Grooves="1200" Blazing="250"></Grating>
+  <Grating DisplayName="1200 g/mm 300 blaze" Ruling="HOLOGRAPHIC" Grooves="1200" Blazing="300"></Grating>
+  <Grating DisplayName="1200 g/mm 300 blaze" Ruling="HOLOGRAPHIC" Grooves="1200" Blazing="300"></Grating>
+  <Grating DisplayName="1200 g/mm 380 blaze" Ruling="HOLOGRAPHIC" Grooves="1200" Blazing="380"></Grating>
+  <Grating DisplayName="1200 g/mm 450 blaze" Ruling="HOLOGRAPHIC" Grooves="1200" Blazing="450"></Grating>
+  <Grating DisplayName="1200 g/mm 540 blaze" Ruling="HOLOGRAPHIC" Grooves="1200" Blazing="540"></Grating>
+  <Grating DisplayName="1200 g/mm 550 blaze" Ruling="HOLOGRAPHIC" Grooves="1200" Blazing="550"></Grating>
+  <Grating DisplayName="1200 g/mm 650 blaze" Ruling="HOLOGRAPHIC" Grooves="1200" Blazing="650"></Grating>
+  <Grating DisplayName="1200 g/mm 850 blaze" Ruling="HOLOGRAPHIC" Grooves="1200" Blazing="850"></Grating>
+  <Grating DisplayName="1800 g/mm 250 blaze" Ruling="HOLOGRAPHIC" Grooves="1800" Blazing="250"></Grating>
+  <Grating DisplayName="1800 g/mm 550 blaze" Ruling="HOLOGRAPHIC" Grooves="1800" Blazing="550"></Grating>
+  <Grating DisplayName="1800 g/mm holographic uv" Ruling="HOLOGRAPHIC_UV"  Grooves="1800" Blazing="0"></Grating>
+  <Grating DisplayName="1800 g/mm holographic vis" Ruling="HOLOGRAPHIC_VIS" Grooves="1800" Blazing="0"></Grating>
+  <Grating DisplayName="2360 g/mm 275 blaze" Ruling="HOLOGRAPHIC" Grooves="2360" Blazing="275"></Grating>
+  <Grating DisplayName="2360 g/mm 300 blaze" Ruling="HOLOGRAPHIC" Grooves="2360" Blazing="300"></Grating>
+  <Grating DisplayName="2400 g/mm 250 blaze" Ruling="HOLOGRAPHIC" Grooves="2400" Blazing="250"></Grating>
+  <Grating DisplayName="2400 g/mm 325 blaze" Ruling="HOLOGRAPHIC" Grooves="2400" Blazing="325"></Grating>
+  <Grating DisplayName="2400 g/mm 500 blaze" Ruling="HOLOGRAPHIC" Grooves="2400" Blazing="500"></Grating>  
+  <Grating DisplayName="2400 g/mm holographic uv" Ruling="HOLOGRAPHIC_UV" Grooves="2400" Blazing="0"></Grating>
+  <Grating DisplayName="2400 g/mm holographic vis" Ruling="HOLOGRAPHIC_VIS" Grooves="2400" Blazing="0"></Grating>
+  <Grating DisplayName="3000 g/mm 400 blaze" Ruling="HOLOGRAPHIC" Grooves="3000" Blazing="400"></Grating>
+  <Grating DisplayName="3600 g/mm 240 blaze" Ruling="HOLOGRAPHIC" Grooves="3600" Blazing="240"></Grating>
+  <Grating DisplayName="3600 g/mm holographic uv" Ruling="HOLOGRAPHIC_UV" Grooves="3600" Blazing="0"></Grating>
+  <Grating DisplayName="4320 g/mm holographic uv" Ruling="HOLOGRAPHIC_UV" Grooves="4320" Blazing="0"></Grating>
+</Gratings>

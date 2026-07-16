@@ -1,0 +1,106 @@
+;/*++
+;
+;Module Name:
+;
+;    PIUSB64.INF
+;
+;Abstract:
+;    Installation inf for PI USB kernel mode driver
+;
+;--*/
+
+[Version]
+Signature="$WINDOWS NT$"
+Class=PI_USB
+ClassGuid={7B4B6729-58E7-4e50-A7D4-CDEAFEC229C1}
+Provider=%PI%
+DriverVer=10/10/2019,5.6.1.0
+CatalogFile.NTAMD64=piusb64.cat
+
+
+; ================= Class section =====================
+
+[ClassInstall32.ntamd64]
+Addreg=PIClassReg     
+
+[PIClassReg]
+HKR,,,0,%ClassName%
+HKR,,Icon,,-20
+
+
+; ================= Device section =====================
+
+[Manufacturer]
+%PIKMDF%=PI,NTAMD64
+
+; For XP and later
+[PI.NTAMD64]
+%USB\VID_0BD7&PID_A026.DeviceDesc%=PIUSB64.Dev, USB\VID_0BD7&PID_A026
+%USB\VID_0BD7&PID_A010.DeviceDesc%=PIUSB64.Dev, USB\VID_0BD7&PID_A010
+
+
+[PIUSB64.Dev.NT]
+CopyFiles=PIUSB64.Files.Ext
+
+[PIUSB64.Dev.NT.Services]
+AddService = PIUSB64, %SPSVCINST_ASSOCSERVICE%, PIUSB64.AddService
+
+[PIUSB64.AddService]
+DisplayName    = %PIUSB64.SvcDesc%
+ServiceType    = 1                  ; SERVICE_KERNEL_DRIVER
+StartType      = 3                  ; SERVICE_DEMAND_START
+ErrorControl   = 1                  ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %10%\System32\Drivers\piusbwdf.sys
+AddReg         = PIUSB64.AddReg
+LoadOrderGroup = Base
+
+[PIUSB64.AddReg]
+HKR, Parameters\Wdf, VerboseOn,       0x00010001, 1
+HKR, Parameters\Wdf, VerifierOn,      0x00010001, 1
+HKR, Parameters\Wdf, DbgBreakOnError, 0x00010001, 1
+HKR,, NumReaders, 0x00010001,3
+
+[PIUSB64.Files.Ext]
+piusbwdf.sys
+
+[SourceDisksNames]
+1=%Disk_Description%,,,
+
+[SourceDisksFiles]
+piusbwdf.sys = 1
+WdfCoInstaller01009.dll=1 ; make sure the number matches with SourceDisksNames
+
+[DestinationDirs]
+DefaultDestDir = 12
+CoInstaller_CopyFiles = 11
+
+;-------------- WDF Coinstaller installation
+
+[PIUSB64.Dev.NT.CoInstallers]
+AddReg=CoInstaller_AddReg
+CopyFiles=CoInstaller_CopyFiles
+
+[CoInstaller_CopyFiles]
+WdfCoInstaller01009.dll
+
+
+[CoInstaller_AddReg]
+HKR,,CoInstallers32,0x00010000, "WdfCoInstaller01009.dll,WdfCoInstaller"
+
+[PIUSB64.Dev.NT.Wdf]
+KmdfService = PIUSB64, PIUSB64_wdfsect
+
+[PIUSB64_wdfsect]
+KmdfLibraryVersion = 1.9
+
+;---------------------------------------------------------------;
+
+[Strings]
+PI="Princeton Instruments"
+PIKMDF="PI Software"
+Disk_Description="Pixis Installation Disk"
+USB\VID_0BD7&PID_A026.DeviceDesc="PIXIS USB Camera"
+USB\VID_0BD7&PID_A010.DeviceDesc="PI MTE USB Camera"
+PIUSB64.SvcDesc="WDF-KMDF Driver for PI USB Cameras"
+ClassName       = "Princeton Instruments USB"
+SPSVCINST_ASSOCSERVICE= 0x00000002

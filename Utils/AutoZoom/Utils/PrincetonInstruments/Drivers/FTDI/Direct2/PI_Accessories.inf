@@ -1,0 +1,133 @@
+[Version]
+Signature="$Windows NT$"
+DriverPackageType=PlugAndPlay
+DriverPackageDisplayName=%DESC%
+Class=PrincetonInstrumentsAccessories
+ClassGUID={443AA80D-1CA7-460E-BEE5-FFE4BA8BF4B7}
+Provider=%FTDI%
+CatalogFile=pi_ftdibus.cat
+DriverVer=09/19/2017,2.12.28
+
+[ClassInstall32]
+AddReg = ClassInstall_AddReg
+
+[ClassInstall_AddReg]
+HKR,,,,%ClassName%
+HKR,,NoInstallClass,,1
+HKR,,IconPath,%REG_MULTI_SZ%,"%SystemRoot%\system32\setupapi.dll,-19"
+
+[SourceDisksNames]
+1=%DriversDisk%,,,
+
+[SourceDisksFiles]
+ftdibus.sys = 1,i386
+ftbusui.dll = 1,i386
+ftd2xx.dll = 1,i386
+FTLang.Dll = 1,i386
+
+[SourceDisksFiles.amd64]
+ftdibus.sys = 1,amd64
+ftbusui.dll = 1,amd64
+ftd2xx64.dll = 1,amd64
+ftd2xx.dll = 1,i386
+FTLang.Dll = 1,amd64
+
+[DestinationDirs]
+FtdiBus.NT.Copy = 10,system32\drivers
+FtdiBus.NT.Copy2 = 10,system32
+FtdiBus.NTamd64.Copy = 10,system32\drivers
+FtdiBus.NTamd64.Copy2 = 10,system32
+FtdiBus.NTamd64.Copy3 = 10,syswow64
+
+[Add_Icons]
+DeviceIcon,,,,"%SystemRoot%\system32\setupapi.dll,-19"
+
+[Manufacturer]
+%Ftdi%=FtdiHw,NTamd64
+
+[FtdiHw]
+%USB\VID_0647&PID_F100.DeviceDesc%=FtdiBus.NT,USB\VID_0647&PID_F100
+%USB\VID_0647&PID_F101.DeviceDesc%=FtdiBus.NT,USB\VID_0647&PID_F101
+%USB\VID_0647&PID_F102.DeviceDesc%=FtdiBus.NT,USB\VID_0647&PID_F102
+
+[FtdiHw.NTamd64]
+%USB\VID_0647&PID_F100.DeviceDesc%=FtdiBus.NTamd64,USB\VID_0647&PID_F100
+%USB\VID_0647&PID_F101.DeviceDesc%=FtdiBus.NTamd64,USB\VID_0647&PID_F101
+%USB\VID_0647&PID_F102.DeviceDesc%=FtdiBus.NTamd64,USB\VID_0647&PID_F102
+
+[ControlFlags]
+ExcludeFromSelect=*
+
+[FtdiBus.NT]
+CopyFiles=FtdiBus.NT.Copy,FtdiBus.NT.Copy2
+AddReg=FtdiBus.NT.AddReg
+AddProperty=Add_Icons
+
+[FtdiBus.NT.HW]
+AddReg=FtdiBus.NT.HW.AddReg
+AddProperty=Add_Icons
+
+[FtdiBus.NTamd64]
+CopyFiles=FtdiBus.NTamd64.Copy,FtdiBus.NTamd64.Copy2,FtdiBus.NTamd64.Copy3
+AddReg=FtdiBus.NT.AddReg
+AddProperty=Add_Icons
+
+[FtdiBus.NTamd64.HW]
+AddReg=FtdiBus.NT.HW.AddReg
+AddProperty=Add_Icons
+
+[FtdiBus.NT.Services]
+AddService = FTDIBUS, 0x00000002, FtdiBus.NT.AddService
+
+[FtdiBus.NTamd64.Services]
+AddService = FTDIBUS, 0x00000002, FtdiBus.NT.AddService
+
+[FtdiBus.NT.AddService]
+DisplayName = %SvcDesc%
+ServiceType = 1 ; SERVICE_KERNEL_DRIVER
+StartType = 3 ; SERVICE_DEMAND_START
+ErrorControl = 1 ; SERVICE_ERROR_NORMAL
+ServiceBinary = %10%\system32\drivers\ftdibus.sys
+LoadOrderGroup = Base
+AddReg = FtdiBus.NT.AddService.AddReg
+
+[FtdiBus.NT.AddReg]
+HKR,,DevLoader,,*ntkern
+HKR,,NTMPDriver,,ftdibus.sys
+HKR,,EnumPropPages32,,"ftbusui.dll,FTBUSUIPropPageProvider"
+
+[FtdiBus.NT.HW.AddReg]
+HKR,,"USBTimeout",0x00010001,5000
+HKR,,"ConfigData",0x00010001,18
+
+[FtdiBus.NT.AddService.AddReg]
+HKR,Parameters,"RetryResetCount",0x10001,50
+
+[FtdiBus.NT.Copy]
+ftdibus.sys
+
+[FtdiBus.NT.Copy2]
+ftbusui.dll
+ftd2xx.dll
+FTLang.dll
+
+[FtdiBus.NTamd64.Copy]
+ftdibus.sys
+
+[FtdiBus.NTamd64.Copy2]
+ftbusui.dll
+ftd2xx.dll,ftd2xx64.dll
+FTLang.dll
+
+[FtdiBus.NTamd64.Copy3]
+ftd2xx.dll
+
+[Strings]
+Ftdi="FTDI"
+DESC="CDM Driver Package - Bus/D2XX Driver"
+DriversDisk="FTDI USB Drivers Disk"
+USB\VID_0647&PID_F100.DeviceDesc="Laser"
+USB\VID_0647&PID_F101.DeviceDesc="Quartz Tungsten Halogen Lamp"
+USB\VID_0647&PID_F102.DeviceDesc="Atomic Emissions Lamp"
+SvcDesc="Princeton LightSource Driver"
+ClassName="PrincetonInstrumentsAccessories"

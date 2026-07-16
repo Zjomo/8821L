@@ -1,0 +1,173 @@
+; FTDIBUS.INF
+; Copyright (c) 2000-2009 FTDI Ltd.
+;
+; USB serial converter driver installation file for Windows 2000, XP, Server 2003, Vista, Server 2008,
+; Windows 7 and Server 2008 R2 (x86 and x64).
+;
+; FTDI device drivers may be used only in conjunction with products based on FTDI parts.
+; The driver may be distributed in any form as long as our license information is not modified.
+; If a custom Vendor ID and/or Product ID, or description string are used, it is the responsibility of 
+; the product manufacturer to maintain any changes and subsequent WHQL re-certification as a result of
+; making these changes.
+;
+;
+
+[Version]
+Signature="$Windows NT$"
+DriverPackageType=PlugAndPlay
+DriverPackageDisplayName=%DESC%
+Class=USB
+ClassGUID={36fc9e60-c465-11cf-8056-444553540000}
+Provider=%PI%
+CatalogFile=ftdibus.cat
+DriverVer=10/22/2009,2.06.00
+
+[SourceDisksNames]
+1=%DriversDisk%,,,
+
+[SourceDisksFiles]
+ftdibus.sys = 1,i386
+ftbusui.dll = 1,i386
+ftd2xx.dll = 1,i386
+FTLang.Dll = 1,i386
+
+[SourceDisksFiles.amd64]
+ftdibus.sys = 1,amd64
+ftbusui.dll = 1,amd64
+ftd2xx64.dll = 1,amd64
+ftd2xx.dll = 1,i386
+FTLang.Dll = 1,amd64
+
+[DestinationDirs]
+FtdiBus.NT.Copy = 10,system32\drivers
+FtdiBus.NT.Copy2 = 10,system32
+FtdiBus.NTamd64.Copy = 10,system32\drivers
+FtdiBus.NTamd64.Copy2 = 10,system32
+FtdiBus.NTamd64.Copy3 = 10,syswow64
+
+
+[Manufacturer]
+%Ftdi%=FtdiHw,NTamd64
+
+[FtdiHw]
+%USB\VID_0647&PID_03E9.DeviceDesc%=FtdiBus.NT, USB\VID_0647&PID_03E9
+%USB\VID_0647&PID_03EA.DeviceDesc%=FtdiBus.NT, USB\VID_0647&PID_03EA
+%USB\VID_0647&PID_03EB.DeviceDesc%=FtdiBus.NT, USB\VID_0647&PID_03EB
+%USB\VID_0647&PID_03EC.DeviceDesc%=FtdiBus.NT, USB\VID_0647&PID_03EC
+%USB\VID_0647&PID_0200.DeviceDesc%=FtdiBus.NT,USB\VID_0647&PID_0200
+%USB\VID_0647&PID_0201.DeviceDesc%=FtdiBus.NT,USB\VID_0647&PID_0201
+%USB\VID_0647&PID_0202.DeviceDesc%=FtdiBus.NT,USB\VID_0647&PID_0202
+%USB\VID_0647&PID_0203.DeviceDesc%=FtdiBus.NT,USB\VID_0647&PID_0203
+%USB\VID_0647&PID_0204.DeviceDesc%=FtdiBus.NT,USB\VID_0647&PID_0204
+%USB\VID_0647&PID_0210.DeviceDesc%=FtdiBus.NT,USB\VID_0647&PID_0210
+%USB\VID_0647&PID_0220.DeviceDesc%=FtdiBus.NT,USB\VID_0647&PID_0220
+%USB\VID_0647&PID_0230.DeviceDesc%=FtdiBus.NT,USB\VID_0647&PID_0230
+%USB\VID_0647&PID_0240.DeviceDesc%=FtdiBus.NT,USB\VID_0647&PID_0240
+%USB\VID_0647&PID_0250.DeviceDesc%=FtdiBus.NT,USB\VID_0647&PID_0250
+
+[FtdiHw.NTamd64]
+%USB\VID_0647&PID_03E9.DeviceDesc%=FtdiBus.NTamd64, USB\VID_0647&PID_03E9
+%USB\VID_0647&PID_03EA.DeviceDesc%=FtdiBus.NTamd64, USB\VID_0647&PID_03EA
+%USB\VID_0647&PID_03EB.DeviceDesc%=FtdiBus.NTamd64, USB\VID_0647&PID_03EB
+%USB\VID_0647&PID_03EC.DeviceDesc%=FtdiBus.NTamd64, USB\VID_0647&PID_03EC
+%USB\VID_0647&PID_0200.DeviceDesc%=FtdiBus.NTamd64,USB\VID_0647&PID_0200
+%USB\VID_0647&PID_0201.DeviceDesc%=FtdiBus.NTamd64,USB\VID_0647&PID_0201
+%USB\VID_0647&PID_0202.DeviceDesc%=FtdiBus.NTamd64,USB\VID_0647&PID_0202
+%USB\VID_0647&PID_0203.DeviceDesc%=FtdiBus.NTamd64,USB\VID_0647&PID_0203
+%USB\VID_0647&PID_0204.DeviceDesc%=FtdiBus.NTamd64,USB\VID_0647&PID_0204
+%USB\VID_0647&PID_0210.DeviceDesc%=FtdiBus.NTamd64,USB\VID_0647&PID_0210
+%USB\VID_0647&PID_0220.DeviceDesc%=FtdiBus.NTamd64,USB\VID_0647&PID_0220
+%USB\VID_0647&PID_0230.DeviceDesc%=FtdiBus.NTamd64,USB\VID_0647&PID_0230
+%USB\VID_0647&PID_0240.DeviceDesc%=FtdiBus.NTamd64,USB\VID_0647&PID_0240
+%USB\VID_0647&PID_0250.DeviceDesc%=FtdiBus.NTamd64,USB\VID_0647&PID_0250
+
+[FtdiBus.NT.HW]
+AddReg=FtdiBus.NT.HW.AddReg
+
+[FtdiBus.NTamd64.HW]
+AddReg=FtdiBus.NT.HW.AddReg
+
+[FtdiBus.NT.HW.AddReg]
+HKR,,"ConfigData",0x00010001,0
+
+[ControlFlags]
+ExcludeFromSelect=*
+
+[FtdiBus.NT]
+CopyFiles=FtdiBus.NT.Copy,FtdiBus.NT.Copy2
+AddReg=FtdiBus.NT.AddReg
+
+[FtdiBus.NTamd64]
+CopyFiles=FtdiBus.NTamd64.Copy,FtdiBus.NTamd64.Copy2,FtdiBus.NTamd64.Copy3
+AddReg=FtdiBus.NT.AddReg
+
+[FtdiBus.NT.Services]
+AddService = FTDIBUS, 0x00000002, FtdiBus.NT.AddService
+
+[FtdiBus.NTamd64.Services]
+AddService = FTDIBUS, 0x00000002, FtdiBus.NT.AddService
+
+[FtdiBus.NT.AddService]
+DisplayName = %SvcDesc%
+ServiceType = 1 ; SERVICE_KERNEL_DRIVER
+StartType = 3 ; SERVICE_DEMAND_START
+ErrorControl = 1 ; SERVICE_ERROR_NORMAL
+ServiceBinary = %10%\system32\drivers\ftdibus.sys
+LoadOrderGroup = Base
+AddReg = FtdiBus.NT.AddService.AddReg
+
+[FtdiBus.NT.AddReg]
+HKR,,DevLoader,,*ntkern
+HKR,,NTMPDriver,,ftdibus.sys
+HKR,,EnumPropPages32,,"ftbusui.dll,FTBUSUIPropPageProvider"
+
+[FtdiBus.NT.AddService.AddReg]
+;HKR,Parameters,"LocIds",1,31,00,00,00,32,00,00,00,00
+;HKR,Parameters,"RetryResetCount",0x10001,50
+
+
+[FtdiBus.NT.Copy]
+ftdibus.sys
+
+[FtdiBus.NT.Copy2]
+ftbusui.dll
+ftd2xx.dll
+FTLang.dll
+
+[FtdiBus.NTamd64.Copy]
+ftdibus.sys
+
+[FtdiBus.NTamd64.Copy2]
+ftbusui.dll
+ftd2xx.dll,ftd2xx64.dll
+FTLang.dll
+
+[FtdiBus.NTamd64.Copy3]
+ftd2xx.dll
+
+[Strings]
+PI="Princeton Instruments"
+Ftdi="FTDI"
+DESC="CDM Driver Package"
+DriversDisk="FTDI USB Drivers Disk"
+USB\VID_0647&PID_03E9.DeviceDesc="INSPECTRUM 128x1024 F"
+USB\VID_0647&PID_03EA.DeviceDesc="INSPECTRUM 256x1024 F"
+USB\VID_0647&PID_03EB.DeviceDesc="INSPECTRUM 128x1024 B"
+USB\VID_0647&PID_03EC.DeviceDesc="INSPECTRUM 256x1024 B"
+USB\VID_0647&PID_0200.DeviceDesc="Princeton Instruments Light Source"
+USB\VID_0647&PID_0201.DeviceDesc="Princeton Instruments Mercury Light Source"
+USB\VID_0647&PID_0202.DeviceDesc="Princeton Instruments Neon Light Source"
+USB\VID_0647&PID_0203.DeviceDesc="Princeton Instruments Mercury Neon Light Source"
+USB\VID_0647&PID_0204.DeviceDesc="Princeton Instruments Mixed Gas Light Source"
+USB\VID_0647&PID_0205.DeviceDesc="Princeton Instruments Deuterium Light Source"
+USB\VID_0647&PID_0206.DeviceDesc="Princeton Instruments Tungsten Light Source"
+USB\VID_0647&PID_0207.DeviceDesc="Princeton Instruments Tungsten Deuterium Light Source"
+USB\VID_0647&PID_0210.DeviceDesc="Princeton Instruments Filter Wheel"
+USB\VID_0647&PID_0220.DeviceDesc="Princeton Instruments Laser Delivery System"
+USB\VID_0647&PID_0230.DeviceDesc="Princeton Instruments Lens Spectrograph"
+USB\VID_0647&PID_0240.DeviceDesc="Princeton Instruments Sample Chamber"
+USB\VID_0647&PID_0250.DeviceDesc="Princeton Instruments Detector"
+USB\VID_0647&PID_0251.DeviceDesc="Princeton Instruments Silocon Diode Detector"
+USB\VID_0647&PID_0252.DeviceDesc="Princeton Instruments Photon Multiplier Tube Detector"
+SvcDesc="USB Serial Converter Driver"
+ClassName="USB"

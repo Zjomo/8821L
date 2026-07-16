@@ -1,0 +1,149 @@
+﻿<?xml version="1.0"?>
+<doc>
+<assembly>
+<name>
+LightFieldVisualBasicAutomationSample
+</name>
+</assembly>
+<members>
+<member name="M:LightFieldVisualBasicAutomationSample.MainWindow.InitializeComponent">
+	<summary>
+InitializeComponent
+</summary>
+</member><member name="T:LightFieldVisualBasicAutomationSample.MainWindow">
+	<summary>
+MainWindow
+</summary>
+</member><member name="M:LightFieldVisualBasicAutomationSample.Application.InitializeComponent">
+	<summary>
+InitializeComponent
+</summary>
+</member><member name="M:LightFieldVisualBasicAutomationSample.Application.Main">
+	<summary>
+Application Entry Point.
+</summary>
+</member><member name="T:LightFieldVisualBasicAutomationSample.Application">
+	<summary>
+Application
+</summary>
+</member><member name="P:LightFieldVisualBasicAutomationSample.My.Resources.Resources.ResourceManager">
+	<summary>
+  Returns the cached ResourceManager instance used by this class.
+</summary>
+</member><member name="P:LightFieldVisualBasicAutomationSample.My.Resources.Resources.Culture">
+	<summary>
+  Overrides the current thread's CurrentUICulture property for all
+  resource lookups using this strongly typed resource class.
+</summary>
+</member><member name="T:LightFieldVisualBasicAutomationSample.My.Resources.Resources">
+	<summary>
+  A strongly-typed resource class, for looking up localized strings, etc.
+</summary>
+</member><member name="P:LightFieldVisualBasicAutomationSample.My.MyWpfExtension.Application">
+	<summary>
+ Returns the application object for the running application
+ </summary>
+</member><member name="P:LightFieldVisualBasicAutomationSample.My.MyWpfExtension.Computer">
+	<summary>
+ Returns information about the host computer.
+ </summary>
+</member><member name="P:LightFieldVisualBasicAutomationSample.My.MyWpfExtension.User">
+	<summary>
+ Returns information for the current user.  If you wish to run the application with the current 
+ Windows user credentials, call My.User.InitializeWithWindowsUser().
+ </summary>
+</member><member name="P:LightFieldVisualBasicAutomationSample.My.MyWpfExtension.Log">
+	<summary>
+ Returns the application log. The listeners can be configured by the application's configuration file.
+ </summary>
+</member><member name="P:LightFieldVisualBasicAutomationSample.My.MyWpfExtension.Windows">
+	<summary>
+ Returns the collection of Windows defined in the project.
+ </summary>
+</member><member name="T:LightFieldVisualBasicAutomationSample.My.MyWpfExtension">
+	<summary>
+ Module used to define the properties that are available in the My Namespace for WPF
+ </summary>
+	<remarks></remarks>
+</member><member name="P:LightFieldVisualBasicAutomationSample.MainWindow.OpenLightFields">
+	<summary> 
+ Collection of all open LightFields
+ </summary>
+</member><member name="P:LightFieldVisualBasicAutomationSample.MainWindow.Cameras">
+	<summary>
+ Collection of all cameras
+ </summary>
+	<value></value>
+	<returns></returns>
+	<remarks></remarks>
+</member><member name="P:LightFieldVisualBasicAutomationSample.MainWindow.IncrementFileName">
+	<summary>
+ Used for unique file naming
+ </summary>
+	<value></value>
+	<returns></returns>
+	<remarks></remarks>
+</member><member name="M:LightFieldVisualBasicAutomationSample.MainWindow.UpdateListBox">
+	<summary>
+ Update list box with available cameras
+ </summary>
+</member><member name="M:LightFieldVisualBasicAutomationSample.MainWindow.AddAvailableCameras">
+	<summary>
+ Associate available cameras with automation and setup class
+ Connect camera to LightField
+ </summary>
+	<remarks></remarks>
+</member><member name="M:LightFieldVisualBasicAutomationSample.MainWindow.OpenLightField.OpenSingleInstance">
+	<summary>
+ Creates and opens a new instance of LightField
+ </summary>
+	<remarks></remarks>
+</member><member name="M:LightFieldVisualBasicAutomationSample.MainWindow.OpenLightField.Automation">
+	<summary>
+ Create a new automation object
+ Hook closing event handler
+ Set LightField to visible or invisible
+ </summary>
+</member><member name="M:LightFieldVisualBasicAutomationSample.MainWindow.OpenLightField.AutoApplication">
+	<summary>
+ Return ILightFieldApplication object
+ </summary>
+</member><member name="M:LightFieldVisualBasicAutomationSample.MainWindow.OpenLightField.UnHookEvents">
+	<summary>
+ Removes event/event handler association 
+ </summary>
+</member><member name="T:LightFieldVisualBasicAutomationSample.MainWindow.OpenLightField">
+	<summary>
+ Encapsulation of individual LightField instances
+ </summary>
+	<remarks></remarks>
+</member><member name="M:LightFieldVisualBasicAutomationSample.MainWindow.CameraSetup.#ctor(PrincetonInstruments.LightField.AddIns.IExperiment,LightFieldVisualBasicAutomationSample.MainWindow,System.String)">
+	<summary>
+ Constructor
+ </summary>
+	<param name="experiment"></param>
+	<param name="mainWIndow"></param>
+	<remarks></remarks>
+</member><member name="M:LightFieldVisualBasicAutomationSample.MainWindow.CameraSetup.CreateAcquisitionBGW">
+	<summary>
+ Instantiate a new background worker for every experiment's start acquisition
+ </summary>
+	<remarks></remarks>
+</member><member name="M:LightFieldVisualBasicAutomationSample.MainWindow.CameraSetup.SaveFileOptions">
+	<summary>
+ Set file options for each LightField instance
+ </summary>
+	<remarks></remarks>
+</member><member name="M:LightFieldVisualBasicAutomationSample.MainWindow.CameraSetup.UnHookEvents">
+	<summary>
+ Removes event/event handler association
+ </summary>
+	<remarks></remarks>
+</member><member name="T:LightFieldVisualBasicAutomationSample.MainWindow.CameraSetup">
+	<summary>
+ Encapsulation of individual experiment associations
+ </summary>
+	<remarks></remarks>
+</member>
+</members>
+</doc>

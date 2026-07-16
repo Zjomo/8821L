@@ -1,0 +1,140 @@
+;/*++
+;
+;Module Name:
+;
+;    PI1394WDF.INF
+;
+;Abstract:
+;    Installation inf for PI 1394 kernel mode driver
+;
+;--*/
+
+[Version]
+Signature="$WINDOWS NT$"
+Class=PI_1394
+ClassGuid={2BAB0CB8-D225-4798-A119-AF26CBBC8960}
+Provider=%PI%
+DriverVer=05/21/2015,0.0.3.12
+CatalogFile=PI1394x64.cat
+
+
+; ================= Class section =====================
+
+[ClassInstall32]
+Addreg=PIClassReg     
+
+[PIClassReg]
+HKR,,,0,%ClassName%
+HKR,,Icon,,-21
+
+
+; ================= Device section =====================
+
+[Manufacturer]
+%PIKMDF%=PI,NTamd64
+
+; For Vista x64 and later
+[PI.NTamd64]
+;this one passes signability test but doesn't load the driver when camera is turned on
+;%1394\Princeton_Instruments&1394%=PI1394.Dev,1394\Princeton_Instruments&1394
+;the following line doesn't pass signability test
+
+;"working one" that doesn't sign
+;%1394\Princeton_Instruments&1394%=PI1394.Dev, 1394\13D8&1
+
+;a%1394\Princeton_Instruments&1394%=PI1394.Dev,  , 1394\13D8&1\0013D80000000001
+;b%1394\Princeton_Instruments&1394%=PI1394.Dev,  , 13D8&1\0013D80000000001
+;c%1394\Princeton_Instruments&1394%=PI1394.Dev,  , \0013D80000000001
+;d%1394\Princeton_Instruments&1394%=PI1394.Dev,  , 1394\13D8&1
+;e%1394\Princeton_Instruments&1394%=PI1394.Dev,  , 1394\13D8&0
+;f%1394\Princeton_Instruments&1394%=PI1394.Dev,  , 1394\13D8
+;g%1394\Princeton_Instruments&1394%=PI1394.Dev, 13D8&1\0013D80000000001
+;h%1394\Princeton_Instruments&1394%=PI1394.Dev, 13D8&1
+;i%1394\Princeton_Instruments&1394%=PI1394.Dev, 1394\FFF&1  , 1394\13D8&1\0013D80000000001
+;j%1394\Princeton_Instruments&1394%=PI1394.Dev, 1394\FFF&1 , \13D8&1\0013D80000000001
+;k%1394\Princeton_Instruments&1394%=PI1394.Dev, 13D8&0
+;l%1394\Princeton_Instruments&1394%=PI1394.Dev, 13D8
+
+;%1394\Princeton_Instruments&1394%=PI1394.Dev, 1394,%PI%&1394
+
+;%1394\Princeton_Instruments&1394%=PI1394.Dev, 1394\13D8
+;%1394\Princeton_Instruments&1394%=PI1394.Dev, 1394\"Princeton Instruments"&1394
+
+;%1394\Princeton_Instruments&1394%=PI1394.Dev, 1394\"Princeton Instruments"&"1394"
+
+;%1394\Princeton_Instruments&1394%=PI1394.Dev, 1394\V_13D8&1,1394\13D8&1
+
+%1394\Princeton_Instruments&1394%=PI1394.Dev, 1394\"Princeton Instruments"&"1394", 13D8
+;%1394\Princeton_Instruments&1394%=PI1394.Dev, 13D8&1
+
+[PI1394.Dev.NT]
+CopyFiles=PI1394.Files.Ext
+1
+[PI1394.Dev.NT.Services]
+AddService = PI1394, %SPSVCINST_ASSOCSERVICE%, PI1394.AddService
+
+[PI1394.AddService]
+DisplayName    = %PI1394.SvcDesc%
+ServiceType    = 1                  ; SERVICE_KERNEL_DRIVER
+StartType      = 3                  ; SERVICE_DEMAND_START
+ErrorControl   = 1                  ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %10%\System32\Drivers\pi1394wdf.sys
+AddReg         = PI1394.AddReg
+LoadOrderGroup = Base
+
+[PI1394.AddReg]
+HKR, Parameters\Wdf, VerboseOn,       0x00010001, 1
+HKR, Parameters\Wdf, VerifierOn,      0x00010001, 1
+HKR, Parameters\Wdf, DbgBreakOnError, 0x00010001, 1
+
+[PI1394.Files.Ext]
+pi1394wdf.sys
+
+[SourceDisksNames]
+1=%Disk_Description%,,,
+
+[SourceDisksFiles]
+pi1394wdf.sys = 1
+
+[DestinationDirs]
+DefaultDestDir = 12
+
+;-------------- WDF Coinstaller installation
+
+[DestinationDirs]
+CoInstaller_CopyFiles = 11
+
+[PI1394.Dev.NT.CoInstallers]
+AddReg=CoInstaller_AddReg
+CopyFiles=CoInstaller_CopyFiles
+
+[CoInstaller_CopyFiles]
+WdfCoInstaller01009.dll
+
+[SourceDisksFiles]
+WdfCoInstaller01009.dll=1 ; make sure the number matches with SourceDisksNames
+
+[CoInstaller_AddReg]
+HKR,,CoInstallers32,0x00010000, "WdfCoInstaller01009.dll,WdfCoInstaller"
+
+[PI1394.Dev.NT.Wdf]
+KmdfService = PI1394, PI1394_wdfsect
+
+[PI1394_wdfsect]
+KmdfLibraryVersion = 1.9
+
+;---------------------------------------------------------------;
+
+[Strings]
+PI="Princeton Instruments"
+PIKMDF="Princeton Instruments"
+MfgName="PI"
+Disk_Description="Quad-RO Installation Disk"
+1394\Princeton_Instruments&1394="PI-1394 QuadRO"
+PI1394.SvcDesc="WDF-KMDF Driver for PI Quad-RO Cameras"
+ClassName       = "Princeton Instruments 1394"
+SPSVCINST_ASSOCSERVICE= 0x00000002
+PI_QUADRO="PI 1394 Quad-RO Camera Interface"
+VendorName="13D8"
+ModelName="1"
+Copyright="Copyright(c) Princeton Instruments 2012"

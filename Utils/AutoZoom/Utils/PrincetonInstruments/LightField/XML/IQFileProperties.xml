@@ -1,0 +1,70 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Schema xmlns="urn:schemas-microsoft-com:xml-data"
+        xmlns:dt="urn:schemas-microsoft-com:datatypes">
+
+  <AttributeType name="propertyType" required="yes" dt:type="enumeration" dt:values="String Integer Double Date Unknown"></AttributeType>
+  <AttributeType name="isStandard" dt:type="enumeration" dt:values="true false" default="false" /> 
+  <ElementType name="Identifier"/>
+  <ElementType name="Name"/>
+  <ElementType name="Description"/>
+  <ElementType name="FilePropertySupport">
+    <description>
+      FilePropertyType is restricted to the following values:
+      Ignore, Obscure, Normal
+      Any unrecognized value will be treated as "Ignore".
+    </description>
+  </ElementType>
+  <ElementType name="Property">
+    <description>
+      The Property defines the image or frame property (as determined by the 
+      IsImageProperty element) to which the meta-data from the file format will be copied.
+    </description>
+  </ElementType>
+  <ElementType name="IsImageProperty">
+    <description>
+      IsImageProperty should be defined as a numeric value, using 0 for frame properties 
+      and any non-zero value of IsImageProperty for image properties
+    </description>
+  </ElementType>
+
+  <ElementType name="FilePropertyInfo" content="eltOnly">
+    <attribute type="propertyType"/>
+    <attribute type="isStandard"/>
+    <element type="Name"/>
+    <element type="Description"/>
+    <element type="Identifier"/>
+    <element type="FilePropertySupport"/>
+    <element type="Property"/>
+    <element type="IsImageProperty"/>
+  </ElementType>
+
+  <AttributeType name="collectionType" required="yes" dt:type="enumeration" dt:values="TextID NumericID"/>
+  <ElementType name="Count"/>
+  <ElementType name="FilePropertyCollection" content="eltOnly">
+    <description>
+      The Count element is present for documentation purposes only,
+      and is ignored when the collection is opened.
+    </description>
+    <attribute type="collectionType"/>
+    <element type="Name"/>
+    <element type="Description"/>
+    <element type="Count"/>
+    <group minOccurs="0" maxOccurs="*">
+      <element type="FilePropertyInfo" />
+    </group>
+  </ElementType>
+
+  <ElementType name="FilePropertyConfig" content="eltOnly">
+    <description>
+      The Count element should be set equal to the number of 
+      FilePropertyCollection elements.
+    </description>
+    <element type="Name"/>
+    <element type="Description"/>
+    <element type="Count"/>
+    <group minOccurs="0" maxOccurs="*">
+      <element type="FilePropertyCollection" />
+    </group>
+  </ElementType>
+
+</Schema>

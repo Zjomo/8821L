@@ -1,0 +1,106 @@
+;
+; piusb3.inf
+;
+
+[Version]
+Signature="$WINDOWS NT$"
+Class=USBDevice
+ClassGuid={88BAE032-5A81-49f0-BC3D-A4FF138216D6}
+Provider=%ManufacturerName%
+CatalogFile=piusb3.cat
+DriverVer=11/02/2018,1.3.0
+
+[DestinationDirs]
+DefaultDestDir = 12
+piusb3_Device_CoInstaller_CopyFiles = 11
+
+[SourceDisksNames]
+1 = %DiskName%,,,""
+
+[SourceDisksFiles]
+piusb3.sys  = 1,,
+WdfCoInstaller01011.dll=1 ; make sure the number matches with SourceDisksNames
+
+;*****************************************
+; Install Section
+;*****************************************
+
+[Manufacturer]
+%ManufacturerName%=Standard,NTamd64
+
+[Standard.NTamd64]
+%piusb3.DeviceDesc%=piusb3_Device, USB\VID_0647&PID_F001
+
+[piusb3_Device.NT]
+CopyFiles=Drivers_Dir
+
+[Drivers_Dir]
+piusb3.sys
+
+[piusb3_Device.NT.HW]
+AddReg=piusb3_AddReg
+
+[piusb3_AddReg]
+; By default, USBDevice class uses iProduct descriptor to name the device in
+; Device Manager on Windows 8 and higher.
+; Uncomment for this device to use %DeviceName% on Windows 8 and higher:
+HKR,,FriendlyName,,%piusb3.DeviceDesc%
+
+;-------------- Class definition
+
+;[ClassInstall32]
+;AddReg = ClassInstall_AddReg
+
+;[ClassInstall_AddReg]
+;HKR,,,,%ClassName%
+;HKR,,NoInstallClass,,1
+;HKR,,IconPath,%REG_MULTI_SZ%,"%systemroot%\system32\setupapi.dll,-20"
+;HKR,,LowerLogoVersion,,5.2
+
+;-------------- Service installation
+[piusb3_Device.NT.Services]
+AddService = piusb3,%SPSVCINST_ASSOCSERVICE%, piusb3_Service_Inst
+
+; -------------- piusb3 driver install sections
+[piusb3_Service_Inst]
+DisplayName    = %piusb3.SVCDESC%
+ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
+StartType      = 3               ; SERVICE_DEMAND_START
+ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\piusb3.sys
+LoadOrderGroup = Extended Base
+
+;
+;--- piusb3_Device Coinstaller installation ------
+;
+
+;[DestinationDirs]
+;piusb3_Device_CoInstaller_CopyFiles = 11
+
+[piusb3_Device.NT.CoInstallers]
+AddReg=piusb3_Device_CoInstaller_AddReg
+CopyFiles=piusb3_Device_CoInstaller_CopyFiles
+
+[piusb3_Device_CoInstaller_AddReg]
+HKR,,CoInstallers32,0x00010000, "WdfCoInstaller01011.dll,WdfCoInstaller"
+
+[piusb3_Device_CoInstaller_CopyFiles]
+WdfCoInstaller01011.dll
+
+;[SourceDisksFiles]
+;WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1 ; make sure the number matches with SourceDisksNames
+
+[piusb3_Device.NT.Wdf]
+KmdfService =  piusb3, piusb3_wdfsect
+[piusb3_wdfsect]
+KmdfLibraryVersion = 1.11
+
+[Strings]
+SPSVCINST_ASSOCSERVICE= 0x00000002
+ManufacturerName="Princeton Instruments"
+ClassName="Princeton Instruments USB3 Camera"
+DiskName = "piusb3 Installation Disk"
+piusb3.DeviceDesc = "PI USB3 Camera"
+piusb3.SVCDESC = "piusb3 Service"
+REG_MULTI_SZ = 0x00010000
+Copyright="Copyright(c) Princeton Instruments 2018"

@@ -1,0 +1,7 @@
+REGEDIT4
+
+[HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services\VxD\PIVXDECP]
+"StaticVxD"="pivxdecp.vxd"
+"Npages"=dword:000003e8
+"NumControllers"=dword:00000001
+
