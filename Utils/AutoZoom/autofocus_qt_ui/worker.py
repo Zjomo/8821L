@@ -253,10 +253,12 @@ class AutofocusWorker(QObject):
 
                 # 被动补焦：统计连续达标轮数，达标 n 轮后自动停止
                 if passive_mode and self._cfg.autofocus_enabled and score is not None:
-                    if score > trigger_ratio:
+                    from Focus.controller import focus_score_ratio_in_tolerance
+
+                    if focus_score_ratio_in_tolerance(score, trigger_ratio):
                         consecutive_good_count += 1
                         self.log.emit(
-                            f"[被动补焦] 分数达标 {score:.4f} > {trigger_ratio}, "
+                            f"[被动补焦] 分数达标 {score:.4f} 在允许区间内, "
                             f"连续达标 {consecutive_good_count}/{passive_consecutive_good}"
                         )
                         if consecutive_good_count >= passive_consecutive_good:
@@ -267,7 +269,7 @@ class AutofocusWorker(QObject):
                     else:
                         consecutive_good_count = 0
                         self.log.emit(
-                            f"[被动补焦] 分数未达标 {score:.4f} <= {trigger_ratio}，"
+                            f"[被动补焦] 分数未达标 {score:.4f} 超出允许区间，"
                             "本轮已触发补焦，进入常规等待"
                         )
 

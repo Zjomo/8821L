@@ -129,14 +129,18 @@ class PICamBinding:
         if dll_file is None or not dll_file.exists():
             raise PICamError(
                 "无法找到 Picam.dll。请安装 PICam SDK 并设置 PicamRoot 环境变量，"
-                "或在构造 PICamBinding 时传入 dll_path。"
+                "或在构造 PICamBinding 时传入 dll_path。\n"
+                "提示：如果没有真实硬件，请在 UI 中选择 '无 SDK 模拟' 后端。"
             )
 
         self.dll_path = str(dll_file)
         try:
             self._lib = ctypes.CDLL(str(dll_file))
         except OSError as e:
-            raise PICamError(f"加载 Picam.dll 失败: {e}") from e
+            raise PICamError(
+                f"加载 Picam.dll 失败: {e}\n"
+                "提示：如果没有真实硬件，请在 UI 中选择 '无 SDK 模拟' 后端。"
+            ) from e
 
         self._setup_function_signatures()
         err = self._lib.Picam_InitializeLibrary()
@@ -157,8 +161,13 @@ class PICamBinding:
         ]
         lib.Picam_GetAvailableCameraIDs.restype = ctypes.c_int
 
-        lib.Picam_FreeCameraIDs.argtypes = [ctypes.POINTER(PicamCameraID)]
-        lib.Picam_FreeCameraIDs.restype = ctypes.c_int
+        # Picam_FreeCameraIDs 在某些版本中不存在，需要容错
+        if hasattr(lib, 'Picam_FreeCameraIDs'):
+            lib.Picam_FreeCameraIDs.argtypes = [ctypes.POINTER(PicamCameraID)]
+            lib.Picam_FreeCameraIDs.restype = ctypes.c_int
+        else:
+            # 旧版本 SDK 可能没有此函数，设置为 None 表示跳过
+            lib.Picam_FreeCameraIDs = None
 
         # Demo camera
         lib.Picam_ConnectDemoCamera.argtypes = [
@@ -288,7 +297,12 @@ class PICamBinding:
         for i in range(count.value):
             cameras.append(ids_ptr[i])
 
-        self.lib.Picam_FreeCameraIDs(ids_ptr)
+        # 某些旧版 SDK 没有 Picam_FreeCameraIDs，跳过释放
+        if hasattr(self.lib, 'Picam_FreeCameraIDs') and self.lib.Picam_FreeCameraIDs is not None:
+            try:
+                self.lib.Picam_FreeCameraIDs(ids_ptr)
+            except Exception:
+                pass  # 忽略释放失败
         return cameras
 
     def connect_demo_camera(self, model: int, serial_number: str) -> PicamCameraID:

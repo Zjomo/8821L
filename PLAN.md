@@ -242,3 +242,68 @@
 - `Utils/AutoZoom/autofocus_qt_ui/app.py`
 - `Utils/AutoZoom/test_preview_comparison_and_summary.py`（新增）
 - `PLAN.md`
+
+---
+
+## AutoZoom Focus：照明光串口变更未生效 & FocusScore 阈值改为绝对值
+
+### Summary
+修复 AutoZoom 中两个与运行参数相关的健壮性问题：
+1. **照明光串口变更后未生效**：GUI 中将 `COM20` 改为 `COM19` 后，后台仍连接 `COM20`；
+2. **FocusScore 触发阈值改为绝对值**：原逻辑只判断 `FocusScore_ratio < 触发阈值`，现在改为以 1.0 为中心的对称区间，即 `FocusScore_ratio < 0.95` 或 `> 1.05` 均触发补焦。
+
+### Root Cause
+1. **串口未生效**：`MeasurementWorkflow.connect_light()` 在 `self.light` 已存在时直接返回，未检查 `self.cfg.light_port` 是否变化；GUI 修改端口并同步到 `cfg` 后，旧连接对象仍占用原串口。
+2. **阈值单侧判断**：`AutofocusController.evaluate_trigger()` 只判断 `focus_score_ratio < autofocus_focus_trigger_ratio`，未处理聚焦过度（> 1.0）的情况。
+
+### Implementation Changes
+1. **串口变更重新连接（`Utils/AutoZoom/0_measurement_workflow_real_virtual_same_detection_6.25.py` 与 `0_measurement_workflow_real_virtual_same_detection_7_16.py`）**
+   - `connect_light()` 现在检查 `self.light.port` 与 `self.cfg.light_port` 是否一致。
+   - 不一致时先关闭旧连接，再使用新端口创建新的 `IlluminationRelay` / `VirtualIlluminationRelay`。
+   - 两个 workflow 版本同步修复，避免 7_16 版本在 GUI 改端口后仍连接旧串口。
+
+2. **FocusScore 对称区间判断（`Utils/AutoZoom/Focus/controller.py`）**
+   - 新增模块级函数 `focus_score_ratio_in_tolerance(score, trigger_ratio)`：
+     - 允许区间：`[trigger_ratio, 2 - trigger_ratio]`
+     - 默认 `trigger_ratio=0.95` 时允许区间为 `[0.95, 1.05]`。
+   - `evaluate_trigger()` 改为：超出允许区间则 `consecutive_focus_low_count += 1`，回到区间内则清零。
+   - `check_and_autofocus()` 补焦结束后使用 `_focus_ratio_in_tolerance()` 判断是否需要重置计数。
+   - 更新日志和触发理由，明确提示“超出 [lower, upper]”。
+
+3. **同步其他使用点**
+   - `Utils/AutoZoom/autofocus_qt_ui/worker.py`：被动模式下连续达标判断改用 `focus_score_ratio_in_tolerance()`。
+   - `Utils/AutoZoom/spectrum_autofocus_loop.py`：被动补焦达标判断、FocusScore 曲线上下限均改为对称区间。
+   - `Utils/AutoZoom/measurement_autofocus_shg_closed_loop.py`：`evaluate_autofocus_trigger()`、`step45_focus_check_and_autofocus()`、闭环搜索结束判断均改为对称区间。
+
+4. **配置注释更新（`Utils/AutoZoom/Focus/config.py`）**
+   - `autofocus_focus_trigger_ratio` 注释改为“对称区间下限”。
+   - `autofocus_focus_trigger_count` 改为“连续 N 轮超出允许区间”。
+   - `autofocus_passive_*` 注释同步更新。
+
+### Test Plan
+1. **对称区间单测**：验证 `focus_score_ratio_in_tolerance()` 对 0.95/1.00/1.05 的判断。
+2. **触发逻辑单测**：
+   - 连续低于 0.95 触发补焦；
+   - 连续高于 1.05 触发补焦；
+   - 回到 1.0 后计数清零。
+3. **串口变更源码检查**：分别验证 6.25 与 7_16 两个 workflow 的 `connect_light()` 源码中均包含端口比较和重新连接逻辑。
+4. **回归测试**：运行现有的被动模式、Picomotor、闭环重启相关测试。
+
+### Test Results
+```bash
+python Utils/AutoZoom/test_light_port_and_symmetric_trigger.py   → 全部通过
+python Utils/AutoZoom/test_passive_mode.py                       → 全部通过
+python Utils/AutoZoom/test_picomotor_and_stop.py                 → 全部通过
+python Utils/AutoZoom/test_final_crash_fix.py                    → 全部通过
+```
+
+### Files Modified
+- `Utils/AutoZoom/0_measurement_workflow_real_virtual_same_detection_6.25.py`
+- `Utils/AutoZoom/0_measurement_workflow_real_virtual_same_detection_7_16.py`
+- `Utils/AutoZoom/Focus/controller.py`
+- `Utils/AutoZoom/Focus/config.py`
+- `Utils/AutoZoom/autofocus_qt_ui/worker.py`
+- `Utils/AutoZoom/spectrum_autofocus_loop.py`
+- `Utils/AutoZoom/measurement_autofocus_shg_closed_loop.py`
+- `Utils/AutoZoom/test_light_port_and_symmetric_trigger.py`（新增）
+- `PLAN.md`

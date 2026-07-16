@@ -2217,9 +2217,22 @@ class MeasurementWorkflow:
         self.connect_measurement_devices()
 
     def connect_light(self):
+        # 如果已有连接但串口号变化，先关闭旧连接并重新创建
         if self.light is not None:
-            self.log("[照明光] 已连接")
-            return
+            current_port = getattr(self.light, "port", None)
+            if current_port != self.cfg.light_port:
+                self.log(
+                    f"[照明光] 串口变更：{current_port} -> {self.cfg.light_port}，"
+                    f"关闭旧连接并重新连接"
+                )
+                try:
+                    self.light.close()
+                except Exception as e:
+                    self.log(f"[照明光] 关闭旧连接失败：{e}")
+                self.light = None
+            else:
+                self.log("[照明光] 已连接")
+                return
 
         if self._is_virtual_hardware_mode():
             self.log(f"[照明光][virtual] 创建虚拟照明对象：port={self.cfg.light_port}；不连接真实硬件")

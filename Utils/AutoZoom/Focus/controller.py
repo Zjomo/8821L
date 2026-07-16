@@ -27,6 +27,23 @@ logger = logging.getLogger(__name__)
 LogCallback = Optional[Callable[[str], None]]
 
 
+def focus_score_ratio_in_tolerance(
+    focus_score_ratio: Optional[float],
+    trigger_ratio: float,
+) -> bool:
+    """
+    判断 FocusScore_ratio 是否在以 1.0 为中心的对称允许区间内。
+
+    允许区间：[trigger_ratio, 2 - trigger_ratio]
+    例如 trigger_ratio=0.95 时，允许区间为 [0.95, 1.05]。
+    """
+    if focus_score_ratio is None:
+        return False
+    lower = min(trigger_ratio, 2.0 - trigger_ratio)
+    upper = max(trigger_ratio, 2.0 - trigger_ratio)
+    return lower <= focus_score_ratio <= upper
+
+
 class AutofocusController:
     """
     自动补焦闭环控制器。
@@ -82,6 +99,19 @@ class AutofocusController:
     # 补焦触发判断
     # ================================================================
 
+    def _focus_ratio_in_tolerance(self, focus_score_ratio: Optional[float]) -> bool:
+        """
+        判断 FocusScore_ratio 是否在允许范围内。
+
+        以 1.0 为中心，允许区间为：
+            [trigger_ratio, 2 - trigger_ratio]
+        例如 trigger_ratio=0.95 时，允许区间为 [0.95, 1.05]。
+        """
+        return focus_score_ratio_in_tolerance(
+            focus_score_ratio,
+            float(self.cfg.autofocus_focus_trigger_ratio),
+        )
+
     def evaluate_trigger(
         self,
         focus_score_ratio: Optional[float],
@@ -90,7 +120,8 @@ class AutofocusController:
         判断是否需要触发自动补焦。
 
         触发条件：
-          1. FocusScore_ratio 连续 N 轮低于阈值；
+          1. FocusScore_ratio 连续 N 轮超出以 1.0 为中心的对称区间
+             [autofocus_focus_trigger_ratio, 2 - autofocus_focus_trigger_ratio]；
           2. SHG_ratio 单轮硬阈值或连续 N 轮低于阈值（可选）。
 
         参数
@@ -103,18 +134,27 @@ class AutofocusController:
         """
         reasons: List[str] = []
 
+        ratio = float(self.cfg.autofocus_focus_trigger_ratio)
+        lower = min(ratio, 2.0 - ratio)
+        upper = max(ratio, 2.0 - ratio)
+
         if focus_score_ratio is not None:
-            if focus_score_ratio < float(self.cfg.autofocus_focus_trigger_ratio):
-                self.consecutive_focus_low_count += 1
-            else:
+            if self._focus_ratio_in_tolerance(focus_score_ratio):
                 self.consecutive_focus_low_count = 0
+            else:
+                self.consecutive_focus_low_count += 1
+                direction = "偏低" if focus_score_ratio < lower else "偏高"
+                self._log(
+                    f"[补焦] FocusScore_ratio={focus_score_ratio:.4f} {direction}，"
+                    f"超出允许区间 [{lower:.4f}, {upper:.4f}]"
+                )
 
         if self.consecutive_focus_low_count >= int(
             self.cfg.autofocus_focus_trigger_count
         ):
             reasons.append(
                 f"连续{self.consecutive_focus_low_count}轮 FocusScore_ratio "
-                f"< {self.cfg.autofocus_focus_trigger_ratio}"
+                f"超出 [{lower:.4f}, {upper:.4f}]"
             )
 
         if self.last_shg_ratio is not None:
@@ -312,9 +352,7 @@ class AutofocusController:
         final_score, _ = self.scorer.score_ratio(final_roi)
         if isinstance(final_metrics, dict):
             final_metrics["focus_score_ratio"] = final_score
-        if final_score is not None and final_score >= float(
-            self.cfg.autofocus_focus_trigger_ratio
-        ):
+        if final_score is not None and self._focus_ratio_in_tolerance(final_score):
             self.consecutive_focus_low_count = 0
 
         return final_metrics

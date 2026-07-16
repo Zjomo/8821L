@@ -57,7 +57,11 @@ UI 功能：
 - 后端选择（mock / demo / picam）
 - 曝光、温度、ROI 参数配置
 - 单帧 / 连续采集
-- 实时光谱曲线绘制
+- 实时光谱曲线绘制，支持光标、峰值/FWHM 标注、历史轨迹叠加、对数 Y 轴
+- 暗背景/背景扣除与帧库管理
+- 实时光谱统计：峰位、峰强、FWHM、质心、积分、SNR、多峰检测
+- 实验序列（Recipe）：多步骤采集编排、循环、暂停/停止
+- 自动保存：文件名模板与自动编号
 - CSV 保存
 
 ### 3. 在现有工作流中使用
@@ -92,7 +96,13 @@ DEFAULT_CONFIG = {
 python -m pytest tests/ -v
 ```
 
-当前状态：19 passed, 1 skipped（UI 启动测试默认跳过）。
+若 pytest 未安装，可运行新增的独立回归脚本：
+
+```powershell
+python test_lightfield_enhancements.py
+```
+
+当前状态：核心测试 16/16 通过（无 pytest 独立脚本）；完整 pytest 套件待环境就绪后运行。
 
 ## 更换其他光谱仪的接口说明
 

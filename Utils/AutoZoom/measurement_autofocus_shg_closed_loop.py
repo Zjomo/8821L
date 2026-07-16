@@ -1044,20 +1044,33 @@ class MeasurementWorkflow:
             )
         return self.last_shg_ratio
 
+    def _focus_score_ratio_in_tolerance(self, focus_score_ratio: Optional[float]) -> bool:
+        """判断 FocusScore_ratio 是否在以 1.0 为中心的对称允许区间内。"""
+        if focus_score_ratio is None:
+            return False
+        ratio = float(self.cfg.autofocus_focus_trigger_ratio)
+        lower = min(ratio, 2.0 - ratio)
+        upper = max(ratio, 2.0 - ratio)
+        return lower <= focus_score_ratio <= upper
+
     def evaluate_autofocus_trigger(self, focus_score_ratio: Optional[float]) -> Tuple[bool, List[str]]:
         reasons: List[str] = []
 
+        ratio = float(self.cfg.autofocus_focus_trigger_ratio)
+        lower = min(ratio, 2.0 - ratio)
+        upper = max(ratio, 2.0 - ratio)
+
         if focus_score_ratio is not None:
-            if focus_score_ratio < float(self.cfg.autofocus_focus_trigger_ratio):
-                self.consecutive_focus_low_count += 1
-            else:
+            if self._focus_score_ratio_in_tolerance(focus_score_ratio):
                 self.consecutive_focus_low_count = 0
+            else:
+                self.consecutive_focus_low_count += 1
         self.context["consecutive_focus_low_count"] = self.consecutive_focus_low_count
 
         if self.consecutive_focus_low_count >= int(self.cfg.autofocus_focus_trigger_count):
             reasons.append(
                 f"连续{self.consecutive_focus_low_count}轮 FocusScore_ratio "
-                f"< {self.cfg.autofocus_focus_trigger_ratio}"
+                f"超出 [{lower:.4f}, {upper:.4f}]"
             )
 
         if self.last_shg_ratio is not None:
@@ -1115,7 +1128,7 @@ class MeasurementWorkflow:
 
         # 成功补焦后清空焦点低分计数；SHG计数保留到下一次光谱验证后更新。
         final_score = final_metrics.get("focus_score_ratio") if isinstance(final_metrics, dict) else None
-        if final_score is not None and final_score >= float(self.cfg.autofocus_focus_trigger_ratio):
+        if final_score is not None and self._focus_score_ratio_in_tolerance(final_score):
             self.consecutive_focus_low_count = 0
             self.context["consecutive_focus_low_count"] = 0
 
@@ -1259,7 +1272,7 @@ class MeasurementWorkflow:
             if settle_s > 0:
                 time.sleep(settle_s)
 
-        ok = best_score >= min(target, float(self.cfg.autofocus_focus_trigger_ratio))
+        ok = self._focus_score_ratio_in_tolerance(best_score)
         self.log(
             f"========== 闭环补焦 #{event_id} 结束：ok={ok}, "
             f"best_score={best_score:.4f}, best_relative_z_steps={best_pos} =========="

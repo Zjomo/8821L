@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import ctypes
 import os
+import struct
 from pathlib import Path
 from typing import Optional, List, Tuple, Any
 
@@ -21,6 +22,27 @@ from typing import Optional, List, Tuple, Any
 class ARCSpectraError(Exception):
     """ARC SpectraPro SDK 错误。"""
     pass
+
+
+def _get_python_bits() -> int:
+    """返回当前 Python 解释器的位数（32 或 64）。"""
+    return struct.calcsize("P") * 8
+
+
+def _get_dll_bits(dll_path: str) -> int:
+    """读取 PE 头，返回 DLL 的位数（32 或 64）。"""
+    with open(dll_path, "rb") as f:
+        dos_header = f.read(64)
+    if len(dos_header) < 64 or dos_header[:2] != b"MZ":
+        return 32  # 默认假设为 32 位
+    pe_offset = struct.unpack_from("<I", dos_header, 0x3C)[0]
+    with open(dll_path, "rb") as f:
+        f.seek(pe_offset)
+        pe_header = f.read(6)
+    if len(pe_header) < 6 or pe_header[:4] != b"PE\x00\x00":
+        return 32
+    machine = struct.unpack_from("<H", pe_header, 4)[0]
+    return 64 if machine == 0x8664 else 32
 
 
 def _find_arc_dll() -> Optional[Path]:
@@ -88,13 +110,32 @@ class ARCSpectraBinding:
             )
 
         self.dll_path = str(dll_file)
+
+        # 检查 Python 与 DLL 的位数匹配
+        dll_bits = _get_dll_bits(self.dll_path)
+        py_bits = _get_python_bits()
+        if dll_bits != py_bits:
+            raise ARCSpectraError(
+                f"Python/DLL 位数不匹配：当前 Python 是 {py_bits} 位，"
+                f"ARC_SpectraPro.dll 是 {dll_bits} 位。\n"
+                f"请使用 {dll_bits} 位 Python 解释器运行本项目。\n"
+                f"建议：安装 Python 3.9 {dll_bits}-bit，并重新创建虚拟环境。\n"
+                f"下载地址：https://www.python.org/downloads/release/python-3913/"
+            )
+
         try:
             # 将 DLL 目录添加到 PATH，确保依赖 DLL 可找到
             dll_dir = str(Path(dll_file).parent)
             os.environ["PATH"] = dll_dir + os.pathsep + os.environ.get("PATH", "")
             self._lib = ctypes.CDLL(str(dll_file))
         except OSError as e:
-            raise ARCSpectraError(f"加载 ARC_SpectraPro.dll 失败: {e}") from e
+            err_msg = str(e)
+            if "不是有效的 Win32 应用程序" in err_msg or "%1 is not a valid Win32" in err_msg:
+                err_msg += (
+                    "\n提示：位数不匹配。当前 Python 是 {} 位，DLL 是 {} 位。"
+                    "请使用 {} 位 Python。".format(py_bits, dll_bits, dll_bits)
+                )
+            raise ARCSpectraError(f"加载 ARC_SpectraPro.dll 失败: {err_msg}") from e
 
         self._setup_function_signatures()
 

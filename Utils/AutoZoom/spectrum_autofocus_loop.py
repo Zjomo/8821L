@@ -35,7 +35,7 @@ if str(AUTOZOOM_ROOT) not in sys.path:
     sys.path.insert(0, str(AUTOZOOM_ROOT))
 
 from Focus.config import AutofocusConfig
-from Focus.controller import AutofocusController
+from Focus.controller import AutofocusController, focus_score_ratio_in_tolerance
 from Focus.metrics import FocusMetricsCalculator
 from Focus.scorer import FocusScorer
 from Focus.simulator import create_demo_environment
@@ -484,10 +484,10 @@ class SpectrumAutofocusLoop:
 
             if score is None:
                 self._log("[光谱补焦] FocusScore 为空，等待下一轮")
-            elif score > trigger_ratio:
+            elif focus_score_ratio_in_tolerance(score, trigger_ratio):
                 consecutive_good_count += 1
                 self._log(
-                    f"[光谱补焦] FocusScore={score:.4f} > {trigger_ratio}，"
+                    f"[光谱补焦] FocusScore={score:.4f} 在允许区间内，"
                     f"连续达标 {consecutive_good_count}/{consecutive_good_target}"
                 )
                 if consecutive_good_count >= consecutive_good_target:
@@ -498,7 +498,7 @@ class SpectrumAutofocusLoop:
             else:
                 if consecutive_good_count > 0:
                     self._log(
-                        f"[光谱补焦] FocusScore={score:.4f} <= {trigger_ratio}，"
+                        f"[光谱补焦] FocusScore={score:.4f} 超出允许区间，"
                         "连续达标计数重置"
                     )
                 consecutive_good_count = 0
@@ -548,14 +548,24 @@ class SpectrumAutofocusLoop:
             ]
             indices = list(range(1, len(scores) + 1))
 
+            lower = min(trigger_ratio, 2.0 - trigger_ratio)
+            upper = max(trigger_ratio, 2.0 - trigger_ratio)
+
             fig, ax = plt.subplots(figsize=(8, 4.5))
             ax.plot(indices, scores, "b-o", label="FocusScore_ratio")
             ax.axhline(
-                trigger_ratio,
+                lower,
                 color="r",
                 linestyle="--",
-                label=f"trigger={trigger_ratio}",
+                label=f"lower={lower:.3f}",
             )
+            ax.axhline(
+                upper,
+                color="r",
+                linestyle="--",
+                label=f"upper={upper:.3f}",
+            )
+            ax.axhspan(lower, upper, color="green", alpha=0.1, label="tolerance")
             ax.set_xlabel("Detection round")
             ax.set_ylabel("FocusScore_ratio")
             ax.set_title(f"FocusScore Curve - Cycle {cycle_index}")

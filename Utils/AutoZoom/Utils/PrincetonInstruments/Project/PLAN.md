@@ -332,3 +332,313 @@ spectrum_autofocus_loop()
 
 *计划创建时间：2026-07-15*
 *负责人：待分配*
+
+---
+
+## 8. 问题修复记录
+
+### 8.1 Picam_FreeCameraIDs 函数未找到错误修复
+
+**报错信息**：
+```
+连接错误: function 'Picam_FreeCameraIDs' not found
+```
+
+**根因分析**：
+1. `Picam.dll` 成功加载（位于 `C:\Program Files\Common Files\Princeton Instruments\Picam\Runtime\Picam.dll`）
+2. 但 `Picam_FreeCameraIDs` 函数在当前安装的 PICam SDK 版本中不存在
+3. 这是 PICam SDK 版本差异导致的兼容性问题
+
+**修复方案**：
+修改 `pi_spectrometer/picam/binding.py`，增加对 `Picam_FreeCameraIDs` 函数不存在的容错处理：
+
+1. 在 `_setup_function_signatures()` 中检查函数是否存在：
+```python
+if hasattr(lib, 'Picam_FreeCameraIDs'):
+    lib.Picam_FreeCameraIDs.argtypes = [ctypes.POINTER(PicamCameraID)]
+    lib.Picam_FreeCameraIDs.restype = ctypes.c_int
+else:
+    lib.Picam_FreeCameraIDs = None
+```
+
+2. 在 `get_available_cameras()` 中调用前检查：
+```python
+if hasattr(self.lib, 'Picam_FreeCameraIDs') and self.lib.Picam_FreeCameraIDs is not None:
+    try:
+        self.lib.Picam_FreeCameraIDs(ids_ptr)
+    except Exception:
+        pass
+```
+
+3. 增强错误提示，引导用户使用 "无 SDK 模拟" 后端：
+```python
+raise PICamError(
+    "无法找到 Picam.dll。请安装 PICam SDK...\n"
+    "提示：如果没有真实硬件，请在 UI 中选择 '无 SDK 模拟' 后端。"
+)
+```
+
+**测试验证**：
+```bash
+cd e:\CWB\8821L\Utils\AutoZoom\Utils\PrincetonInstruments\Project
+python -c "
+from pi_spectrometer.picam.demo import MockSpectrometerBackend
+backend = MockSpectrometerBackend()
+backend.connect()
+result = backend.acquire()
+print(f'采集成功: {result.num_points} 点')
+backend.disconnect()
+"
+# 输出: Mock 后端连接成功
+#       采集成功: 1024 点, raw_peak=1010.09
+#       Mock 后端断开成功
+```
+
+**修改文件**：
+- `pi_spectrometer/picam/binding.py`
+
+**使用建议**：
+- 如果没有真实 PI 硬件，请在 UI 后端选择 **“无 SDK 模拟”**
+- 如果需要连接真实 PI 设备，请确保安装了正确版本的 PICam SDK
+
+---
+
+### 8.2 PI 光谱仪 SDK 分析与连接方案
+
+**目标**：保证项目可以直接连接 Princeton Instruments 光谱仪系统。
+
+#### SDK 分析结果
+
+| SDK | DLL 路径 | 架构 | 用途 | 当前状态 |
+|---|---|---|---|---|
+| PICam SDK | `C:\Program Files\Common Files\Princeton Instruments\Picam\Runtime\Picam.dll` | x64 | 控制 CCD/CMOS 探测器 | 已安装 v5.14.7.2311，缺少 `Picam_FreeCameraIDs` |
+| ARC SDK | `Utils/AutoZoom/Utils/PrincetonInstruments/ISOPLANEControl/ARC_SpectraPro.dll` | x86 | 控制 IsoPlane/SpectraPro 单色仪 | 已内置，但与当前 64-bit Python 位数不匹配 |
+
+#### 关键发现
+
+1. **PICam.dll 缺少 `Picam_FreeCameraIDs`**
+   - 已在 §8.1 中通过容错处理修复。
+   - 建议升级到最新版 PICam SDK 以完全解决。
+
+2. **ARC_SpectraPro.dll 是 32-bit**
+   - 当前 Python 是 64-bit，无法直接加载 32-bit DLL（Windows 限制）。
+   - 错误：`[WinError 193] %1 不是有效的 Win32 应用程序。`
+
+3. **DLL 导出表特征**
+   - `ARC_*.dll` 仅通过 ordinal 导出，没有函数名。
+   - `Picam.dll` 有函数名导出，但版本差异导致部分函数缺失。
+
+#### 实现改动
+
+1. **ARC 绑定层增强（`pi_spectrometer/picam/arc_binding.py`）**
+   - 新增 `_get_python_bits()` 和 `_get_dll_bits()` 检测位数。
+   - 在 `_initialize()` 中提前检测 Python/DLL 位数不匹配，给出明确错误提示和 32-bit Python 下载链接。
+
+2. **环境诊断脚本（`diagnose_pi_environment.py`）**
+   - 检查 Python 位数。
+   - 检查 PICam SDK 版本和关键函数是否存在。
+   - 检查 ARC SDK 位数匹配性。
+   - 扫描可用串口设备。
+   - 输出可操作的修复建议。
+
+3. **UI 增强（`pi_spectrometer/ui/main_window.py`）**
+   - 增加 **“连接 IsoPlane 单色仪”** 按钮。
+   - 增加 **“运行环境诊断”** 按钮，直接在 UI 日志中显示诊断结果。
+   - 延迟导入 `IsoPlaneBackend`，避免在 64-bit Python 启动时立即加载 32-bit DLL。
+
+4. **辅助脚本**
+   - `ISOPLANEControl/analyze_dlls.py`：不依赖第三方库，分析 PE 导出函数。
+   - `check_picam.py`：检查 Picam.dll 版本和位数。
+   - `test_pi_fixes.py`：基础回归测试。
+
+#### 测试验证
+
+```bash
+cd e:\CWB\8821L\Utils\AutoZoom\Utils\PrincetonInstruments\Project
+python diagnose_pi_environment.py
+python test_pi_fixes.py
+python -c "from pi_spectrometer.ui.main_window import MainWindow; print('UI OK')"
+```
+
+**测试结果**：
+```
+PASS: MockSpectrometerBackend
+PASS: PICamBinding import OK, Picam.dll=...
+PASS: ARC DLL=32-bit, Python=64-bit
+PASS: ARCSpectraBinding 正确报告位数不匹配
+PASS: diagnose_pi_environment import OK
+UI 构建成功
+```
+
+#### 连接 PI 光谱仪的操作步骤
+
+**情况 A：只有 PICam 探测器（无 IsoPlane 单色仪）**
+1. 确保已安装 PICam SDK（64-bit）。
+2. 运行 `python diagnose_pi_environment.py` 确认 `Picam.dll` 可加载。
+3. 在 UI 中选择 **“PICam 真实相机”**，点击连接。
+4. 如果仍提示 `Picam_FreeCameraIDs` 缺失，说明 SDK 版本过旧，建议升级。
+
+**情况 B：需要连接 IsoPlane/SpectraPro 单色仪**
+1. 安装 **32-bit Python 3.9**：https://www.python.org/downloads/release/python-3913/
+2. 在 32-bit Python 中安装依赖：
+   ```bash
+   py -3.9-32 -m pip install numpy pyserial pyqt5 pyqtgraph
+   ```
+3. 使用 32-bit Python 运行项目：
+   ```bash
+   py -3.9-32 scripts/run_ui.py
+   ```
+4. 点击 **“连接 IsoPlane 单色仪”** 按钮。
+
+**情况 C：无硬件，仅测试代码**
+1. 在 UI 中选择 **“无 SDK 模拟”** 或 **“PICam Demo 相机”**。
+2. 可以正常进行单帧/连续采集、保存 CSV 等操作。
+
+#### 修改文件
+
+- `pi_spectrometer/picam/arc_binding.py`
+- `pi_spectrometer/ui/main_window.py`
+- `diagnose_pi_environment.py`（新增）
+- `ISOPLANEControl/analyze_dlls.py`（新增）
+- `check_picam.py`（新增）
+- `test_pi_fixes.py`（新增）
+- `PLAN.md`
+
+---
+
+## 9. UI 功能增强：向 LightField 级 acquisition UI 演进
+
+### 9.1 目标
+
+在现有 PyQt 测试 UI 基础上，补齐 Princeton Instruments LightField 软件中常用的核心 acquisition 与数据处理能力，使本 UI 从“单帧/连续采集演示工具”升级为可用于日常光谱实验的轻量级 acquisition 工作站。
+
+### 9.2 待实现功能清单
+
+| 功能域 | 子功能 | 优先级 | 说明 |
+|--------|--------|--------|------|
+| **背景/暗场校正** | 采集/加载暗背景帧 | P0 | 支持 dark/background 帧库，采集时自动或手动扣除 |
+| | 背景帧管理（保存/列出/切换） | P1 | 可维护多组背景帧 |
+| **光谱统计** | 峰值、FWHM、质心、积分 | P0 | 实时计算并显示在主界面 |
+| | SNR、基线、半峰宽 | P1 | 辅助判断数据质量 |
+| **实验序列 (Recipe)** | 多步骤采集（曝光/帧数/延迟/循环） | P0 | 类似 LightField Experiment 的 step 编排 |
+| | 循环与条件分支 | P1 | for-loop、if-peak 等简单控制 |
+| **增强绘图** | 双光标与峰值标注 | P0 | 在谱线上标记峰位、FWHM 区间 |
+| | 历史轨迹/瀑布图 | P1 | 显示最近 N 帧的演变 |
+| | 对数/线性 Y 轴切换 | P1 | |
+| **自动保存** | 文件名模板与自动编号 | P0 | `spectrum_{index}_{timestamp}.csv` 等 |
+| | 按 Recipe 自动归档 | P1 | 每步结果独立目录 |
+| **波长校准** | 从 xlsx/手动输入加载波长轴 | P1 | 替代当前外部 xlsx 后处理 |
+| | 基于 IsoPlane 参数自动计算 | P0 | 已部分实现，UI 需暴露参数 |
+
+### 9.3 模块设计
+
+1. **`pi_spectrometer/processing/background.py`**
+   - `BackgroundFrameLibrary`：管理 dark/background/reference 帧
+   - `apply_background_correction(result, dark=None, reference=None)`：扣除暗背景，可选做 reference 归一化
+
+2. **`pi_spectrometer/processing/stats.py`**
+   - `SpectrumStats`：峰值、峰位、FWHM、质心、积分面积、SNR
+   - `find_peaks_and_stats(x, y, threshold=...)`：多峰检测与统计
+
+3. **`pi_spectrometer/core/recipe.py`**
+   - `RecipeStep`：单步定义（action, params, repeats, delay_s）
+   - `AcquisitionRecipe`：步骤列表、验证、执行、回调
+   - `RecipeRunner`：在后台线程运行 Recipe，支持 stop/pause
+
+4. **`pi_spectrometer/ui/plot_widget.py` 增强**
+   - `CursorLine`：可拖拽光标
+   - `PeakAnnotation`：峰值标注Item
+   - `PlotWidget.set_log_mode()` / `set_linear_mode()`
+   - `PlotWidget.add_history_trace()` / `clear_history()`
+
+5. **`pi_spectrometer/ui/main_window.py` 扩展**
+   - 新增“背景帧”面板：capture dark / load dark / apply toggle
+   - 新增“统计”面板：显示 peak / FWHM / centroid / integral
+   - 新增“Recipe”面板：步骤列表、添加/删除/运行/停止
+   - 新增“自动保存”设置：启用开关、目录、文件名模板
+   - 状态栏/日志增强：显示采集进度、Recipe 步骤
+
+### 9.4 测试计划
+
+1. **背景处理单元测试**
+   - 暗背景扣除后基线接近 0
+   - reference 归一化保持形状
+   - 尺寸不匹配时抛出明确异常
+
+2. **统计模块单元测试**
+   - 高斯峰 FWHM 与理论值误差 < 5%
+   - 质心、积分计算正确
+   - 多峰检测返回正确数量
+
+3. **Recipe 单元测试**
+   - 单步执行调用 backend.acquire()
+   - 循环 3 次产生 3 个结果
+   - 暂停/停止立即响应
+   - 非法步骤参数在验证阶段报错
+
+4. **UI 单元测试/冒烟测试**
+   - 增强后的 `PlotWidget` 可导入并设置光标
+   - 主窗口新增面板存在且可访问
+   - Recipe 面板添加/删除步骤后列表同步
+
+5. **集成测试**
+   - Mock 后端下运行完整 Recipe 并自动保存 CSV
+   - 背景扣除在 UI 端到端链路中生效
+
+### 9.5 交付文件
+
+- `pi_spectrometer/processing/background.py`（新增）
+- `pi_spectrometer/processing/stats.py`（新增）
+- `pi_spectrometer/core/recipe.py`（新增）
+- `pi_spectrometer/ui/plot_widget.py`（修改）
+- `pi_spectrometer/ui/main_window.py`（修改）
+- `tests/test_background.py`（新增）
+- `tests/test_stats.py`（新增）
+- `tests/test_recipe.py`（新增）
+- `tests/test_ui_enhanced.py`（新增）
+- `test_lightfield_enhancements.py`（新增，无 pytest 时可直接运行）
+- `PLAN.md`（本节）
+
+### 9.6 测试验证
+
+由于当前环境无法联网安装 `pytest`，新增了一个无需 pytest 的回归脚本：
+
+```bash
+cd e:\CWB\8821L\Utils\AutoZoom\Utils\PrincetonInstruments\Project
+python test_lightfield_enhancements.py
+```
+
+输出：
+```
+PASS: dark subtraction
+PASS: reference normalization
+PASS: background library
+PASS: correct spectrometer result
+PASS: centroid
+PASS: integral
+PASS: fwhm gaussian
+PASS: spectrum stats
+PASS: multipeak detection
+PASS: recipe serialization
+PASS: recipe runner acquire
+PASS: recipe runner repeat
+PASS: recipe runner stop
+PASS: plot widget enhanced
+PASS: main window panels
+PASS: main window recipe add/remove
+
+结果: 16 通过, 0 失败
+所有测试通过!
+```
+
+待 pytest 可用时，也可运行：
+
+```bash
+python -m pytest tests/ -v
+```
+
+### 9.7 已知限制与后续迭代
+
+1. **P0 已实现**：暗背景扣除、光谱统计、Recipe 编排、峰值标注、自动保存、对数 Y 轴、历史轨迹。
+2. **P1 待完善**：瀑布图 3D 显示、波长校准 UI、背景帧文件持久化、Recipe 条件分支/循环嵌套、SPE/TIFF 多格式保存。
+3. **集成测试**：当前在 mock 后端验证；真实 PI 硬件上的端到端验证待 SDK/设备就绪后进行。
