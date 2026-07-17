@@ -1,0 +1,58 @@
+{
+  "created_at": "2026-06-21 20:58:48",
+  "method": "circle_like_external_axis_aligned_bbox",
+  "source_mask_path": "measurement_output\\calibration\\full_calibration_static_c\\static_c_sam2_mask.png",
+  "circle_debug": {
+    "is_circle_like": true,
+    "reason": "circle_like",
+    "area": 10039.0,
+    "perimeter": 385.2203427553177,
+    "circularity": 0.8501232456035747,
+    "bbox_xywh": [
+      487,
+      419,
+      109,
+      116
+    ],
+    "bbox_aspect": 0.9396551724137931,
+    "bbox_aspect_norm": 0.9396551724137931,
+    "bbox_fill": 0.7939734261309712,
+    "min_enclosing_circle": [
+      537.6043090820312,
+      475.5508728027344,
+      59.40336227416992
+    ],
+    "circle_fill": 0.9055627035935649,
+    "approx_vertex_count_eps_0p02": 8
+  },
+  "bbox_debug": {
+    "bbox_xyxy": [
+      487,
+      419,
+      595,
+      534
+    ],
+    "bbox_width_px": 109,
+    "bbox_height_px": 116,
+    "bbox_area_px": 12644,
+    "mask_area_px": 10136
+  },
+  "points_xy": [
+    [
+      487.0,
+      419.0
+    ],
+    [
+      595.0,
+      419.0
+    ],
+    [
+      595.0,
+      534.0
+    ],
+    [
+      487.0,
+      534.0
+    ]
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "created_at": "2026-06-27 16:29:17",
+  "capture_area": [
+    116,
+    98,
+    1112,
+    886
+  ],
+  "target_x_px": 498.8235294117647,
+  "target_y_px": 397.64705882352945,
+  "tolerance_px": 10.0,
+  "stage_step_size": 20,
+  "stage12_velocity": 10,
+  "stage12_acceleration": 10,
+  "stage12_max_voltage": 50,
+  "enable_stage": true,
+  "step9_detection_mode": "color_region_center",
+  "color_mode": "include",
+  "color_hsv": [
+    45,
+    115,
+    91
+  ],
+  "color_tol_hsv": [
+    12,
+    70,
+    70
+  ],
+  "color_min_area_px": 200,
+  "static_c_map_dir_legacy": ""
+}

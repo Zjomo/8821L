@@ -1,0 +1,65 @@
+{
+  "ok": true,
+  "label": "step7_realtime_frame_000057",
+  "method": "yolo_obb_long_edge_from_second_code",
+  "angle_deg": -35.95142611071396,
+  "angle_deg_raw": -35.95142611071396,
+  "confidence": 0.8794630765914917,
+  "class_id": 0,
+  "class_name": "bn_up",
+  "center_region": [
+    568.4611206054688,
+    333.6115417480469
+  ],
+  "center_screen": [
+    684.4611206054688,
+    431.6115417480469
+  ],
+  "points_region": [
+    [
+      472.856201171875,
+      440.625732421875
+    ],
+    [
+      699.879150390625,
+      275.977783203125
+    ],
+    [
+      664.0660400390625,
+      226.59735107421875
+    ],
+    [
+      437.0430908203125,
+      391.24530029296875
+    ]
+  ],
+  "points_screen": [
+    [
+      588.856201171875,
+      538.625732421875
+    ],
+    [
+      815.879150390625,
+      373.977783203125
+    ],
+    [
+      780.0660400390625,
+      324.59735107421875
+    ],
+    [
+      553.0430908203125,
+      489.24530029296875
+    ]
+  ],
+  "edge_length_px": 280.44316118229597,
+  "capture_area": [
+    116,
+    98,
+    1112,
+    886
+  ],
+  "detection_count": 1,
+  "timestamp": 1784297766.5297165,
+  "raw_image_path": "measurement_output\\save\\07.17\\20260717_221443\\ab_angle_realtime_yolo_obb\\20260717_221606_552_step7_realtime_frame_000057_raw.png",
+  "overlay_image_path": "measurement_output\\save\\07.17\\20260717_221443\\ab_angle_realtime_yolo_obb\\20260717_221606_552_step7_realtime_frame_000057_YOLO_OBB_overlay.png"
+}
