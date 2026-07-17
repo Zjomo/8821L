@@ -149,6 +149,27 @@ python measurement_with_focus_roi_metrics.py
 
 # TODO🎯
 
+### 2026-7-17
+
+```
+JY光谱仪通信原理：原系统用Python发送命令，Labview TCP中间层架构进行光谱仪处理，并反馈相关数据至python UI界面	✔	
+Pi光谱仪的系统代码更新 -- https://www.spark-opt.com.cn/product-item-202.html		✔
+基于PyQt 和 PICam SDK完成一个PI光谱仪的测试UI（暂不需要.\PrincetonInstruments\Project）	✔
+LightField 操作步骤：	✔
+	1、点击两个开关；
+    2、设置温度为 -25℃，等待温度降低至-25℃后，开始锁定locked；
+    3、设置On-CCD Accumulations 为1000；
+    4、设置GATING中，Gate Delay 为250ns；Gate Width 为10ms；
+    5、Center Wavelength 为516nm。
+
+找到PI SDK与UI界面对接，在本地完成原有系统的"选项"补充，并上传至github	✔
+解决在"照明光"串口更新后，后台没有反应的问题，比如：默认是com20，手动改成com19后，结果仍是找串口com20	✔
+触发阈值改为"绝对值±5%"，比如进行补焦时，触发阈值为0.95，计算Focus_Score小于0.95 或者大于1.05了，也要补焦	✔
+
+```
+
+
+
 ### 2026-7-16
 
 下次需要push大量文件时，一定先设计好gitignore，不然有我好受的T.T	✔
