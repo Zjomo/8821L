@@ -78,6 +78,7 @@ from Focus.scorer import FocusScorer
 from Focus.z_axis import ZAxisController
 from Focus.controller import AutofocusController
 from Focus.simulator import FocusSimulator, create_demo_environment
+from offline_dataset_detection import OfflineDatasetDetector
 
 from .config import (
     DEFAULT_CAPTURE_AREA,
@@ -87,10 +88,13 @@ from .config import (
     DEFAULT_INTERVAL_S,
     DEFAULT_OUTPUT_DIR,
     DEFAULT_PASSIVE_CONSECUTIVE_GOOD,
+    DEFAULT_PASSIVE_DISABLE_AUTO_STOP,
     DEFAULT_PASSIVE_MAX_ATTEMPTS,
     DEFAULT_PASSIVE_MODE,
     DEFAULT_SEARCH_STRATEGY,
+    DEFAULT_DETECTION_ONLY,
     DEFAULT_STOP_RATIO,
+    DEFAULT_TRIGGER_ABSOLUTE,
     DEFAULT_TRIGGER_COUNT,
     DEFAULT_TRIGGER_RATIO,
     DEFAULT_WINDOW_TITLE,
@@ -106,6 +110,7 @@ from .widgets import (
     LoopSummaryDialog,
 )
 from .worker import AutofocusThread
+from .offline_worker import OfflineDatasetThread
 from .themes import Theme, get_theme, available_themes
 
 logger = logging.getLogger("autofocus_qt_ui.app")
@@ -129,11 +134,14 @@ class UiRuntimeArgs:
     z_picomotor_backend: str = "auto"
     autofocus_enabled: bool = True
     trigger_ratio: float = DEFAULT_TRIGGER_RATIO
+    trigger_absolute: bool = DEFAULT_TRIGGER_ABSOLUTE
+    detection_only: bool = DEFAULT_DETECTION_ONLY
     stop_ratio: float = DEFAULT_STOP_RATIO
     trigger_count: int = DEFAULT_TRIGGER_COUNT
     passive_mode: bool = DEFAULT_PASSIVE_MODE
     passive_max_attempts: int = DEFAULT_PASSIVE_MAX_ATTEMPTS
     passive_consecutive_good: int = DEFAULT_PASSIVE_CONSECUTIVE_GOOD
+    passive_disable_auto_stop: bool = DEFAULT_PASSIVE_DISABLE_AUTO_STOP
     search_strategy: str = DEFAULT_SEARCH_STRATEGY
     demo_sim: bool = False
 
@@ -368,6 +376,24 @@ class AutofocusMainWindow(QMainWindow):
         self.trigger_ratio_spin.setValue(DEFAULT_TRIGGER_RATIO)
         focus_layout.addRow("触发阈值:", self.trigger_ratio_spin)
 
+        self.trigger_absolute_check = QCheckBox("使用绝对值区间 (以 1.0 对称)")
+        self.trigger_absolute_check.setChecked(DEFAULT_TRIGGER_ABSOLUTE)
+        self.trigger_absolute_check.setToolTip(
+            "勾选后，允许区间为 [触发阈值, 2 - 触发阈值]。\n"
+            "例如阈值 0.95 时，FocusScore_ratio 在 [0.95, 1.05] 内为达标，"
+            "低于 0.95 或高于 1.05 均会触发补焦。"
+        )
+        focus_layout.addRow("", self.trigger_absolute_check)
+
+        self.detection_only_btn = QPushButton("FocusScore检测")
+        self.detection_only_btn.setCheckable(True)
+        self.detection_only_btn.setChecked(DEFAULT_DETECTION_ONLY)
+        self.detection_only_btn.setToolTip(
+            "开启后，当触发补焦条件时仅记录当前图像和分数，\n"
+            "不会执行 Z 轴闭环搜索等硬件操作，避免设备报错。"
+        )
+        focus_layout.addRow("", self.detection_only_btn)
+
         self.stop_ratio_spin = QDoubleSpinBox()
         self.stop_ratio_spin.setRange(0.1, 1.0)
         self.stop_ratio_spin.setSingleStep(0.05)
@@ -449,6 +475,15 @@ class AutofocusMainWindow(QMainWindow):
         )
         loop_layout.addRow("连续达标次数:", self.passive_good_spin)
 
+        self.disable_auto_stop_btn = QPushButton("关闭达标阈值")
+        self.disable_auto_stop_btn.setCheckable(True)
+        self.disable_auto_stop_btn.setChecked(DEFAULT_PASSIVE_DISABLE_AUTO_STOP)
+        self.disable_auto_stop_btn.setToolTip(
+            "点击后被动补焦将不再因连续达标而自动停止，\n"
+            "只有手动点击“停止”才会结束循环。"
+        )
+        loop_layout.addRow("", self.disable_auto_stop_btn)
+
         self.output_edit = QLineEdit(DEFAULT_OUTPUT_DIR)
         self.output_btn = QPushButton("浏览...")
         h = QHBoxLayout()
@@ -457,6 +492,50 @@ class AutofocusMainWindow(QMainWindow):
         loop_layout.addRow("输出目录:", h)
 
         layout.addWidget(self.loop_group)
+
+        # 离线数据集检测模块
+        self.offline_group = QGroupBox("离线数据集检测")
+        offline_layout = QFormLayout(self.offline_group)
+
+        self.offline_input_edit = QLineEdit()
+        self.offline_input_edit.setPlaceholderText("选择视频文件或图片文件夹")
+        self.offline_input_btn = QPushButton("浏览...")
+        h_offline_input = QHBoxLayout()
+        h_offline_input.addWidget(self.offline_input_edit)
+        h_offline_input.addWidget(self.offline_input_btn)
+        offline_layout.addRow("输入路径:", h_offline_input)
+
+        self.offline_output_edit = QLineEdit(DEFAULT_OUTPUT_DIR)
+        self.offline_output_btn = QPushButton("浏览...")
+        h_offline_output = QHBoxLayout()
+        h_offline_output.addWidget(self.offline_output_edit)
+        h_offline_output.addWidget(self.offline_output_btn)
+        offline_layout.addRow("输出目录:", h_offline_output)
+
+        self.offline_reference_edit = QLineEdit()
+        self.offline_reference_edit.setPlaceholderText("可选：选择基准图片（默认使用第一张）")
+        self.offline_reference_btn = QPushButton("浏览...")
+        h_offline_ref = QHBoxLayout()
+        h_offline_ref.addWidget(self.offline_reference_edit)
+        h_offline_ref.addWidget(self.offline_reference_btn)
+        offline_layout.addRow("基准图片:", h_offline_ref)
+
+        self.offline_interval_spin = QDoubleSpinBox()
+        self.offline_interval_spin.setRange(0.5, 300.0)
+        self.offline_interval_spin.setSingleStep(0.5)
+        self.offline_interval_spin.setValue(3.0)
+        self.offline_interval_spin.setToolTip("视频帧提取间隔（秒）")
+        offline_layout.addRow("抽帧间隔 (s):", self.offline_interval_spin)
+
+        self.offline_run_btn = QPushButton("运行离线检测")
+        self.offline_run_btn.setObjectName("primary")
+        self.offline_run_btn.setToolTip(
+            "对输入的视频或图片文件夹进行离线 FocusScore 检测：\n"
+            "提取帧/读取图片 → 建立基准 → 计算得分 → 标注 → 输出"
+        )
+        offline_layout.addRow("", self.offline_run_btn)
+
+        layout.addWidget(self.offline_group)
 
         btn_layout = QHBoxLayout()
         self.build_ref_btn = QPushButton("建立参考")
@@ -638,6 +717,13 @@ class AutofocusMainWindow(QMainWindow):
         self.detect_spots_btn.clicked.connect(self._on_detect_spots)
 
         self.passive_check.stateChanged.connect(self._on_passive_changed)
+        self.disable_auto_stop_btn.toggled.connect(self._on_disable_auto_stop_toggled)
+        self.detection_only_btn.toggled.connect(self._on_detection_only_toggled)
+
+        self.offline_input_btn.clicked.connect(self._choose_offline_input)
+        self.offline_output_btn.clicked.connect(self._choose_offline_output_dir)
+        self.offline_reference_btn.clicked.connect(self._choose_offline_reference)
+        self.offline_run_btn.clicked.connect(self._run_offline_detection)
 
     def _apply_default_values(self) -> None:
         self._on_mode_changed(0)
@@ -662,12 +748,29 @@ class AutofocusMainWindow(QMainWindow):
 
         # 根据被动模式初始状态禁用/启用循环轮数
         self._on_passive_changed(self.passive_check.checkState())
+        self._on_disable_auto_stop_toggled(self.disable_auto_stop_btn.isChecked())
+        self._on_detection_only_toggled(self.detection_only_btn.isChecked())
 
     def _on_passive_changed(self, state) -> None:
         """被动模式开关变化时禁用/启用循环轮数。"""
         from autofocus_qt_ui.qt_compat import Qt
         is_passive = (state == Qt.Checked)
         self.cycles_spin.setEnabled(not is_passive)
+
+    def _on_disable_auto_stop_toggled(self, checked: bool) -> None:
+        """关闭达标阈值时禁用连续达标次数并提示。"""
+        self.passive_good_spin.setEnabled(not checked)
+        if checked:
+            self.disable_auto_stop_btn.setText("开启达标阈值")
+        else:
+            self.disable_auto_stop_btn.setText("关闭达标阈值")
+
+    def _on_detection_only_toggled(self, checked: bool) -> None:
+        """FocusScore 检测模式切换时更新按钮文字。"""
+        if checked:
+            self.detection_only_btn.setText("退出FocusScore检测")
+        else:
+            self.detection_only_btn.setText("FocusScore检测")
 
     def _collect_args(self) -> UiRuntimeArgs:
         args = UiRuntimeArgs()
@@ -692,11 +795,14 @@ class AutofocusMainWindow(QMainWindow):
         args.z_picomotor_backend = self.z_picomotor_backend_combo.currentText().strip()
         args.autofocus_enabled = self.autofocus_check.isChecked()
         args.trigger_ratio = self.trigger_ratio_spin.value()
+        args.trigger_absolute = self.trigger_absolute_check.isChecked()
+        args.detection_only = self.detection_only_btn.isChecked()
         args.stop_ratio = self.stop_ratio_spin.value()
         args.trigger_count = self.trigger_count_spin.value()
         args.passive_mode = self.passive_check.isChecked()
         args.passive_max_attempts = self.passive_attempts_spin.value()
         args.passive_consecutive_good = self.passive_good_spin.value()
+        args.passive_disable_auto_stop = self.disable_auto_stop_btn.isChecked()
         args.search_strategy = self.strategy_combo.currentText()
         args.demo_sim = False
         return args
@@ -1158,11 +1264,14 @@ class AutofocusMainWindow(QMainWindow):
             "z_picomotor_backend": args.z_picomotor_backend,
             "autofocus_enabled": args.autofocus_enabled,
             "autofocus_focus_trigger_ratio": args.trigger_ratio,
+            "autofocus_trigger_absolute": args.trigger_absolute,
+            "autofocus_detection_only": args.detection_only,
             "autofocus_stop_ratio": args.stop_ratio,
             "autofocus_focus_trigger_count": args.trigger_count,
             "autofocus_passive_mode": args.passive_mode,
             "autofocus_passive_max_attempts": args.passive_max_attempts,
             "autofocus_passive_consecutive_good": args.passive_consecutive_good,
+            "autofocus_passive_disable_auto_stop": args.passive_disable_auto_stop,
             "z_search_strategy": args.search_strategy,
             "usb_device_index": args.usb_device,
         }
@@ -1275,7 +1384,9 @@ class AutofocusMainWindow(QMainWindow):
         self._thread.worker.capture_requested.connect(self._on_worker_capture)
 
         self._set_controls_running(True)
-        self.score_plot.set_thresholds(args.trigger_ratio, args.stop_ratio)
+        self.score_plot.set_thresholds(
+            args.trigger_ratio, args.stop_ratio, args.trigger_absolute
+        )
         self.score_plot.clear()
         # 启动对比模式：若已建立参考，则左右显示基准图与实时图
         self.preview_label.set_comparison_mode(self._reference_image is not None)
@@ -1486,6 +1597,113 @@ class AutofocusMainWindow(QMainWindow):
             self.video_path_edit.setText(path)
             self.log(f"已选择视频文件: {path}")
             self._detect_video_params(path)
+
+    def _choose_offline_input(self) -> None:
+        """选择离线检测的输入：视频文件或图片文件夹。"""
+        current = self.offline_input_edit.text().strip()
+        start_dir = current if current and Path(current).exists() else ""
+
+        # 先询问是文件还是文件夹
+        choice = QMessageBox.question(
+            self,
+            "选择输入类型",
+            "请选择输入类型：\n“是”=视频文件，\n“否”=图片文件夹，\n“取消”=不选择",
+            QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel,
+        )
+        if choice == QMessageBox.Yes:
+            path, _ = QFileDialog.getOpenFileName(
+                self,
+                "选择离线检测视频文件",
+                start_dir,
+                "视频文件 (*.mp4 *.avi *.mov *.mkv *.wmv *.flv *.webm);;所有文件 (*.*)",
+            )
+        elif choice == QMessageBox.No:
+            path = QFileDialog.getExistingDirectory(
+                self, "选择离线检测图片文件夹", start_dir
+            )
+        else:
+            return
+
+        if path:
+            self.offline_input_edit.setText(path)
+            self.log(f"[离线检测] 已选择输入：{path}")
+
+    def _choose_offline_output_dir(self) -> None:
+        """选择离线检测输出目录。"""
+        current = self.offline_output_edit.text().strip()
+        start_dir = current if current and Path(current).exists() else ""
+        path = QFileDialog.getExistingDirectory(
+            self, "选择离线检测输出目录", start_dir
+        )
+        if path:
+            self.offline_output_edit.setText(path)
+
+    def _choose_offline_reference(self) -> None:
+        """选择离线检测的基准图片。"""
+        current = self.offline_reference_edit.text().strip()
+        start_dir = Path(current).parent if current and Path(current).exists() else ""
+        path, _ = QFileDialog.getOpenFileName(
+            self,
+            "选择基准图片",
+            str(start_dir),
+            "图片 (*.jpg *.jpeg *.png *.bmp *.tif *.tiff);;所有文件 (*.*)",
+        )
+        if path:
+            self.offline_reference_edit.setText(path)
+            self.log(f"[离线检测] 已选择基准图片：{path}")
+
+    def _run_offline_detection(self) -> None:
+        """启动离线数据集检测线程。"""
+        input_path = self.offline_input_edit.text().strip()
+        output_dir = self.offline_output_edit.text().strip() or DEFAULT_OUTPUT_DIR
+        reference_path = self.offline_reference_edit.text().strip() or None
+        interval = self.offline_interval_spin.value()
+
+        if not input_path or not Path(input_path).exists():
+            QMessageBox.warning(self, "输入无效", "请选择有效的视频文件或图片文件夹")
+            return
+
+        roi = self._parse_rect(self.focus_roi_edit.text(), DEFAULT_FOCUS_ROI)
+        cfg = AutofocusConfig(focus_roi=roi)
+        detector = OfflineDatasetDetector(cfg)
+
+        self._offline_thread = OfflineDatasetThread(self)
+        self._offline_thread.configure(
+            detector=detector,
+            input_path=input_path,
+            output_dir=output_dir,
+            reference_path=reference_path,
+            interval_seconds=interval,
+        )
+        self._offline_thread.worker.log.connect(self.log)
+        self._offline_thread.worker.progress.connect(self._on_offline_progress)
+        self._offline_thread.worker.finished.connect(self._on_offline_finished)
+
+        self.offline_run_btn.setEnabled(False)
+        self.progress_bar.setValue(0)
+        self.status_label.setText("离线检测运行中...")
+        self.log("[离线检测] 启动离线数据集检测...")
+        self._offline_thread.start()
+
+    def _on_offline_progress(self, current: int, total: int) -> None:
+        """更新离线检测进度条。"""
+        if total > 0:
+            self.progress_bar.setValue(int(current * 100 / total))
+        self.status_label.setText(f"离线检测中... {current}/{total}")
+
+    def _on_offline_finished(self, ok: bool, message: str) -> None:
+        """离线检测完成回调。"""
+        self.offline_run_btn.setEnabled(True)
+        if ok:
+            self.progress_bar.setValue(100)
+            self.status_label.setText("离线检测完成")
+            self.log(f"[离线检测] 完成，输出目录：{message}")
+            QMessageBox.information(self, "完成", f"离线检测完成\n输出目录：{message}")
+        else:
+            self.progress_bar.setValue(0)
+            self.status_label.setText("离线检测失败")
+            self.log(f"[离线检测] 失败：{message}")
+            QMessageBox.critical(self, "失败", f"离线检测失败：{message}")
 
     def _detect_video_params(self, video_path: str) -> None:
         """检测视频参数并自动填入采集区域。"""

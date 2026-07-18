@@ -494,6 +494,7 @@ class FocusScorePlot(QWidget):
         self._scores: Deque[Tuple[int, float]] = deque(maxlen=max_points)
         self._trigger_ratio: float = 0.90
         self._stop_ratio: float = 0.95
+        self._trigger_absolute: bool = True
         self._hover_cycle: Optional[int] = None
         self._hover_score: Optional[float] = None
         self._hover_pos: Optional[Tuple[int, int]] = None
@@ -513,9 +514,10 @@ class FocusScorePlot(QWidget):
         self._hover_pos = None
         self.update()
 
-    def set_thresholds(self, trigger: float, stop: float) -> None:
+    def set_thresholds(self, trigger: float, stop: float, absolute: bool = True) -> None:
         self._trigger_ratio = trigger
         self._stop_ratio = stop
+        self._trigger_absolute = absolute
         self.update()
 
     def mouseMoveEvent(self, event) -> None:
@@ -591,10 +593,15 @@ class FocusScorePlot(QWidget):
         painter.drawLine(left, top, left, top + plot_h)
 
         # 阈值线
-        for val, color, label in [
+        threshold_lines = [
             (self._stop_ratio, theme.success, "stop"),
             (self._trigger_ratio, theme.warning, "trigger"),
-        ]:
+        ]
+        if self._trigger_absolute:
+            upper_trigger = 2.0 - self._trigger_ratio
+            if 0.0 < upper_trigger <= 2.0:
+                threshold_lines.append((upper_trigger, theme.warning, "trigger+"))
+        for val, color, label in threshold_lines:
             y = top + plot_h - int(val * plot_h)
             painter.setPen(QPen(QColor(color), 1, Qt.DashLine))
             painter.drawLine(left, y, left + plot_w, y)

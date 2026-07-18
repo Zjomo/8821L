@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import numpy as np
+from PIL import Image
 
 from .qt_compat import QObject, QThread, Signal, Slot
 
@@ -213,8 +214,17 @@ class AutofocusWorker(QObject):
                 and self._cfg.autofocus_enabled
             )
             trigger_ratio = float(self._cfg.autofocus_focus_trigger_ratio)
+            trigger_absolute = bool(
+                getattr(self._cfg, "autofocus_trigger_absolute", True)
+            )
             passive_consecutive_good = max(
                 1, int(getattr(self._cfg, "autofocus_passive_consecutive_good", 3))
+            )
+            disable_auto_stop = bool(
+                getattr(self._cfg, "autofocus_passive_disable_auto_stop", False)
+            )
+            detection_only = bool(
+                getattr(self._cfg, "autofocus_detection_only", False)
             )
             consecutive_good_count = 0
 
@@ -244,6 +254,10 @@ class AutofocusWorker(QObject):
                 )
 
                 score = result.get("focus_score_ratio") if isinstance(result, dict) else None
+                triggered = bool(result.get("triggered")) if isinstance(result, dict) else False
+                is_detection_only = (
+                    bool(result.get("detection_only")) if isinstance(result, dict) else False
+                )
                 self._state.focus_score = score
                 self._update_preview(result)
 
@@ -251,21 +265,35 @@ class AutofocusWorker(QObject):
                     self.score_updated.emit(cycle, score)
                     self.log.emit(f"第 {cycle} 轮 FocusScore_ratio = {score:.4f}")
 
+                # FocusScore 检测模式：触发时保存当前图像，不执行硬件补焦
+                if detection_only and triggered and is_detection_only:
+                    self._save_detection_image(result, cycle_save_dir, cycle, score)
+                    self.log.emit(
+                        f"[FocusScore检测] 第 {cycle} 轮触发，已保存图像到 "
+                        f"{cycle_save_dir / 'trigger_detection.jpg'}"
+                    )
+
                 # 被动补焦：统计连续达标轮数，达标 n 轮后自动停止
                 if passive_mode and self._cfg.autofocus_enabled and score is not None:
                     from Focus.controller import focus_score_ratio_in_tolerance
 
-                    if focus_score_ratio_in_tolerance(score, trigger_ratio):
+                    if focus_score_ratio_in_tolerance(score, trigger_ratio, trigger_absolute):
                         consecutive_good_count += 1
-                        self.log.emit(
-                            f"[被动补焦] 分数达标 {score:.4f} 在允许区间内, "
-                            f"连续达标 {consecutive_good_count}/{passive_consecutive_good}"
-                        )
-                        if consecutive_good_count >= passive_consecutive_good:
+                        if disable_auto_stop:
                             self.log.emit(
-                                f"[被动补焦] 连续达标 {passive_consecutive_good} 轮，停止循环"
+                                f"[被动补焦] 分数达标 {score:.4f} 在允许区间内，"
+                                "已关闭达标阈值，继续运行"
                             )
-                            break
+                        else:
+                            self.log.emit(
+                                f"[被动补焦] 分数达标 {score:.4f} 在允许区间内, "
+                                f"连续达标 {consecutive_good_count}/{passive_consecutive_good}"
+                            )
+                            if consecutive_good_count >= passive_consecutive_good:
+                                self.log.emit(
+                                    f"[被动补焦] 连续达标 {passive_consecutive_good} 轮，停止循环"
+                                )
+                                break
                     else:
                         consecutive_good_count = 0
                         self.log.emit(
@@ -329,6 +357,36 @@ class AutofocusWorker(QObject):
             self.preview_updated.emit(roi_image)
 
         self.metrics_updated.emit(full_metrics, roi_metrics)
+
+    def _save_detection_image(
+        self,
+        result: Dict[str, Any],
+        cycle_save_dir: Path,
+        cycle: int,
+        score: Optional[float],
+    ) -> None:
+        """FocusScore 检测模式下保存触发图像。"""
+        image = result.get("full_rgb")
+        if image is None:
+            image = result.get("roi_rgb")
+        if image is None or not isinstance(image, np.ndarray):
+            return
+        try:
+            cycle_save_dir.mkdir(parents=True, exist_ok=True)
+            img_path = cycle_save_dir / "trigger_detection.jpg"
+            if image.ndim == 3 and image.shape[2] == 3:
+                Image.fromarray(image).save(str(img_path), quality=95)
+            else:
+                Image.fromarray(image).save(str(img_path))
+
+            # 同时记录分数到文本文件，方便后续查看
+            score_path = cycle_save_dir / "trigger_detection_score.txt"
+            score_str = f"{score:.6f}" if score is not None else "None"
+            score_path.write_text(
+                f"cycle={cycle}\nfocus_score_ratio={score_str}\n", encoding="utf-8"
+            )
+        except Exception as exc:
+            self.log.emit(f"[FocusScore检测] 保存图像失败：{exc}")
 
     def _cleanup(self) -> None:
         try:

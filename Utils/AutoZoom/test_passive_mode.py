@@ -28,6 +28,7 @@ if str(AUTOZOOM_ROOT) not in sys.path:
 from autofocus_qt_ui.qt_compat import QApplication
 from autofocus_qt_ui.config import (
     DEFAULT_PASSIVE_CONSECUTIVE_GOOD,
+    DEFAULT_PASSIVE_DISABLE_AUTO_STOP,
     DEFAULT_PASSIVE_MAX_ATTEMPTS,
     DEFAULT_PASSIVE_MODE,
     DEFAULT_STOP_RATIO,
@@ -49,6 +50,7 @@ def _make_cfg(
     passive_mode: bool = DEFAULT_PASSIVE_MODE,
     passive_max_attempts: int = DEFAULT_PASSIVE_MAX_ATTEMPTS,
     passive_consecutive_good: int = DEFAULT_PASSIVE_CONSECUTIVE_GOOD,
+    passive_disable_auto_stop: bool = DEFAULT_PASSIVE_DISABLE_AUTO_STOP,
     autofocus_enabled: bool = True,
     trigger_ratio: float = DEFAULT_TRIGGER_RATIO,
     stop_ratio: float = DEFAULT_STOP_RATIO,
@@ -64,6 +66,7 @@ def _make_cfg(
         autofocus_passive_mode=passive_mode,
         autofocus_passive_max_attempts=passive_max_attempts,
         autofocus_passive_consecutive_good=passive_consecutive_good,
+        autofocus_passive_disable_auto_stop=passive_disable_auto_stop,
     )
 
 
@@ -138,12 +141,16 @@ def test_default_thresholds() -> None:
     assert cfg.autofocus_passive_mode is False, "被动模式默认应关闭"
     assert cfg.autofocus_passive_max_attempts == 10, "默认最大连续补焦次数应为 10"
     assert cfg.autofocus_passive_consecutive_good == 3, "默认连续达标次数应为 3"
+    assert cfg.autofocus_passive_disable_auto_stop is False, (
+        "默认不应关闭达标阈值"
+    )
 
     assert DEFAULT_TRIGGER_RATIO == 0.95
     assert DEFAULT_STOP_RATIO == 0.95
     assert DEFAULT_PASSIVE_MODE is False
     assert DEFAULT_PASSIVE_MAX_ATTEMPTS == 10
     assert DEFAULT_PASSIVE_CONSECUTIVE_GOOD == 3
+    assert DEFAULT_PASSIVE_DISABLE_AUTO_STOP is False
     print("PASS: default thresholds and passive defaults")
 
 
@@ -161,6 +168,9 @@ def test_ui_controls_reflect_defaults() -> None:
         assert abs(window.trigger_ratio_spin.value() - 0.95) < 1e-9, (
             f"UI 触发阈值默认值错误：{window.trigger_ratio_spin.value()}"
         )
+        assert window.trigger_absolute_check.isChecked() is True, (
+            "UI 绝对值区间默认应勾选"
+        )
         assert abs(window.stop_ratio_spin.value() - 0.95) < 1e-9, (
             f"UI 目标阈值默认值错误：{window.stop_ratio_spin.value()}"
         )
@@ -170,6 +180,12 @@ def test_ui_controls_reflect_defaults() -> None:
         )
         assert window.passive_good_spin.value() == 3, (
             f"UI 连续达标次数默认值错误：{window.passive_good_spin.value()}"
+        )
+        assert window.disable_auto_stop_btn.isChecked() is False, (
+            "UI 关闭达标阈值默认应未按下"
+        )
+        assert window.passive_good_spin.isEnabled() is True, (
+            "关闭达标阈值未启用时连续达标次数应可用"
         )
         assert window.cycles_spin.isEnabled() is True, "未勾选被动模式时循环轮数应可用"
 
@@ -256,6 +272,25 @@ def test_passive_mode_manual_stop() -> None:
     assert controller._idx == 5, f"期望调用 5 次后手动停止，实际 {controller._idx}"
     assert worker._state.running is False
     print("PASS: passive mode manual stop")
+
+
+def test_disable_auto_stop_ignores_consecutive_good() -> None:
+    """关闭达标阈值后，即使分数一直达标也不会自动停止，只能手动停止。"""
+    cfg = _make_cfg(
+        passive_mode=True, passive_consecutive_good=1, passive_disable_auto_stop=True
+    )
+    results = [_result_with_score(0.96) for _ in range(100)]
+    controller = _MockController(results, cfg)
+
+    worker = _run_worker(
+        cfg, controller, cycles=1, interval=0.0, stop_after_score_cycles=7
+    )
+
+    assert controller._idx == 7, (
+        f"关闭达标阈值后应持续运行直到手动停止，期望 7 次，实际 {controller._idx}"
+    )
+    assert worker._state.running is False
+    print("PASS: disable auto stop ignores consecutive good")
 
 
 def test_passive_mode_off_keeps_single_autofocus() -> None:

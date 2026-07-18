@@ -74,6 +74,15 @@ class AutofocusConfig:
     以 1.0 为中心，允许区间为 [ratio, 2 - ratio]。
     默认 0.95 表示允许区间 [0.95, 1.05]，超出即计数。"""
 
+    autofocus_trigger_absolute: bool = True
+    """触发阈值是否使用以 1.0 为中心的对称区间（绝对值模式）。
+    True  ：[trigger_ratio, 2 - trigger_ratio]，例如 [0.95, 1.05]。
+    False ：仅单边下限，score < trigger_ratio 时触发。"""
+
+    autofocus_detection_only: bool = False
+    """FocusScore 检测模式。
+    True 时触发补焦条件后只记录当前图像和分数，不执行 Z 轴闭环搜索等硬件操作。"""
+
     autofocus_focus_trigger_count: int = 3
     """连续 N 轮 FocusScore_ratio 超出允许区间则启动补焦"""
 
@@ -89,6 +98,10 @@ class AutofocusConfig:
 
     autofocus_passive_consecutive_good: int = 3
     """被动补焦模式下，FocusScore 连续多少轮回到允许区间内后自动停止循环"""
+
+    autofocus_passive_disable_auto_stop: bool = False
+    """被动补焦模式下是否关闭“连续达标次数”自动停止逻辑。
+    True 时被动补焦将持续运行，只有手动点击停止才会结束。"""
 
     # -------------------- SHG 补焦触发阈值（可选） --------------------
     autofocus_shg_trigger_ratio: float = 0.90

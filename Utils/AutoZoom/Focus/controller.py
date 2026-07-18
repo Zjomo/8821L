@@ -30,15 +30,23 @@ LogCallback = Optional[Callable[[str], None]]
 def focus_score_ratio_in_tolerance(
     focus_score_ratio: Optional[float],
     trigger_ratio: float,
+    absolute: bool = True,
 ) -> bool:
     """
-    判断 FocusScore_ratio 是否在以 1.0 为中心的对称允许区间内。
+    判断 FocusScore_ratio 是否在允许区间内。
 
-    允许区间：[trigger_ratio, 2 - trigger_ratio]
-    例如 trigger_ratio=0.95 时，允许区间为 [0.95, 1.05]。
+    参数
+    ----------
+    absolute : bool, 默认 True
+        True  时使用以 1.0 为中心的对称区间
+              [trigger_ratio, 2 - trigger_ratio]。
+              例如 trigger_ratio=0.95 时允许区间为 [0.95, 1.05]。
+        False 时使用单边下限，score >= trigger_ratio 即认为达标。
     """
     if focus_score_ratio is None:
         return False
+    if not absolute:
+        return focus_score_ratio >= trigger_ratio
     lower = min(trigger_ratio, 2.0 - trigger_ratio)
     upper = max(trigger_ratio, 2.0 - trigger_ratio)
     return lower <= focus_score_ratio <= upper
@@ -103,13 +111,15 @@ class AutofocusController:
         """
         判断 FocusScore_ratio 是否在允许范围内。
 
-        以 1.0 为中心，允许区间为：
+        根据 cfg.autofocus_trigger_absolute 选择：
+          - True（默认）：以 1.0 为中心的对称区间
             [trigger_ratio, 2 - trigger_ratio]
-        例如 trigger_ratio=0.95 时，允许区间为 [0.95, 1.05]。
+          - False：仅单边下限 score >= trigger_ratio
         """
         return focus_score_ratio_in_tolerance(
             focus_score_ratio,
             float(self.cfg.autofocus_focus_trigger_ratio),
+            bool(getattr(self.cfg, "autofocus_trigger_absolute", True)),
         )
 
     def evaluate_trigger(
@@ -135,27 +145,40 @@ class AutofocusController:
         reasons: List[str] = []
 
         ratio = float(self.cfg.autofocus_focus_trigger_ratio)
-        lower = min(ratio, 2.0 - ratio)
-        upper = max(ratio, 2.0 - ratio)
+        absolute = bool(getattr(self.cfg, "autofocus_trigger_absolute", True))
+        lower = min(ratio, 2.0 - ratio) if absolute else ratio
+        upper = max(ratio, 2.0 - ratio) if absolute else float("inf")
 
         if focus_score_ratio is not None:
             if self._focus_ratio_in_tolerance(focus_score_ratio):
                 self.consecutive_focus_low_count = 0
             else:
                 self.consecutive_focus_low_count += 1
-                direction = "偏低" if focus_score_ratio < lower else "偏高"
-                self._log(
-                    f"[补焦] FocusScore_ratio={focus_score_ratio:.4f} {direction}，"
-                    f"超出允许区间 [{lower:.4f}, {upper:.4f}]"
-                )
+                if absolute:
+                    direction = "偏低" if focus_score_ratio < lower else "偏高"
+                    self._log(
+                        f"[补焦] FocusScore_ratio={focus_score_ratio:.4f} {direction}，"
+                        f"超出允许区间 [{lower:.4f}, {upper:.4f}]"
+                    )
+                else:
+                    self._log(
+                        f"[补焦] FocusScore_ratio={focus_score_ratio:.4f} "
+                        f"低于阈值 {ratio:.4f}"
+                    )
 
         if self.consecutive_focus_low_count >= int(
             self.cfg.autofocus_focus_trigger_count
         ):
-            reasons.append(
-                f"连续{self.consecutive_focus_low_count}轮 FocusScore_ratio "
-                f"超出 [{lower:.4f}, {upper:.4f}]"
-            )
+            if absolute:
+                reasons.append(
+                    f"连续{self.consecutive_focus_low_count}轮 FocusScore_ratio "
+                    f"超出 [{lower:.4f}, {upper:.4f}]"
+                )
+            else:
+                reasons.append(
+                    f"连续{self.consecutive_focus_low_count}轮 FocusScore_ratio "
+                    f"低于 {ratio:.4f}"
+                )
 
         if self.last_shg_ratio is not None:
             if self.last_shg_ratio < float(self.cfg.autofocus_shg_hard_ratio):
@@ -333,7 +356,20 @@ class AutofocusController:
             self._log("[补焦] 已触发但 autofocus_enabled=False，不移动")
             return focus_metrics
 
-        # 4. 闭环补焦
+        # 4. 闭环补焦（或仅检测记录）
+        detection_only = bool(
+            getattr(self.cfg, "autofocus_detection_only", False)
+        )
+        if detection_only:
+            self._log(
+                "[FocusScore检测] 触发: " + "; ".join(reasons) + "，"
+                "检测模式开启，不执行 Z 轴闭环补焦"
+            )
+            if isinstance(focus_metrics, dict):
+                focus_metrics["triggered"] = True
+                focus_metrics["detection_only"] = True
+            return focus_metrics
+
         self._log("[补焦] 触发: " + "; ".join(reasons))
         autofocus_result = self.run_closed_loop(
             initial_focus_score=focus_score

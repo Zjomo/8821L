@@ -50,10 +50,13 @@ class DummyScorer:
         return True
 
 
-def _make_controller(scores, trigger_ratio=0.95, trigger_count=3):
+def _make_controller(
+    scores, trigger_ratio=0.95, trigger_count=3, trigger_absolute=True
+):
     cfg = AutofocusConfig(
         autofocus_enabled=True,
         autofocus_focus_trigger_ratio=trigger_ratio,
+        autofocus_trigger_absolute=trigger_absolute,
         autofocus_focus_trigger_count=trigger_count,
         z_enabled=False,
     )
@@ -66,12 +69,18 @@ def _make_controller(scores, trigger_ratio=0.95, trigger_count=3):
 
 
 def test_focus_score_ratio_in_tolerance():
+    # 默认绝对值（对称）模式
     assert focus_score_ratio_in_tolerance(0.95, 0.95) is True
     assert focus_score_ratio_in_tolerance(1.00, 0.95) is True
     assert focus_score_ratio_in_tolerance(1.05, 0.95) is True
     assert focus_score_ratio_in_tolerance(0.94, 0.95) is False
     assert focus_score_ratio_in_tolerance(1.06, 0.95) is False
     assert focus_score_ratio_in_tolerance(None, 0.95) is False
+
+    # 单边模式
+    assert focus_score_ratio_in_tolerance(1.06, 0.95, absolute=False) is True
+    assert focus_score_ratio_in_tolerance(0.95, 0.95, absolute=False) is True
+    assert focus_score_ratio_in_tolerance(0.94, 0.95, absolute=False) is False
     print("PASS: focus_score_ratio_in_tolerance")
 
 
@@ -105,6 +114,30 @@ def test_reset_when_back_in_tolerance():
     ctrl.evaluate_trigger(1.00)
     assert ctrl.consecutive_focus_low_count == 0
     print("PASS: reset when back in tolerance")
+
+
+def test_one_sided_mode_ignores_high_score():
+    """关闭绝对值模式后，FocusScore_ratio 偏高不应触发补焦。"""
+    ctrl = _make_controller(
+        [1.10, 1.11, 1.12], trigger_count=3, trigger_absolute=False
+    )
+    for _ in range(3):
+        need, reasons = ctrl.evaluate_trigger(1.10)
+    assert need is False, f"单边模式下不应因分数偏高触发补焦，但 need={need}"
+    assert ctrl.consecutive_focus_low_count == 0
+    print("PASS: one-sided mode ignores high score")
+
+
+def test_one_sided_mode_triggers_on_low_score():
+    """关闭绝对值模式后，FocusScore_ratio 偏低仍应触发补焦。"""
+    ctrl = _make_controller(
+        [0.90, 0.91, 0.92], trigger_count=3, trigger_absolute=False
+    )
+    for _ in range(3):
+        need, reasons = ctrl.evaluate_trigger(0.90)
+    assert need is True, f"单边模式下分数偏低应触发补焦，但 need={need}"
+    assert "低于 0.9500" in reasons[0], f"理由不正确: {reasons}"
+    print("PASS: one-sided mode triggers on low score")
 
 
 def _check_connect_light_source(path: str) -> None:
@@ -154,6 +187,8 @@ def main():
     test_trigger_below_lower()
     test_trigger_above_upper()
     test_reset_when_back_in_tolerance()
+    test_one_sided_mode_ignores_high_score()
+    test_one_sided_mode_triggers_on_low_score()
     test_light_port_change_in_source_6_25()
     test_light_port_change_in_source_7_16()
     test_illumination_relay_port_change()
