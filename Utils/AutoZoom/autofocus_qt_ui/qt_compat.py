@@ -8,6 +8,7 @@ import sys
 try:
     from PySide6 import QtCore, QtGui
     from PySide6.QtCore import (
+        QCoreApplication,
         QObject,
         Qt,
         QThread,
@@ -54,6 +55,7 @@ try:
 except ImportError:
     from PySide2 import QtCore, QtGui
     from PySide2.QtCore import (
+        QCoreApplication,
         QObject,
         Qt,
         QThread,

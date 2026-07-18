@@ -1490,6 +1490,21 @@ class MeasurementWorkflow:
             return ""
         return ""
 
+    @staticmethod
+    def _find_contours_compat(image: np.ndarray, mode: int, method: int) -> List[np.ndarray]:
+        """
+        兼容 OpenCV 3.x 与 4.x 的 findContours 返回值差异。
+
+        OpenCV 3.x: image, contours, hierarchy = cv2.findContours(...)
+        OpenCV 4.x: contours, hierarchy = cv2.findContours(...)
+        """
+        result = cv2.findContours(image, mode, method)
+        if len(result) == 3:
+            _, contours, _ = result
+        else:
+            contours, _ = result
+        return list(contours)
+
     def _force_cfg_to_strict_full_calibration_c(self, reason: str = "") -> str:
         """
         把 workflow.cfg 强制锁定到本次完整测量专用 C。
@@ -1656,6 +1671,16 @@ class MeasurementWorkflow:
         mask = cv2.imread(str(src_mask), cv2.IMREAD_GRAYSCALE)
         if mask is None:
             raise RuntimeError(f"读取完整标定 C mask 失败：{src_mask}")
+        # 防御性处理：确保 mask 为单通道二维数组，避免某些 OpenCV/图像格式导致维度异常。
+        if len(mask.shape) == 3:
+            if mask.shape[2] == 1:
+                mask = np.squeeze(mask)
+            else:
+                mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
+        if len(mask.shape) != 2:
+            mask = np.squeeze(mask)
+            if len(mask.shape) != 2:
+                raise RuntimeError(f"完整标定 C mask 维度异常：{mask.shape}")
         if int(np.count_nonzero(mask > 0)) <= 0:
             raise RuntimeError(f"完整标定 C mask 为空：{src_mask}")
         cv2.imwrite(str(dst_mask), mask)
@@ -1735,7 +1760,7 @@ class MeasurementWorkflow:
             else:
                 center = [float(np.mean(xs)), float(np.mean(ys))]
 
-            contours, _ = cv2.findContours((mask_bool.astype(np.uint8) * 255), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            contours = self._find_contours_compat((mask_bool.astype(np.uint8) * 255), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             if contours:
                 contour = max(contours, key=cv2.contourArea)
                 peri = float(cv2.arcLength(contour, True))
@@ -3570,7 +3595,7 @@ class MeasurementWorkflow:
         min_len = max(1.0, float(min_edge_length_px))
 
         m_u8 = (m.astype(np.uint8) * 255)
-        contours, _ = cv2.findContours(m_u8, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours = self._find_contours_compat(m_u8, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         if not contours:
             return []
 
@@ -4731,7 +4756,7 @@ class MeasurementWorkflow:
         if area_px < max(1, min_area):
             return {"ok": False, "reason": f"bmask_area_too_small:{area_px}< {min_area}", "b_mask_area_px": area_px}
 
-        contours, _ = cv2.findContours(m, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours = self._find_contours_compat(m, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         if not contours:
             return {"ok": False, "reason": "no_external_contour", "b_mask_area_px": area_px}
         contour = max(contours, key=cv2.contourArea)
@@ -4859,7 +4884,7 @@ class MeasurementWorkflow:
             overlay = canvas.copy()
             overlay[clean.astype(bool)] = (0, 128, 255)
             canvas = cv2.addWeighted(overlay, 0.35, canvas, 0.65, 0)
-            contours, _ = cv2.findContours(clean, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            contours = self._find_contours_compat(clean, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             if contours:
                 cv2.drawContours(canvas, contours, -1, (0, 255, 255), 1, cv2.LINE_AA)
 
@@ -5976,7 +6001,7 @@ class MeasurementWorkflow:
             m = np.asarray(mask_bool).astype(bool)
             if m.size <= 0 or not np.any(m):
                 return None
-            contours, _ = cv2.findContours((m.astype(np.uint8) * 255), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            contours = self._find_contours_compat((m.astype(np.uint8) * 255), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             if not contours:
                 return None
             contour = max(contours, key=cv2.contourArea)
@@ -6541,7 +6566,7 @@ class MeasurementWorkflow:
         if m.size <= 0 or not np.any(m):
             return [], []
         h, w = m.shape[:2]
-        contours, _ = cv2.findContours((m.astype(np.uint8) * 255), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+        contours = self._find_contours_compat((m.astype(np.uint8) * 255), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
         if not contours:
             return [], []
         contour = max(contours, key=cv2.contourArea)
@@ -7873,7 +7898,7 @@ class MeasurementWorkflow:
         mean_rgb = [float(x) for x in np.mean(pix_rgb, axis=0)]
         std_rgb = [float(x) for x in np.std(pix_rgb, axis=0)]
 
-        contours, _ = cv2.findContours(m.astype(np.uint8) * 255, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours = self._find_contours_compat(m.astype(np.uint8) * 255, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         hu = [0.0] * 7
         if contours:
             c = max(contours, key=cv2.contourArea)
@@ -14369,7 +14394,7 @@ class MeasurementWorkflowGUI:
         h, w = c_bool.shape[:2]
         mask_u8 = (c_bool.astype(np.uint8) * 255)
 
-        contours, _ = cv2.findContours(mask_u8, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours = self._find_contours_compat(mask_u8, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         if not contours:
             raise RuntimeError("C mask 中没有找到有效轮廓，无法拟合四边形。")
 

@@ -111,6 +111,7 @@ from .widgets import (
 )
 from .worker import AutofocusThread
 from .offline_worker import OfflineDatasetThread
+from .video_roi_crop_worker import VideoRoiCropThread
 from .themes import Theme, get_theme, available_themes
 
 logger = logging.getLogger("autofocus_qt_ui.app")
@@ -162,6 +163,7 @@ class AutofocusMainWindow(QMainWindow):
         self._reference_image: Optional[np.ndarray] = None  # 基准 ROI 图像
         self._loop_snapshots: List[Tuple[int, np.ndarray]] = []  # 闭环过程截图 (cycle, roi_rgb)
         self._summary_dialog: Optional[LoopSummaryDialog] = None  # 当前打开的回顾弹窗
+        self._roi_crop_thread: Optional[VideoRoiCropThread] = None  # ROI 视频裁剪线程
 
         # 视频播放器状态
         self._video_capture: Optional[Any] = None  # cv2.VideoCapture
@@ -537,6 +539,39 @@ class AutofocusMainWindow(QMainWindow):
 
         layout.addWidget(self.offline_group)
 
+        # 离线视频 ROI 裁剪模块
+        self.roi_video_group = QGroupBox("离线视频 ROI 裁剪")
+        roi_video_layout = QFormLayout(self.roi_video_group)
+
+        self.roi_video_input_edit = QLineEdit()
+        self.roi_video_input_edit.setPlaceholderText("选择要裁剪的本地视频文件")
+        self.roi_video_input_btn = QPushButton("浏览...")
+        h_roi_input = QHBoxLayout()
+        h_roi_input.addWidget(self.roi_video_input_edit)
+        h_roi_input.addWidget(self.roi_video_input_btn)
+        roi_video_layout.addRow("输入视频:", h_roi_input)
+
+        self.roi_video_output_edit = QLineEdit()
+        self.roi_video_output_edit.setPlaceholderText("默认自动生成输出路径")
+        self.roi_video_output_btn = QPushButton("浏览...")
+        h_roi_output = QHBoxLayout()
+        h_roi_output.addWidget(self.roi_video_output_edit)
+        h_roi_output.addWidget(self.roi_video_output_btn)
+        roi_video_layout.addRow("输出视频:", h_roi_output)
+
+        self.roi_video_load_btn = QPushButton("加载视频")
+        self.roi_video_load_btn.setToolTip("加载视频到预览区，便于框选 ROI")
+        roi_video_layout.addRow("", self.roi_video_load_btn)
+
+        self.roi_video_run_btn = QPushButton("生成 ROI 视频")
+        self.roi_video_run_btn.setObjectName("primary")
+        self.roi_video_run_btn.setToolTip(
+            "使用上方 ROI 设置中的 ROI 区域，对输入视频逐帧裁剪并输出新视频"
+        )
+        roi_video_layout.addRow("", self.roi_video_run_btn)
+
+        layout.addWidget(self.roi_video_group)
+
         btn_layout = QHBoxLayout()
         self.build_ref_btn = QPushButton("建立参考")
         self.build_ref_btn.setObjectName("primary")
@@ -724,6 +759,11 @@ class AutofocusMainWindow(QMainWindow):
         self.offline_output_btn.clicked.connect(self._choose_offline_output_dir)
         self.offline_reference_btn.clicked.connect(self._choose_offline_reference)
         self.offline_run_btn.clicked.connect(self._run_offline_detection)
+
+        self.roi_video_input_btn.clicked.connect(self._choose_roi_video_input)
+        self.roi_video_output_btn.clicked.connect(self._choose_roi_video_output)
+        self.roi_video_load_btn.clicked.connect(self._load_roi_video)
+        self.roi_video_run_btn.clicked.connect(self._run_roi_video_crop)
 
     def _apply_default_values(self) -> None:
         self._on_mode_changed(0)
@@ -987,13 +1027,16 @@ class AutofocusMainWindow(QMainWindow):
         self.focus_roi_edit.setText(f"{x}, {y}, {w}, {h}")
         self.log(f"框选 ROI：({x}, {y}, {w}, {h})")
 
-        # 视频模式下自动更新截图区域
+        # 视频模式下自动更新截图区域，并实时刷新 ROI 裁剪预览
         if self.mode_combo.currentIndex() == 3:
             image = self.preview_label.get_original_image()
             if image is not None:
                 ih, iw = image.shape[:2]
                 self.capture_area_edit.setText(f"0, 0, {iw}, {ih}")
                 self.log(f"截图区域已自动更新: 0, 0, {iw}, {ih}")
+            if self._video_capture is not None:
+                self._show_video_frame(self._video_current_frame)
+                self.log("ROI 已应用，可拖动进度条观察裁剪区域变化")
 
     def _on_cross_hair_changed(self, x: int, y: int) -> None:
         self._compute_and_update_profile()
@@ -1705,6 +1748,115 @@ class AutofocusMainWindow(QMainWindow):
             self.log(f"[离线检测] 失败：{message}")
             QMessageBox.critical(self, "失败", f"离线检测失败：{message}")
 
+    def _choose_roi_video_input(self) -> None:
+        """选择 ROI 视频裁剪的输入视频。"""
+        current = self.roi_video_input_edit.text().strip()
+        start_dir = current if current and Path(current).exists() else ""
+        path, _ = QFileDialog.getOpenFileName(
+            self,
+            "选择输入视频",
+            start_dir,
+            "视频文件 (*.mp4 *.avi *.mov *.mkv *.wmv *.flv *.webm);;所有文件 (*.*)",
+        )
+        if path:
+            self.roi_video_input_edit.setText(path)
+            self.log(f"[ROI裁剪] 已选择输入视频：{path}")
+
+    def _choose_roi_video_output(self) -> None:
+        """选择 ROI 视频裁剪的输出视频路径。"""
+        current = self.roi_video_output_edit.text().strip()
+        start_dir = str(Path(current).parent) if current and Path(current).parent.exists() else ""
+        path, _ = QFileDialog.getSaveFileName(
+            self,
+            "选择输出视频",
+            start_dir,
+            "视频文件 (*.mp4 *.avi *.mov *.mkv *.wmv *.flv *.webm);;所有文件 (*.*)",
+        )
+        if path:
+            self.roi_video_output_edit.setText(path)
+            self.log(f"[ROI裁剪] 已选择输出视频：{path}")
+
+    def _load_roi_video(self) -> None:
+        """将 ROI 视频裁剪面板的视频加载到现有播放器中预览。"""
+        path = self.roi_video_input_edit.text().strip()
+        if not path or not Path(path).exists():
+            QMessageBox.warning(self, "输入无效", "请选择有效的视频文件")
+            return
+
+        # 切换到本地视频文件模式并加载
+        self.mode_combo.setCurrentIndex(3)
+        self.video_path_edit.setText(path)
+        self._detect_video_params(path)
+        self.log(f"[ROI裁剪] 已加载视频到预览区：{path}")
+
+    def _get_current_roi_for_crop(self) -> Optional[tuple]:
+        """从预览标签获取当前 ROI。"""
+        roi = self.preview_label.get_roi()
+        if roi is not None and roi[2] > 0 and roi[3] > 0:
+            return roi
+        return None
+
+    def _run_roi_video_crop(self) -> None:
+        """启动视频 ROI 裁剪线程。"""
+        input_path = self.roi_video_input_edit.text().strip()
+        output_path = self.roi_video_output_edit.text().strip() or None
+
+        if not input_path or not Path(input_path).exists():
+            QMessageBox.warning(self, "输入无效", "请选择有效的视频文件")
+            return
+
+        roi = self._get_current_roi_for_crop()
+        if roi is None:
+            QMessageBox.warning(
+                self,
+                "ROI 无效",
+                "请先在预览图中框选 ROI（框选后会自动应用）",
+            )
+            return
+
+        # 清理上一次线程
+        if self._roi_crop_thread is not None:
+            try:
+                self._roi_crop_thread.wait(500)
+            except Exception:
+                pass
+
+        self._roi_crop_thread = VideoRoiCropThread(self)
+        self._roi_crop_thread.configure(
+            input_path=input_path,
+            output_path=output_path,
+            roi=roi,
+        )
+        self._roi_crop_thread.worker.log.connect(self.log)
+        self._roi_crop_thread.worker.progress.connect(self._on_roi_crop_progress)
+        self._roi_crop_thread.worker.finished.connect(self._on_roi_crop_finished)
+
+        self.roi_video_run_btn.setEnabled(False)
+        self.progress_bar.setValue(0)
+        self.status_label.setText("ROI 视频裁剪中...")
+        self.log(f"[ROI裁剪] 启动裁剪，ROI={roi}")
+        self._roi_crop_thread.start()
+
+    def _on_roi_crop_progress(self, current: int, total: int) -> None:
+        """更新 ROI 视频裁剪进度条。"""
+        if total > 0:
+            self.progress_bar.setValue(int(current * 100 / total))
+        self.status_label.setText(f"ROI 裁剪中... {current}/{total}")
+
+    def _on_roi_crop_finished(self, ok: bool, message: str) -> None:
+        """ROI 视频裁剪完成回调。"""
+        self.roi_video_run_btn.setEnabled(True)
+        if ok:
+            self.progress_bar.setValue(100)
+            self.status_label.setText("ROI 裁剪完成")
+            self.log(f"[ROI裁剪] 完成，输出：{message}")
+            QMessageBox.information(self, "完成", f"ROI 视频裁剪完成\n输出：{message}")
+        else:
+            self.progress_bar.setValue(0)
+            self.status_label.setText("ROI 裁剪失败")
+            self.log(f"[ROI裁剪] 失败：{message}")
+            QMessageBox.critical(self, "失败", f"ROI 视频裁剪失败：{message}")
+
     def _detect_video_params(self, video_path: str) -> None:
         """检测视频参数并自动填入采集区域。"""
         try:
@@ -2087,6 +2239,9 @@ class AutofocusMainWindow(QMainWindow):
         if self._thread is not None and self._thread.isRunning():
             self._thread.worker.stop_loop()
             self._thread.wait(2000)
+        if self._roi_crop_thread is not None and self._roi_crop_thread.isRunning():
+            self._roi_crop_thread.worker.stop()
+            self._roi_crop_thread.wait(2000)
         self._stop_screen_preview()
         self._close_video_player()
         event.accept()

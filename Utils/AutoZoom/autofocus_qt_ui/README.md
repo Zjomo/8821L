@@ -15,13 +15,16 @@ Utils/AutoZoom/
 │   ├── qt_compat.py
 │   ├── widgets.py
 │   ├── worker.py
+│   ├── offline_worker.py
+│   ├── video_roi_crop.py
+│   ├── video_roi_crop_worker.py
 │   └── README.md
 ```
 
 ## 功能
 
-- **采集源选择**：模拟模式（无硬件）、屏幕区域、窗口 ROI、USB 相机
-- **实时预览**：支持 ROI 鼠标框选
+- **采集源选择**：模拟模式（无硬件）、屏幕区域、窗口 ROI、USB 相机、本地视频文件
+- **实时预览**：支持 ROI 鼠标框选，视频模式下可拖动进度条实时观察 ROI 区域
 - **14 项聚焦指标**：整图 + ROI 双列显示
 - **FocusScore_ratio 曲线**：实时自绘趋势图 + 触发/目标阈值线
 - **参考基线建立**：一键建立聚焦参考
@@ -66,6 +69,44 @@ cd Utils/AutoZoom
 python offline_dataset_detection.py path/to/video.mp4 -o path/to/output -r path/to/ref.jpg --roi 0,0,300,300
 ```
 
+## 离线视频 ROI 裁剪（video_roi_crop.py）
+
+位于 `Utils/AutoZoom/autofocus_qt_ui/video_roi_crop.py`，可对已有视频按手动 ROI 区域进行裁剪，输出仅含 ROI 区域的新视频，用于减少背景噪声。
+
+### 功能
+
+- **输入**：视频文件（mp4/avi/mov 等）
+- **ROI 框选**：在预览画面上直接框选需要保留的区域
+- **实时预览**：拖动视频进度条，实时观察 ROI 区域在不同帧下的变化
+- **输出**：新的视频文件，尺寸等于 ROI 尺寸，帧率与源视频保持一致
+
+### 使用方式
+
+```python
+from autofocus_qt_ui.video_roi_crop import VideoRoiCropper
+
+cropper = VideoRoiCropper()
+output = cropper.crop_video(
+    input_path=r"path/to/video.mp4",
+    output_path=r"path/to/output.mp4",  # 可选，默认自动生成
+    roi=(100, 80, 300, 300),
+)
+```
+
+UI 中使用流程：
+
+1. 在左侧面板 **离线视频 ROI 裁剪** 中选择输入视频并点击 **加载视频**；
+2. 在右侧预览区框选 ROI，预览会自动刷新为 ROI 裁剪后的画面；
+3. 拖动视频进度条，观察 ROI 区域在不同时刻的变化；
+4. 点击 **生成 ROI 视频**，后台线程将逐帧裁剪并输出新视频。
+
+命令行：
+
+```bash
+cd Utils/AutoZoom
+python -m autofocus_qt_ui.video_roi_crop path/to/video.mp4 --roi 100,80,300,300 -o path/to/output.mp4
+```
+
 ## 运行方式
 
 ```bash
@@ -91,9 +132,12 @@ python -m Utils.AutoZoom.autofocus_qt_ui
    - **FocusScore检测**：点击后按钮变为“退出FocusScore检测”。开启后，当触发补焦条件时
      仅保存当前图像（`cycles/cycle_xxxx/trigger_detection.jpg`）和分数到文本文件，
      **不执行 Z 轴闭环搜索**，避免硬件操作或设备报错。
-   - **离线数据集检测**：在左侧面板底部填写输入路径、输出目录、基准图（可选）和抽帧间隔，
+   - **离线数据集检测**：在左侧面板填写输入路径、输出目录、基准图（可选）和抽帧间隔，
      点击 **运行离线检测** 即可对视频或图片文件夹进行离线 FocusScore 评分与标注。
      ROI 沿用上方“ROI 设置”中的值。
+   - **离线视频 ROI 裁剪**：在左侧面板选择输入/输出视频路径，点击 **加载视频** 后在预览区
+     框选 ROI，拖动进度条观察 ROI 区域变化，最后点击 **生成 ROI 视频** 输出裁剪后的新视频。
+     ROI 区域将自动限制在视频帧范围内。
 5. 可在“循环参数”中勾选 **启用被动补焦**，此时“循环轮数”会被禁用
    - **连续达标次数**：FocusScore 连续多少轮在允许区间内后自动停止
    - **关闭达标阈值**：点击后该按钮变为“开启达标阈值”，被动补焦不再因连续达标而自动停止，只有手动点击 **停止** 才会结束循环
