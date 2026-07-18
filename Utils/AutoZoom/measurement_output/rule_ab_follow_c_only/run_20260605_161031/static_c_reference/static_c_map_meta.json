@@ -1,0 +1,37 @@
+{
+  "created_time": 1780647784.863887,
+  "static_c_map_name": "default_static_c_map",
+  "bbox": [
+    449.0,
+    219.0,
+    821.0,
+    529.0
+  ],
+  "center": [
+    644.6350133866705,
+    386.4960293773714
+  ],
+  "area": 47746.5,
+  "source": "static_c_map_loaded_from_legacy_reference",
+  "contour": [
+    [
+      500.0,
+      291.0
+    ],
+    [
+      634.0,
+      521.0
+    ],
+    [
+      820.0,
+      495.0
+    ],
+    [
+      597.0,
+      219.0
+    ]
+  ],
+  "mask_path": "E:\\Dzj\\2026\\2026-06\\06-04\\06.03\\measurement_output\\rule_ab_follow_c_only\\run_20260605_161031\\static_c_reference\\static_c_mask.png",
+  "pixels_path": "E:\\Dzj\\2026\\2026-06\\06-04\\06.03\\measurement_output\\rule_ab_follow_c_only\\run_20260605_161031\\static_c_reference\\static_c_pixels_yx.npy",
+  "note": "auto-generated from legacy static_c_reference folder"
+}

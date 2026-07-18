@@ -1,0 +1,31 @@
+{
+  "created_at": "2026-07-17 22:21:57",
+  "capture_area": [
+    116,
+    98,
+    1112,
+    886
+  ],
+  "target_x_px": 642.3529411764706,
+  "target_y_px": 428.2352941176471,
+  "tolerance_px": 10.0,
+  "stage_step_size": 20,
+  "stage12_velocity": 10,
+  "stage12_acceleration": 10,
+  "stage12_max_voltage": 50,
+  "enable_stage": true,
+  "step9_detection_mode": "color_region_center",
+  "color_mode": "include",
+  "color_hsv": [
+    131,
+    164,
+    204
+  ],
+  "color_tol_hsv": [
+    12,
+    70,
+    70
+  ],
+  "color_min_area_px": 200,
+  "static_c_map_dir_legacy": "E:\\CWB\\8821L\\Utils\\AutoZoom\\measurement_output\\rule_ab_follow_c_only\\_static_c_map_library\\default_static_c_map"
+}

@@ -1,0 +1,31 @@
+{
+  "created_at": "2026-06-17 21:50:12",
+  "capture_area": [
+    116,
+    98,
+    1112,
+    886
+  ],
+  "target_x_px": 545.8823529411765,
+  "target_y_px": 436.47058823529414,
+  "tolerance_px": 10.0,
+  "stage_step_size": 20,
+  "stage12_velocity": 10,
+  "stage12_acceleration": 10,
+  "stage12_max_voltage": 50,
+  "enable_stage": true,
+  "step9_detection_mode": "color_region_center",
+  "color_mode": "include",
+  "color_hsv": [
+    123,
+    94,
+    127
+  ],
+  "color_tol_hsv": [
+    12,
+    70,
+    70
+  ],
+  "color_min_area_px": 200,
+  "static_c_map_dir_legacy": "E:\\Dzj\\2026\\2026-06\\06-04\\06.03\\measurement_output\\rule_ab_follow_c_only\\_static_c_map_library\\default_static_c_map"
+}
