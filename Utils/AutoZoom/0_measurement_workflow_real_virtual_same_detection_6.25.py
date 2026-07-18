@@ -12486,7 +12486,7 @@ class MeasurementWorkflow:
         Step 1：角度检测一次，得到 current_angle
         Step 2：生成保存路径
         Step 3：照明光 OFF，并按 stable_wait_ms 等待稳定
-        Step 4：LabVIEW 光谱采集【停2min，】
+        Step 4：LabVIEW 光谱采集
         Step 5：照明光 ON
         Step 5.5：保存本轮数据；保存角度使用 Step1 的 YOLO-OBB baseline 原始角度。
         Step 6：打开激光

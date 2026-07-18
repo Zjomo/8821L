@@ -14818,7 +14818,11 @@ class MeasurementWorkflowGUI:
         return ordered.astype(np.float32)
 
     @staticmethod
-    def _fit_quadrilateral_from_mask(mask_bool: np.ndarray) -> Tuple[np.ndarray, np.ndarray, str]:
+    def _find_contours_compat(image: np.ndarray, mode: int, method: int):
+        """委托给 MeasurementWorkflow 的同名静态方法，保持调用一致性。"""
+        return MeasurementWorkflow._find_contours_compat(image, mode, method)
+
+    def _fit_quadrilateral_from_mask(self, mask_bool: np.ndarray) -> Tuple[np.ndarray, np.ndarray, str]:
         """
         将 SAM2 原始 C mask 近似为四边形，并生成四边形 mask。
 
@@ -18273,6 +18277,9 @@ class MeasurementWorkflowGUI:
         """交互式选择 Focus ROI 并建立参考；同时将 ROI 同步为新的截图区域。"""
         try:
             wf = self.ensure_workflow()
+            # 清除 workflow 停止标志，避免上一轮停止后无法进入 ROI 选择截图
+            wf.stop_requested = False
+            wf.step9_stop_requested = False
             current_capture_area = self.parse_capture_area()
             cfg = self._make_saf_config()
             loop = SpectrumAutofocusLoop(
@@ -18329,6 +18336,9 @@ class MeasurementWorkflowGUI:
         try:
             self.set_var(self.saf_status_var, "光谱补焦循环：运行中")
             wf = self.ensure_workflow()
+            # 清除 workflow 停止标志，确保新一轮循环不被旧停止锁拦截
+            wf.stop_requested = False
+            wf.step9_stop_requested = False
             cfg = self._make_saf_config()
 
             # 复用已选择 ROI 的 loop 实例，否则新建

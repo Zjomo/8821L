@@ -1,53 +1,53 @@
 {
-  "method": "approxPolyDP_eps_ratio_0.0787",
+  "method": "approxPolyDP_eps_ratio_0.0463",
   "points_xy": [
     [
-      580.0,
-      399.0
+      612.0,
+      357.0
     ],
     [
-      662.0,
-      365.0
+      701.0,
+      379.0
     ],
     [
-      681.0,
+      679.0,
       473.0
     ],
     [
-      613.0,
-      486.0
+      588.0,
+      444.0
     ]
   ],
-  "raw_sam2_mask_area_px": 9922,
-  "sam2_mask_area_px": 9922,
-  "quad_mask_area_px": 8097,
+  "raw_sam2_mask_area_px": 12076,
+  "sam2_mask_area_px": 12076,
+  "quad_mask_area_px": 8913,
   "c_prompt_component_clean_debug": {
     "enabled": true,
     "reason": "kept_component_with_most_positive_prompts",
-    "input_area_px": 9922,
-    "output_area_px": 9922,
-    "positive_point_count": 13,
-    "negative_point_count": 17,
+    "input_area_px": 12076,
+    "output_area_px": 12076,
+    "positive_point_count": 9,
+    "negative_point_count": 13,
     "component_count": 1,
     "components": [
       {
         "label": 1,
-        "area_px": 9922,
-        "pos_hits": 13,
+        "area_px": 12076,
+        "pos_hits": 9,
         "neg_hits": 0,
-        "pos_near_pixels": 1435,
+        "pos_near_pixels": 1080,
         "neg_near_pixels": 0,
-        "score": 1443509.202610574
+        "score": 1008009.3990580962
       }
     ],
     "selected_component": {
       "label": 1,
-      "area_px": 9922,
-      "pos_hits": 13,
+      "area_px": 12076,
+      "pos_hits": 9,
       "neg_hits": 0,
-      "pos_near_pixels": 1435,
+      "pos_near_pixels": 1080,
       "neg_near_pixels": 0,
-      "score": 1443509.202610574
+      "score": 1008009.3990580962
     },
     "area_ratio_output_over_input": 1.0
   }
