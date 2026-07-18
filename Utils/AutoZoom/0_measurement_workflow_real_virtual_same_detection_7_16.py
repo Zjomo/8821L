@@ -149,6 +149,11 @@ except Exception:
 from logic.rule_ac_fixed import RuleACConfig, RuleACOverlapController
 
 from Focus.config import AutofocusConfig
+from Focus.controller import AutofocusController, focus_score_ratio_in_tolerance
+from Focus.metrics import FocusMetricsCalculator
+from Focus.scorer import FocusScorer
+from Focus.simulator import create_demo_environment
+from Focus.z_axis import ZAxisController
 from spectrum_autofocus_loop import SpectrumAutofocusLoop
 
 
@@ -593,6 +598,22 @@ class MeasurementConfig:
     # 该文件用于保存：角度检测B点/检测边、RuleAB的A点、全局C点/static C、Step9目标点与颜色。
     calibration_path: str = str(_cfg("calibration_path", ""))
     require_full_calibration_before_run: bool = bool(_cfg("require_full_calibration_before_run", True))
+
+    # -------------------- 完整循环测量补焦参数（与光谱补焦循环 UI 共用） --------------------
+    focus_roi: Tuple[int, int, int, int] = tuple(_cfg("focus_roi", (0, 0, 300, 300)))  # type: ignore
+    focus_trigger_ratio: float = float(_cfg("focus_trigger_ratio", 0.95))
+    focus_stop_ratio: float = float(_cfg("focus_stop_ratio", 0.95))
+    focus_trigger_count: int = int(_cfg("focus_trigger_count", 3))
+    focus_trigger_absolute: bool = bool(_cfg("focus_trigger_absolute", True))
+    focus_detection_only: bool = bool(_cfg("focus_detection_only", False))
+    focus_z_enabled: bool = bool(_cfg("focus_z_enabled", True))
+    focus_z_axis: int = int(_cfg("focus_z_axis", 1))
+    focus_z_speed: int = int(_cfg("focus_z_speed", 100))
+    focus_z_accel: int = int(_cfg("focus_z_accel", 100))
+    focus_search_strategy: str = str(_cfg("focus_search_strategy", "hill_climb"))
+
+    # 单次光谱采集后是否自动保存完整光谱数据到 xlsx
+    save_single_spectrum_enabled: bool = bool(_cfg("save_single_spectrum_enabled", True))
 
 
 # ============================================================
@@ -1273,6 +1294,18 @@ class MeasurementWorkflow:
             "信号发生器打开时间/ms",
         ]
         self._ensure_summary_xlsx()
+
+        # --------------------------------------------------------
+        # 聚焦参考图与补焦组件（完整循环测量使用）
+        # --------------------------------------------------------
+        self._focus_reference_image: Optional[np.ndarray] = None
+        self._focus_reference_ready: bool = False
+        self._focus_metrics_calc: Optional[FocusMetricsCalculator] = None
+        self._focus_scorer: Optional[FocusScorer] = None
+        self._focus_controller: Optional[AutofocusController] = None
+        self._focus_simulator: Optional[Any] = None
+        self._focus_consecutive_low_count: int = 0
+        self._focus_autofocus_event_counter: int = 0
 
     def _get_today_save_dir(self) -> Path:
         date_dir = datetime.now().strftime("%m.%d")
@@ -11612,6 +11645,62 @@ class MeasurementWorkflow:
         self.notify_update()
         return result
 
+    def save_single_spectrum_to_xlsx(self) -> Optional[Path]:
+        """
+        将当前 context 中的光谱数据保存为 xlsx。
+
+        文件路径：{output_root}/save/{MM.DD}/measurement_summary_YYYYMMDD_HHMMSS.xlsx
+        工作表：光谱数据，列包括波长/索引、原始强度、阈值滤波、中值滤波、拟合曲线。
+        """
+        try:
+            raw_values = self.context.get("raw_values") or []
+            threshold_values = self.context.get("raw_filtered_values") or []
+            median_values = self.context.get("raw_median_values") or []
+            fit_values = self.context.get("fit_values") or []
+            x_axis_values = self.context.get("x_axis_values") or []
+
+            if not raw_values:
+                self.log("[保存光谱数据] 无原始光谱数据，跳过保存")
+                return None
+
+            save_dir = self._get_today_save_dir()
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            xlsx_path = save_dir / f"measurement_summary_{timestamp}.xlsx"
+
+            wb = Workbook()
+            ws = wb.active
+            ws.title = "光谱数据"
+            ws.append(["波长/索引", "原始强度", "阈值滤波", "中值滤波", "拟合曲线"])
+
+            n = len(raw_values)
+            for i in range(n):
+                x_val = x_axis_values[i] if i < len(x_axis_values) else i
+                row = [
+                    x_val,
+                    raw_values[i],
+                    threshold_values[i] if i < len(threshold_values) else None,
+                    median_values[i] if i < len(median_values) else None,
+                    fit_values[i] if i < len(fit_values) else None,
+                ]
+                ws.append(row)
+
+            # 简单样式
+            header_fill = PatternFill("solid", fgColor="1F4E78")
+            header_font = Font(bold=True, color="FFFFFF")
+            center_alignment = Alignment(horizontal="center", vertical="center")
+            for cell in ws[1]:
+                cell.fill = header_fill
+                cell.font = header_font
+                cell.alignment = center_alignment
+
+            wb.save(xlsx_path)
+            self.log(f"[保存光谱数据] 已保存：{xlsx_path}")
+            return xlsx_path
+        except Exception as e:
+            self.log(f"[保存光谱数据] 保存失败：{e}")
+            self.log(traceback.format_exc())
+            return None
+
 
     def _parse_labview_result(self, result: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -12588,6 +12677,210 @@ class MeasurementWorkflow:
         return True
 
     # --------------------------------------------------------
+    # 聚焦参考图与补焦（完整循环测量）
+    # --------------------------------------------------------
+
+    def _make_focus_config(self) -> AutofocusConfig:
+        """根据 GUI 当前值构造完整循环测量使用的 AutofocusConfig。"""
+        capture_area = tuple(
+            int(v) for v in self._parse_focus_roi_text(self.cfg.capture_area)
+        )
+        focus_roi = tuple(
+            int(v) for v in self._parse_focus_roi_text(self.cfg.focus_roi)
+        )
+        return AutofocusConfig(
+            capture_mode="screen_region",
+            capture_area=capture_area,
+            focus_roi=focus_roi,
+            autofocus_enabled=True,
+            autofocus_focus_trigger_ratio=float(self.cfg.focus_trigger_ratio),
+            autofocus_stop_ratio=float(self.cfg.focus_stop_ratio),
+            autofocus_focus_trigger_count=int(self.cfg.focus_trigger_count),
+            autofocus_trigger_absolute=bool(self.cfg.focus_trigger_absolute),
+            autofocus_detection_only=bool(self.cfg.focus_detection_only),
+            z_enabled=bool(self.cfg.focus_z_enabled),
+            z_axis=int(self.cfg.focus_z_axis),
+            z_speed=int(self.cfg.focus_z_speed),
+            z_accel=int(self.cfg.focus_z_accel),
+            z_search_strategy=str(self.cfg.focus_search_strategy),
+        )
+
+    def _ensure_focus_components(self) -> None:
+        """延迟初始化 Focus 评分/控制组件。"""
+        if self._focus_metrics_calc is None:
+            cfg = self._make_focus_config()
+            self._focus_metrics_calc = FocusMetricsCalculator(cfg)
+        if self._focus_scorer is None:
+            self._focus_scorer = FocusScorer(
+                self._focus_metrics_calc.cfg, self._focus_metrics_calc
+            )
+
+    def _capture_current_focus_frame(self) -> Optional[np.ndarray]:
+        """截取当前完整画面（RGB），用于聚焦参考或评分。"""
+        try:
+            image_rgb = self._capture_current_rule_ab_frame(output_dir=None)
+            if image_rgb is not None and image_rgb.size > 0:
+                return image_rgb
+        except Exception as e:
+            self.log(f"[聚焦] 截图失败：{e}")
+        return None
+
+    def capture_focus_reference(self, cycle_index: int) -> bool:
+        """
+        在第一轮循环照明光 OFF 前，截取当前 ROI 画面并建立聚焦参考图。
+        """
+        self.log("========== Step 1.5：建立聚焦参考图 ==========")
+        try:
+            self._ensure_focus_components()
+            image_rgb = self._capture_current_focus_frame()
+            if image_rgb is None or image_rgb.size == 0:
+                self.log("[聚焦参考] 截图失败，跳过参考建立")
+                return False
+
+            ref_dir = self.output_root / "focus_reference"
+            ref_dir.mkdir(parents=True, exist_ok=True)
+            ref = self._focus_scorer.build_reference_from_image(
+                image_rgb=image_rgb,
+                output_root=ref_dir,
+                on_log=self.log,
+            )
+            self._focus_reference_image = ref.get("full_rgb")
+            self._focus_reference_ready = True
+            self._focus_consecutive_low_count = 0
+            self.log(
+                f"[聚焦参考] 第 {cycle_index} 轮已建立，ROI="
+                f"{self._focus_metrics_calc.cfg.focus_roi}"
+            )
+            return True
+        except Exception as e:
+            self.log(f"[聚焦参考] 建立失败：{e}")
+            self.log(traceback.format_exc())
+            return False
+
+    def compute_current_focus_score(self) -> Optional[float]:
+        """截取当前画面并计算与参考图的 FocusScore_ratio。"""
+        if not self._focus_reference_ready or self._focus_scorer is None:
+            return None
+        image_rgb = self._capture_current_focus_frame()
+        if image_rgb is None or image_rgb.size == 0:
+            return None
+        roi = self._focus_metrics_calc.clamp_roi(
+            tuple(self._focus_metrics_calc.cfg.focus_roi), image_rgb.shape
+        )
+        x, y, rw, rh = roi
+        roi_rgb = image_rgb[y : y + rh, x : x + rw].copy()
+        roi_metrics = self._focus_metrics_calc.compute_for_image(roi_rgb)
+        score, _ = self._focus_scorer.score_ratio(roi_metrics)
+        return score
+
+    def _ensure_focus_controller(self) -> AutofocusController:
+        """获取或创建 AutofocusController；virtual 模式使用 simulator。"""
+        if self._focus_controller is not None:
+            return self._focus_controller
+
+        self._ensure_focus_components()
+        cfg = self._focus_metrics_calc.cfg
+
+        if self._is_virtual_hardware_mode():
+            self.log("[聚焦补焦] virtual 模式：使用 FocusSimulator")
+            simulator, metrics_calc, scorer, controller = create_demo_environment(
+                cfg,
+                peak_z=50,
+                blur_scale=0.3,
+                image_size=(400, 400),
+                initial_z=0,
+            )
+            self._focus_metrics_calc = metrics_calc
+            self._focus_scorer = scorer
+            self._focus_simulator = simulator
+        else:
+            z_axis = ZAxisController(cfg)
+            controller = AutofocusController(
+                cfg, self._focus_scorer, self._focus_metrics_calc, z_axis
+            )
+
+        controller.on_log = self.log
+        controller.should_stop = lambda: self.stop_requested
+        self._focus_controller = controller
+        return controller
+
+    def run_autofocus_if_needed(self, cycle_index: int) -> Dict[str, Any]:
+        """
+        计算当前 FocusScore_ratio，若连续超出阈值则执行补焦。
+        返回 {"score": float|None, "triggered": bool, "autofocus_ok": bool}。
+        """
+        result = {"score": None, "triggered": False, "autofocus_ok": False}
+        score = self.compute_current_focus_score()
+        result["score"] = score
+
+        if score is None:
+            self.log("[聚焦补焦] 当前 FocusScore 为空，跳过")
+            return result
+
+        trigger_ratio = float(self.cfg.focus_trigger_ratio)
+        absolute = bool(self.cfg.focus_trigger_absolute)
+        lower = min(trigger_ratio, 2.0 - trigger_ratio) if absolute else trigger_ratio
+        upper = max(trigger_ratio, 2.0 - trigger_ratio) if absolute else float("inf")
+
+        if focus_score_ratio_in_tolerance(score, trigger_ratio, absolute):
+            self._focus_consecutive_low_count = 0
+            self.log(
+                f"[聚焦补焦] FocusScore_ratio={score:.4f} 在允许区间"
+                f"[{lower:.4f}, {upper:.4f}] 内，不触发补焦"
+            )
+            return result
+
+        self._focus_consecutive_low_count += 1
+        self.log(
+            f"[聚焦补焦] FocusScore_ratio={score:.4f} 超出允许区间"
+            f"[{lower:.4f}, {upper:.4f}]，连续低分计数="
+            f"{self._focus_consecutive_low_count}/{self.cfg.focus_trigger_count}"
+        )
+
+        if self._focus_consecutive_low_count < int(self.cfg.focus_trigger_count):
+            return result
+
+        result["triggered"] = True
+        if not bool(self.cfg.focus_z_enabled):
+            self.log("[聚焦补焦] 已触发但 Z 轴禁用，不执行补焦")
+            return result
+
+        if bool(self.cfg.focus_detection_only):
+            self.log("[聚焦补焦] FocusScore检测模式：仅记录，不执行 Z 轴闭环")
+            return result
+
+        try:
+            self.log("[聚焦补焦] 触发补焦，启动闭环搜索")
+            controller = self._ensure_focus_controller()
+            autofocus_result = controller.run_closed_loop(initial_focus_score=score)
+            result["autofocus_ok"] = bool(autofocus_result.get("ok", False))
+            final_score = autofocus_result.get("best_score")
+            self.log(
+                f"[聚焦补焦] 闭环结束：ok={result['autofocus_ok']}, "
+                f"best_score={final_score}"
+            )
+            if final_score is not None and focus_score_ratio_in_tolerance(
+                final_score, trigger_ratio, absolute
+            ):
+                self._focus_consecutive_low_count = 0
+        except Exception as e:
+            self.log(f"[聚焦补焦] 闭环补焦异常：{e}")
+            self.log(traceback.format_exc())
+
+        return result
+
+    @staticmethod
+    def _parse_focus_roi_text(value: Any) -> Tuple[int, int, int, int]:
+        """把 'x,y,w,h' 字符串解析为整数元组；失败返回 (0,0,300,300)。"""
+        try:
+            parts = [int(v.strip()) for v in str(value).split(",")]
+            if len(parts) == 4:
+                return tuple(parts)  # type: ignore
+        except Exception:
+            pass
+        return (0, 0, 300, 300)
+
+    # --------------------------------------------------------
     # 单轮完整流程
     # --------------------------------------------------------
 
@@ -12595,15 +12888,18 @@ class MeasurementWorkflow:
         """
         单轮循环测量流程：
         Step 1：角度检测一次，得到 current_angle
+        Step 1.5（仅第一轮）：在照明光 OFF 前，截取当前 ROI 画面建立聚焦参考图
         Step 2：生成保存路径
-        Step 3：照明光 OFF，并按 stable_wait_ms 等待稳定
-        Step 4：LabVIEW 光谱采集【停2min，】
-        Step 5：照明光 ON
-        Step 5.5：保存本轮数据；保存角度使用 Step1 的 YOLO-OBB baseline 原始角度。
         Step 6：打开激光
         Step 7：A推动B（logic/rule_ab.py），每次运动后检测B对边角度；
                 Step7 角度只用于关闭激光/是否继续推动，不再覆盖本轮保存角度。
         Step 8：检测颜色区域中心，与提前选定位置对齐；偏离过大则移动1/2通道
+        Step 9.5：补焦判断。计算当前 ROI 与参考图的 FocusScore_ratio；
+                  若触发阈值，执行补焦。
+        Step 3：照明光 OFF，并按 stable_wait_ms 等待稳定
+        Step 4：LabVIEW 光谱采集
+        Step 5：照明光 ON
+        Step 5.5：保存本轮数据；保存角度使用 Step1 的 YOLO-OBB baseline 原始角度。
         """
         self.context["cycle_index"] = cycle_index
         self.notify_update()
@@ -12690,80 +12986,16 @@ class MeasurementWorkflow:
             if current_angle is not None:
                 self.previous_cycle_angle = float(current_angle)
 
+            # 仅在第一轮且未建立参考图时建立聚焦参考
+            if cycle_index == 1 and not self._focus_reference_ready:
+                self.capture_focus_reference(cycle_index)
+
             self.log("========== Step 2：生成保存路径 ==========")
             paths = self.build_save_path(cycle_index)
 
-            self.log("========== Step 3：照明光 OFF，等待稳定 ==========")
-            self.light_off()
-            wait_after_off = float(self.cfg.stable_wait_ms) / 1000.0
-            if wait_after_off > 0:
-                self.log(f"[照明光] OFF 后稳定等待：{wait_after_off:.3f} s（由“稳定等待/ms”控制）")
-                time.sleep(wait_after_off)
-            else:
-                self.log("[照明光] OFF 后稳定等待：0 s，立即进入 LabVIEW 光谱采集")
-
-            if self.stop_requested:
-                return False
-            if self._is_midrun_recalibration_requested():
-                self.restart_current_cycle_after_recalibration = True
-                self.midrun_recalibration_cycle_index = int(cycle_index)
-                self.context["restart_current_cycle_after_recalibration"] = True
-                self.context["midrun_recalibration_cycle_index"] = int(cycle_index)
-                self.log(f"[中途重标定] 第 {cycle_index} 轮 Step4 前检测到请求，暂停并等待重标定。")
-                return False
-
-            self.log("========== Step 4：LabVIEW 光谱采集 ==========")
-            labview_result = self.request_labview_spectrum(cycle_index)
-
-            if self.stop_requested:
-                return False
-            if self._is_midrun_recalibration_requested():
-                self.restart_current_cycle_after_recalibration = True
-                self.midrun_recalibration_cycle_index = int(cycle_index)
-                self.context["restart_current_cycle_after_recalibration"] = True
-                self.context["midrun_recalibration_cycle_index"] = int(cycle_index)
-                self.log(f"[中途重标定] 第 {cycle_index} 轮 Step5 前检测到请求，暂停并等待重标定。")
-                return False
-
-            self.log("========== Step 5：照明光 ON ==========")
-            self.light_on()
-
-            # 当前版本按要求：本轮数据保存提前到 Step5 和 Step6 之间。
-            # 保存角度固定使用 Step1 最终角度 current_angle，而不是 Step7 最终角度。
-            # 因为 start_save_cycle_result_async() 会立即创建 context_snapshot，
-            # 所以后续 Step7 即使更新 angle_after，也不会影响本轮已提交的保存数据。
-            if self.stop_requested:
-                return False
-            if self._is_midrun_recalibration_requested():
-                self.restart_current_cycle_after_recalibration = True
-                self.midrun_recalibration_cycle_index = int(cycle_index)
-                self.context["restart_current_cycle_after_recalibration"] = True
-                self.context["midrun_recalibration_cycle_index"] = int(cycle_index)
-                self.log(f"[中途重标定] 第 {cycle_index} 轮 Step5.5 前检测到请求，暂停并等待重标定。")
-                return False
-
-            self.log("========== Step 5.5：保存数据（异步线程，使用 Step1 最终角度） ==========")
-            angle_after_result_for_save = {
-                "ok": False,
-                "angle_deg": None,
-                "reason": "save_moved_before_step6_use_step1_final_angle",
-            }
-            t_save_submit0 = time.time()
-            self.start_save_cycle_result_async(
-                cycle_index=cycle_index,
-                paths=paths,
-                angle_before_result=angle_result,
-                angle_after_result=angle_after_result_for_save,
-                labview_result=labview_result,
-            )
-            self.log(f"[Step 5.5] 异步保存任务提交耗时：{time.time() - t_save_submit0:.3f} s；保存角度=Step1最终角度 {current_angle}")
-
-            if self.stop_requested:
-                return False
-
+            # 以下 Step 3/4/5/5.5 已移到 Step9/颜色对齐/补焦之后执行
             self.log("========== Step 6：打开激光 ==========")
             self.laser_on()
-
             self.log("========== Step 7：A推动B，并用当前帧Bmask最长边检测B角度 ==========")
 
             # 完整测量 Step7 的目标就是让 3/4 通道推动 A。
@@ -12874,7 +13106,93 @@ class MeasurementWorkflow:
                 self.notify_update()
                 return False
 
-            # Step7 后只记录最终角度用于排查/GUI显示，不再覆盖本轮保存角度。
+            # Step 9.5：补焦判断
+            self.log("========== Step 9.5：补焦判断 ==========")
+            try:
+                autofocus_result = self.run_autofocus_if_needed(cycle_index)
+                self.context["last_autofocus_result"] = autofocus_result
+                self.notify_update()
+            except Exception as e:
+                self.log(f"[补焦判断] 异常：{e}")
+                self.log(traceback.format_exc())
+                self.context["last_autofocus_result"] = {"score": None, "triggered": False, "autofocus_ok": False, "error": str(e)}
+
+            if self.stop_requested:
+                return False
+            if self._is_midrun_recalibration_requested():
+                self.restart_current_cycle_after_recalibration = True
+                self.midrun_recalibration_cycle_index = int(cycle_index)
+                self.context["restart_current_cycle_after_recalibration"] = True
+                self.context["midrun_recalibration_cycle_index"] = int(cycle_index)
+                self.log(f"[中途重标定] 第 {cycle_index} 轮 Step9.5 后检测到请求，暂停并等待重标定。")
+                return False
+
+            # Step 3：照明光 OFF，并按 stable_wait_ms 等待稳定
+            self.log("========== Step 3：照明光 OFF，等待稳定 ==========")
+            self.light_off()
+            wait_after_off = float(self.cfg.stable_wait_ms) / 1000.0
+            if wait_after_off > 0:
+                self.log(f"[照明光] OFF 后稳定等待：{wait_after_off:.3f} s（由“稳定等待/ms”控制）")
+                time.sleep(wait_after_off)
+            else:
+                self.log("[照明光] OFF 后稳定等待：0 s，立即进入 LabVIEW 光谱采集")
+
+            if self.stop_requested:
+                return False
+            if self._is_midrun_recalibration_requested():
+                self.restart_current_cycle_after_recalibration = True
+                self.midrun_recalibration_cycle_index = int(cycle_index)
+                self.context["restart_current_cycle_after_recalibration"] = True
+                self.context["midrun_recalibration_cycle_index"] = int(cycle_index)
+                self.log(f"[中途重标定] 第 {cycle_index} 轮 Step4 前检测到请求，暂停并等待重标定。")
+                return False
+
+            # Step 4：LabVIEW 光谱采集
+            self.log("========== Step 4：LabVIEW 光谱采集 ==========")
+            labview_result = self.request_labview_spectrum(cycle_index)
+
+            if self.stop_requested:
+                return False
+            if self._is_midrun_recalibration_requested():
+                self.restart_current_cycle_after_recalibration = True
+                self.midrun_recalibration_cycle_index = int(cycle_index)
+                self.context["restart_current_cycle_after_recalibration"] = True
+                self.context["midrun_recalibration_cycle_index"] = int(cycle_index)
+                self.log(f"[中途重标定] 第 {cycle_index} 轮 Step5 前检测到请求，暂停并等待重标定。")
+                return False
+
+            # Step 5：照明光 ON
+            self.log("========== Step 5：照明光 ON ==========")
+            self.light_on()
+
+            # Step 5.5：保存本轮数据；保存角度固定使用 Step1 最终角度 current_angle
+            if self.stop_requested:
+                return False
+            if self._is_midrun_recalibration_requested():
+                self.restart_current_cycle_after_recalibration = True
+                self.midrun_recalibration_cycle_index = int(cycle_index)
+                self.context["restart_current_cycle_after_recalibration"] = True
+                self.context["midrun_recalibration_cycle_index"] = int(cycle_index)
+                self.log(f"[中途重标定] 第 {cycle_index} 轮 Step5.5 前检测到请求，暂停并等待重标定。")
+                return False
+
+            self.log("========== Step 5.5：保存数据（异步线程，使用 Step1 最终角度） ==========")
+            angle_after_result_for_save = {
+                "ok": False,
+                "angle_deg": None,
+                "reason": "save_after_autofocus_use_step1_final_angle",
+            }
+            t_save_submit0 = time.time()
+            self.start_save_cycle_result_async(
+                cycle_index=cycle_index,
+                paths=paths,
+                angle_before_result=angle_result,
+                angle_after_result=angle_after_result_for_save,
+                labview_result=labview_result,
+            )
+            self.log(f"[Step 5.5] 异步保存任务提交耗时：{time.time() - t_save_submit0:.3f} s；保存角度=Step1最终角度 {current_angle}")
+
+            # Step7/Step9/Step9.5 后只记录最终角度用于排查/GUI显示，不再覆盖本轮保存角度。
             # 本轮 CSV/XLSX/绘图已经在 Step5.5 提交保存，保存角度为 save_angle_deg=current_angle。
             final_step7_angle = rule_ab_result.get("final_angle")
             final_step7_delta = rule_ab_result.get("final_delta")
@@ -13542,6 +13860,7 @@ class MeasurementWorkflowGUI:
         self.tcp_command_var = tk.StringVar(value=cfg0.tcp_command)
         self.tcp_status_var = tk.StringVar(value="TCP状态：未启动")
         self.tcp_result_var = tk.StringVar(value="最近光谱：None")
+        self.save_single_spectrum_var = tk.BooleanVar(value=cfg0.save_single_spectrum_enabled)
 
         # 新增：光谱仪设备选择
         self.spectrometer_backend_var = tk.StringVar(value=cfg0.spectrometer_backend)
@@ -13606,6 +13925,9 @@ class MeasurementWorkflowGUI:
         ttk.Button(tcp_buttons, text="等待READY", command=self.wait_ready_thread).grid(row=0, column=1, padx=4, pady=3, sticky="ew")
         ttk.Button(tcp_buttons, text="单次光谱采集", command=self.measure_spectrum_once_thread).grid(row=1, column=0, padx=4, pady=3, sticky="ew")
         ttk.Button(tcp_buttons, text="关闭TCP", command=self.close_tcp_thread).grid(row=1, column=1, padx=4, pady=3, sticky="ew")
+        ttk.Checkbutton(
+            tcp_buttons, text="自动保存光谱数据", variable=self.save_single_spectrum_var
+        ).grid(row=2, column=0, columnspan=2, padx=4, pady=3, sticky="w")
 
         ttk.Label(tcp_frame, textvariable=self.tcp_status_var, wraplength=450).grid(row=5, column=0, columnspan=4, padx=4, pady=(4, 0), sticky="w")
         ttk.Label(tcp_frame, textvariable=self.tcp_result_var, wraplength=450).grid(row=6, column=0, columnspan=4, padx=4, pady=(4, 0), sticky="w")
@@ -13810,33 +14132,152 @@ class MeasurementWorkflowGUI:
         self.saf_status_var = tk.StringVar(value="光谱补焦循环：未启动")
         self.saf_max_cycles_var = tk.IntVar(value=0)
 
-        saf_frame.columnconfigure(1, weight=1)
+        # 补焦参数（与 autofocus_qt_ui 对齐）
+        self.saf_trigger_ratio_var = tk.DoubleVar(value=0.95)
+        self.saf_stop_ratio_var = tk.DoubleVar(value=0.95)
+        self.saf_trigger_count_var = tk.IntVar(value=3)
+        self.saf_trigger_absolute_var = tk.BooleanVar(value=True)
+        self.saf_detection_only_var = tk.BooleanVar(value=False)
+        self.saf_passive_mode_var = tk.BooleanVar(value=True)
+        self.saf_passive_attempts_var = tk.IntVar(value=10)
+        self.saf_passive_good_var = tk.IntVar(value=5)
+        self.saf_disable_auto_stop_var = tk.BooleanVar(value=False)
+        self.saf_z_enabled_var = tk.BooleanVar(value=True)
+        self.saf_z_axis_var = tk.IntVar(value=1)
+        self.saf_z_speed_var = tk.IntVar(value=100)
+        self.saf_z_accel_var = tk.IntVar(value=100)
+        self.saf_search_strategy_var = tk.StringVar(value="hill_climb")
+        self.saf_interval_var = tk.DoubleVar(value=1.0)
+        self.saf_wait_between_spectrum_var = tk.DoubleVar(value=120.0)
+
+        for col_idx in range(4):
+            saf_frame.columnconfigure(col_idx, weight=1)
+
+        # Row 0: ROI
         ttk.Label(saf_frame, text="Focus ROI(x,y,w,h)").grid(
             row=0, column=0, padx=4, pady=4, sticky="w"
         )
         ttk.Entry(saf_frame, textvariable=self.saf_roi_var).grid(
-            row=0, column=1, padx=4, pady=4, sticky="ew"
+            row=0, column=1, columnspan=2, padx=4, pady=4, sticky="ew"
         )
         ttk.Button(saf_frame, text="选择ROI", command=self.select_saf_roi_thread).grid(
-            row=0, column=2, padx=4, pady=4, sticky="ew"
+            row=0, column=3, padx=4, pady=4, sticky="ew"
         )
 
+        # Row 1: 输出目录 + 最大轮数
         ttk.Label(saf_frame, text="输出目录").grid(
             row=1, column=0, padx=4, pady=4, sticky="w"
         )
         ttk.Entry(saf_frame, textvariable=self.saf_output_dir_var).grid(
             row=1, column=1, padx=4, pady=4, sticky="ew"
         )
-
         ttk.Label(saf_frame, text="最大轮数(0=无限)").grid(
-            row=2, column=0, padx=4, pady=4, sticky="w"
+            row=1, column=2, padx=4, pady=4, sticky="w"
         )
         ttk.Entry(saf_frame, textvariable=self.saf_max_cycles_var, width=10).grid(
-            row=2, column=1, padx=4, pady=4, sticky="w"
+            row=1, column=3, padx=4, pady=4, sticky="w"
         )
 
+        # Row 2: 触发阈值 / 目标阈值
+        ttk.Label(saf_frame, text="触发阈值").grid(
+            row=2, column=0, padx=4, pady=4, sticky="w"
+        )
+        ttk.Entry(saf_frame, textvariable=self.saf_trigger_ratio_var, width=10).grid(
+            row=2, column=1, padx=4, pady=4, sticky="w"
+        )
+        ttk.Label(saf_frame, text="目标阈值").grid(
+            row=2, column=2, padx=4, pady=4, sticky="w"
+        )
+        ttk.Entry(saf_frame, textvariable=self.saf_stop_ratio_var, width=10).grid(
+            row=2, column=3, padx=4, pady=4, sticky="w"
+        )
+
+        # Row 3: 连续触发次数 / 搜索策略
+        ttk.Label(saf_frame, text="连续触发次数").grid(
+            row=3, column=0, padx=4, pady=4, sticky="w"
+        )
+        ttk.Entry(saf_frame, textvariable=self.saf_trigger_count_var, width=10).grid(
+            row=3, column=1, padx=4, pady=4, sticky="w"
+        )
+        ttk.Label(saf_frame, text="搜索策略").grid(
+            row=3, column=2, padx=4, pady=4, sticky="w"
+        )
+        ttk.Combobox(
+            saf_frame,
+            textvariable=self.saf_search_strategy_var,
+            values=["hill_climb", "full_sweep", "curve_fit", "golden_section"],
+            state="readonly",
+            width=12,
+        ).grid(row=3, column=3, padx=4, pady=4, sticky="w")
+
+        # Row 4: 模式开关
+        ttk.Checkbutton(
+            saf_frame, text="绝对值区间", variable=self.saf_trigger_absolute_var
+        ).grid(row=4, column=0, padx=4, pady=4, sticky="w")
+        ttk.Checkbutton(
+            saf_frame, text="FocusScore检测", variable=self.saf_detection_only_var
+        ).grid(row=4, column=1, padx=4, pady=4, sticky="w")
+        ttk.Checkbutton(
+            saf_frame, text="被动补焦", variable=self.saf_passive_mode_var
+        ).grid(row=4, column=2, padx=4, pady=4, sticky="w")
+        ttk.Checkbutton(
+            saf_frame, text="关闭达标阈值", variable=self.saf_disable_auto_stop_var
+        ).grid(row=4, column=3, padx=4, pady=4, sticky="w")
+
+        # Row 5: 被动补焦参数
+        ttk.Label(saf_frame, text="最大连续补焦").grid(
+            row=5, column=0, padx=4, pady=4, sticky="w"
+        )
+        ttk.Entry(saf_frame, textvariable=self.saf_passive_attempts_var, width=10).grid(
+            row=5, column=1, padx=4, pady=4, sticky="w"
+        )
+        ttk.Label(saf_frame, text="连续达标次数").grid(
+            row=5, column=2, padx=4, pady=4, sticky="w"
+        )
+        ttk.Entry(saf_frame, textvariable=self.saf_passive_good_var, width=10).grid(
+            row=5, column=3, padx=4, pady=4, sticky="w"
+        )
+
+        # Row 6: Z 轴参数
+        ttk.Checkbutton(
+            saf_frame, text="启用Z轴", variable=self.saf_z_enabled_var
+        ).grid(row=6, column=0, padx=4, pady=4, sticky="w")
+        ttk.Label(saf_frame, text="Z轴").grid(
+            row=6, column=1, padx=4, pady=4, sticky="w"
+        )
+        ttk.Entry(saf_frame, textvariable=self.saf_z_axis_var, width=6).grid(
+            row=6, column=1, padx=(30, 4), pady=4, sticky="w"
+        )
+        ttk.Label(saf_frame, text="速度").grid(
+            row=6, column=2, padx=4, pady=4, sticky="w"
+        )
+        ttk.Entry(saf_frame, textvariable=self.saf_z_speed_var, width=8).grid(
+            row=6, column=2, padx=(30, 4), pady=4, sticky="w"
+        )
+        ttk.Label(saf_frame, text="加速度").grid(
+            row=6, column=3, padx=4, pady=4, sticky="w"
+        )
+        ttk.Entry(saf_frame, textvariable=self.saf_z_accel_var, width=8).grid(
+            row=6, column=3, padx=(40, 4), pady=4, sticky="w"
+        )
+
+        # Row 7: 时间参数
+        ttk.Label(saf_frame, text="补焦间隔(s)").grid(
+            row=7, column=0, padx=4, pady=4, sticky="w"
+        )
+        ttk.Entry(saf_frame, textvariable=self.saf_interval_var, width=10).grid(
+            row=7, column=1, padx=4, pady=4, sticky="w"
+        )
+        ttk.Label(saf_frame, text="光谱间等待(s)").grid(
+            row=7, column=2, padx=4, pady=4, sticky="w"
+        )
+        ttk.Entry(saf_frame, textvariable=self.saf_wait_between_spectrum_var, width=10).grid(
+            row=7, column=3, padx=4, pady=4, sticky="w"
+        )
+
+        # Row 8: 按钮
         saf_buttons = ttk.Frame(saf_frame)
-        saf_buttons.grid(row=3, column=0, columnspan=3, padx=2, pady=4, sticky="ew")
+        saf_buttons.grid(row=8, column=0, columnspan=4, padx=2, pady=4, sticky="ew")
         saf_buttons.columnconfigure(0, weight=1)
         saf_buttons.columnconfigure(1, weight=1)
         ttk.Button(
@@ -13852,8 +14293,9 @@ class MeasurementWorkflowGUI:
             style="Danger.TButton",
         ).grid(row=0, column=1, padx=4, pady=3, sticky="ew")
 
+        # Row 9: 状态
         ttk.Label(saf_frame, textvariable=self.saf_status_var, wraplength=450).grid(
-            row=4, column=0, columnspan=3, padx=4, pady=(4, 0), sticky="w"
+            row=9, column=0, columnspan=4, padx=4, pady=(4, 0), sticky="w"
         )
 
         # =====================================================
@@ -15105,6 +15547,18 @@ class MeasurementWorkflowGUI:
 
             calibration_path=str((Path(self.save_root_var.get().strip() or "measurement_output") / "calibration" / "current_calibration.json")),
             require_full_calibration_before_run=True,
+
+            focus_roi=self._parse_focus_roi(self.saf_roi_var.get()),
+            focus_trigger_ratio=float(self.saf_trigger_ratio_var.get()),
+            focus_stop_ratio=float(self.saf_stop_ratio_var.get()),
+            focus_trigger_count=int(self.saf_trigger_count_var.get()),
+            focus_trigger_absolute=bool(self.saf_trigger_absolute_var.get()),
+            focus_detection_only=bool(self.saf_detection_only_var.get()),
+            focus_z_enabled=bool(self.saf_z_enabled_var.get()),
+            focus_z_axis=int(self.saf_z_axis_var.get()),
+            focus_z_speed=int(self.saf_z_speed_var.get()),
+            focus_z_accel=int(self.saf_z_accel_var.get()),
+            focus_search_strategy=str(self.saf_search_strategy_var.get()),
         )
     
     def sync_config_from_ui_to_workflow(self) -> MeasurementWorkflow:
@@ -16902,6 +17356,15 @@ class MeasurementWorkflowGUI:
             self.set_var(self.tcp_status_var, "TCP状态：采集完成")
             self.refresh_result_labels(wf)
 
+            if self.save_single_spectrum_var.get():
+                try:
+                    saved_path = wf.save_single_spectrum_to_xlsx()
+                    if saved_path is not None:
+                        self.log(f"[TCP] 已自动保存光谱数据：{saved_path}")
+                except Exception as e:
+                    self.log(f"[TCP] 自动保存光谱数据失败：{e}")
+                    self.log(traceback.format_exc())
+
         except Exception as e:
             self.set_var(self.tcp_status_var, "TCP状态：采集失败")
             self.log(f"[TCP] 单次采集失败：{e}")
@@ -17786,6 +18249,21 @@ class MeasurementWorkflowGUI:
             capture_mode="screen_region",
             capture_area=capture_area,
             focus_roi=focus_roi,
+            autofocus_enabled=True,
+            autofocus_focus_trigger_ratio=float(self.saf_trigger_ratio_var.get()),
+            autofocus_stop_ratio=float(self.saf_stop_ratio_var.get()),
+            autofocus_focus_trigger_count=int(self.saf_trigger_count_var.get()),
+            autofocus_trigger_absolute=bool(self.saf_trigger_absolute_var.get()),
+            autofocus_detection_only=bool(self.saf_detection_only_var.get()),
+            autofocus_passive_mode=bool(self.saf_passive_mode_var.get()),
+            autofocus_passive_max_attempts=int(self.saf_passive_attempts_var.get()),
+            autofocus_passive_consecutive_good=int(self.saf_passive_good_var.get()),
+            autofocus_passive_disable_auto_stop=bool(self.saf_disable_auto_stop_var.get()),
+            z_enabled=bool(self.saf_z_enabled_var.get()),
+            z_axis=int(self.saf_z_axis_var.get()),
+            z_speed=int(self.saf_z_speed_var.get()),
+            z_accel=int(self.saf_z_accel_var.get()),
+            z_search_strategy=str(self.saf_search_strategy_var.get()),
         )
 
     def select_saf_roi_thread(self):
@@ -17875,6 +18353,10 @@ class MeasurementWorkflowGUI:
                 self.spectrum_autofocus_loop = loop
 
             loop.should_stop = lambda: self.spectrum_autofocus_stop_requested
+            loop.interval_s = float(self.saf_interval_var.get())
+            loop.wait_between_spectrum_s = float(
+                self.saf_wait_between_spectrum_var.get()
+            )
             loop.run(max_cycles=int(self.saf_max_cycles_var.get()))
 
             self.set_var(self.saf_status_var, "光谱补焦循环：已结束")

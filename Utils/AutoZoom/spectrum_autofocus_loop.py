@@ -109,6 +109,12 @@ class SpectrumAutofocusLoop:
         self._controller: Optional[AutofocusController] = None
         self._simulator: Optional[Any] = None
 
+        # 运行时可调参数（允许 GUI 覆盖）
+        self.interval_s: float = float(self.DEFAULT_INTERVAL_S)
+        self.wait_between_spectrum_s: float = float(
+            self.DEFAULT_WAIT_BETWEEN_SPECTRUM_S
+        )
+
     # ------------------------------------------------------------------
     # 日志与工具
     # ------------------------------------------------------------------
@@ -425,17 +431,25 @@ class SpectrumAutofocusLoop:
         return controller, None
 
     def _configure_passive_autofocus(self) -> None:
-        """按需求设置被动补焦参数。"""
-        self.cfg.autofocus_focus_trigger_ratio = self.DEFAULT_TRIGGER_RATIO
-        self.cfg.autofocus_stop_ratio = self.DEFAULT_STOP_RATIO
-        self.cfg.autofocus_focus_trigger_count = self.DEFAULT_TRIGGER_COUNT
-        self.cfg.z_search_strategy = self.DEFAULT_SEARCH_STRATEGY
-        self.cfg.z_axis = self.DEFAULT_Z_AXIS
-        self.cfg.z_picomotor_conn = self.DEFAULT_Z_CONN
-        self.cfg.z_picomotor_backend = self.DEFAULT_Z_BACKEND
-        self.cfg.autofocus_passive_mode = self.DEFAULT_PASSIVE_MODE
-        self.cfg.autofocus_passive_max_attempts = self.DEFAULT_PASSIVE_MAX_ATTEMPTS
-        self.cfg.autofocus_passive_consecutive_good = self.DEFAULT_PASSIVE_CONSECUTIVE_GOOD
+        """按需求设置被动补焦参数；若 cfg 已被 GUI 显式设置则优先保留。"""
+        def _set_if_default(attr: str, default_value) -> None:
+            """仅在当前值等于 AutofocusConfig 默认值时才覆盖。"""
+            import inspect
+            default_cfg = AutofocusConfig()
+            current = getattr(self.cfg, attr, None)
+            if current == getattr(default_cfg, attr, None):
+                setattr(self.cfg, attr, default_value)
+
+        _set_if_default("autofocus_focus_trigger_ratio", self.DEFAULT_TRIGGER_RATIO)
+        _set_if_default("autofocus_stop_ratio", self.DEFAULT_STOP_RATIO)
+        _set_if_default("autofocus_focus_trigger_count", self.DEFAULT_TRIGGER_COUNT)
+        _set_if_default("z_search_strategy", self.DEFAULT_SEARCH_STRATEGY)
+        _set_if_default("z_axis", self.DEFAULT_Z_AXIS)
+        _set_if_default("z_picomotor_conn", self.DEFAULT_Z_CONN)
+        _set_if_default("z_picomotor_backend", self.DEFAULT_Z_BACKEND)
+        _set_if_default("autofocus_passive_mode", self.DEFAULT_PASSIVE_MODE)
+        _set_if_default("autofocus_passive_max_attempts", self.DEFAULT_PASSIVE_MAX_ATTEMPTS)
+        _set_if_default("autofocus_passive_consecutive_good", self.DEFAULT_PASSIVE_CONSECUTIVE_GOOD)
 
     def run_passive_autofocus_detection(self, cycle_index: int) -> Dict[str, Any]:
         """
@@ -458,7 +472,7 @@ class SpectrumAutofocusLoop:
         consecutive_good_target = max(
             1, int(self.cfg.autofocus_passive_consecutive_good)
         )
-        interval_s = max(0.0, float(self.DEFAULT_INTERVAL_S))
+        interval_s = max(0.0, float(self.interval_s))
         consecutive_good_count = 0
         history: List[Dict[str, Any]] = []
 
@@ -623,9 +637,9 @@ class SpectrumAutofocusLoop:
                 break
 
             self._log(
-                f"[光谱补焦] 等待 {self.DEFAULT_WAIT_BETWEEN_SPECTRUM_S} 秒"
+                f"[光谱补焦] 等待 {self.wait_between_spectrum_s} 秒"
             )
-            if self._safe_sleep(self.DEFAULT_WAIT_BETWEEN_SPECTRUM_S):
+            if self._safe_sleep(self.wait_between_spectrum_s):
                 break
 
             self.run_passive_autofocus_detection(cycle_index)

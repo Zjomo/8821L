@@ -71,7 +71,7 @@ def _make_loop(
         output_dir=str(output_dir),
         should_stop=should_stop,
     )
-    loop.DEFAULT_INTERVAL_S = 0.0
+    loop.interval_s = 0.0
     return loop
 
 
