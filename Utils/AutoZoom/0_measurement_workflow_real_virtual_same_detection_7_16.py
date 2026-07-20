@@ -172,6 +172,10 @@ class MeasurementConfig:
 
     max_cycles: int = int(_cfg("max_cycles", 10))
 
+    # 新循环结构：每个外循环周期内 Step 7-14 子循环的重复次数
+    # 默认 1 表示与旧结构最接近；0 表示跳过子循环，只做 Step 1-6 的初始光谱采集
+    sub_loop_iterations_per_cycle: int = int(_cfg("sub_loop_iterations_per_cycle", 1))
+
     # 这个不是照明光时间，而是信号发生器 CH1 ON 的持续时间
     signal_on_time_ms: float = float(_cfg("signal_on_time_ms", 50.0))
 
@@ -2451,7 +2455,12 @@ class MeasurementWorkflow:
         约定：
             cfg.laser_on_steps 只填写步数幅值。
             打开激光时固定使用正向运动 +abs(laser_on_steps)。
+            若 context 中激光已经是 ON 状态，则跳过重复打开，防止子循环中多次调用导致轴过冲。
         """
+        if bool(self.context.get("laser_on", False)):
+            self.log("[激光开关] 激光已经是 ON 状态，跳过重复打开")
+            return
+
         steps = abs(int(self.cfg.laser_on_steps))
 
         self.laser_move_and_wait(
@@ -12880,6 +12889,85 @@ class MeasurementWorkflow:
             pass
         return (0, 0, 300, 300)
 
+    def _set_midrun_recalibration(self, cycle_index: int, phase: str) -> None:
+        """统一设置中途重标定状态并记录日志。"""
+        self.restart_current_cycle_after_recalibration = True
+        self.midrun_recalibration_cycle_index = int(cycle_index)
+        self.context["restart_current_cycle_after_recalibration"] = True
+        self.context["midrun_recalibration_cycle_index"] = int(cycle_index)
+        self.log(f"[中途重标定] 第 {cycle_index} 轮 {phase} 检测到请求，暂停并等待重标定。")
+
+    def _acquire_and_save_spectrum(
+        self,
+        cycle_index: int,
+        paths: Dict[str, Any],
+        angle_result: Dict[str, Any],
+        off_label: str,
+        acquire_label: str,
+        on_label: str,
+        save_label: str,
+    ) -> bool:
+        """
+        标准光谱采集保存块：照明光 OFF → LabVIEW 光谱采集 → 照明光 ON → 异步保存。
+
+        参数中的 *_label 用于日志区分 Step 3/4/5/6 与 Step 11/12/13/14。
+        保存角度固定使用 Step1 传入的 angle_result。
+        返回 False 表示流程被停止或触发中途重标定。
+        """
+        # 照明光 OFF，等待稳定
+        self.log(f"========== {off_label}：照明光 OFF，等待稳定 ==========")
+        self.light_off()
+        wait_after_off = float(self.cfg.stable_wait_ms) / 1000.0
+        if wait_after_off > 0:
+            self.log(f"[照明光] OFF 后稳定等待：{wait_after_off:.3f} s（由“稳定等待/ms”控制）")
+            time.sleep(wait_after_off)
+        else:
+            self.log("[照明光] OFF 后稳定等待：0 s，立即进入 LabVIEW 光谱采集")
+
+        if self.stop_requested:
+            return False
+        if self._is_midrun_recalibration_requested():
+            self._set_midrun_recalibration(cycle_index, f"{off_label} 后")
+            return False
+
+        # LabVIEW 光谱采集
+        self.log(f"========== {acquire_label}：LabVIEW 光谱采集 ==========")
+        labview_result = self.request_labview_spectrum(cycle_index)
+
+        if self.stop_requested:
+            return False
+        if self._is_midrun_recalibration_requested():
+            self._set_midrun_recalibration(cycle_index, f"{acquire_label} 后")
+            return False
+
+        # 照明光 ON
+        self.log(f"========== {on_label}：照明光 ON ==========")
+        self.light_on()
+
+        if self.stop_requested:
+            return False
+        if self._is_midrun_recalibration_requested():
+            self._set_midrun_recalibration(cycle_index, f"{on_label} 后")
+            return False
+
+        # 保存数据
+        self.log(f"========== {save_label}：保存数据（异步线程，使用 Step1 最终角度） ==========")
+        angle_after_result_for_save = {
+            "ok": False,
+            "angle_deg": None,
+            "reason": "save_uses_step1_final_angle",
+        }
+        t_save_submit0 = time.time()
+        self.start_save_cycle_result_async(
+            cycle_index=cycle_index,
+            paths=paths,
+            angle_before_result=angle_result,
+            angle_after_result=angle_after_result_for_save,
+            labview_result=labview_result,
+        )
+        self.log(f"[{save_label}] 异步保存任务提交耗时：{time.time() - t_save_submit0:.3f} s；保存角度=Step1最终角度")
+        return True
+
     # --------------------------------------------------------
     # 单轮完整流程
     # --------------------------------------------------------
@@ -12890,26 +12978,29 @@ class MeasurementWorkflow:
         Step 1：角度检测一次，得到 current_angle
         Step 1.5（仅第一轮）：在照明光 OFF 前，截取当前 ROI 画面建立聚焦参考图
         Step 2：生成保存路径
-        Step 6：打开激光
-        Step 7：A推动B（logic/rule_ab.py），每次运动后检测B对边角度；
-                Step7 角度只用于关闭激光/是否继续推动，不再覆盖本轮保存角度。
-        Step 8：检测颜色区域中心，与提前选定位置对齐；偏离过大则移动1/2通道
-        Step 9.5：补焦判断。计算当前 ROI 与参考图的 FocusScore_ratio；
-                  若触发阈值，执行补焦。
         Step 3：照明光 OFF，并按 stable_wait_ms 等待稳定
         Step 4：LabVIEW 光谱采集
         Step 5：照明光 ON
-        Step 5.5：保存本轮数据；保存角度使用 Step1 的 YOLO-OBB baseline 原始角度。
+        Step 6：保存本轮数据；保存角度使用 Step1 的 YOLO-OBB baseline 原始角度
+
+        Step 7：打开激光
+        Step 8：A推动B（logic/rule_ab.py），每次运动后检测B对边角度；
+                Step7 角度只用于关闭激光/是否继续推动，不再覆盖本轮保存角度。
+        Step 9：检测颜色区域中心，与提前选定位置对齐；偏离过大则移动1/2通道
+        Step 10：补焦判断。计算当前 ROI 与参考图的 FocusScore_ratio；
+                  若触发阈值，执行补焦。
+        Step 11：照明光 OFF，并按 stable_wait_ms 等待稳定
+        Step 12：LabVIEW 光谱采集
+        Step 13：照明光 ON
+        Step 14：保存本轮数据；保存角度使用 Step1 的 YOLO-OBB baseline 原始角度
+
+        Step 15：继续 Step 7 到 Step 14 的循环（固定次数，由 sub_loop_iterations_per_cycle 控制）
         """
         self.context["cycle_index"] = cycle_index
         self.notify_update()
 
         if self._is_midrun_recalibration_requested():
-            self.restart_current_cycle_after_recalibration = True
-            self.midrun_recalibration_cycle_index = int(cycle_index)
-            self.context["restart_current_cycle_after_recalibration"] = True
-            self.context["midrun_recalibration_cycle_index"] = int(cycle_index)
-            self.log(f"[中途重标定] 第 {cycle_index} 轮开始前检测到重标定请求，暂停当前 cycle。")
+            self._set_midrun_recalibration(cycle_index, "开始前")
             return False
 
         self.log("")
@@ -12993,210 +13084,183 @@ class MeasurementWorkflow:
             self.log("========== Step 2：生成保存路径 ==========")
             paths = self.build_save_path(cycle_index)
 
-            # 以下 Step 3/4/5/5.5 已移到 Step9/颜色对齐/补焦之后执行
-            self.log("========== Step 6：打开激光 ==========")
-            self.laser_on()
-            self.log("========== Step 7：A推动B，并用当前帧Bmask最长边检测B角度 ==========")
+            # Step 3-6：初始光谱采集（在激光操作之前）
+            if not self._acquire_and_save_spectrum(
+                cycle_index=cycle_index,
+                paths=paths,
+                angle_result=angle_result,
+                off_label="Step 3",
+                acquire_label="Step 4",
+                on_label="Step 5",
+                save_label="Step 6",
+            ):
+                return False
 
-            # 完整测量 Step7 的目标就是让 3/4 通道推动 A。
-            # 如果 GUI 中“RuleAB真动Stage34”没有勾选，旧代码会 dry-run，表现为 3/4 通道没有任何变化。
-            # 这里在完整测量中自动打开真动 Stage34；单独测试按钮仍可通过 GUI 选择 dry-run。
-            if self._is_virtual_hardware_mode():
-                self.cfg.rule_ab_enable_stage = False
-                if self.rule_ab_follower is not None and getattr(self.rule_ab_follower, "cfg", None) is not None:
-                    try:
-                        self.rule_ab_follower.cfg.enable_stage = False
-                    except Exception:
-                        pass
-                self.log("[RuleAB][virtual] 完整测量 Step7 使用真实视觉/角度逻辑，但 Stage34 为虚拟动作：不连接、不控制真实 3/4 通道。")
-            elif not bool(getattr(self.cfg, "rule_ab_enable_stage", False)):
-                self.log("[RuleAB] 完整测量 Step7 检测到 rule_ab_enable_stage=False，已自动改为 True，避免3/4通道 dry-run。")
-                self.cfg.rule_ab_enable_stage = True
-                if self.rule_ab_follower is not None and getattr(self.rule_ab_follower, "cfg", None) is not None:
-                    try:
-                        self.rule_ab_follower.cfg.enable_stage = True
-                    except Exception:
-                        pass
+            # Step 7-14 子循环
+            sub_loop_count = max(0, int(getattr(self.cfg, "sub_loop_iterations_per_cycle", 1)))
+            self.log(f"[流程] 本周期 Step 7-14 子循环次数：{sub_loop_count}")
 
-            rule_ab_result = self.run_rule_ab_until_angle_delta(
-                baseline_angle=current_angle,
-                min_delta_deg=None,
-                max_delta_deg=None,
-            )
+            last_rule_ab_result: Dict[str, Any] = {}
+            last_rule_ac_result: Dict[str, Any] = {}
+            last_autofocus_result: Dict[str, Any] = {}
 
-            if self._is_midrun_recalibration_requested() or str(rule_ab_result.get("reason", "")) == "midrun_recalibration_requested":
-                self.restart_current_cycle_after_recalibration = True
-                self.midrun_recalibration_cycle_index = int(cycle_index)
-                self.context["restart_current_cycle_after_recalibration"] = True
-                self.context["midrun_recalibration_cycle_index"] = int(cycle_index)
+            for sub_idx in range(1, sub_loop_count + 1):
+                if self.stop_requested:
+                    return False
+                if self._is_midrun_recalibration_requested():
+                    self._set_midrun_recalibration(cycle_index, f"Step 7-14 子循环第 {sub_idx} 次开始前")
+                    return False
+
+                self.log(f"========== Step 7-14 子循环第 {sub_idx}/{sub_loop_count} 次开始 ==========")
+
+                # Step 7：打开激光
+                self.log("========== Step 7：打开激光 ==========")
+                self.laser_on()
+
+                # Step 8：A推动B
+                self.log("========== Step 8：A推动B，并用当前帧Bmask最长边检测B角度 ==========")
+
+                # 完整测量 Step8 的目标就是让 3/4 通道推动 A。
+                # 如果 GUI 中“RuleAB真动Stage34”没有勾选，旧代码会 dry-run，表现为 3/4 通道没有任何变化。
+                # 这里在完整测量中自动打开真动 Stage34；单独测试按钮仍可通过 GUI 选择 dry-run。
+                if self._is_virtual_hardware_mode():
+                    self.cfg.rule_ab_enable_stage = False
+                    if self.rule_ab_follower is not None and getattr(self.rule_ab_follower, "cfg", None) is not None:
+                        try:
+                            self.rule_ab_follower.cfg.enable_stage = False
+                        except Exception:
+                            pass
+                    self.log("[RuleAB][virtual] 完整测量 Step8 使用真实视觉/角度逻辑，但 Stage34 为虚拟动作：不连接、不控制真实 3/4 通道。")
+                elif not bool(getattr(self.cfg, "rule_ab_enable_stage", False)):
+                    self.log("[RuleAB] 完整测量 Step8 检测到 rule_ab_enable_stage=False，已自动改为 True，避免3/4通道 dry-run。")
+                    self.cfg.rule_ab_enable_stage = True
+                    if self.rule_ab_follower is not None and getattr(self.rule_ab_follower, "cfg", None) is not None:
+                        try:
+                            self.rule_ab_follower.cfg.enable_stage = True
+                        except Exception:
+                            pass
+
+                rule_ab_result = self.run_rule_ab_until_angle_delta(
+                    baseline_angle=current_angle,
+                    min_delta_deg=None,
+                    max_delta_deg=None,
+                )
+                last_rule_ab_result = rule_ab_result
+
+                if self._is_midrun_recalibration_requested() or str(rule_ab_result.get("reason", "")) == "midrun_recalibration_requested":
+                    self._set_midrun_recalibration(cycle_index, f"Step 8 子循环第 {sub_idx} 次")
+                    self.context["last_rule_ab_result"] = rule_ab_result
+                    self.notify_update()
+                    return False
+
                 self.context["last_rule_ab_result"] = rule_ab_result
-                self.log(f"[中途重标定] 第 {cycle_index} 轮 Step7 已安全暂停；等待重新标定后从 Step1 重跑本轮。")
                 self.notify_update()
-                return False
 
-            self.context["last_rule_ab_result"] = rule_ab_result
-            self.notify_update()
+                if self.stop_requested:
+                    return False
 
-            if self.stop_requested:
-                return False
+                # Step8 判定：
+                # 只有 YOLO-OBB 检测角度变化 >= min_delta，Step8 才算成功并允许继续完整测量。
+                # 当前版本不再使用 max_delta / 6° 上限；达到 3.5° 阈值即进入下一步。
+                # 修改：Bmask/角度检测类失败不再当作整次测量失败；只跳过当前 cycle，完整循环继续。
+                # 但用户主动停止、硬件/激光关闭失败、中途重标定等仍按原逻辑停止或暂停。
+                if not bool(rule_ab_result.get("ok", False)):
+                    final_delta = rule_ab_result.get("final_delta")
+                    target_min = rule_ab_result.get("target_min")
+                    target_max = rule_ab_result.get("target_max")
+                    reason = rule_ab_result.get("reason")
 
-            # Step7 判定：
-            # 只有 YOLO-OBB 检测角度变化 >= min_delta，Step7 才算成功并允许继续完整测量。
-            # 当前版本不再使用 max_delta / 6° 上限；达到 3.5° 阈值即进入下一步。
-            # 修改：Bmask/角度检测类失败不再当作整次测量失败；只跳过当前 cycle，完整循环继续。
-            # 但用户主动停止、硬件/激光关闭失败、中途重标定等仍按原逻辑停止或暂停。
-            if not bool(rule_ab_result.get("ok", False)):
-                final_delta = rule_ab_result.get("final_delta")
-                target_min = rule_ab_result.get("target_min")
-                target_max = rule_ab_result.get("target_max")
-                reason = rule_ab_result.get("reason")
+                    if self._is_nonfatal_bmask_angle_failure_reason(reason):
+                        self.log(
+                            "[RuleAB] Step8 未达到目标角度或 Bmask/角度检测失败；"
+                            "本次不再停止完整循环，只跳过当前轮并继续下一轮："
+                            f"final_delta={final_delta}, target=[{target_min}, {target_max}], "
+                            f"reason={reason}, records={len(rule_ab_result.get('records', []))}"
+                        )
+                        self.context["last_rule_ab_result"] = rule_ab_result
+                        return self._skip_current_cycle_without_stopping_measurement(
+                            cycle_index=cycle_index,
+                            phase="Step8_Bmask_angle_or_delta_not_ready",
+                            reason=reason,
+                            close_laser_if_on=True,
+                        )
 
-                if self._is_nonfatal_bmask_angle_failure_reason(reason):
                     self.log(
-                        "[RuleAB] Step7 未达到目标角度或 Bmask/角度检测失败；"
-                        "本次不再停止完整循环，只跳过当前轮并继续下一轮："
+                        "[RuleAB] Step8 发生非 Bmask/角度类失败，仍停止完整循环测量："
                         f"final_delta={final_delta}, target=[{target_min}, {target_max}], "
                         f"reason={reason}, records={len(rule_ab_result.get('records', []))}"
                     )
-                    self.context["last_rule_ab_result"] = rule_ab_result
-                    return self._skip_current_cycle_without_stopping_measurement(
-                        cycle_index=cycle_index,
-                        phase="Step7_Bmask_angle_or_delta_not_ready",
-                        reason=reason,
-                        close_laser_if_on=True,
-                    )
+                    self.context["rule_ab_failed_stop"] = True
+                    self.context["rule_ab_failed_reason"] = reason
+                    self.stop_requested = True
+                    self.notify_update()
+                    return False
 
-                self.log(
-                    "[RuleAB] Step7 发生非 Bmask/角度类失败，仍停止完整循环测量："
-                    f"final_delta={final_delta}, target=[{target_min}, {target_max}], "
-                    f"reason={reason}, records={len(rule_ab_result.get('records', []))}"
-                )
-                self.context["rule_ab_failed_stop"] = True
-                self.context["rule_ab_failed_reason"] = reason
-                self.stop_requested = True
+                # Step 9：检测颜色区域中心，必要时移动1/2通道
+                self.log("========== Step 9：检测颜色区域中心，必要时移动1/2通道 ==========")
+                rule_ac_result = self.run_rule_ac_until_threshold()
+                last_rule_ac_result = rule_ac_result
+                self.context["last_rule_ac_result"] = rule_ac_result
                 self.notify_update()
-                return False
 
-            self.log("========== Step 8：关闭激光（主流程正常关激光，非Step7角度线程触发） ==========")
+                if self._is_midrun_recalibration_requested() or str(rule_ac_result.get("reason", "")) == "midrun_recalibration_requested":
+                    self._set_midrun_recalibration(cycle_index, f"Step 9 子循环第 {sub_idx} 次")
+                    self.notify_update()
+                    return False
+
+                # Step 10：补焦判断
+                self.log("========== Step 10：补焦判断 ==========")
+                try:
+                    autofocus_result = self.run_autofocus_if_needed(cycle_index)
+                    last_autofocus_result = autofocus_result
+                    self.context["last_autofocus_result"] = autofocus_result
+                    self.notify_update()
+                except Exception as e:
+                    self.log(f"[补焦判断] 异常：{e}")
+                    self.log(traceback.format_exc())
+                    last_autofocus_result = {"score": None, "triggered": False, "autofocus_ok": False, "error": str(e)}
+                    self.context["last_autofocus_result"] = last_autofocus_result
+
+                if self.stop_requested:
+                    return False
+                if self._is_midrun_recalibration_requested():
+                    self._set_midrun_recalibration(cycle_index, f"Step 10 子循环第 {sub_idx} 次")
+                    return False
+
+                # Step 11-14：光谱采集与保存
+                if not self._acquire_and_save_spectrum(
+                    cycle_index=cycle_index,
+                    paths=paths,
+                    angle_result=angle_result,
+                    off_label="Step 11",
+                    acquire_label="Step 12",
+                    on_label="Step 13",
+                    save_label="Step 14",
+                ):
+                    return False
+
+                self.log(f"========== Step 7-14 子循环第 {sub_idx}/{sub_loop_count} 次结束 ==========")
+
+            # 子循环结束后关闭激光（安全兜底）
+            self.log("========== Step 7-14 子循环结束：关闭激光 ==========")
             try:
                 if bool(self.context.get("laser_on", False)):
                     self.laser_off()
-                    self.log("[激光开关] Step7 已完成，主流程正常关闭激光")
+                    self.log("[激光开关] 子循环结束，主流程正常关闭激光")
                 else:
-                    self.log("[激光开关] Step7 已完成，但 laser_on=False，主流程跳过重复关激光")
+                    self.log("[激光开关] 子循环结束，但 laser_on=False，主流程跳过重复关激光")
             except Exception as e:
-                self.log(f"[激光开关] Step8 正常关闭激光失败：{e}")
+                self.log(f"[激光开关] 子循环结束后正常关闭激光失败：{e}")
                 self.context["laser_off_failed_after_step7"] = True
                 self.context["laser_off_failed_reason"] = str(e)
                 self.stop_requested = True
                 self.notify_update()
                 return False
 
-            self.log("========== Step 9：检测颜色区域中心，必要时移动1/2通道 ==========")
-            rule_ac_result = self.run_rule_ac_until_threshold()
-            self.context["last_rule_ac_result"] = rule_ac_result
-            self.notify_update()
-
-            if self._is_midrun_recalibration_requested() or str(rule_ac_result.get("reason", "")) == "midrun_recalibration_requested":
-                self.restart_current_cycle_after_recalibration = True
-                self.midrun_recalibration_cycle_index = int(cycle_index)
-                self.context["restart_current_cycle_after_recalibration"] = True
-                self.context["midrun_recalibration_cycle_index"] = int(cycle_index)
-                self.log(f"[中途重标定] 第 {cycle_index} 轮 Step9 已安全暂停；等待重新标定后从 Step1 重跑本轮。")
-                self.notify_update()
-                return False
-
-            # Step 9.5：补焦判断
-            self.log("========== Step 9.5：补焦判断 ==========")
-            try:
-                autofocus_result = self.run_autofocus_if_needed(cycle_index)
-                self.context["last_autofocus_result"] = autofocus_result
-                self.notify_update()
-            except Exception as e:
-                self.log(f"[补焦判断] 异常：{e}")
-                self.log(traceback.format_exc())
-                self.context["last_autofocus_result"] = {"score": None, "triggered": False, "autofocus_ok": False, "error": str(e)}
-
-            if self.stop_requested:
-                return False
-            if self._is_midrun_recalibration_requested():
-                self.restart_current_cycle_after_recalibration = True
-                self.midrun_recalibration_cycle_index = int(cycle_index)
-                self.context["restart_current_cycle_after_recalibration"] = True
-                self.context["midrun_recalibration_cycle_index"] = int(cycle_index)
-                self.log(f"[中途重标定] 第 {cycle_index} 轮 Step9.5 后检测到请求，暂停并等待重标定。")
-                return False
-
-            # Step 3：照明光 OFF，并按 stable_wait_ms 等待稳定
-            self.log("========== Step 3：照明光 OFF，等待稳定 ==========")
-            self.light_off()
-            wait_after_off = float(self.cfg.stable_wait_ms) / 1000.0
-            if wait_after_off > 0:
-                self.log(f"[照明光] OFF 后稳定等待：{wait_after_off:.3f} s（由“稳定等待/ms”控制）")
-                time.sleep(wait_after_off)
-            else:
-                self.log("[照明光] OFF 后稳定等待：0 s，立即进入 LabVIEW 光谱采集")
-
-            if self.stop_requested:
-                return False
-            if self._is_midrun_recalibration_requested():
-                self.restart_current_cycle_after_recalibration = True
-                self.midrun_recalibration_cycle_index = int(cycle_index)
-                self.context["restart_current_cycle_after_recalibration"] = True
-                self.context["midrun_recalibration_cycle_index"] = int(cycle_index)
-                self.log(f"[中途重标定] 第 {cycle_index} 轮 Step4 前检测到请求，暂停并等待重标定。")
-                return False
-
-            # Step 4：LabVIEW 光谱采集
-            self.log("========== Step 4：LabVIEW 光谱采集 ==========")
-            labview_result = self.request_labview_spectrum(cycle_index)
-
-            if self.stop_requested:
-                return False
-            if self._is_midrun_recalibration_requested():
-                self.restart_current_cycle_after_recalibration = True
-                self.midrun_recalibration_cycle_index = int(cycle_index)
-                self.context["restart_current_cycle_after_recalibration"] = True
-                self.context["midrun_recalibration_cycle_index"] = int(cycle_index)
-                self.log(f"[中途重标定] 第 {cycle_index} 轮 Step5 前检测到请求，暂停并等待重标定。")
-                return False
-
-            # Step 5：照明光 ON
-            self.log("========== Step 5：照明光 ON ==========")
-            self.light_on()
-
-            # Step 5.5：保存本轮数据；保存角度固定使用 Step1 最终角度 current_angle
-            if self.stop_requested:
-                return False
-            if self._is_midrun_recalibration_requested():
-                self.restart_current_cycle_after_recalibration = True
-                self.midrun_recalibration_cycle_index = int(cycle_index)
-                self.context["restart_current_cycle_after_recalibration"] = True
-                self.context["midrun_recalibration_cycle_index"] = int(cycle_index)
-                self.log(f"[中途重标定] 第 {cycle_index} 轮 Step5.5 前检测到请求，暂停并等待重标定。")
-                return False
-
-            self.log("========== Step 5.5：保存数据（异步线程，使用 Step1 最终角度） ==========")
-            angle_after_result_for_save = {
-                "ok": False,
-                "angle_deg": None,
-                "reason": "save_after_autofocus_use_step1_final_angle",
-            }
-            t_save_submit0 = time.time()
-            self.start_save_cycle_result_async(
-                cycle_index=cycle_index,
-                paths=paths,
-                angle_before_result=angle_result,
-                angle_after_result=angle_after_result_for_save,
-                labview_result=labview_result,
-            )
-            self.log(f"[Step 5.5] 异步保存任务提交耗时：{time.time() - t_save_submit0:.3f} s；保存角度=Step1最终角度 {current_angle}")
-
-            # Step7/Step9/Step9.5 后只记录最终角度用于排查/GUI显示，不再覆盖本轮保存角度。
-            # 本轮 CSV/XLSX/绘图已经在 Step5.5 提交保存，保存角度为 save_angle_deg=current_angle。
-            final_step7_angle = rule_ab_result.get("final_angle")
-            final_step7_delta = rule_ab_result.get("final_delta")
-            last_records = rule_ab_result.get("records") or []
+            # 使用最后一轮子循环的结果更新上下文（用于排查/GUI显示）
+            final_step7_angle = last_rule_ab_result.get("final_angle")
+            final_step7_delta = last_rule_ab_result.get("final_delta")
+            last_records = last_rule_ab_result.get("records") or []
             last_record = last_records[-1] if last_records else {}
             last_angle_result = last_record.get("angle_result") if isinstance(last_record.get("angle_result"), dict) else {}
 
@@ -13211,9 +13275,9 @@ class MeasurementWorkflow:
             self.notify_update()
 
             self.log(
-                f"[流程] 第 {cycle_index} 轮数据已在 Step5.5 提交保存；"
+                f"[流程] 第 {cycle_index} 轮数据已提交保存；"
                 f"保存角度=Step1最终角度 {current_angle}；"
-                f"Step7最终角度={final_step7_angle} 仅用于关闭激光/排查，不覆盖保存角度。"
+                f"Step8最终角度={final_step7_angle} 仅用于关闭激光/排查，不覆盖保存角度。"
             )
             self.notify_update()
             return True
@@ -13715,6 +13779,7 @@ class MeasurementWorkflowGUI:
 
         cfg0 = self.default_cfg
         self.max_cycles_var = tk.IntVar(value=cfg0.max_cycles)
+        self.sub_loop_iterations_per_cycle_var = tk.IntVar(value=cfg0.sub_loop_iterations_per_cycle)
         self.signal_on_time_ms_var = tk.DoubleVar(value=cfg0.signal_on_time_ms)
         self.signal_on_time_ms_var.trace_add("write", self._on_signal_on_time_var_changed)
         self.stable_wait_ms_var = tk.IntVar(value=cfg0.stable_wait_ms)
@@ -13759,6 +13824,9 @@ class MeasurementWorkflowGUI:
         ttk.Entry(basic_frame, textvariable=self.raw_remove_above_var, width=14).grid(row=4, column=1, padx=(0, 4), pady=4, sticky="ew")
         ttk.Label(basic_frame, text="中值滤波窗口").grid(row=4, column=2, padx=(4, 6), pady=4, sticky="w")
         ttk.Entry(basic_frame, textvariable=self.median_filter_window_var, width=14).grid(row=4, column=3, padx=(0, 10), pady=4, sticky="ew")
+
+        ttk.Label(basic_frame, text="子循环次数").grid(row=5, column=0, padx=(4, 6), pady=4, sticky="w")
+        ttk.Entry(basic_frame, textvariable=self.sub_loop_iterations_per_cycle_var, width=14).grid(row=5, column=1, padx=(0, 10), pady=4, sticky="ew")
 
         ttk.Separator(basic_frame, orient=tk.HORIZONTAL).grid(row=6, column=0, columnspan=4, padx=4, pady=(8, 6), sticky="ew")
 
@@ -15431,6 +15499,7 @@ class MeasurementWorkflowGUI:
             virtual_spectrum_replay_csv=str(self.virtual_spectrum_replay_csv_var.get()).strip(),
 
             max_cycles=int(self.max_cycles_var.get()),
+            sub_loop_iterations_per_cycle=int(self.sub_loop_iterations_per_cycle_var.get()),
 
             signal_on_time_ms=float(self.signal_on_time_ms_var.get()),
             stable_wait_ms=int(self.stable_wait_ms_var.get()),
