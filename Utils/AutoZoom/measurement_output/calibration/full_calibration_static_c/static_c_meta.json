@@ -1,6 +1,6 @@
 {
-  "created_at": "2026-07-20 22:13:30",
-  "created_time": 1784556810.8759446,
+  "created_at": "2026-07-22 21:52:39",
+  "created_time": 1784728359.6787484,
   "source": "full_calibration_static_c",
   "source_static_c_mask": "E:\\CWB\\8821L\\Utils\\AutoZoom\\measurement_output\\rule_ab_follow_c_only\\_static_c_map_library\\default_static_c_map\\static_c_mask.png",
   "runtime_static_c_dir": "E:\\CWB\\8821L\\Utils\\AutoZoom\\measurement_output\\calibration\\full_calibration_static_c",
@@ -8,36 +8,11 @@
   "mask_path": "E:\\CWB\\8821L\\Utils\\AutoZoom\\measurement_output\\calibration\\full_calibration_static_c\\static_c_mask.png",
   "edge_route_path": "E:\\CWB\\8821L\\Utils\\AutoZoom\\measurement_output\\calibration\\full_calibration_static_c\\static_c_edge_route.json",
   "pixels_path": "E:\\CWB\\8821L\\Utils\\AutoZoom\\measurement_output\\calibration\\full_calibration_static_c\\static_c_pixels_yx.npy",
-  "bbox": [
-    652.0,
-    343.0,
-    777.0,
-    471.0
-  ],
-  "center": [
-    714.4086567525088,
-    404.3947527505743
-  ],
-  "area": 8126.5,
-  "mask_area_px": 8271,
-  "contour": [
-    [
-      708.0,
-      343.0
-    ],
-    [
-      652.0,
-      411.0
-    ],
-    [
-      719.0,
-      471.0
-    ],
-    [
-      777.0,
-      388.0
-    ]
-  ],
+  "bbox": null,
+  "center": null,
+  "area": 7773.0,
+  "mask_area_px": 7773,
+  "contour": [],
   "purpose": "strict_full_calibration_c_for_measurement_run",
   "note": "完整测量只允许 RuleAB/Step9 加载本目录，不允许使用 GUI 单独测试区域残留的 C 文件夹。"
 }
