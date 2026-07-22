@@ -318,6 +318,76 @@ def test_select_saf_roi_source_uses_sync() -> None:
     print("PASS: select_saf_roi_source_uses_sync")
 
 
+def test_select_saf_roi_7_16_does_not_affect_main_capture_area() -> None:
+    """确认 7_16 版本中 select_saf_roi 仅更新补焦专用区域，不影响标定/角度检测的 capture_area。"""
+    main_source = AUTOZOOM_ROOT / "0_measurement_workflow_real_virtual_same_detection_7_16.py"
+    assert main_source.exists(), f"主程序源码不存在：{main_source}"
+    source = main_source.read_text(encoding="utf-8")
+
+    # 必须存在：补焦专用区域变量与同步
+    required_patterns = [
+        "self.saf_capture_area_var = tk.StringVar",
+        "self.saf_capture_area_var.set(",
+        "loop.cfg.capture_area = new_capture_area",
+        "loop.cfg.focus_roi = new_focus_roi",
+        "saf_capture_area=self._parse_focus_roi(self.saf_capture_area_var.get())",
+        "saf_focus_roi=self._parse_focus_roi(self.saf_roi_var.get())",
+    ]
+    for needle in required_patterns:
+        assert needle in source, f"7_16 select_saf_roi 中未找到：{needle}"
+
+    # 必须不存在：把补焦 ROI 同步回主 capture_area
+    forbidden_patterns = [
+        # 注意：只检查 select_saf_roi 函数体内的赋值（通过上下文片段判断）
+        "self.capture_area_var.set(\",\".join(str(v) for v in new_capture_area)",
+        "wf.cfg.capture_area = new_capture_area",
+    ]
+    for needle in forbidden_patterns:
+        assert needle not in source, f"7_16 select_saf_roi 不应再出现：{needle}"
+
+    print("PASS: select_saf_roi_7_16_does_not_affect_main_capture_area")
+
+
+def test_make_saf_config_uses_saf_capture_area_7_16() -> None:
+    """确认 7_16 的 _make_saf_config 使用 saf_capture_area_var，而非主 capture_area_var。"""
+    main_source = AUTOZOOM_ROOT / "0_measurement_workflow_real_virtual_same_detection_7_16.py"
+    assert main_source.exists(), f"主程序源码不存在：{main_source}"
+    source = main_source.read_text(encoding="utf-8")
+
+    func_start = source.find("def _make_saf_config(self)")
+    assert func_start != -1, "未找到 _make_saf_config"
+    func_end = source.find("\n    def ", func_start + 1)
+    func_body = source[func_start:func_end]
+
+    assert "self.saf_capture_area_var.get()" in func_body, (
+        "_make_saf_config 应读取 saf_capture_area_var"
+    )
+    assert "self.capture_area_var.get()" not in func_body, (
+        "_make_saf_config 不应再读取主 capture_area_var"
+    )
+
+    print("PASS: make_saf_config_uses_saf_capture_area_7_16")
+
+
+def test_measurement_config_has_saf_fields() -> None:
+    """确认 MeasurementConfig 已新增 saf_capture_area / saf_focus_roi 字段。"""
+    main_source = AUTOZOOM_ROOT / "0_measurement_workflow_real_virtual_same_detection_7_16.py"
+    assert main_source.exists(), f"主程序源码不存在：{main_source}"
+    source = main_source.read_text(encoding="utf-8")
+
+    required_patterns = [
+        "saf_capture_area: Tuple[int, int, int, int]",
+        "saf_focus_roi: Tuple[int, int, int, int]",
+        "def __post_init__(self)",
+        "self.saf_capture_area = tuple(int(v) for v in self.capture_area)",
+        "self.saf_focus_roi = tuple(int(v) for v in self.focus_roi)",
+    ]
+    for needle in required_patterns:
+        assert needle in source, f"MeasurementConfig 中未找到：{needle}"
+
+    print("PASS: measurement_config_has_saf_fields")
+
+
 if __name__ == "__main__":
     tests = [
         test_parse_focus_roi_valid,
@@ -331,6 +401,9 @@ if __name__ == "__main__":
         test_focus_score_curve_saved,
         test_roi_to_screen_capture_area,
         test_select_saf_roi_source_uses_sync,
+        test_select_saf_roi_7_16_does_not_affect_main_capture_area,
+        test_make_saf_config_uses_saf_capture_area_7_16,
+        test_measurement_config_has_saf_fields,
     ]
 
     failed = 0

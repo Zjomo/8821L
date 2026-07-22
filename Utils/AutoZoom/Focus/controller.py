@@ -292,6 +292,14 @@ class AutofocusController:
     # 一站式接口：Step 4.5 截图 → 判断 → 补焦 → 最终截图
     # ================================================================
 
+    def close(self) -> None:
+        """关闭 Z 轴控制器，释放 USB 连接。"""
+        if self.z_axis is not None:
+            try:
+                self.z_axis.close()
+            except Exception as exc:
+                logger.warning(f"[补焦] 关闭 Z 轴控制器失败：{exc}")
+
     def check_and_autofocus(
         self,
         cycle_index: int = 0,

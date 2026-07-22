@@ -3,7 +3,7 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 .\sam2_env\Scripts\Activate.ps1
 cd ..
 python measurement_workflow_real_virtual_same_detection_6.25.py
-python step7_circle_4way_segmented_modified.py
+python 0_measurement_workflow_real_virtual_same_detection_7_16.py
 标记位置时 自动曝光时间设为80ms，模拟增益1.0x，照明光调节至第六档
 运行之后  TCP连接（在这也行）
 先标定 ，标定部分 鼠标左键点击是正点（即需要分割的部分），右键点击是负点（即不需要被分割的地方），键盘Enter键是确认标记完成，R键是标记错误重新标定

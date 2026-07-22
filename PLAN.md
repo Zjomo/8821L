@@ -1,3 +1,99 @@
+## AutoZoom Focus：UI 参数实时更新 & 补焦参考基准图弹窗
+
+### Summary
+为 `Utils/AutoZoom/0_measurement_workflow_real_virtual_same_detection_7_16.py` 增加两项交互增强：
+1. **UI 面板参数实时更新**：所有左侧配置参数在编辑后即时同步到 workflow 配置，无需重启或重新点击启动；
+2. **补焦参考基准图实时弹窗**：点击“运行完整循环测量”后，第一轮采集“补焦参考基准图”时自动弹出 OpenCV 窗口，方便用户实时确认参考图质量。
+
+### Implementation Changes
+1. **UI 参数实时同步（`Utils/AutoZoom/0_measurement_workflow_real_virtual_same_detection_7_16.py`）**
+   - 新增 `_on_ui_parameter_change(*args)`：非运行状态下调用 `sync_config_from_ui_to_workflow()`，把当前 GUI 值立即写回 `workflow.cfg`。
+   - 新增 `_bind_ui_parameter_traces()`：在 `_build_ui()` 结束时统一为所有参数型 Tkinter 变量（基本参数、照明光、角度检测、TCP、PI 光谱仪、Δw 判断、RuleAB/RuleAC、光谱补焦循环等）注册 `trace_add("write", ...)`。
+   - 运行中（`workflow.is_measuring=True`）不触发实时同步，避免每输入一个字符就重建硬件/算法对象；运行中的参数仍由每轮开始前的 `sync_config_from_ui_to_workflow()` 统一读取。
+   - 临时非法输入（如清空数字框）被静默忽略，不阻断用户交互。
+
+2. **补焦参考基准图弹窗（`Utils/AutoZoom/0_measurement_workflow_real_virtual_same_detection_7_16.py`）**
+   - 修改 `MeasurementWorkflow.capture_focus_reference()`：在成功截取 ROI 画面后，立即调用 `cv2.imshow("Focus Reference Baseline Image", ...)` 并 `cv2.waitKey(1)` 刷新窗口。
+   - 弹窗失败仅记录日志，不影响后续参考建立和循环测量。
+   - 同一窗口名在后续调用时会被自动复用/刷新。
+
+### Test Plan
+1. **UI 实时同步单测**
+   - 非运行状态下修改 `max_cycles_var`，验证 `workflow.cfg.max_cycles` 立即更新。
+   - 运行状态下修改同一变量，验证 `workflow.cfg.max_cycles` 保持原值（由下一轮统一读取）。
+2. **弹窗单测**
+   - mock `cv2.imshow` / `cv2.waitKey`，调用 `capture_focus_reference(1)`，验证窗口名正确、图像形状匹配。
+3. **回归测试**
+   - `python Utils/AutoZoom/test_spectrum_autofocus_loop.py`
+   - `python Utils/AutoZoom/test_light_port_and_symmetric_trigger.py`
+
+### Test Results
+```bash
+python Utils/AutoZoom/test_ui_realtime_and_focus_popup.py  → 全部通过
+python Utils/AutoZoom/test_spectrum_autofocus_loop.py       → 全部通过
+python Utils/AutoZoom/test_light_port_and_symmetric_trigger.py → 全部通过
+python -m py_compile Utils/AutoZoom/0_measurement_workflow_real_virtual_same_detection_7_16.py → 通过
+```
+
+### Files Modified
+- `Utils/AutoZoom/0_measurement_workflow_real_virtual_same_detection_7_16.py`
+- `Utils/AutoZoom/test_ui_realtime_and_focus_popup.py`（新增）
+- `PLAN.md`
+
+---
+
+## AutoZoom Focus：补焦基准参考 ROI 选择 & 角度-拟合峰值列表循环次数修复
+
+### Summary
+修复 `Utils/AutoZoom/0_measurement_workflow_real_virtual_same_detection_7_16.py` 完整循环测量中的两个问题：
+1. **补焦基准参考界面未弹窗/基准图为空**：当 SAF 专用截图区域无法获取有效图像时，自动弹出交互式 ROI 选择窗口，让用户框选补焦区域，而不是直接出现“基准图为空”；
+2. **“角度-拟合峰值列表”循环次数翻倍**：每轮循环的 Step 3-6 初始光谱采集与 Step 7-14 子循环会多次保存并追加绘图点，导致右侧列表条目数是配置循环次数的数倍，现改为每轮只追加一个点。
+
+### Implementation Changes
+1. **交互式 ROI 选择（`Utils/AutoZoom/0_measurement_workflow_real_virtual_same_detection_7_16.py`）**
+   - 新增 `_select_focus_roi_interactively()`：使用当前主截图区域采集一帧，弹出 OpenCV 窗口让用户拖拽矩形框选补焦区域；Enter/N 确认、R 重置、ESC/Q 取消。
+   - 选择成功后更新 `self.cfg.saf_capture_area` 与 `self.cfg.saf_focus_roi`，并清空 `_focus_metrics_calc`/`_focus_scorer`/`_focus_controller`，使后续聚焦截图基于新 ROI。
+   - 修改 `capture_focus_reference()`：当 `_capture_current_focus_frame()` 返回空图时，自动调用 `_select_focus_roi_interactively()`；选择失败或取消则跳过参考建立。
+   - `_capture_current_focus_frame()` 改用 SAF 独立截图区域（`saf_capture_area` / `saf_focus_roi`），与标定/角度检测区域解耦。
+
+2. **绘图点去重（`Utils/AutoZoom/0_measurement_workflow_real_virtual_same_detection_7_16.py`）**
+   - 为 `save_cycle_result()` / `start_save_cycle_result_async()` / `_save_cycle_result_thread_entry()` / `_acquire_and_save_spectrum()` 增加 `append_plot_point: bool = True` 参数。
+   - `save_cycle_result()` 仅在 `append_plot_point=True` 时调用 `_append_plot_point()`，从而精确控制何时向 `plot_points` 列表追加数据。
+   - `run_one_cycle()` 中：
+     - 无子循环（`sub_loop_iterations_per_cycle=0`）时，Step 3-6 初始采集追加一个点；
+     - 有子循环时，初始采集 `append_plot_point=False`，仅在最后一轮子循环（`is_last_sub_loop`）的 Step 11-14 采集时 `append_plot_point=True`。
+   - 这样无论一轮内包含多少子循环，右侧“角度-拟合峰值列表”每轮循环只增加一条记录，条目数与 `max_cycles` 一致。
+
+### Test Plan
+1. **ROI 选择回退单测**
+   - mock `_capture_current_focus_frame` 首次返回 `None`、二次返回有效图像，验证 `capture_focus_reference()` 会调用 `_select_focus_roi_interactively()` 并弹出实时窗口。
+2. **ROI 取消单测**
+   - mock `_capture_current_focus_frame` 返回 `None` 且 `_select_focus_roi_interactively` 返回 `False`，验证 `capture_focus_reference()` 返回 `False` 且不会调用 `cv2.imshow`。
+3. **每轮只追加一个绘图点单测**
+   - 设置 `sub_loop_iterations_per_cycle=3`，mock `run_one_cycle` 全部依赖，验证 `_acquire_and_save_spectrum()` 被调用 4 次且仅最后一次 `append_plot_point=True`。
+4. **无子循环时初始采集追加点单测**
+   - 设置 `sub_loop_iterations_per_cycle=0`，验证唯一一次采集 `append_plot_point=True`。
+5. **append 标志单元测试**
+   - 直接调用 `save_cycle_result()`，分别传入 `append_plot_point=False` 与 `True`，验证 `plot_points` 长度变化符合预期。
+6. **回归测试**
+   - `python Utils/AutoZoom/test_ui_realtime_and_focus_popup.py`
+   - `python Utils/AutoZoom/test_subloop_restructure.py`
+
+### Test Results
+```bash
+python Utils/AutoZoom/test_focus_roi_and_plot_count.py  → 全部通过
+python Utils/AutoZoom/test_ui_realtime_and_focus_popup.py → 全部通过
+python Utils/AutoZoom/test_subloop_restructure.py       → 全部通过
+python -m py_compile Utils/AutoZoom/0_measurement_workflow_real_virtual_same_detection_7_16.py → 通过
+```
+
+### Files Modified
+- `Utils/AutoZoom/0_measurement_workflow_real_virtual_same_detection_7_16.py`
+- `Utils/AutoZoom/test_focus_roi_and_plot_count.py`（新增）
+- `PLAN.md`
+
+---
+
 ## 4轴双镜闭环替代现有5轴(Z扫描)方案
 
 ### Summary
@@ -306,4 +402,62 @@ python Utils/AutoZoom/test_final_crash_fix.py                    → 全部通�
 - `Utils/AutoZoom/spectrum_autofocus_loop.py`
 - `Utils/AutoZoom/measurement_autofocus_shg_closed_loop.py`
 - `Utils/AutoZoom/test_light_port_and_symmetric_trigger.py`（新增）
+- `PLAN.md`
+
+---
+
+## AutoZoom Focus：补焦区域与标定/角度检测画面解耦
+
+### Summary
+将光谱补焦循环（SAF）使用的截图区域与 ROI 从标定、角度检测等主流程画面中解耦：
+- 补焦 ROI 选择不再修改主 `capture_area`；
+- 标定、角度检测继续沿用主截图区域；
+- 仅补焦步骤使用独立的 `saf_capture_area` / `saf_focus_roi`。
+
+### Root Cause
+原 `select_saf_roi()` 在交互式选择 Focus ROI 后，把新的截图区域同步回 `self.capture_area_var` 与 `wf.cfg.capture_area`，导致：
+1. 标定（RuleAB-A/B/C、全局 C）后续截图区域被补焦小窗口覆盖；
+2. 角度检测 `ScreenAngleDetector` 因 `capture_area` 变化被强制重建；
+3. 用户无法为补焦单独设置一个局部区域而不影响主流程。
+
+### Implementation Changes
+1. **新增独立配置字段（`Utils/AutoZoom/0_measurement_workflow_real_virtual_same_detection_7_16.py`）**
+   - `MeasurementConfig` 新增 `saf_capture_area` 与 `saf_focus_roi`。
+   - 新增 `__post_init__()`：初始化时若未显式设置 SAF 区域，则默认复制自主 `capture_area` / `focus_roi`，保证旧配置兼容。
+
+2. **UI 增加补焦专用截图区域输入框**
+   - 在“9. 光谱补焦循环”面板新增“补焦截图区域”输入框（`saf_capture_area_var`）。
+   - “Focus ROI”输入框仅控制补焦 ROI，不再影响主截图区域。
+
+3. **ROI 选择逻辑解耦（`select_saf_roi`）**
+   - 仅更新 `self.saf_capture_area_var` 与 `self.saf_roi_var`。
+   - 仅同步 `loop.cfg.capture_area` / `loop.cfg.focus_roi`。
+   - 不再修改 `self.capture_area_var` 与 `wf.cfg.capture_area`。
+
+4. **光谱补焦配置构造解耦（`_make_saf_config`）**
+   - 改读 `self.saf_capture_area_var.get()`，而非 `self.capture_area_var.get()`。
+
+5. **完整循环测量补焦配置解耦（`_make_focus_config`）**
+   - 完整循环测量的自动补焦也改用 `cfg.saf_capture_area` / `cfg.saf_focus_roi`，
+     与标定/角度检测主区域完全分离。
+
+6. **配置同步不影响主区域（`sync_config_from_ui_to_workflow`）**
+   - `saf_capture_area` / `saf_focus_roi` 变化不会触发 `ScreenAngleDetector` 重建，
+     也不会触发 RuleAB/RuleAC 的 `capture_area` 相关重新标定。
+
+### Test Plan
+1. **源码结构检查**：验证 7_16 版本 `MeasurementConfig` 已新增 `saf_*` 字段且存在 `__post_init__` 默认复制逻辑。
+2. **ROI 选择解耦检查**：验证 `select_saf_roi` 不再写入 `self.capture_area_var` 与 `wf.cfg.capture_area`。
+3. **SAF 配置构造检查**：验证 `_make_saf_config` 读取 `saf_capture_area_var` 而非 `capture_area_var`。
+4. **回归测试**：运行 `test_spectrum_autofocus_loop.py` 全部用例；运行 `py_compile` 语法检查。
+
+### Test Results
+```bash
+python Utils/AutoZoom/test_spectrum_autofocus_loop.py   → 全部通过（含新增 3 个解耦检查用例）
+python -m py_compile Utils/AutoZoom/0_measurement_workflow_real_virtual_same_detection_7_16.py  → 通过
+```
+
+### Files Modified
+- `Utils/AutoZoom/0_measurement_workflow_real_virtual_same_detection_7_16.py`
+- `Utils/AutoZoom/test_spectrum_autofocus_loop.py`
 - `PLAN.md`

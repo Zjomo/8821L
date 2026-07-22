@@ -404,8 +404,19 @@ class SpectrumAutofocusLoop:
             self._scorer = FocusScorer(self.cfg, metrics_calc)
         return self._scorer
 
-    def _create_controller(self) -> Tuple[AutofocusController, Optional[Any]]:
-        """创建 AutofocusController；virtual 模式下返回注入模拟器的组件。"""
+    def _get_or_create_controller(self) -> Tuple[AutofocusController, Optional[Any]]:
+        """获取或创建控制器：首次调用时创建，后续直接复用。"""
+        if self._controller is not None:
+            return self._controller, self._simulator
+
+        controller, simulator = self._create_raw_controller()
+        self._controller = controller
+        self._simulator = simulator
+        self._log("[光谱补焦] 已创建/复用控制器和模拟器")
+        return controller, simulator
+
+    def _create_raw_controller(self) -> Tuple[AutofocusController, Optional[Any]]:
+        """原始控制器创建逻辑（内部使用）。"""
         if hasattr(self.workflow, "_is_virtual_hardware_mode") and self.workflow._is_virtual_hardware_mode():
             self._log("[光谱补焦] virtual 模式：使用 FocusSimulator 进行补焦")
             simulator, metrics_calc, scorer, controller = create_demo_environment(
@@ -458,6 +469,8 @@ class SpectrumAutofocusLoop:
         若当前 FocusScore 未连续低于触发阈值，则只监测不移动；
         若触发补焦，则执行闭环搜索，直到连续达标次数满足或外部停止。
         返回最后一轮结果，并保存 FocusScore 历史曲线。
+
+        注意：Controller 在 self.run() 开头统一创建，此处只复用。
         """
         self._log("[光谱补焦] 启动被动补焦检测")
         self._configure_passive_autofocus()
@@ -465,8 +478,8 @@ class SpectrumAutofocusLoop:
         if not self._reference_ready:
             self.build_reference_from_single_capture()
 
-        controller, simulator = self._create_controller()
-        self._controller = controller
+        # 复用已在 self.run() 中创建的控制器；不存在时才新建一次
+        controller, simulator = self._get_or_create_controller()
 
         trigger_ratio = float(self.cfg.autofocus_focus_trigger_ratio)
         consecutive_good_target = max(
@@ -642,6 +655,38 @@ class SpectrumAutofocusLoop:
             if self._safe_sleep(self.wait_between_spectrum_s):
                 break
 
-            self.run_passive_autofocus_detection(cycle_index)
+            try:
+                self.run_passive_autofocus_detection(cycle_index)
+            except Exception as e:
+                self._log(f"[光谱补焦] 被动补焦检测异常：{e}")
+                # 记录错误后退出循环（确保 cleanup 执行）
+                if self.should_stop and callable(self.should_stop) and self.should_stop():
+                    self._log("[光谱补焦] 用户主动停止")
+                break
 
         self._log("========== 光谱补焦循环结束 ==========")
+
+        # 释放所有运行时组件，防止下次启动时 USB 连接冲突
+        self._cleanup_components()
+
+    def _cleanup_components(self) -> None:
+        """关闭 Focus 组件和 Z 轴控制器，释放 USB 句柄。"""
+        if self._controller is not None:
+            try:
+                self._controller.close()
+                self._log("[光谱补焦] 已释放 AutofocusController")
+            except Exception as exc:
+                self._log(f"[光谱补焦] 释放控制器失败：{exc}")
+            self._controller = None
+
+        if self._simulator is not None:
+            self._simulator = None
+            self._log("[光谱补焦] 已释放 FocusSimulator")
+
+        if self._metrics_calc is not None:
+            try:
+                self._metrics_calc.close()
+                self._log("[光谱补焦] 已释放 FocusMetricsCalculator")
+            except Exception as exc:
+                self._log(f"[光谱补焦] 释放 metrics_calc 失败：{exc}")
+            self._metrics_calc = None

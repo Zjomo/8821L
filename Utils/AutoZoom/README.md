@@ -297,6 +297,16 @@ pip install mss						✔
 
 
 
+### 2026-7-20
+
+1、补焦区域画面解耦					✔
+
+- 在 `0_measurement_workflow_real_virtual_same_detection_7_16.py` 中，将光谱补焦循环（SAF）的截图区域与 ROI 从标定、角度检测等主流程画面中解耦。
+- `MeasurementConfig` 新增独立字段 `saf_capture_area` / `saf_focus_roi`；`__post_init__` 默认复制自主 `capture_area` / `focus_roi`，兼容旧配置。
+- UI“9. 光谱补焦循环”面板新增“补焦截图区域”输入框；选择 ROI 后仅更新补焦专用区域，不再修改主 `capture_area`。
+- `_make_saf_config()` 与 `_make_focus_config()` 均改用 `saf_*` 字段，确保标定/角度检测使用的主区域不受补焦区域影响。
+- 更新并扩展 `test_spectrum_autofocus_loop.py`，新增 3 个解耦相关源码检查用例，全部通过。
+
 ### 2026-7-13
 
 1、光谱补焦循环					✔
