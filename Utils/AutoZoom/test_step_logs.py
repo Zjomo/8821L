@@ -212,12 +212,70 @@ def test_step_log_via_runtime() -> None:
     print(f"PASS: step_log_via_runtime（{len(expected_step_logs)} 个 Step 日志全部输出）")
 
 
+def test_step_log_skip_cycle_when_step1_fails() -> None:
+    """Step 1 角度检测失败时，应跳过本轮且不输出 Step 2-9 日志（这是正确的行为）。"""
+    import importlib.util
+    _spec = importlib.util.spec_from_file_location(
+        "measurement_workflow_7_23", str(MAIN_FILE)
+    )
+    _module = importlib.util.module_from_spec(_spec)
+    sys.modules["measurement_workflow_7_23"] = _module
+    _spec.loader.exec_module(_module)  # type: ignore[union-attr]
+
+    MeasurementConfig = _module.MeasurementConfig
+    MeasurementWorkflow = _module.MeasurementWorkflow
+
+    cfg = MeasurementConfig()
+    cfg.hardware_mode = "virtual"
+    cfg.max_cycles = 1
+
+    wf = MeasurementWorkflow(cfg)
+    log_calls: list = []
+    wf.on_log = lambda msg: log_calls.append(msg)
+    if wf._log_manager is not None:
+        wf._log_manager.on_log = None
+
+    wf._ensure_rule_ab_follower_with_startup_retry = lambda label: None
+    wf.apply_runtime_rule_ab_params_to_follower = lambda follower, reason: None
+    wf._ensure_rule_ab_feature_tracker_installed = lambda follower, state: None
+    wf._get_loaded_calibration_state = lambda: None
+    wf._is_midrun_recalibration_requested = lambda: False
+    wf._is_nonfatal_bmask_angle_failure_reason = lambda reason: True
+
+    # 关键：让 Step 1 角度检测失败
+    wf.detect_step7_yolo_obb_angle_once = lambda **kwargs: {
+        "ok": False, "angle_deg": None, "reason": "yolo_obb_no_detection", "angle_source": "failed"
+    }
+
+    try:
+        wf.run_one_cycle(1)
+    except Exception:
+        pass
+
+    all_logs = "\n".join(log_calls)
+
+    # Step 1 应该出现
+    assert "========== Step 1：" in all_logs, "Step 1 日志应出现"
+
+    # Step 2-9 不应出现，因为 Step 1 失败直接跳过本轮
+    for step in ["Step 2", "Step 3", "Step 4", "Step 5", "Step 5.5", "Step 6", "Step 7", "Step 8", "Step 9"]:
+        assert step not in all_logs or f"========== {step}：" not in all_logs, (
+            f"Step 1 失败时不应出现「========== {step}：」日志"
+        )
+
+    # 应有"跳过本轮"日志
+    assert "跳过本轮" in all_logs, "Step 1 失败时应有跳过本轮的日志"
+
+    print("PASS: step_log_skip_cycle_when_step1_fails（Step 1 失败时正确跳过 Step 2-9）")
+
+
 if __name__ == "__main__":
     tests = [
         test_run_one_cycle_has_step_logs,
         test_step_log_format_consistent,
         test_step_logs_cover_full_cycle,
         test_step_log_via_runtime,
+        test_step_log_skip_cycle_when_step1_fails,
     ]
 
     failed = 0

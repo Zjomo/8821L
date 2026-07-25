@@ -1,0 +1,12 @@
+PASS: measurement_config_has_laser_picomotor_fields
+PASS: measurement_config_has_z_picomotor_fields
+PASS: laser_and_z_have_different_default_conn（laser=1, Z=0）
+PASS: laser_and_z_fields_independent_override
+PASS: make_focus_config_passes_z_picomotor
+PASS: connect_laser_uses_cfg_laser_picomotor
+PASS: make_focus_config_passes_z_picomotor_in_source
+PASS: gui_has_laser_picomotor_widgets
+PASS: virtual_connect_laser_uses_laser_stage（VirtualNewportPicomotor8742）
+PASS: laser_and_z_conn_no_conflict（|1-0|>=1）
+
+All tests passed!

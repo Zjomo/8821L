@@ -1,18 +1,43 @@
 {
-  "created_at": "2026-07-22 21:52:39",
-  "created_time": 1784728359.6787484,
+  "created_at": "2026-07-25 20:36:26",
+  "created_time": 1784982986.5085242,
   "source": "full_calibration_static_c",
-  "source_static_c_mask": "E:\\CWB\\8821L\\Utils\\AutoZoom\\measurement_output\\rule_ab_follow_c_only\\_static_c_map_library\\default_static_c_map\\static_c_mask.png",
-  "runtime_static_c_dir": "E:\\CWB\\8821L\\Utils\\AutoZoom\\measurement_output\\calibration\\full_calibration_static_c",
+  "source_static_c_mask": "E:\\jupyter file\\2_Optics\\8821L\\Utils\\AutoZoom\\measurement_output\\rule_ab_follow_c_only\\_static_c_map_library\\default_static_c_map\\static_c_mask.png",
+  "runtime_static_c_dir": "E:\\jupyter file\\2_Optics\\8821L\\Utils\\AutoZoom\\measurement_output\\calibration\\full_calibration_static_c",
   "static_c_map_name": "full_calibration_static_c",
-  "mask_path": "E:\\CWB\\8821L\\Utils\\AutoZoom\\measurement_output\\calibration\\full_calibration_static_c\\static_c_mask.png",
-  "edge_route_path": "E:\\CWB\\8821L\\Utils\\AutoZoom\\measurement_output\\calibration\\full_calibration_static_c\\static_c_edge_route.json",
-  "pixels_path": "E:\\CWB\\8821L\\Utils\\AutoZoom\\measurement_output\\calibration\\full_calibration_static_c\\static_c_pixels_yx.npy",
-  "bbox": null,
-  "center": null,
-  "area": 7773.0,
-  "mask_area_px": 7773,
-  "contour": [],
+  "mask_path": "E:\\jupyter file\\2_Optics\\8821L\\Utils\\AutoZoom\\measurement_output\\calibration\\full_calibration_static_c\\static_c_mask.png",
+  "edge_route_path": "E:\\jupyter file\\2_Optics\\8821L\\Utils\\AutoZoom\\measurement_output\\calibration\\full_calibration_static_c\\static_c_edge_route.json",
+  "pixels_path": "E:\\jupyter file\\2_Optics\\8821L\\Utils\\AutoZoom\\measurement_output\\calibration\\full_calibration_static_c\\static_c_pixels_yx.npy",
+  "bbox": [
+    470.0,
+    377.0,
+    568.0,
+    479.0
+  ],
+  "center": [
+    519.6815939278937,
+    427.0618595825427
+  ],
+  "area": 5151.5,
+  "mask_area_px": 5270,
+  "contour": [
+    [
+      512.0,
+      377.0
+    ],
+    [
+      470.0,
+      434.0
+    ],
+    [
+      529.0,
+      479.0
+    ],
+    [
+      568.0,
+      416.0
+    ]
+  ],
   "purpose": "strict_full_calibration_c_for_measurement_run",
   "note": "完整测量只允许 RuleAB/Step9 加载本目录，不允许使用 GUI 单独测试区域残留的 C 文件夹。"
 }

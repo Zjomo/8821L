@@ -1,0 +1,233 @@
+[2026-07-25 19:21:24] [保存] Excel汇总文件已创建：measurement_output\save\07.25\measurement_summary_20260725_192124.xlsx
+[2026-07-25 19:21:24] [照明光][virtual] 创建虚拟照明对象：port=COM20；不连接真实硬件
+[2026-07-25 19:21:24] [虚拟照明] open(port=COM20)：未连接真实照明继电器
+[2026-07-25 19:21:24] [照明光][virtual] 连接成功
+[2026-07-25 19:21:24] [虚拟照明] ON：未控制真实硬件
+[2026-07-25 19:21:24] [照明光] ON
+[2026-07-25 19:21:25] [横坐标xlsx] 已读取：E:\jupyter file\2_Optics\8821L\Utils\AutoZoom\516中心波长.xlsx，sheet=Sheet1，点数=1024
+[2026-07-25 19:21:35] ========== 启动虚拟 LabVIEW TCP Server ==========
+[2026-07-25 19:21:35] [光谱仪] 使用 PI 直接控制后端: picam_demo
+[2026-07-25 19:21:35] [TCP] 已调用 LabVIEWTCPServer.start_server_async() 启动 Server
+[2026-07-25 19:21:35] [PIAdapter] 启动后端: picam_demo
+[2026-07-25 19:21:36] [PIAdapter] IsoPlane 连接失败（继续使用相机）: 连接单色仪失败: Python/DLL 位数不匹配：当前 Python 是 64 位，ARC_SpectraPro.dll 是 32 位。
+请使用 32 位 Python 解释器运行本项目。
+建议：安装 Python 3.9 32-bit，并重新创建虚拟环境。
+下载地址：https://www.python.org/downloads/release/python-3913/
+[2026-07-25 19:21:36] [PIAdapter] 启动失败: function 'Picam_DestroyCommitParameters' not found
+[2026-07-25 19:21:36] [PIAdapter] 已关闭
+[2026-07-25 19:21:38] [TCP][virtual] LabVIEW READY：虚拟模式立即就绪
+[2026-07-25 19:21:41] ========== 启动虚拟 LabVIEW TCP Server ==========
+[2026-07-25 19:21:44] [TCP][virtual] LabVIEW READY：虚拟模式立即就绪
+[2026-07-25 19:21:57] [完整测量标定] 已保存标定文件：E:\jupyter file\2_Optics\8821L\measurement_output\calibration\current_calibration.json
+[2026-07-25 19:22:05] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=3/4, B点=0/0, C点=7/19, static_C=E:\jupyter file\2_Optics\8821L\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(449.4,360.0), HSV=(0,255,255)
+[2026-07-25 19:22:05] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=3/4, B点=0/0, C点=7/19, static_C=E:\jupyter file\2_Optics\8821L\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(449.4,360.0), HSV=(0,255,255)
+[2026-07-25 19:22:05] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=3/4, B点=0/0, C点=7/19, static_C=E:\jupyter file\2_Optics\8821L\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(449.4,360.0), HSV=(0,255,255)
+[2026-07-25 19:22:07] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=3/4, B点=0/0, C点=7/19, static_C=E:\jupyter file\2_Optics\8821L\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(449.4,360.0), HSV=(0,255,255)
+[2026-07-25 19:22:07] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=3/4, B点=0/0, C点=7/19, static_C=E:\jupyter file\2_Optics\8821L\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(449.4,360.0), HSV=(0,255,255)
+[2026-07-25 19:22:07] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=3/4, B点=0/0, C点=7/19, static_C=E:\jupyter file\2_Optics\8821L\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(449.4,360.0), HSV=(0,255,255)
+[2026-07-25 19:22:08] [完整测量标定] 已保存标定文件：E:\jupyter file\2_Optics\8821L\measurement_output\calibration\current_calibration.json
+[2026-07-25 19:22:09] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=3/4, B点=0/0, C点=5/7, static_C=E:\jupyter file\2_Optics\8821L\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(-1.0,-1.0), HSV=(0,255,255)
+[2026-07-25 19:22:09] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=3/4, B点=0/0, C点=5/7, static_C=E:\jupyter file\2_Optics\8821L\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(-1.0,-1.0), HSV=(0,255,255)
+[2026-07-25 19:22:09] [完整测量标定] 已保存标定文件：E:\jupyter file\2_Optics\8821L\measurement_output\calibration\current_calibration.json
+[2026-07-25 19:22:09] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=3/4, B点=0/0, C点=5/7, static_C=E:\jupyter file\2_Optics\8821L\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(510.6,436.5), HSV=(0,255,255)
+[2026-07-25 19:22:09] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=3/4, B点=0/0, C点=5/7, static_C=E:\jupyter file\2_Optics\8821L\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(510.6,436.5), HSV=(0,255,255)
+[2026-07-25 19:22:09] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=3/4, B点=0/0, C点=5/7, static_C=E:\jupyter file\2_Optics\8821L\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(510.6,436.5), HSV=(0,255,255)
+[2026-07-25 19:22:10] [完整测量标定] 已保存标定文件：E:\jupyter file\2_Optics\8821L\measurement_output\calibration\current_calibration.json
+[2026-07-25 19:22:12] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=3/4, B点=0/0, C点=5/7, static_C=E:\jupyter file\2_Optics\8821L\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(510.6,436.5), HSV=(0,255,255)
+[2026-07-25 19:22:12] [Step9-颜色中心] 新建本次 Step9 保存文件夹：measurement_output\step9_color_center_align\run_20260725_192212_188
+[2026-07-25 19:22:14] [Step9-颜色中心] 颜色检测已准备：mode=include, HSV=(65, 126, 107), area=602 px, center=(506.8272425249169, 434.656146179402)
+[2026-07-25 19:22:14] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=3/4, B点=0/0, C点=5/7, static_C=E:\jupyter file\2_Optics\8821L\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(510.6,436.5), HSV=(0,255,255)
+[2026-07-25 19:22:14] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=3/4, B点=0/0, C点=5/7, static_C=E:\jupyter file\2_Optics\8821L\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(510.6,436.5), HSV=(0,255,255)
+[2026-07-25 19:22:15] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=3/4, B点=0/0, C点=5/7, static_C=E:\jupyter file\2_Optics\8821L\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(510.6,436.5), HSV=(0,255,255)
+[2026-07-25 19:22:15] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=3/4, B点=0/0, C点=5/7, static_C=E:\jupyter file\2_Optics\8821L\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(510.6,436.5), HSV=(0,255,255)
+[2026-07-25 19:22:15] [完整测量标定] 已保存标定文件：E:\jupyter file\2_Optics\8821L\measurement_output\calibration\current_calibration.json
+[2026-07-25 19:22:17] [完整测量标定] 已保存标定文件：E:\jupyter file\2_Optics\8821L\measurement_output\calibration\current_calibration.json
+[2026-07-25 19:22:21] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=3/4, B点=0/0, C点=5/7, static_C=E:\jupyter file\2_Optics\8821L\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(510.6,436.5), HSV=(65,126,107)
+[2026-07-25 19:22:21] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=3/4, B点=0/0, C点=5/7, static_C=E:\jupyter file\2_Optics\8821L\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(510.6,436.5), HSV=(65,126,107)
+[2026-07-25 19:22:21] [完整测量标定] 已按 quad 重建 Step7 A 路线：points=224, path=E:\jupyter file\2_Optics\8821L\measurement_output\calibration\full_calibration_static_c\static_c_edge_route.json
+[2026-07-25 19:22:22] [完整测量标定] 已创建并锁定本次完整测量专用 C 目录：E:\jupyter file\2_Optics\8821L\measurement_output\calibration\full_calibration_static_c；来源=E:\jupyter file\2_Optics\8821L\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map\static_c_mask.png；area=8369 px；外部 RuleAB 应显示 source=full_calibration_static_c
+[2026-07-25 19:22:22] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=3/4, B点=0/0, C点=5/7, static_C=E:\jupyter file\2_Optics\8821L\measurement_output\calibration\full_calibration_static_c, Step9 target=(510.6,436.5), HSV=(65,126,107)
+[2026-07-25 19:22:22] [完整测量标定] 已锁定完整测量专用 C：E:\jupyter file\2_Optics\8821L\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-25 19:22:22] [完整测量标定] 已锁定完整测量专用 C：E:\jupyter file\2_Optics\8821L\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-25 19:22:22] [完整测量标定] 已锁定完整测量专用 C：E:\jupyter file\2_Optics\8821L\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-25 19:22:22] [完整测量标定] 已锁定完整测量专用 C：E:\jupyter file\2_Optics\8821L\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-25 19:22:22] [完整测量标定] 已锁定完整测量专用 C：E:\jupyter file\2_Optics\8821L\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-25 19:22:22] [完整测量标定] 已锁定完整测量专用 C：E:\jupyter file\2_Optics\8821L\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-25 19:22:22] [完整测量标定] 已锁定完整测量专用 C：E:\jupyter file\2_Optics\8821L\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-25 19:22:22] [完整测量标定] 已锁定完整测量专用 C：E:\jupyter file\2_Optics\8821L\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-25 19:22:23] [完整测量标定] 已锁定完整测量专用 C：E:\jupyter file\2_Optics\8821L\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-25 19:22:23] [完整测量标定] 已锁定完整测量专用 C：E:\jupyter file\2_Optics\8821L\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-25 19:22:23] [完整测量标定] 已锁定完整测量专用 C：E:\jupyter file\2_Optics\8821L\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-25 19:22:23] [完整测量标定] 已锁定完整测量专用 C：E:\jupyter file\2_Optics\8821L\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-25 19:22:23] [完整测量标定] 已锁定完整测量专用 C：E:\jupyter file\2_Optics\8821L\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-25 19:22:23] [完整测量标定] 已锁定完整测量专用 C：E:\jupyter file\2_Optics\8821L\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-25 19:22:23] [完整测量标定] 已锁定完整测量专用 C：E:\jupyter file\2_Optics\8821L\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-25 19:22:23] [完整测量标定] 已锁定完整测量专用 C：E:\jupyter file\2_Optics\8821L\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-25 19:22:23] [完整测量标定] 已锁定完整测量专用 C：E:\jupyter file\2_Optics\8821L\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-25 19:22:24] [完整测量标定] 已锁定完整测量专用 C：E:\jupyter file\2_Optics\8821L\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-25 19:22:24] [完整测量标定] 已锁定完整测量专用 C：E:\jupyter file\2_Optics\8821L\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-25 19:22:27] [完整测量标定] 已锁定完整测量专用 C：E:\jupyter file\2_Optics\8821L\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-25 19:22:27] ========== 初始化实验设备 ==========
+[2026-07-25 19:22:27] [照明光] 已连接
+[2026-07-25 19:22:27] [激光开关][virtual] 创建虚拟 Newport/Picomotor8742；不连接真实硬件
+[2026-07-25 19:22:27] [激光开关] SET axis=2, cmd=VA5000
+[2026-07-25 19:22:27] [虚拟Newport] query(axis=2, cmd=VA5000)：未连接真实控制器
+[2026-07-25 19:22:27] [激光开关] SET axis=2, cmd=AC5000
+[2026-07-25 19:22:27] [虚拟Newport] query(axis=2, cmd=AC5000)：未连接真实控制器
+[2026-07-25 19:22:28] [激光开关] OK axis=2, speed=5000, accel=5000
+[2026-07-25 19:22:28] [激光开关][virtual] 虚拟激光控制器连接成功
+[2026-07-25 19:22:28] [YOLO-OBB角度] 正在初始化 YOLO-OBB 模型
+[2026-07-25 19:22:28] [YOLO-OBB角度] model_path=E:\jupyter file\2_Optics\8821L\Utils\AutoZoom\best.pt
+[2026-07-25 19:22:28] [YOLO-OBB角度] capture_area=(116, 98, 1112, 886)
+[2026-07-25 19:22:28] [YOLO-OBB角度] conf=0.5, iou=0.7, imgsz=640, device=''
+[2026-07-25 19:22:28] [YOLO-OBB角度] 初始化完成；Step1/Step7 将使用 OBB 四角长边角度
+[2026-07-25 19:22:28] ========== 实验设备初始化完成：照明光 + 激光控制器 + 角度检测 ==========
+[2026-07-25 19:22:31] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=3/4, B点=0/0, C点=5/7, static_C=E:\jupyter file\2_Optics\8821L\measurement_output\calibration\full_calibration_static_c, Step9 target=(510.6,436.5), HSV=(65,126,107)
+[2026-07-25 19:22:31] [运行批次] 新建本次测量文件夹：measurement_output\save\07.25\20260725_192231
+[2026-07-25 19:22:31] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=3/4, B点=0/0, C点=5/7, static_C=E:\jupyter file\2_Optics\8821L\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(510.6,436.5), HSV=(65,126,107)
+[2026-07-25 19:22:31] [完整测量标定] 已加载标定文件：E:\jupyter file\2_Optics\8821L\measurement_output\calibration\current_calibration.json
+[2026-07-25 19:22:31] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=3/4, B点=0/0, C点=5/7, static_C=E:\jupyter file\2_Optics\8821L\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(510.6,436.5), HSV=(65,126,107)
+[2026-07-25 19:22:31] [完整测量标定] 启动前检查通过：angle_source=Bmask最长边, A点=3/4, C点=5/7, Step9 target=(510.6, 436.5), HSV=(65, 126, 107)
+[2026-07-25 19:22:32] [完整测量标定] 已创建并锁定本次完整测量专用 C 目录：E:\jupyter file\2_Optics\8821L\measurement_output\save\07.25\20260725_192231\full_calibration_static_c；来源=E:\jupyter file\2_Optics\8821L\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map\static_c_mask.png；area=8369 px；外部 RuleAB 应显示 source=full_calibration_static_c
+[2026-07-25 19:22:32] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=3/4, B点=0/0, C点=5/7, static_C=E:\jupyter file\2_Optics\8821L\measurement_output\save\07.25\20260725_192231\full_calibration_static_c, Step9 target=(510.6,436.5), HSV=(65,126,107)
+[2026-07-25 19:22:32] [完整测量标定] 已锁定完整测量专用 C：E:\jupyter file\2_Optics\8821L\measurement_output\save\07.25\20260725_192231\full_calibration_static_c；reason=run_workflow_after_prepare_runtime
+[2026-07-25 19:22:32] [完整测量标定] 已锁定完整测量专用 C：E:\jupyter file\2_Optics\8821L\measurement_output\save\07.25\20260725_192231\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-25 19:22:32] [完整测量标定] 已锁定完整测量专用 C：E:\jupyter file\2_Optics\8821L\measurement_output\save\07.25\20260725_192231\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-25 19:22:32] [完整测量标定] 已锁定完整测量专用 C：E:\jupyter file\2_Optics\8821L\measurement_output\save\07.25\20260725_192231\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-25 19:22:33] [完整测量标定] 已锁定完整测量专用 C：E:\jupyter file\2_Optics\8821L\measurement_output\save\07.25\20260725_192231\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-25 19:22:33] [完整测量标定] 已锁定完整测量专用 C：E:\jupyter file\2_Optics\8821L\measurement_output\save\07.25\20260725_192231\full_calibration_static_c；reason=run_workflow_cycle_1_before_run_one_cycle
+[2026-07-25 19:22:33] 
+[2026-07-25 19:22:33] ############################################################
+[2026-07-25 19:22:33] 开始第 1 轮循环测量
+[2026-07-25 19:22:33] ############################################################
+[2026-07-25 19:22:33] ========== Step 1：Bmask最长边角度检测 current_angle ==========
+[2026-07-25 19:22:33] [完整测量标定] 已锁定完整测量专用 C：E:\jupyter file\2_Optics\8821L\measurement_output\save\07.25\20260725_192231\full_calibration_static_c；reason=ensure_rule_ab_follower
+[2026-07-25 19:22:33] [RuleAB] 初始化 A推动B 模块：enable_stage=False, max_steps=10000000, full_calibration_loaded=True, confirm_first_frame_segmentation=False, static_c_map_dir=E:\jupyter file\2_Optics\8821L\measurement_output\save\07.25\20260725_192231\full_calibration_static_c
+[2026-07-25 19:22:36] [RuleAB][virtual] 已把 follower.stage 替换为虚拟 Stage34；后续硬件动作只写日志。
+[2026-07-25 19:22:36] [完整测量标定] initialize_abc_with_calibration() 初始化失败，尝试其他方式：完整标定注入失败：缺少 B 正点，不能非交互初始化 RuleAB。
+[2026-07-25 19:22:36] [完整测量标定] 外部 RuleAB 模块没有发现专用非交互初始化接口，将尝试用预注入 A/B/C 点调用 initialize_abc_with_first_frame()；如果仍弹窗，需要修改 logic/actual_nano_boundary_following...py 读取 preloaded 点。
+[2026-07-25 19:22:36] [RuleAB启动重试] step1_bmask_longest_edge_angle: 初始化/首帧读取失败 attempt=1/5: RuleAB 初始化失败。当前外部 ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。；transient_frame_read_error=False
+[2026-07-25 19:22:36] [虚拟Thorlabs] stop_all()
+[2026-07-25 19:22:36] [虚拟Thorlabs] close(serial=97101208)
+[2026-07-25 19:22:36] [RuleAB启动重试] 已释放本次 RuleAB follower，准备下一帧重试；reason=step1_bmask_longest_edge_angle/attempt=1: RuleAB 初始化失败。当前外部 ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。
+[2026-07-25 19:22:37] [完整测量标定] 已锁定完整测量专用 C：E:\jupyter file\2_Optics\8821L\measurement_output\save\07.25\20260725_192231\full_calibration_static_c；reason=ensure_rule_ab_follower
+[2026-07-25 19:22:37] [RuleAB] 初始化 A推动B 模块：enable_stage=False, max_steps=10000000, full_calibration_loaded=True, confirm_first_frame_segmentation=False, static_c_map_dir=E:\jupyter file\2_Optics\8821L\measurement_output\save\07.25\20260725_192231\full_calibration_static_c
+[2026-07-25 19:22:40] [RuleAB][virtual] 已把 follower.stage 替换为虚拟 Stage34；后续硬件动作只写日志。
+[2026-07-25 19:22:40] [完整测量标定] initialize_abc_with_calibration() 初始化失败，尝试其他方式：完整标定注入失败：缺少 B 正点，不能非交互初始化 RuleAB。
+[2026-07-25 19:22:40] [完整测量标定] 外部 RuleAB 模块没有发现专用非交互初始化接口，将尝试用预注入 A/B/C 点调用 initialize_abc_with_first_frame()；如果仍弹窗，需要修改 logic/actual_nano_boundary_following...py 读取 preloaded 点。
+[2026-07-25 19:22:40] [RuleAB启动重试] step1_bmask_longest_edge_angle: 初始化/首帧读取失败 attempt=2/5: RuleAB 初始化失败。当前外部 ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。；transient_frame_read_error=False
+[2026-07-25 19:22:40] [虚拟Thorlabs] stop_all()
+[2026-07-25 19:22:40] [虚拟Thorlabs] close(serial=97101208)
+[2026-07-25 19:22:40] [RuleAB启动重试] 已释放本次 RuleAB follower，准备下一帧重试；reason=step1_bmask_longest_edge_angle/attempt=2: RuleAB 初始化失败。当前外部 ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。
+[2026-07-25 19:22:41] [完整测量标定] 已锁定完整测量专用 C：E:\jupyter file\2_Optics\8821L\measurement_output\save\07.25\20260725_192231\full_calibration_static_c；reason=ensure_rule_ab_follower
+[2026-07-25 19:22:41] [RuleAB] 初始化 A推动B 模块：enable_stage=False, max_steps=10000000, full_calibration_loaded=True, confirm_first_frame_segmentation=False, static_c_map_dir=E:\jupyter file\2_Optics\8821L\measurement_output\save\07.25\20260725_192231\full_calibration_static_c
+[2026-07-25 19:22:44] [RuleAB][virtual] 已把 follower.stage 替换为虚拟 Stage34；后续硬件动作只写日志。
+[2026-07-25 19:22:44] [完整测量标定] initialize_abc_with_calibration() 初始化失败，尝试其他方式：完整标定注入失败：缺少 B 正点，不能非交互初始化 RuleAB。
+[2026-07-25 19:22:44] [完整测量标定] 外部 RuleAB 模块没有发现专用非交互初始化接口，将尝试用预注入 A/B/C 点调用 initialize_abc_with_first_frame()；如果仍弹窗，需要修改 logic/actual_nano_boundary_following...py 读取 preloaded 点。
+[2026-07-25 19:22:44] [RuleAB启动重试] step1_bmask_longest_edge_angle: 初始化/首帧读取失败 attempt=3/5: RuleAB 初始化失败。当前外部 ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。；transient_frame_read_error=False
+[2026-07-25 19:22:44] [虚拟Thorlabs] stop_all()
+[2026-07-25 19:22:44] [虚拟Thorlabs] close(serial=97101208)
+[2026-07-25 19:22:44] [RuleAB启动重试] 已释放本次 RuleAB follower，准备下一帧重试；reason=step1_bmask_longest_edge_angle/attempt=3: RuleAB 初始化失败。当前外部 ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。
+[2026-07-25 19:22:45] [完整测量标定] 已锁定完整测量专用 C：E:\jupyter file\2_Optics\8821L\measurement_output\save\07.25\20260725_192231\full_calibration_static_c；reason=ensure_rule_ab_follower
+[2026-07-25 19:22:45] [RuleAB] 初始化 A推动B 模块：enable_stage=False, max_steps=10000000, full_calibration_loaded=True, confirm_first_frame_segmentation=False, static_c_map_dir=E:\jupyter file\2_Optics\8821L\measurement_output\save\07.25\20260725_192231\full_calibration_static_c
+[2026-07-25 19:22:47] [RuleAB][virtual] 已把 follower.stage 替换为虚拟 Stage34；后续硬件动作只写日志。
+[2026-07-25 19:22:47] [完整测量标定] initialize_abc_with_calibration() 初始化失败，尝试其他方式：完整标定注入失败：缺少 B 正点，不能非交互初始化 RuleAB。
+[2026-07-25 19:22:47] [完整测量标定] 外部 RuleAB 模块没有发现专用非交互初始化接口，将尝试用预注入 A/B/C 点调用 initialize_abc_with_first_frame()；如果仍弹窗，需要修改 logic/actual_nano_boundary_following...py 读取 preloaded 点。
+[2026-07-25 19:22:47] [RuleAB启动重试] step1_bmask_longest_edge_angle: 初始化/首帧读取失败 attempt=4/5: RuleAB 初始化失败。当前外部 ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。；transient_frame_read_error=False
+[2026-07-25 19:22:47] [虚拟Thorlabs] stop_all()
+[2026-07-25 19:22:47] [虚拟Thorlabs] close(serial=97101208)
+[2026-07-25 19:22:47] [RuleAB启动重试] 已释放本次 RuleAB follower，准备下一帧重试；reason=step1_bmask_longest_edge_angle/attempt=4: RuleAB 初始化失败。当前外部 ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。
+[2026-07-25 19:22:48] [完整测量标定] 已锁定完整测量专用 C：E:\jupyter file\2_Optics\8821L\measurement_output\save\07.25\20260725_192231\full_calibration_static_c；reason=ensure_rule_ab_follower
+[2026-07-25 19:22:48] [RuleAB] 初始化 A推动B 模块：enable_stage=False, max_steps=10000000, full_calibration_loaded=True, confirm_first_frame_segmentation=False, static_c_map_dir=E:\jupyter file\2_Optics\8821L\measurement_output\save\07.25\20260725_192231\full_calibration_static_c
+[2026-07-25 19:22:50] [RuleAB][virtual] 已把 follower.stage 替换为虚拟 Stage34；后续硬件动作只写日志。
+[2026-07-25 19:22:50] [完整测量标定] initialize_abc_with_calibration() 初始化失败，尝试其他方式：完整标定注入失败：缺少 B 正点，不能非交互初始化 RuleAB。
+[2026-07-25 19:22:50] [完整测量标定] 外部 RuleAB 模块没有发现专用非交互初始化接口，将尝试用预注入 A/B/C 点调用 initialize_abc_with_first_frame()；如果仍弹窗，需要修改 logic/actual_nano_boundary_following...py 读取 preloaded 点。
+[2026-07-25 19:22:50] [RuleAB启动重试] step1_bmask_longest_edge_angle: 初始化/首帧读取失败 attempt=5/5: RuleAB 初始化失败。当前外部 ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。；transient_frame_read_error=False
+[2026-07-25 19:22:50] [虚拟Thorlabs] stop_all()
+[2026-07-25 19:22:50] [虚拟Thorlabs] close(serial=97101208)
+[2026-07-25 19:22:50] [RuleAB启动重试] 已释放本次 RuleAB follower，准备下一帧重试；reason=step1_bmask_longest_edge_angle/attempt=5: RuleAB 初始化失败。当前外部 ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。
+[2026-07-25 19:22:50] [角度检测-current_angle] Bmask 最长边 baseline 计算异常：step1_bmask_longest_edge_angle: RuleAB 初始化/首帧读取连续失败 5 次，最后错误：RuleAB 初始化失败。当前外部 ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。
+[2026-07-25 19:22:50] [角度检测-current_angle] 本轮 Bmask 最长边角度无效；不再把它当作整次测量失败，本轮不进入 Step7，直接跳过并继续下一轮。 reason=step1_bmask_longest_edge_angle: RuleAB 初始化/首帧读取连续失败 5 次，最后错误：RuleAB 初始化失败。当前外部 ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。
+[2026-07-25 19:22:50] [完整测量-跳过本轮] 第 1 轮在 Step1_Bmask_longest_edge_baseline 发生 Bmask/角度检测失败；不结束完整循环、不关闭全部设备，进入下一轮。reason=step1_bmask_longest_edge_angle: RuleAB 初始化/首帧读取连续失败 5 次，最后错误：RuleAB 初始化失败。当前外部 ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。
+[2026-07-25 19:22:51] [完整测量标定] 已锁定完整测量专用 C：E:\jupyter file\2_Optics\8821L\measurement_output\save\07.25\20260725_192231\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-25 19:22:51] [完整测量标定] 已锁定完整测量专用 C：E:\jupyter file\2_Optics\8821L\measurement_output\save\07.25\20260725_192231\full_calibration_static_c；reason=run_workflow_cycle_2_before_run_one_cycle
+[2026-07-25 19:22:51] 
+[2026-07-25 19:22:51] ############################################################
+[2026-07-25 19:22:51] 开始第 2 轮循环测量
+[2026-07-25 19:22:51] ############################################################
+[2026-07-25 19:22:51] ========== Step 1：Bmask最长边角度检测 current_angle ==========
+[2026-07-25 19:22:51] [完整测量标定] 已锁定完整测量专用 C：E:\jupyter file\2_Optics\8821L\measurement_output\save\07.25\20260725_192231\full_calibration_static_c；reason=ensure_rule_ab_follower
+[2026-07-25 19:22:52] [RuleAB] 初始化 A推动B 模块：enable_stage=False, max_steps=10000000, full_calibration_loaded=True, confirm_first_frame_segmentation=False, static_c_map_dir=E:\jupyter file\2_Optics\8821L\measurement_output\save\07.25\20260725_192231\full_calibration_static_c
+[2026-07-25 19:22:53] [RuleAB][virtual] 已把 follower.stage 替换为虚拟 Stage34；后续硬件动作只写日志。
+[2026-07-25 19:22:54] [完整测量标定] initialize_abc_with_calibration() 初始化失败，尝试其他方式：完整标定注入失败：缺少 B 正点，不能非交互初始化 RuleAB。
+[2026-07-25 19:22:54] [完整测量标定] 外部 RuleAB 模块没有发现专用非交互初始化接口，将尝试用预注入 A/B/C 点调用 initialize_abc_with_first_frame()；如果仍弹窗，需要修改 logic/actual_nano_boundary_following...py 读取 preloaded 点。
+[2026-07-25 19:22:54] [RuleAB启动重试] step1_bmask_longest_edge_angle: 初始化/首帧读取失败 attempt=1/5: RuleAB 初始化失败。当前外部 ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。；transient_frame_read_error=False
+[2026-07-25 19:22:54] [虚拟Thorlabs] stop_all()
+[2026-07-25 19:22:54] [虚拟Thorlabs] close(serial=97101208)
+[2026-07-25 19:22:54] [RuleAB启动重试] 已释放本次 RuleAB follower，准备下一帧重试；reason=step1_bmask_longest_edge_angle/attempt=1: RuleAB 初始化失败。当前外部 ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。
+[2026-07-25 19:22:54] [完整测量标定] 已锁定完整测量专用 C：E:\jupyter file\2_Optics\8821L\measurement_output\save\07.25\20260725_192231\full_calibration_static_c；reason=ensure_rule_ab_follower
+[2026-07-25 19:22:54] [RuleAB] 初始化 A推动B 模块：enable_stage=False, max_steps=10000000, full_calibration_loaded=True, confirm_first_frame_segmentation=False, static_c_map_dir=E:\jupyter file\2_Optics\8821L\measurement_output\save\07.25\20260725_192231\full_calibration_static_c
+[2026-07-25 19:22:56] [RuleAB][virtual] 已把 follower.stage 替换为虚拟 Stage34；后续硬件动作只写日志。
+[2026-07-25 19:22:56] [完整测量标定] initialize_abc_with_calibration() 初始化失败，尝试其他方式：完整标定注入失败：缺少 B 正点，不能非交互初始化 RuleAB。
+[2026-07-25 19:22:56] [完整测量标定] 外部 RuleAB 模块没有发现专用非交互初始化接口，将尝试用预注入 A/B/C 点调用 initialize_abc_with_first_frame()；如果仍弹窗，需要修改 logic/actual_nano_boundary_following...py 读取 preloaded 点。
+[2026-07-25 19:22:56] [RuleAB启动重试] step1_bmask_longest_edge_angle: 初始化/首帧读取失败 attempt=2/5: RuleAB 初始化失败。当前外部 ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。；transient_frame_read_error=False
+[2026-07-25 19:22:56] [虚拟Thorlabs] stop_all()
+[2026-07-25 19:22:56] [虚拟Thorlabs] close(serial=97101208)
+[2026-07-25 19:22:56] [RuleAB启动重试] 已释放本次 RuleAB follower，准备下一帧重试；reason=step1_bmask_longest_edge_angle/attempt=2: RuleAB 初始化失败。当前外部 ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。
+[2026-07-25 19:22:57] [完整测量标定] 已锁定完整测量专用 C：E:\jupyter file\2_Optics\8821L\measurement_output\save\07.25\20260725_192231\full_calibration_static_c；reason=ensure_rule_ab_follower
+[2026-07-25 19:22:57] [RuleAB] 初始化 A推动B 模块：enable_stage=False, max_steps=10000000, full_calibration_loaded=True, confirm_first_frame_segmentation=False, static_c_map_dir=E:\jupyter file\2_Optics\8821L\measurement_output\save\07.25\20260725_192231\full_calibration_static_c
+[2026-07-25 19:22:59] [RuleAB][virtual] 已把 follower.stage 替换为虚拟 Stage34；后续硬件动作只写日志。
+[2026-07-25 19:22:59] [完整测量标定] initialize_abc_with_calibration() 初始化失败，尝试其他方式：完整标定注入失败：缺少 B 正点，不能非交互初始化 RuleAB。
+[2026-07-25 19:22:59] [完整测量标定] 外部 RuleAB 模块没有发现专用非交互初始化接口，将尝试用预注入 A/B/C 点调用 initialize_abc_with_first_frame()；如果仍弹窗，需要修改 logic/actual_nano_boundary_following...py 读取 preloaded 点。
+[2026-07-25 19:23:00] [RuleAB启动重试] step1_bmask_longest_edge_angle: 初始化/首帧读取失败 attempt=3/5: RuleAB 初始化失败。当前外部 ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。；transient_frame_read_error=False
+[2026-07-25 19:23:00] [虚拟Thorlabs] stop_all()
+[2026-07-25 19:23:00] [虚拟Thorlabs] close(serial=97101208)
+[2026-07-25 19:23:00] [RuleAB启动重试] 已释放本次 RuleAB follower，准备下一帧重试；reason=step1_bmask_longest_edge_angle/attempt=3: RuleAB 初始化失败。当前外部 ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。
+[2026-07-25 19:23:01] [完整测量标定] 已锁定完整测量专用 C：E:\jupyter file\2_Optics\8821L\measurement_output\save\07.25\20260725_192231\full_calibration_static_c；reason=ensure_rule_ab_follower
+[2026-07-25 19:23:01] [RuleAB] 初始化 A推动B 模块：enable_stage=False, max_steps=10000000, full_calibration_loaded=True, confirm_first_frame_segmentation=False, static_c_map_dir=E:\jupyter file\2_Optics\8821L\measurement_output\save\07.25\20260725_192231\full_calibration_static_c
+[2026-07-25 19:23:02] [RuleAB][virtual] 已把 follower.stage 替换为虚拟 Stage34；后续硬件动作只写日志。
+[2026-07-25 19:23:02] [完整测量标定] initialize_abc_with_calibration() 初始化失败，尝试其他方式：完整标定注入失败：缺少 B 正点，不能非交互初始化 RuleAB。
+[2026-07-25 19:23:02] [完整测量标定] 外部 RuleAB 模块没有发现专用非交互初始化接口，将尝试用预注入 A/B/C 点调用 initialize_abc_with_first_frame()；如果仍弹窗，需要修改 logic/actual_nano_boundary_following...py 读取 preloaded 点。
+[2026-07-25 19:23:02] [RuleAB启动重试] step1_bmask_longest_edge_angle: 初始化/首帧读取失败 attempt=4/5: RuleAB 初始化失败。当前外部 ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。；transient_frame_read_error=False
+[2026-07-25 19:23:02] [虚拟Thorlabs] stop_all()
+[2026-07-25 19:23:02] [虚拟Thorlabs] close(serial=97101208)
+[2026-07-25 19:23:02] [RuleAB启动重试] 已释放本次 RuleAB follower，准备下一帧重试；reason=step1_bmask_longest_edge_angle/attempt=4: RuleAB 初始化失败。当前外部 ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。
+[2026-07-25 19:23:03] [完整测量标定] 已锁定完整测量专用 C：E:\jupyter file\2_Optics\8821L\measurement_output\save\07.25\20260725_192231\full_calibration_static_c；reason=ensure_rule_ab_follower
+[2026-07-25 19:23:03] [RuleAB] 初始化 A推动B 模块：enable_stage=False, max_steps=10000000, full_calibration_loaded=True, confirm_first_frame_segmentation=False, static_c_map_dir=E:\jupyter file\2_Optics\8821L\measurement_output\save\07.25\20260725_192231\full_calibration_static_c
+[2026-07-25 19:23:05] [RuleAB][virtual] 已把 follower.stage 替换为虚拟 Stage34；后续硬件动作只写日志。
+[2026-07-25 19:23:05] [完整测量标定] initialize_abc_with_calibration() 初始化失败，尝试其他方式：完整标定注入失败：缺少 B 正点，不能非交互初始化 RuleAB。
+[2026-07-25 19:23:05] [完整测量标定] 外部 RuleAB 模块没有发现专用非交互初始化接口，将尝试用预注入 A/B/C 点调用 initialize_abc_with_first_frame()；如果仍弹窗，需要修改 logic/actual_nano_boundary_following...py 读取 preloaded 点。
+[2026-07-25 19:23:05] [RuleAB启动重试] step1_bmask_longest_edge_angle: 初始化/首帧读取失败 attempt=5/5: RuleAB 初始化失败。当前外部 ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。；transient_frame_read_error=False
+[2026-07-25 19:23:05] [虚拟Thorlabs] stop_all()
+[2026-07-25 19:23:05] [虚拟Thorlabs] close(serial=97101208)
+[2026-07-25 19:23:05] [RuleAB启动重试] 已释放本次 RuleAB follower，准备下一帧重试；reason=step1_bmask_longest_edge_angle/attempt=5: RuleAB 初始化失败。当前外部 ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。
+[2026-07-25 19:23:05] [角度检测-current_angle] Bmask 最长边 baseline 计算异常：step1_bmask_longest_edge_angle: RuleAB 初始化/首帧读取连续失败 5 次，最后错误：RuleAB 初始化失败。当前外部 ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。
+[2026-07-25 19:23:05] [角度检测-current_angle] 本轮 Bmask 最长边角度无效；不再把它当作整次测量失败，本轮不进入 Step7，直接跳过并继续下一轮。 reason=step1_bmask_longest_edge_angle: RuleAB 初始化/首帧读取连续失败 5 次，最后错误：RuleAB 初始化失败。当前外部 ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。
+[2026-07-25 19:23:05] [完整测量-跳过本轮] 第 2 轮在 Step1_Bmask_longest_edge_baseline 发生 Bmask/角度检测失败；不结束完整循环、不关闭全部设备，进入下一轮。reason=step1_bmask_longest_edge_angle: RuleAB 初始化/首帧读取连续失败 5 次，最后错误：RuleAB 初始化失败。当前外部 ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。
+[2026-07-25 19:23:06] [完整测量标定] 已锁定完整测量专用 C：E:\jupyter file\2_Optics\8821L\measurement_output\save\07.25\20260725_192231\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-25 19:23:06] [完整测量标定] 已锁定完整测量专用 C：E:\jupyter file\2_Optics\8821L\measurement_output\save\07.25\20260725_192231\full_calibration_static_c；reason=run_workflow_cycle_3_before_run_one_cycle
+[2026-07-25 19:23:06] 
+[2026-07-25 19:23:06] ############################################################
+[2026-07-25 19:23:06] 开始第 3 轮循环测量
+[2026-07-25 19:23:07] ############################################################
+[2026-07-25 19:23:07] ========== Step 1：Bmask最长边角度检测 current_angle ==========
+[2026-07-25 19:23:07] [完整测量标定] 已锁定完整测量专用 C：E:\jupyter file\2_Optics\8821L\measurement_output\save\07.25\20260725_192231\full_calibration_static_c；reason=ensure_rule_ab_follower
+[2026-07-25 19:23:07] [RuleAB] 初始化 A推动B 模块：enable_stage=False, max_steps=10000000, full_calibration_loaded=True, confirm_first_frame_segmentation=False, static_c_map_dir=E:\jupyter file\2_Optics\8821L\measurement_output\save\07.25\20260725_192231\full_calibration_static_c
+[2026-07-25 19:23:08] [Step9-颜色中心] 已请求停止 1/2 通道运动
+[2026-07-25 19:23:08] [Step9-颜色中心] 已尝试发送 1/2 通道 stop 命令
+[2026-07-25 19:23:08] [流程] 收到停止请求
+[2026-07-25 19:23:08] [保存] Excel汇总文件已保存：measurement_output\save\07.25\measurement_summary_20260725_192124.xlsx
+[2026-07-25 19:23:09] [RuleAB][virtual] 已把 follower.stage 替换为虚拟 Stage34；后续硬件动作只写日志。
+[2026-07-25 19:23:09] [完整测量标定] initialize_abc_with_calibration() 初始化失败，尝试其他方式：完整标定注入失败：缺少 B 正点，不能非交互初始化 RuleAB。
+[2026-07-25 19:23:09] [完整测量标定] 外部 RuleAB 模块没有发现专用非交互初始化接口，将尝试用预注入 A/B/C 点调用 initialize_abc_with_first_frame()；如果仍弹窗，需要修改 logic/actual_nano_boundary_following...py 读取 preloaded 点。
+[2026-07-25 19:23:09] [RuleAB启动重试] step1_bmask_longest_edge_angle: 初始化/首帧读取失败 attempt=1/5: RuleAB 初始化失败。当前外部 ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。；transient_frame_read_error=False
+[2026-07-25 19:23:09] [虚拟Thorlabs] stop_all()
+[2026-07-25 19:23:09] [虚拟Thorlabs] close(serial=97101208)
+[2026-07-25 19:23:09] [RuleAB启动重试] 已释放本次 RuleAB follower，准备下一帧重试；reason=step1_bmask_longest_edge_angle/attempt=1: RuleAB 初始化失败。当前外部 ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。
+[2026-07-25 19:23:10] [角度检测-current_angle] Bmask 最长边 baseline 计算异常：stop_requested
+[2026-07-25 19:23:10] [角度检测-current_angle] 本轮 Bmask 最长边角度无效；不再把它当作整次测量失败，本轮不进入 Step7，直接跳过并继续下一轮。 reason=stop_requested
+[2026-07-25 19:23:10] [完整测量-跳过本轮] 第 3 轮在 Step1_Bmask_longest_edge_baseline 发生 Bmask/角度检测失败；不结束完整循环、不关闭全部设备，进入下一轮。reason=stop_requested
+[2026-07-25 19:23:10] ========== 结束测量 ==========
+[2026-07-25 19:23:11] [流程] 测量结束，照明光保持当前状态，不额外发送 ON/OFF
+[2026-07-25 19:23:11] [保存] Excel汇总文件已保存：measurement_output\save\07.25\measurement_summary_20260725_192124.xlsx
+[2026-07-25 19:23:11] [流程] 正在测量 = False

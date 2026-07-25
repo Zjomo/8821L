@@ -51,7 +51,8 @@ class ZAxisController:
     def _conn_kwargs(self) -> Dict[str, Any]:
         """从配置中提取连接参数，避免硬编码。"""
         return {
-            "conn": int(self.cfg.z_picomotor_conn),
+            # "conn": int(self.cfg.z_picomotor_conn),
+            "conn": str(self.cfg.z_picomotor_conn),
             "backend": str(self.cfg.z_picomotor_backend or "auto"),
             "timeout": float(self.cfg.z_picomotor_timeout),
             "multiaddr": bool(self.cfg.z_picomotor_multiaddr),

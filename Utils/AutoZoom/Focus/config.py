@@ -115,10 +115,12 @@ class AutofocusConfig:
     z_accel: int = 100
 
     # Picomotor 控制器连接参数（解决 conn=0 硬编码导致的连接失败）
-    z_picomotor_conn: int = 0
+    #z_picomotor_conn: int = 0
+    z_picomotor_conn: str = r"8742-100100"
     """控制器索引（对应 Newport.Picomotor8742 的 conn 参数）"""
 
-    z_picomotor_backend: str = "auto"
+    # z_picomotor_backend: str = "auto"
+    z_picomotor_backend: str = "network"
     """连接后端：auto / pyusb / serial"""
 
     z_picomotor_timeout: float = 5.0

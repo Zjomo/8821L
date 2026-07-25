@@ -2438,7 +2438,7 @@ class MeasurementWorkflow:
             raise RuntimeError("当前环境无法导入 pylablib.devices.Newport；请安装 pylablib 或切换 hardware_mode=virtual。")
 
         self.log("[激光开关] 正在连接 Newport 8743-CL / Picomotor")
-        self.laser_stage = Newport.Picomotor8742()
+        self.laser_stage = Newport.Picomotor8742(conn=r'8743-CL-12116', backend="network")
 
         try:
             self.log(f"[激光开关] ID: {self.laser_stage.get_id()}")

@@ -1,0 +1,8 @@
+[2026-07-25 21:28:53] [保存] Excel汇总文件已创建：measurement_output\save\07.25\measurement_summary_20260725_212853.xlsx
+[2026-07-25 21:28:53] [完整测量标定] 标定包缺少 B 正点，已基于当前帧自动生成默认 B 点：(200.0, 200.0)，image_size=(800, 600)。该默认值仅用于兼容 RuleAB 初始化；YOLO-OBB 角度检测不依赖 B 点。
+[2026-07-25 21:28:53] [完整测量标定] 已通过 initialize_abc_with_calibration() 初始化 RuleAB A/B/C，未弹窗。
+[2026-07-25 21:28:53] [完整测量标定] 标定包缺少 B 正点，已基于当前帧自动生成默认 B 点：(400.0, 300.0)，image_size=(800, 600)。该默认值仅用于兼容 RuleAB 初始化；YOLO-OBB 角度检测不依赖 B 点。
+[2026-07-25 21:28:53] [完整测量标定] 已通过 initialize_abc_with_calibration() 初始化 RuleAB A/B/C，未弹窗。
+[2026-07-25 21:28:53] [完整测量标定] 已通过 initialize_abc_with_calibration() 初始化 RuleAB A/B/C，未弹窗。
+[2026-07-25 21:28:53] [完整测量标定] 标定包缺少 B 正点，已基于当前帧自动生成默认 B 点：(799.0, 590.0)，image_size=(800, 600)。该默认值仅用于兼容 RuleAB 初始化；YOLO-OBB 角度检测不依赖 B 点。
+[2026-07-25 21:28:53] [完整测量标定] 已通过 initialize_abc_with_calibration() 初始化 RuleAB A/B/C，未弹窗。
