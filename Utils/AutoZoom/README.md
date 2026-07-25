@@ -149,6 +149,63 @@ python measurement_with_focus_roi_metrics.py
 
 # TODO🎯
 
+### 2026-7-25
+
+在笔记本更新sam-main环境【环境：python3.12、torch2.5、固定prompt】	✔
+
+```
+那我能否通过修改sam2_env\pyvenv.cfg 来使用该环境呢？
+我的系统的中也有python3.11 的版本，因为我安装了anaconda，位置在：E:\Anaconda
+python -m pip install --upgrade pip --force-reinstall
+
+```
+
+将项目的输出日志实时保存至"./Log文件夹中"	✔
+
+日志报错1：[前后两次，针对卐的面积识别超过了报错阈值，0.35-2.8 -- MeasurementConfig（line 381-382）]	✔
+
+```
+[2026-07-24 22:01:59] [ABC特征跟踪] 首帧 original_capture 失败 attempt=5/5: B mask 面积突变: old=18263.0, new=284400.0, ratio=15.57；等待下一帧重试。
+
+```
+
+找到设备型号的设置，功能 map 设备	✔
+
+```
+1、激光控制器为 12116：
+    0_measurement_workflow_real_virtual_same_detection_7_25.py/MeasurementWorkflow/connect_laser_controller 函数内设置
+        self.log("[激光开关] 正在连接 Newport 8743-CL / Picomotor")
+        self.laser_stage = Newport.Picomotor8742(conn=r'8743-CL-12116', backend="network")
+
+2、补焦控制器为 100100 
+    Focus/config.py/AutofocusConfig
+        # Picomotor 控制器连接参数（解决 conn=0 硬编码导致的连接失败）
+        #z_picomotor_conn: int = 0
+        z_picomotor_conn: str = r"8742-100100"
+        """控制器索引（对应 Newport.Picomotor8742 的 conn 参数）"""
+
+        # z_picomotor_backend: str = "auto"
+        z_picomotor_backend: str = "network"
+        """连接后端：auto / pyusb / serial"""
+
+```
+
+调整补焦参考图的逻辑	✔
+
+```
+1、要求"补焦基准图"的ROI区域选择在整个屏幕进行；
+2、补焦画面范围是独立参考的，不影响"标定abc"、"角度检测"等画面的指定区域；
+3、在 RuleAB 初始化路径中兼容无 B 点的情况；
+4、要求"补焦基准图"的ROI区域选择之后，再进行下一步，不然容易卡死；
+5、解决"补焦基准图"之后的第二个参考窗口问题，直接去除该预览图，有点多余；
+6、每次点击"运行完整循环测量"后，都要重新进行一次"补焦基准图"的ROI选取,并为后续的补焦流程进行参考更新
+
+```
+
+
+
+
+
 ### 2026-7-23
 
 1、检测305 新设备环境，并验证测量光谱仪【光谱仪 + 电机 + 材料】	✔
