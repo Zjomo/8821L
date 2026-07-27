@@ -3,3 +3,1676 @@
 [2026-07-27 15:23:25] [照明光] 连接成功
 [2026-07-27 15:23:26] [照明光] ON
 [2026-07-27 15:23:26] [横坐标xlsx] 已读取：516中心波长.xlsx，sheet=Sheet1，点数=1024
+[2026-07-27 15:23:34] ========== 启动 LabVIEW TCP Server ==========
+[2026-07-27 15:23:34] [TCP] host=127.0.0.1, port=65432, output_dir=labview_csv_output
+[2026-07-27 15:23:34] [TCP] 已调用 LabVIEWTCPServer.start_server_async() 启动 Server
+[2026-07-27 15:24:12] ========== 等待 LabVIEW READY ==========
+[2026-07-27 15:24:12] [TCP] LabVIEW READY：由 wait_for_ready() 返回
+[2026-07-27 15:24:33] [完整测量标定] 已保存标定文件：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\current_calibration.json
+[2026-07-27 15:24:43] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=8/12, B点=0/0, C点=11/15, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(449.4,360.0), HSV=(0,255,255)
+[2026-07-27 15:24:43] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=8/12, B点=0/0, C点=11/15, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(449.4,360.0), HSV=(0,255,255)
+[2026-07-27 15:24:43] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=8/12, B点=0/0, C点=11/15, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(449.4,360.0), HSV=(0,255,255)
+[2026-07-27 15:24:44] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=8/12, B点=0/0, C点=11/15, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(449.4,360.0), HSV=(0,255,255)
+[2026-07-27 15:24:44] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=8/12, B点=0/0, C点=11/15, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(449.4,360.0), HSV=(0,255,255)
+[2026-07-27 15:24:44] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=8/12, B点=0/0, C点=11/15, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(449.4,360.0), HSV=(0,255,255)
+[2026-07-27 15:24:44] [完整测量标定] 已保存标定文件：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\current_calibration.json
+[2026-07-27 15:24:47] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=8/12, B点=0/0, C点=8/12, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(-1.0,-1.0), HSV=(0,255,255)
+[2026-07-27 15:24:47] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=8/12, B点=0/0, C点=8/12, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(-1.0,-1.0), HSV=(0,255,255)
+[2026-07-27 15:24:47] [完整测量标定] 已保存标定文件：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\current_calibration.json
+[2026-07-27 15:24:47] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=8/12, B点=0/0, C点=8/12, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(569.4,532.9), HSV=(0,255,255)
+[2026-07-27 15:24:47] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=8/12, B点=0/0, C点=8/12, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(569.4,532.9), HSV=(0,255,255)
+[2026-07-27 15:24:47] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=8/12, B点=0/0, C点=8/12, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(569.4,532.9), HSV=(0,255,255)
+[2026-07-27 15:24:47] [完整测量标定] 已保存标定文件：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\current_calibration.json
+[2026-07-27 15:24:48] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=8/12, B点=0/0, C点=8/12, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(569.4,532.9), HSV=(0,255,255)
+[2026-07-27 15:24:48] [Step9-颜色中心] 新建本次 Step9 保存文件夹：measurement_output\step9_color_center_align\run_20260727_152448_474
+[2026-07-27 15:24:55] [Step9-颜色中心] 颜色检测已准备：mode=include, HSV=(99, 97, 118), area=2524 px, center=(570.8724247226625, 527.128763866878)
+[2026-07-27 15:24:55] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=8/12, B点=0/0, C点=8/12, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(569.4,532.9), HSV=(0,255,255)
+[2026-07-27 15:24:55] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=8/12, B点=0/0, C点=8/12, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(569.4,532.9), HSV=(0,255,255)
+[2026-07-27 15:24:55] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=8/12, B点=0/0, C点=8/12, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(569.4,532.9), HSV=(0,255,255)
+[2026-07-27 15:24:55] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=8/12, B点=0/0, C点=8/12, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(569.4,532.9), HSV=(0,255,255)
+[2026-07-27 15:24:55] [完整测量标定] 已保存标定文件：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\current_calibration.json
+[2026-07-27 15:24:57] [完整测量标定] 已保存标定文件：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\current_calibration.json
+[2026-07-27 15:25:01] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=8/12, B点=0/0, C点=8/12, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(569.4,532.9), HSV=(99,97,118)
+[2026-07-27 15:25:01] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=8/12, B点=0/0, C点=8/12, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(569.4,532.9), HSV=(99,97,118)
+[2026-07-27 15:25:01] [完整测量标定] 已按 quad 重建 Step7 A 路线：points=26, path=E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c\static_c_edge_route.json
+[2026-07-27 15:25:01] [完整测量标定] 已创建并锁定本次完整测量专用 C 目录：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；来源=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map\static_c_mask.png；area=6746 px；外部 RuleAB 应显示 source=full_calibration_static_c
+[2026-07-27 15:25:01] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=8/12, B点=0/0, C点=8/12, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c, Step9 target=(569.4,532.9), HSV=(99,97,118)
+[2026-07-27 15:25:01] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:25:01] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:25:01] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:25:01] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:25:01] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:25:01] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:25:01] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:25:01] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:25:01] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:25:01] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:25:01] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:25:01] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:25:01] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:25:02] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:25:02] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:25:02] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:25:02] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:25:02] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:25:02] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:25:13] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:25:14] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:25:14] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:25:14] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:25:21] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:25:21] ========== 初始化实验设备 ==========
+[2026-07-27 15:25:21] [照明光] 已连接
+[2026-07-27 15:25:21] [激光开关] 正在连接 Newport 8743-CL / Picomotor
+[2026-07-27 15:25:21] [激光开关] ID: New_Focus 8743-CL v4.06 01/19/17 12116
+[2026-07-27 15:25:21] [激光开关] Axes: [1, 2, 3, 4]
+[2026-07-27 15:25:21] [激光开关] SET axis=2, cmd=VA5000
+[2026-07-27 15:25:21] [激光开关] SET axis=2, cmd=AC5000
+[2026-07-27 15:25:21] [激光开关] OK axis=2, speed=5000, accel=5000
+[2026-07-27 15:25:21] [激光开关] Newport 8743-CL 连接成功
+[2026-07-27 15:25:21] [YOLO-OBB角度] 正在初始化 YOLO-OBB 模型
+[2026-07-27 15:25:21] [YOLO-OBB角度] model_path=E:\CWB\8821L\Utils\AutoZoom\best.pt
+[2026-07-27 15:25:22] [YOLO-OBB角度] capture_area=(116, 98, 1112, 886)
+[2026-07-27 15:25:22] [YOLO-OBB角度] conf=0.5, iou=0.7, imgsz=640, device=''
+[2026-07-27 15:25:22] [YOLO-OBB角度] 初始化完成；Step1/Step7 将使用 OBB 四角长边角度
+[2026-07-27 15:25:22] ========== 实验设备初始化完成：照明光 + 激光控制器 + 角度检测 ==========
+[2026-07-27 15:25:23] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=8/12, B点=0/0, C点=8/12, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c, Step9 target=(569.4,532.9), HSV=(99,97,118)
+[2026-07-27 15:25:23] [聚焦参考] 新运行会话开始，已重置补焦 ROI 与参考图状态，将在 Step 1.5 重新选择补焦基准图 ROI
+[2026-07-27 15:25:23] [运行批次] 新建本次测量文件夹：measurement_output\save\07.27\20260727_152523
+[2026-07-27 15:25:23] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=8/12, B点=0/0, C点=8/12, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(569.4,532.9), HSV=(99,97,118)
+[2026-07-27 15:25:23] [完整测量标定] 已加载标定文件：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\current_calibration.json
+[2026-07-27 15:25:23] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=8/12, B点=0/0, C点=8/12, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(569.4,532.9), HSV=(99,97,118)
+[2026-07-27 15:25:23] [完整测量标定] 启动前检查通过：angle_source=Bmask最长边, A点=8/12, C点=8/12, Step9 target=(569.4, 532.9), HSV=(99, 97, 118)
+[2026-07-27 15:25:23] [完整测量标定] 已创建并锁定本次完整测量专用 C 目录：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；来源=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map\static_c_mask.png；area=6746 px；外部 RuleAB 应显示 source=full_calibration_static_c
+[2026-07-27 15:25:23] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=8/12, B点=0/0, C点=8/12, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c, Step9 target=(569.4,532.9), HSV=(99,97,118)
+[2026-07-27 15:25:23] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=run_workflow_after_prepare_runtime
+[2026-07-27 15:25:23] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:25:23] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:25:23] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:25:24] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:25:24] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=run_workflow_cycle_1_before_run_one_cycle
+[2026-07-27 15:25:24] 
+[2026-07-27 15:25:24] ############################################################
+[2026-07-27 15:25:24] 开始第 1 轮循环测量
+[2026-07-27 15:25:24] ############################################################
+[2026-07-27 15:25:24] ========== Step 1：Bmask最长边角度检测 current_angle ==========
+[2026-07-27 15:25:24] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=ensure_rule_ab_follower
+[2026-07-27 15:25:24] [RuleAB] 初始化 A推动B 模块：enable_stage=True, max_steps=10000000, full_calibration_loaded=True, confirm_first_frame_segmentation=False, static_c_map_dir=E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c
+[2026-07-27 15:25:25] [完整测量标定] 标定包缺少 B 正点，已基于当前帧自动生成默认 B 点：(549.4, 308.2)，image_size=(1112, 886)。该默认值仅用于兼容 RuleAB 初始化；YOLO-OBB 角度检测不依赖 B 点。
+[2026-07-27 15:25:26] [完整测量标定] 已通过 initialize_abc_with_calibration() 初始化 RuleAB A/B/C，未弹窗。
+[2026-07-27 15:25:26] [ABC特征跟踪] 已安装：SAM2 仅用于首帧模板建立；后续帧仅使用 feature tracker；Bmask 失败不 fallback、不 hold_last；角度修复已禁用，直接使用 YOLO-OBB 原始角度。
+[2026-07-27 15:25:26] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=runtime_rule_ab_params/step1_bmask_longest_edge_angle
+[2026-07-27 15:25:26] [RuleAB][运行中参数更新] 已下发 Stage34 参数：CH3(v=10,a=10,V=50), CH4(v=2,a=2,V=50); reason=step1_bmask_longest_edge_angle
+[2026-07-27 15:25:26] ========== YOLO-OBB角度检测：current_angle_yolo_obb ==========
+[2026-07-27 15:25:26] [YOLO-OBB角度-current_angle_yolo_obb] angle=34.42605405690574, conf=0.9269868731498718, class=bn_up, overlay=measurement_output\save\07.27\20260727_152523\ab_angle_realtime_yolo_obb\20260727_152526_611_current_angle_yolo_obb_YOLO_OBB_overlay.png
+[2026-07-27 15:25:26] [角度检测-current_angle] 已使用当前帧 Bmask 最长边角度作为本轮 baseline：34.42605405690574°；source=yolo_obb_long_edge
+[2026-07-27 15:25:26] ========== Step 1.5：建立聚焦参考图 ==========
+[2026-07-27 15:25:26] [聚焦参考] 尚未选择补焦基准图 ROI，即将弹出 ROI 选择窗口
+[2026-07-27 15:25:26] [聚焦ROI] 即将弹出全屏 ROI 选择窗口；请拖拽矩形框选补焦区域后按 Enter/N 确认
+[2026-07-27 15:25:31] [聚焦ROI] 全屏 ROI 已选择：(602, 545, 181, 181)，saf_capture_area 已同步为全屏 (0, 0, 1920, 1080)；capture_area / focus_roi 保持不变
+[2026-07-27 15:25:31] [聚焦参考] 参考图已建立并保存，不再弹出实时预览窗口
+[2026-07-27 15:25:31] [聚焦参考] 从单张图像建立参考
+[2026-07-27 15:25:32] [聚焦参考] 参考指标已保存：measurement_output\focus_reference\focus_reference\20260727_152531\focus_reference_metrics.csv
+[2026-07-27 15:25:32] [聚焦参考] 单图参考建立完成：highfreq_ref=0.011666400224649978, tenengrad_ref=1134.4084734898202, brenner_ref=40.19127133553505, red_blue_ref=0.3455317573219122
+[2026-07-27 15:25:32] [聚焦参考] 第 1 轮已建立，ROI=(602, 545, 181, 181)
+[2026-07-27 15:25:32] ========== Step 2：生成保存路径 ==========
+[2026-07-27 15:25:32] ========== 生成最终存储路径 ==========
+[2026-07-27 15:25:32] [保存路径] run_session_dir=measurement_output\save\07.27\20260727_152523
+[2026-07-27 15:25:32] [保存路径] spectrum_csv=measurement_output\save\07.27\20260727_152523\cycle_0001_152532_067_spectrum.csv
+[2026-07-27 15:25:32] [流程] 本周期 Step 7-14 子循环次数：1
+[2026-07-27 15:25:32] ========== Step 3：照明光 OFF，等待稳定 ==========
+[2026-07-27 15:25:32] [照明光] OFF
+[2026-07-27 15:25:33] [照明光] OFF 后稳定等待：1.200 s
+[2026-07-27 15:25:33] [照明光] OFF 后稳定等待：1.200 s（由“稳定等待/ms”控制）
+[2026-07-27 15:25:34] ========== Step 4：LabVIEW 光谱采集 ==========
+[2026-07-27 15:25:34] ========== LabVIEW 采集光谱 ==========
+[2026-07-27 15:25:35] [光谱] 已从CSV读取：labview_csv_output\measure_001_20260727_152535.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-27 15:25:35] [TCP] 已通过 LabVIEWTCPServer.request_measure() 直接获取真实光谱结果
+[2026-07-27 15:25:35] [横坐标xlsx] 已读取：516中心波长.xlsx，sheet=Sheet1，点数=1024
+[2026-07-27 15:25:35] [LabVIEW] 采集完成：index=1, method=request_measure, num_points=1024, csv_path=labview_csv_output\measure_001_20260727_152535.csv
+[2026-07-27 15:25:35] [光谱] 真实采集完成：num_points=1024, x_points=1024, plot_x_points=1024, raw_original_peak=1128.0, raw_filtered_peak=1128.0, raw_median_peak=1104.0, fit_peak=1104.0
+[2026-07-27 15:25:35] [光谱] 阈值去除后点数=1024，阈值=3000.0；5点中值滤波后点数=1024
+[2026-07-27 15:25:35] ========== Step 5：照明光 ON ==========
+[2026-07-27 15:25:36] [照明光] ON
+[2026-07-27 15:25:36] ========== Step 6：保存数据（异步线程，使用 Step1 最终角度） ==========
+[2026-07-27 15:25:36] ========== 保存本轮测量结果 ==========
+[2026-07-27 15:25:36] [异步保存] 第 1 轮保存线程已启动：save-cycle-0001；提交准备耗时=0.034 s
+[2026-07-27 15:25:36] [Step 6] 异步保存任务提交耗时：0.068 s；保存角度=Step1最终角度；append_plot_point=False
+[2026-07-27 15:25:36] [保存] 光谱 CSV：measurement_output\save\07.27\20260727_152523\cycle_0001_152532_067_spectrum.csv；wavelength列已写入中心波长；已写入本轮角度 angle_deg=34.42605405690574
+[2026-07-27 15:25:36] ========== Step 7-14 子循环第 1/1 次开始 ==========
+[2026-07-27 15:25:36] [保存] Summary CSV 已更新：measurement_output\save\07.27\measurement_summary.csv
+[2026-07-27 15:25:36] ========== Step 7：打开激光 ==========
+[2026-07-27 15:25:36] [激光开关] MOVE axis=2, steps=400
+[2026-07-27 15:25:36] [保存] Excel汇总已追加第 1 轮：measurement_output\save\07.27\measurement_summary_20260727_152325.xlsx
+[2026-07-27 15:25:36] [异步保存] 第 1 轮保存完成
+[2026-07-27 15:25:37] [激光开关] ON 完成：axis=2, steps=400
+[2026-07-27 15:25:37] ========== Step 8：A推动B，并用当前帧Bmask最长边检测B角度 ==========
+[2026-07-27 15:25:37] ========== RuleAB：Step7实时双线程，Bmask最长边监控角度 ==========
+[2026-07-27 15:25:37] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_start
+[2026-07-27 15:25:37] ========== YOLO-OBB角度检测：step7_realtime_frame_000001 ==========
+[2026-07-27 15:25:38] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:25:38] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_controller_step_1
+[2026-07-27 15:25:38] [Step7实时控制] step=1: 执行一次 C边沿路线运动；route_points=29；pause保留但可被stop_event打断。
+[2026-07-27 15:25:38] [YOLO-OBB角度-step7_realtime_frame_000001] angle=34.42905511475129, conf=0.9281034469604492, class=bn_up, overlay=measurement_output\save\07.27\20260727_152523\ab_angle_realtime_yolo_obb\20260727_152538_059_step7_realtime_frame_000001_YOLO_OBB_overlay.png
+[2026-07-27 15:25:38] [BColorSeed] B positive point 0 hsv_seed=(111.0,67.0,38.0)
+[2026-07-27 15:25:38] [BColorSeed] saved b_positive_hsv_seeds count=1
+[2026-07-27 15:25:38] [BColorCenter] center_count=7, source=positive_seeds+clean_mask, b_hsv_centers=[[111.0, 67.0, 38.0], [110.55563221753685, 104.0, 38.0], [98.44318767230965, 73.0, 33.0], [111.39277953104747, 120.0, 39.0], [156.63092432366113, 74.0, 49.0], [106.87595224442639, 92.0, 36.0], [115.61309834730305, 83.0, 36.0]]
+[2026-07-27 15:25:38] [ABC特征跟踪] 已用首帧 SAM2 建立 A/B/C 模板；首帧开始即返回 feature_tracker_scene，后续完整测量仅使用 feature tracker；Bmask 失败不 SAM2 fallback、不 hold_last；模板目录=measurement_output\save\07.27\20260727_152523\abc_feature_templates
+[2026-07-27 15:25:38] ========== YOLO-OBB角度检测：step7_realtime_frame_000002 ==========
+[2026-07-27 15:25:38] [YOLO-OBB角度-step7_realtime_frame_000002] angle=34.44029824434739, conf=0.9279582500457764, class=bn_up, overlay=measurement_output\save\07.27\20260727_152523\ab_angle_realtime_yolo_obb\20260727_152538_727_step7_realtime_frame_000002_YOLO_OBB_overlay.png
+[2026-07-27 15:25:38] [Step7实时角度] 角度变化已达到阈值：final_angle=34.440298°, baseline=34.42605405690574, delta=0.014° >= 0.010°；停止/暂停Stage34当前推动，不再使用6°上限/overshoot判定；不在Step7角度线程关闭激光，后续由完整测量主流程正常关激光，并继续完整测量。
+[2026-07-27 15:25:41] [RuleAB-Route] step=1, cur_idx=14/28, target_idx=15, route_index_order=visual_CCW, user_desired_direction=visual_CCW, actual_index_step=1, route_signed_area=-96451.50, loop=True, mode=soft_safe_too_far_tangent_plus_normal, route_distance_px=184.13211940276125, safe_band=[120.00,180.00], nearest_route_xy=[572.9695995418654, 485.0899333298018], safe_target_xy=[487.80960151340383, 361.60805313763586], A=(468.4,333.5), current_target=(481.2,366.2), final_move_target=(475.3,348.0), error_dist=35.07px, move_vec=(6.9,14.5), image_action=DOWN, stage_action=CH4/CH4: move_step=5, dry_run=False, pause_interrupted=True, oscillation_detected=False
+[2026-07-27 15:25:41] [Step7实时] 已发送 stage.stop_all()；reason=angle_delta_ge_target_min_no_laser_off
+[2026-07-27 15:25:41] [Step7实时] 结束：ok=True, overshoot=False, reason=realtime_bmask_longest_edge_delta_ge_target_min_continue_measurement, final_angle=34.44029824434739, final_delta=0.014244187441647682, records=3, csv=measurement_output\save\07.27\20260727_152523\ab_angle_realtime_bmask_longest_edge\step7_realtime_angle_records.csv
+[2026-07-27 15:25:41] ========== Step 9：检测颜色区域中心，必要时移动1/2通道 ==========
+[2026-07-27 15:25:42] ========== Step9：颜色检测区域中心对齐，必要时移动1/2通道 ==========
+[2026-07-27 15:25:42] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:25:43] [Bmask] source=feature, area=959233, center_jump=0.0
+[2026-07-27 15:25:43] [Step9-颜色中心] cycle=1, 已对齐：center=(571.04,527.17), target=(569.41,532.94), dx=-1.63, dy=5.77, tol=10.0
+[2026-07-27 15:25:43] ========== Step 10：补焦判断（循环等待） ==========
+[2026-07-27 15:25:44] [聚焦补焦] FocusScore_ratio=1.0009 在允许区间[0.9500, 1.0500] 内，不触发补焦
+[2026-07-27 15:25:44] [补焦判断] FocusScore 已达标，退出等待循环（第 1 次检查）
+[2026-07-27 15:25:44] ========== Step 11：照明光 OFF，等待稳定 ==========
+[2026-07-27 15:25:44] [照明光] OFF
+[2026-07-27 15:25:45] [照明光] OFF 后稳定等待：1.200 s
+[2026-07-27 15:25:45] [照明光] OFF 后稳定等待：1.200 s（由“稳定等待/ms”控制）
+[2026-07-27 15:25:47] ========== Step 12：LabVIEW 光谱采集 ==========
+[2026-07-27 15:25:47] ========== LabVIEW 采集光谱 ==========
+[2026-07-27 15:25:48] [光谱] 已从CSV读取：labview_csv_output\measure_001_20260727_152548.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-27 15:25:48] [TCP] 已通过 LabVIEWTCPServer.request_measure() 直接获取真实光谱结果
+[2026-07-27 15:25:48] [横坐标xlsx] 已读取：516中心波长.xlsx，sheet=Sheet1，点数=1024
+[2026-07-27 15:25:48] [LabVIEW] 采集完成：index=1, method=request_measure, num_points=1024, csv_path=labview_csv_output\measure_001_20260727_152548.csv
+[2026-07-27 15:25:48] [光谱] 真实采集完成：num_points=1024, x_points=1024, plot_x_points=1024, raw_original_peak=1138.0, raw_filtered_peak=1138.0, raw_median_peak=1106.0, fit_peak=1106.0
+[2026-07-27 15:25:48] [光谱] 阈值去除后点数=1024，阈值=3000.0；5点中值滤波后点数=1024
+[2026-07-27 15:25:48] ========== Step 13：照明光 ON ==========
+[2026-07-27 15:25:48] [照明光] ON
+[2026-07-27 15:25:48] ========== Step 14：保存数据（异步线程，使用 Step1 最终角度） ==========
+[2026-07-27 15:25:48] ========== 保存本轮测量结果 ==========
+[2026-07-27 15:25:48] [异步保存] 第 1 轮保存线程已启动：save-cycle-0001；提交准备耗时=0.008 s
+[2026-07-27 15:25:48] [保存] 光谱 CSV：measurement_output\save\07.27\20260727_152523\cycle_0001_152532_067_spectrum.csv；wavelength列已写入中心波长；已写入本轮角度 angle_deg=34.42605405690574
+[2026-07-27 15:25:48] [Step 14] 异步保存任务提交耗时：0.012 s；保存角度=Step1最终角度；append_plot_point=True
+[2026-07-27 15:25:48] [保存] Summary CSV 已更新：measurement_output\save\07.27\measurement_summary.csv
+[2026-07-27 15:25:48] ========== Step 7-14 子循环第 1/1 次结束 ==========
+[2026-07-27 15:25:48] ========== Step 7-14 子循环结束：关闭激光 ==========
+[2026-07-27 15:25:48] [保存] Excel汇总已追加第 1 轮：measurement_output\save\07.27\measurement_summary_20260727_152325.xlsx
+[2026-07-27 15:25:48] [激光开关] MOVE axis=2, steps=-400
+[2026-07-27 15:25:48] [绘图] 已追加数据点：cycle=1, angle=34.42605405690574, fit_peak=1106.0
+[2026-07-27 15:25:48] [异步保存] 第 1 轮保存完成
+[2026-07-27 15:25:50] [激光开关] OFF 完成：axis=2, steps=-400
+[2026-07-27 15:25:50] [激光开关] 子循环结束，主流程正常关闭激光
+[2026-07-27 15:25:50] [流程] 第 1 轮数据已提交保存；保存角度=Step1最终角度 34.42605405690574；Step8最终角度=34.44029824434739 仅用于关闭激光/排查，不覆盖保存角度。
+[2026-07-27 15:25:50] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:25:50] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=run_workflow_cycle_2_before_run_one_cycle
+[2026-07-27 15:25:51] 
+[2026-07-27 15:25:51] ############################################################
+[2026-07-27 15:25:51] 开始第 2 轮循环测量
+[2026-07-27 15:25:51] ############################################################
+[2026-07-27 15:25:51] ========== Step 1：Bmask最长边角度检测 current_angle ==========
+[2026-07-27 15:25:51] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=runtime_rule_ab_params/step1_bmask_longest_edge_angle
+[2026-07-27 15:25:51] ========== YOLO-OBB角度检测：current_angle_yolo_obb ==========
+[2026-07-27 15:25:51] [YOLO-OBB角度-current_angle_yolo_obb] angle=34.357244342516225, conf=0.9273726940155029, class=bn_up, overlay=measurement_output\save\07.27\20260727_152523\ab_angle_realtime_yolo_obb\20260727_152551_788_current_angle_yolo_obb_YOLO_OBB_overlay.png
+[2026-07-27 15:25:51] [角度检测-current_angle] 已使用当前帧 Bmask 最长边角度作为本轮 baseline：34.357244342516225°；source=yolo_obb_long_edge
+[2026-07-27 15:25:51] ========== Step 2：生成保存路径 ==========
+[2026-07-27 15:25:52] ========== 生成最终存储路径 ==========
+[2026-07-27 15:25:52] [保存路径] run_session_dir=measurement_output\save\07.27\20260727_152523
+[2026-07-27 15:25:52] [保存路径] spectrum_csv=measurement_output\save\07.27\20260727_152523\cycle_0002_152552_157_spectrum.csv
+[2026-07-27 15:25:52] [流程] 本周期 Step 7-14 子循环次数：1
+[2026-07-27 15:25:52] ========== Step 3：照明光 OFF，等待稳定 ==========
+[2026-07-27 15:25:52] [照明光] OFF
+[2026-07-27 15:25:53] [照明光] OFF 后稳定等待：1.200 s
+[2026-07-27 15:25:53] [照明光] OFF 后稳定等待：1.200 s（由“稳定等待/ms”控制）
+[2026-07-27 15:25:54] ========== Step 4：LabVIEW 光谱采集 ==========
+[2026-07-27 15:25:54] ========== LabVIEW 采集光谱 ==========
+[2026-07-27 15:25:56] [光谱] 已从CSV读取：labview_csv_output\measure_002_20260727_152556.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-27 15:25:56] [TCP] 已通过 LabVIEWTCPServer.request_measure() 直接获取真实光谱结果
+[2026-07-27 15:25:56] [横坐标xlsx] 已读取：516中心波长.xlsx，sheet=Sheet1，点数=1024
+[2026-07-27 15:25:56] [LabVIEW] 采集完成：index=2, method=request_measure, num_points=1024, csv_path=labview_csv_output\measure_002_20260727_152556.csv
+[2026-07-27 15:25:56] [光谱] 真实采集完成：num_points=1024, x_points=1024, plot_x_points=1024, raw_original_peak=1133.0, raw_filtered_peak=1133.0, raw_median_peak=1106.0, fit_peak=1106.0
+[2026-07-27 15:25:56] [光谱] 阈值去除后点数=1024，阈值=3000.0；5点中值滤波后点数=1024
+[2026-07-27 15:25:56] ========== Step 5：照明光 ON ==========
+[2026-07-27 15:25:56] [照明光] ON
+[2026-07-27 15:25:56] ========== Step 6：保存数据（异步线程，使用 Step1 最终角度） ==========
+[2026-07-27 15:25:56] ========== 保存本轮测量结果 ==========
+[2026-07-27 15:25:56] [异步保存] 第 2 轮保存线程已启动：save-cycle-0002；提交准备耗时=0.002 s
+[2026-07-27 15:25:56] [Step 6] 异步保存任务提交耗时：0.009 s；保存角度=Step1最终角度；append_plot_point=False
+[2026-07-27 15:25:56] [保存] 光谱 CSV：measurement_output\save\07.27\20260727_152523\cycle_0002_152552_157_spectrum.csv；wavelength列已写入中心波长；已写入本轮角度 angle_deg=34.357244342516225
+[2026-07-27 15:25:56] ========== Step 7-14 子循环第 1/1 次开始 ==========
+[2026-07-27 15:25:56] [保存] Summary CSV 已更新：measurement_output\save\07.27\measurement_summary.csv
+[2026-07-27 15:25:56] ========== Step 7：打开激光 ==========
+[2026-07-27 15:25:56] [保存] Excel汇总已追加第 2 轮：measurement_output\save\07.27\measurement_summary_20260727_152325.xlsx
+[2026-07-27 15:25:56] [激光开关] MOVE axis=2, steps=400
+[2026-07-27 15:25:56] [异步保存] 第 2 轮保存完成
+[2026-07-27 15:25:58] [激光开关] ON 完成：axis=2, steps=400
+[2026-07-27 15:25:58] ========== Step 8：A推动B，并用当前帧Bmask最长边检测B角度 ==========
+[2026-07-27 15:25:58] ========== RuleAB：Step7实时双线程，Bmask最长边监控角度 ==========
+[2026-07-27 15:25:58] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_start
+[2026-07-27 15:25:58] ========== YOLO-OBB角度检测：step7_realtime_frame_000001 ==========
+[2026-07-27 15:25:58] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:25:58] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_controller_step_1
+[2026-07-27 15:25:58] [Step7实时控制] step=1: 执行一次 C边沿路线运动；route_points=29；pause保留但可被stop_event打断。
+[2026-07-27 15:25:58] [YOLO-OBB角度-step7_realtime_frame_000001] angle=34.45875028335033, conf=0.9282097220420837, class=bn_up, overlay=measurement_output\save\07.27\20260727_152523\ab_angle_realtime_yolo_obb\20260727_152558_585_step7_realtime_frame_000001_YOLO_OBB_overlay.png
+[2026-07-27 15:25:58] [Step7实时角度] 角度变化已达到阈值：final_angle=34.458750°, baseline=34.357244342516225, delta=0.102° >= 0.010°；停止/暂停Stage34当前推动，不再使用6°上限/overshoot判定；不在Step7角度线程关闭激光，后续由完整测量主流程正常关激光，并继续完整测量。
+[2026-07-27 15:25:58] [Step7实时] 已发送 stage.stop_all()；reason=angle_delta_ge_target_min_no_laser_off
+[2026-07-27 15:25:59] [Bmask] source=feature, area=959260, center_jump=0.0
+[2026-07-27 15:25:59] [Step7实时] 结束：ok=True, overshoot=False, reason=realtime_bmask_longest_edge_delta_ge_target_min_continue_measurement, final_angle=34.45875028335033, final_delta=0.1015059408341017, records=2, csv=measurement_output\save\07.27\20260727_152523\ab_angle_realtime_bmask_longest_edge\step7_realtime_angle_records.csv
+[2026-07-27 15:25:59] ========== Step 9：检测颜色区域中心，必要时移动1/2通道 ==========
+[2026-07-27 15:26:00] ========== Step9：颜色检测区域中心对齐，必要时移动1/2通道 ==========
+[2026-07-27 15:26:00] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:26:01] [Bmask] source=feature, area=958838, center_jump=0.0
+[2026-07-27 15:26:01] [Step9-颜色中心] cycle=1, 已对齐：center=(566.31,528.22), target=(569.41,532.94), dx=3.10, dy=4.72, tol=10.0
+[2026-07-27 15:26:01] ========== Step 10：补焦判断（循环等待） ==========
+[2026-07-27 15:26:02] [聚焦补焦] FocusScore_ratio=0.6527 超出允许区间[0.9500, 1.0500]，连续低分计数=1/3
+[2026-07-27 15:26:02] [补焦判断] 分数未达标（score=0.6527272287971734），继续等待（第 1 次检查）
+[2026-07-27 15:26:02] [补焦判断] 等待 1.5s 后再次检查...
+[2026-07-27 15:26:04] [聚焦补焦] FocusScore_ratio=0.6490 超出允许区间[0.9500, 1.0500]，连续低分计数=2/3
+[2026-07-27 15:26:04] [补焦判断] 分数未达标（score=0.6489724918101001），继续等待（第 2 次检查）
+[2026-07-27 15:26:04] [补焦判断] 等待 1.5s 后再次检查...
+[2026-07-27 15:26:07] [聚焦补焦] FocusScore_ratio=0.6638 超出允许区间[0.9500, 1.0500]，连续低分计数=3/3
+[2026-07-27 15:26:07] [聚焦补焦] 触发补焦，启动闭环搜索
+[2026-07-27 15:26:07] ========== 闭环补焦 #1 开始: strategy=hill_climb, target=0.95 ==========
+[2026-07-27 15:26:07] [补焦-start] iter=0, z=0, score=0.6582
+[2026-07-27 15:26:08] [补焦-probe_plus] iter=1, z=10, score=0.6545
+[2026-07-27 15:26:09] [补焦-probe_return] iter=2, z=0, score=0.6563
+[2026-07-27 15:26:10] [补焦-probe_minus] iter=3, z=-10, score=0.6651
+[2026-07-27 15:26:11] [补焦-probe_return] iter=4, z=0, score=0.6647
+[2026-07-27 15:26:11] [补焦] 双向试探均无明显提升，停止
+[2026-07-27 15:26:11] ========== 闭环补焦 #1 结束: ok=True, best_score=0.6638, best_z=0 ==========
+[2026-07-27 15:26:11] [聚焦补焦] 闭环结束：ok=True, best_score=0.6638060694670893
+[2026-07-27 15:26:11] [聚焦补焦] 搜索未达标（best=0.6638060694670893），下次将尝试更大范围搜索
+[2026-07-27 15:26:11] [补焦判断] 补焦搜索正常结束但分数未达标（score=0.6638060694670893），继续等待（第 3 次检查）
+[2026-07-27 15:26:11] [补焦判断] 等待 1.5s 后再次检查...
+[2026-07-27 15:26:13] [聚焦补焦] FocusScore_ratio=0.6761 超出允许区间[0.9500, 1.0500]，连续低分计数=4/3
+[2026-07-27 15:26:13] [聚焦补焦] 触发补焦，启动闭环搜索
+[2026-07-27 15:26:13] [聚焦补焦] 上次 hill_climb 搜索未达标，本次切换为 full_sweep
+[2026-07-27 15:26:13] ========== 闭环补焦 #2 开始: strategy=hill_climb, target=0.95 ==========
+[2026-07-27 15:26:14] [补焦-start] iter=0, z=0, score=0.6761
+[2026-07-27 15:26:15] [补焦-probe_plus] iter=1, z=10, score=0.6702
+[2026-07-27 15:26:15] [补焦-probe_return] iter=2, z=0, score=0.6899
+[2026-07-27 15:26:16] [补焦-probe_minus] iter=3, z=-10, score=0.6846
+[2026-07-27 15:26:17] [补焦-search] iter=4, z=-20, score=0.6827
+[2026-07-27 15:26:18] [补焦-search] iter=5, z=-30, score=0.6751
+[2026-07-27 15:26:18] [补焦-search] iter=6, z=-40, score=0.6812
+[2026-07-27 15:26:18] [补焦] 连续 3 次无提升，停止
+[2026-07-27 15:26:18] [补焦] 回退到最佳位置: best_pos=-10, current_pos=-40
+[2026-07-27 15:26:19] [补焦-return_to_best] iter=7, z=-10, score=0.6774
+[2026-07-27 15:26:19] ========== 闭环补焦 #2 结束: ok=False, best_score=0.6846, best_z=-10 ==========
+[2026-07-27 15:26:19] [聚焦补焦] 闭环结束：ok=False, best_score=0.6845947986809813
+[2026-07-27 15:26:19] [聚焦补焦] 搜索未达标（best=0.6845947986809813），下次将尝试更大范围搜索
+[2026-07-27 15:26:19] [补焦判断] 补焦已触发但未成功（score=0.6760673060209617），继续等待（第 4 次检查）
+[2026-07-27 15:26:19] [补焦判断] 等待 1.5s 后再次检查...
+[2026-07-27 15:26:22] [聚焦补焦] FocusScore_ratio=0.7277 超出允许区间[0.9500, 1.0500]，连续低分计数=5/3
+[2026-07-27 15:26:22] [聚焦补焦] 触发补焦，启动闭环搜索
+[2026-07-27 15:26:22] [聚焦补焦] 上次 hill_climb 搜索未达标，本次切换为 full_sweep
+[2026-07-27 15:26:22] ========== 闭环补焦 #3 开始: strategy=hill_climb, target=0.95 ==========
+[2026-07-27 15:26:22] [补焦-start] iter=0, z=0, score=0.7255
+[2026-07-27 15:26:23] [补焦-probe_plus] iter=1, z=10, score=0.7210
+[2026-07-27 15:26:24] [补焦-probe_return] iter=2, z=0, score=0.7368
+[2026-07-27 15:26:25] [补焦-probe_minus] iter=3, z=-10, score=0.7280
+[2026-07-27 15:26:26] [补焦-probe_return] iter=4, z=0, score=0.7278
+[2026-07-27 15:26:26] [补焦] 双向试探均无明显提升，停止
+[2026-07-27 15:26:26] ========== 闭环补焦 #3 结束: ok=True, best_score=0.7277, best_z=0 ==========
+[2026-07-27 15:26:26] [聚焦补焦] 闭环结束：ok=True, best_score=0.7276549412126272
+[2026-07-27 15:26:26] [聚焦补焦] 搜索未达标（best=0.7276549412126272），下次将尝试更大范围搜索
+[2026-07-27 15:26:26] [补焦判断] 补焦搜索正常结束但分数未达标（score=0.7276549412126272），继续等待（第 5 次检查）
+[2026-07-27 15:26:26] [补焦判断] 等待 1.5s 后再次检查...
+[2026-07-27 15:26:28] [聚焦补焦] FocusScore_ratio=0.7406 超出允许区间[0.9500, 1.0500]，连续低分计数=6/3
+[2026-07-27 15:26:28] [聚焦补焦] 触发补焦，启动闭环搜索
+[2026-07-27 15:26:28] [聚焦补焦] 上次 hill_climb 搜索未达标，本次切换为 full_sweep
+[2026-07-27 15:26:28] ========== 闭环补焦 #4 开始: strategy=hill_climb, target=0.95 ==========
+[2026-07-27 15:26:29] [补焦-start] iter=0, z=0, score=0.7435
+[2026-07-27 15:26:29] [补焦-probe_plus] iter=1, z=10, score=0.7440
+[2026-07-27 15:26:30] [补焦-probe_return] iter=2, z=0, score=0.7690
+[2026-07-27 15:26:31] [补焦-probe_minus] iter=3, z=-10, score=0.7545
+[2026-07-27 15:26:32] [补焦-search] iter=4, z=-20, score=0.7513
+[2026-07-27 15:26:32] [补焦-search] iter=5, z=-30, score=0.7449
+[2026-07-27 15:26:33] [补焦-search] iter=6, z=-40, score=0.7398
+[2026-07-27 15:26:33] [补焦] 连续 3 次无提升，停止
+[2026-07-27 15:26:33] [补焦] 回退到最佳位置: best_pos=-10, current_pos=-40
+[2026-07-27 15:26:34] [补焦-return_to_best] iter=7, z=-10, score=0.7335
+[2026-07-27 15:26:34] ========== 闭环补焦 #4 结束: ok=False, best_score=0.7545, best_z=-10 ==========
+[2026-07-27 15:26:34] [聚焦补焦] 闭环结束：ok=False, best_score=0.7544621646321832
+[2026-07-27 15:26:34] [聚焦补焦] 搜索未达标（best=0.7544621646321832），下次将尝试更大范围搜索
+[2026-07-27 15:26:34] [补焦判断] 补焦已触发但未成功（score=0.7406448121277504），继续等待（第 6 次检查）
+[2026-07-27 15:26:34] [补焦判断] 等待 1.5s 后再次检查...
+[2026-07-27 15:26:36] [聚焦补焦] FocusScore_ratio=0.7855 超出允许区间[0.9500, 1.0500]，连续低分计数=7/3
+[2026-07-27 15:26:36] [聚焦补焦] 触发补焦，启动闭环搜索
+[2026-07-27 15:26:36] [聚焦补焦] 上次 hill_climb 搜索未达标，本次切换为 full_sweep
+[2026-07-27 15:26:36] ========== 闭环补焦 #5 开始: strategy=hill_climb, target=0.95 ==========
+[2026-07-27 15:26:37] [补焦-start] iter=0, z=0, score=0.7913
+[2026-07-27 15:26:37] [补焦-probe_plus] iter=1, z=10, score=0.8134
+[2026-07-27 15:26:38] [补焦-search] iter=4, z=20, score=0.8108
+[2026-07-27 15:26:39] [补焦-search] iter=5, z=30, score=0.8495
+[2026-07-27 15:26:40] [补焦-search] iter=6, z=40, score=0.8878
+[2026-07-27 15:26:41] [补焦-search] iter=7, z=50, score=0.9117
+[2026-07-27 15:26:42] [补焦-search] iter=8, z=60, score=0.9625
+[2026-07-27 15:26:42] [补焦] best_score=0.9625 >= target=0.95，停止
+[2026-07-27 15:26:42] ========== 闭环补焦 #5 结束: ok=True, best_score=0.9625, best_z=60 ==========
+[2026-07-27 15:26:42] [聚焦补焦] 闭环结束：ok=True, best_score=0.9625487495508336
+[2026-07-27 15:26:42] [补焦判断] 补焦搜索正常结束但分数未达标（score=0.7855411989004215），继续等待（第 7 次检查）
+[2026-07-27 15:26:42] [补焦判断] 等待 1.5s 后再次检查...
+[2026-07-27 15:26:44] [聚焦补焦] FocusScore_ratio=1.0057 在允许区间[0.9500, 1.0500] 内，不触发补焦
+[2026-07-27 15:26:44] [补焦判断] FocusScore 已达标，退出等待循环（第 8 次检查）
+[2026-07-27 15:26:44] ========== Step 11：照明光 OFF，等待稳定 ==========
+[2026-07-27 15:26:44] [照明光] OFF
+[2026-07-27 15:26:45] [照明光] OFF 后稳定等待：1.200 s
+[2026-07-27 15:26:46] [照明光] OFF 后稳定等待：1.200 s（由“稳定等待/ms”控制）
+[2026-07-27 15:26:47] ========== Step 12：LabVIEW 光谱采集 ==========
+[2026-07-27 15:26:47] ========== LabVIEW 采集光谱 ==========
+[2026-07-27 15:26:48] [光谱] 已从CSV读取：labview_csv_output\measure_002_20260727_152648.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-27 15:26:48] [TCP] 已通过 LabVIEWTCPServer.request_measure() 直接获取真实光谱结果
+[2026-07-27 15:26:48] [横坐标xlsx] 已读取：516中心波长.xlsx，sheet=Sheet1，点数=1024
+[2026-07-27 15:26:48] [LabVIEW] 采集完成：index=2, method=request_measure, num_points=1024, csv_path=labview_csv_output\measure_002_20260727_152648.csv
+[2026-07-27 15:26:48] [光谱] 真实采集完成：num_points=1024, x_points=1024, plot_x_points=1024, raw_original_peak=1135.0, raw_filtered_peak=1135.0, raw_median_peak=1108.0, fit_peak=1108.0
+[2026-07-27 15:26:48] [光谱] 阈值去除后点数=1024，阈值=3000.0；5点中值滤波后点数=1024
+[2026-07-27 15:26:48] ========== Step 13：照明光 ON ==========
+[2026-07-27 15:26:48] [照明光] ON
+[2026-07-27 15:26:48] ========== Step 14：保存数据（异步线程，使用 Step1 最终角度） ==========
+[2026-07-27 15:26:48] ========== 保存本轮测量结果 ==========
+[2026-07-27 15:26:48] [异步保存] 第 2 轮保存线程已启动：save-cycle-0002；提交准备耗时=0.002 s
+[2026-07-27 15:26:48] [保存] 光谱 CSV：measurement_output\save\07.27\20260727_152523\cycle_0002_152552_157_spectrum.csv；wavelength列已写入中心波长；已写入本轮角度 angle_deg=34.357244342516225
+[2026-07-27 15:26:48] [Step 14] 异步保存任务提交耗时：0.036 s；保存角度=Step1最终角度；append_plot_point=True
+[2026-07-27 15:26:48] ========== Step 7-14 子循环第 1/1 次结束 ==========
+[2026-07-27 15:26:48] [保存] Summary CSV 已更新：measurement_output\save\07.27\measurement_summary.csv
+[2026-07-27 15:26:48] ========== Step 7-14 子循环结束：关闭激光 ==========
+[2026-07-27 15:26:48] [保存] Excel汇总已追加第 2 轮：measurement_output\save\07.27\measurement_summary_20260727_152325.xlsx
+[2026-07-27 15:26:49] [激光开关] MOVE axis=2, steps=-400
+[2026-07-27 15:26:49] [绘图] 已追加数据点：cycle=2, angle=34.357244342516225, fit_peak=1108.0
+[2026-07-27 15:26:49] [异步保存] 第 2 轮保存完成
+[2026-07-27 15:26:50] [激光开关] OFF 完成：axis=2, steps=-400
+[2026-07-27 15:26:50] [激光开关] 子循环结束，主流程正常关闭激光
+[2026-07-27 15:26:51] [流程] 第 2 轮数据已提交保存；保存角度=Step1最终角度 34.357244342516225；Step8最终角度=34.45875028335033 仅用于关闭激光/排查，不覆盖保存角度。
+[2026-07-27 15:26:51] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:26:51] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=run_workflow_cycle_3_before_run_one_cycle
+[2026-07-27 15:26:51] 
+[2026-07-27 15:26:51] ############################################################
+[2026-07-27 15:26:51] 开始第 3 轮循环测量
+[2026-07-27 15:26:51] ############################################################
+[2026-07-27 15:26:51] ========== Step 1：Bmask最长边角度检测 current_angle ==========
+[2026-07-27 15:26:51] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=runtime_rule_ab_params/step1_bmask_longest_edge_angle
+[2026-07-27 15:26:51] ========== YOLO-OBB角度检测：current_angle_yolo_obb ==========
+[2026-07-27 15:26:51] [YOLO-OBB角度-current_angle_yolo_obb] angle=34.425246170033205, conf=0.9273828268051147, class=bn_up, overlay=measurement_output\save\07.27\20260727_152523\ab_angle_realtime_yolo_obb\20260727_152651_591_current_angle_yolo_obb_YOLO_OBB_overlay.png
+[2026-07-27 15:26:51] [角度检测-current_angle] 已使用当前帧 Bmask 最长边角度作为本轮 baseline：34.425246170033205°；source=yolo_obb_long_edge
+[2026-07-27 15:26:52] ========== Step 2：生成保存路径 ==========
+[2026-07-27 15:26:52] ========== 生成最终存储路径 ==========
+[2026-07-27 15:26:52] [保存路径] run_session_dir=measurement_output\save\07.27\20260727_152523
+[2026-07-27 15:26:52] [保存路径] spectrum_csv=measurement_output\save\07.27\20260727_152523\cycle_0003_152652_228_spectrum.csv
+[2026-07-27 15:26:52] [流程] 本周期 Step 7-14 子循环次数：1
+[2026-07-27 15:26:52] ========== Step 3：照明光 OFF，等待稳定 ==========
+[2026-07-27 15:26:52] [照明光] OFF
+[2026-07-27 15:26:53] [照明光] OFF 后稳定等待：1.200 s
+[2026-07-27 15:26:54] [照明光] OFF 后稳定等待：1.200 s（由“稳定等待/ms”控制）
+[2026-07-27 15:26:55] ========== Step 4：LabVIEW 光谱采集 ==========
+[2026-07-27 15:26:55] ========== LabVIEW 采集光谱 ==========
+[2026-07-27 15:26:56] [光谱] 已从CSV读取：labview_csv_output\measure_003_20260727_152656.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-27 15:26:56] [TCP] 已通过 LabVIEWTCPServer.request_measure() 直接获取真实光谱结果
+[2026-07-27 15:26:56] [横坐标xlsx] 已读取：516中心波长.xlsx，sheet=Sheet1，点数=1024
+[2026-07-27 15:26:56] [LabVIEW] 采集完成：index=3, method=request_measure, num_points=1024, csv_path=labview_csv_output\measure_003_20260727_152656.csv
+[2026-07-27 15:26:56] [光谱] 真实采集完成：num_points=1024, x_points=1024, plot_x_points=1024, raw_original_peak=1131.0, raw_filtered_peak=1131.0, raw_median_peak=1108.0, fit_peak=1108.0
+[2026-07-27 15:26:56] [光谱] 阈值去除后点数=1024，阈值=3000.0；5点中值滤波后点数=1024
+[2026-07-27 15:26:56] ========== Step 5：照明光 ON ==========
+[2026-07-27 15:26:56] [照明光] ON
+[2026-07-27 15:26:56] ========== Step 6：保存数据（异步线程，使用 Step1 最终角度） ==========
+[2026-07-27 15:26:56] ========== 保存本轮测量结果 ==========
+[2026-07-27 15:26:56] [异步保存] 第 3 轮保存线程已启动：save-cycle-0003；提交准备耗时=0.001 s
+[2026-07-27 15:26:57] [Step 6] 异步保存任务提交耗时：0.266 s；保存角度=Step1最终角度；append_plot_point=False
+[2026-07-27 15:26:57] [保存] 光谱 CSV：measurement_output\save\07.27\20260727_152523\cycle_0003_152652_228_spectrum.csv；wavelength列已写入中心波长；已写入本轮角度 angle_deg=34.425246170033205
+[2026-07-27 15:26:57] ========== Step 7-14 子循环第 1/1 次开始 ==========
+[2026-07-27 15:26:57] [保存] Summary CSV 已更新：measurement_output\save\07.27\measurement_summary.csv
+[2026-07-27 15:26:57] ========== Step 7：打开激光 ==========
+[2026-07-27 15:26:57] [保存] Excel汇总已追加第 3 轮：measurement_output\save\07.27\measurement_summary_20260727_152325.xlsx
+[2026-07-27 15:26:57] [激光开关] MOVE axis=2, steps=400
+[2026-07-27 15:26:57] [异步保存] 第 3 轮保存完成
+[2026-07-27 15:26:58] [激光开关] ON 完成：axis=2, steps=400
+[2026-07-27 15:26:58] ========== Step 8：A推动B，并用当前帧Bmask最长边检测B角度 ==========
+[2026-07-27 15:26:58] ========== RuleAB：Step7实时双线程，Bmask最长边监控角度 ==========
+[2026-07-27 15:26:58] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_start
+[2026-07-27 15:26:58] ========== YOLO-OBB角度检测：step7_realtime_frame_000001 ==========
+[2026-07-27 15:26:58] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:26:59] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_controller_step_1
+[2026-07-27 15:26:59] [Step7实时控制] step=1: 执行一次 C边沿路线运动；route_points=29；pause保留但可被stop_event打断。
+[2026-07-27 15:26:59] [YOLO-OBB角度-step7_realtime_frame_000001] angle=34.50980888310997, conf=0.9269770383834839, class=bn_up, overlay=measurement_output\save\07.27\20260727_152523\ab_angle_realtime_yolo_obb\20260727_152659_075_step7_realtime_frame_000001_YOLO_OBB_overlay.png
+[2026-07-27 15:26:59] [Step7实时角度] 角度变化已达到阈值：final_angle=34.509809°, baseline=34.425246170033205, delta=0.085° >= 0.010°；停止/暂停Stage34当前推动，不再使用6°上限/overshoot判定；不在Step7角度线程关闭激光，后续由完整测量主流程正常关激光，并继续完整测量。
+[2026-07-27 15:26:59] [Step7实时] 已发送 stage.stop_all()；reason=angle_delta_ge_target_min_no_laser_off
+[2026-07-27 15:27:00] [Bmask] source=feature, area=958826, center_jump=0.0
+[2026-07-27 15:27:00] [Step7实时] 结束：ok=True, overshoot=False, reason=realtime_bmask_longest_edge_delta_ge_target_min_continue_measurement, final_angle=34.50980888310997, final_delta=0.08456271307676388, records=2, csv=measurement_output\save\07.27\20260727_152523\ab_angle_realtime_bmask_longest_edge\step7_realtime_angle_records.csv
+[2026-07-27 15:27:00] ========== Step 9：检测颜色区域中心，必要时移动1/2通道 ==========
+[2026-07-27 15:27:01] ========== Step9：颜色检测区域中心对齐，必要时移动1/2通道 ==========
+[2026-07-27 15:27:01] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:27:02] [Bmask] source=feature, area=958917, center_jump=0.0
+[2026-07-27 15:27:02] [Step9-颜色中心] cycle=1, 已对齐：center=(571.21,527.39), target=(569.41,532.94), dx=-1.79, dy=5.55, tol=10.0
+[2026-07-27 15:27:03] ========== Step 10：补焦判断（循环等待） ==========
+[2026-07-27 15:27:03] [聚焦补焦] FocusScore_ratio=1.0415 在允许区间[0.9500, 1.0500] 内，不触发补焦
+[2026-07-27 15:27:03] [补焦判断] FocusScore 已达标，退出等待循环（第 1 次检查）
+[2026-07-27 15:27:04] ========== Step 11：照明光 OFF，等待稳定 ==========
+[2026-07-27 15:27:04] [照明光] OFF
+[2026-07-27 15:27:05] [照明光] OFF 后稳定等待：1.200 s
+[2026-07-27 15:27:05] [照明光] OFF 后稳定等待：1.200 s（由“稳定等待/ms”控制）
+[2026-07-27 15:27:06] ========== Step 12：LabVIEW 光谱采集 ==========
+[2026-07-27 15:27:06] ========== LabVIEW 采集光谱 ==========
+[2026-07-27 15:27:08] [光谱] 已从CSV读取：labview_csv_output\measure_003_20260727_152708.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-27 15:27:08] [TCP] 已通过 LabVIEWTCPServer.request_measure() 直接获取真实光谱结果
+[2026-07-27 15:27:08] [横坐标xlsx] 已读取：516中心波长.xlsx，sheet=Sheet1，点数=1024
+[2026-07-27 15:27:08] [LabVIEW] 采集完成：index=3, method=request_measure, num_points=1024, csv_path=labview_csv_output\measure_003_20260727_152708.csv
+[2026-07-27 15:27:08] [光谱] 真实采集完成：num_points=1024, x_points=1024, plot_x_points=1024, raw_original_peak=1128.0, raw_filtered_peak=1128.0, raw_median_peak=1105.0, fit_peak=1105.0
+[2026-07-27 15:27:08] [光谱] 阈值去除后点数=1024，阈值=3000.0；5点中值滤波后点数=1024
+[2026-07-27 15:27:08] ========== Step 13：照明光 ON ==========
+[2026-07-27 15:27:08] [照明光] ON
+[2026-07-27 15:27:08] ========== Step 14：保存数据（异步线程，使用 Step1 最终角度） ==========
+[2026-07-27 15:27:08] ========== 保存本轮测量结果 ==========
+[2026-07-27 15:27:08] [异步保存] 第 3 轮保存线程已启动：save-cycle-0003；提交准备耗时=0.002 s
+[2026-07-27 15:27:08] [保存] 光谱 CSV：measurement_output\save\07.27\20260727_152523\cycle_0003_152652_228_spectrum.csv；wavelength列已写入中心波长；已写入本轮角度 angle_deg=34.425246170033205
+[2026-07-27 15:27:08] [Step 14] 异步保存任务提交耗时：0.147 s；保存角度=Step1最终角度；append_plot_point=True
+[2026-07-27 15:27:08] [保存] Summary CSV 已更新：measurement_output\save\07.27\measurement_summary.csv
+[2026-07-27 15:27:08] ========== Step 7-14 子循环第 1/1 次结束 ==========
+[2026-07-27 15:27:08] [保存] Excel汇总已追加第 3 轮：measurement_output\save\07.27\measurement_summary_20260727_152325.xlsx
+[2026-07-27 15:27:08] ========== Step 7-14 子循环结束：关闭激光 ==========
+[2026-07-27 15:27:08] [绘图] 已追加数据点：cycle=3, angle=34.425246170033205, fit_peak=1105.0
+[2026-07-27 15:27:08] [激光开关] MOVE axis=2, steps=-400
+[2026-07-27 15:27:08] [异步保存] 第 3 轮保存完成
+[2026-07-27 15:27:10] [激光开关] OFF 完成：axis=2, steps=-400
+[2026-07-27 15:27:10] [激光开关] 子循环结束，主流程正常关闭激光
+[2026-07-27 15:27:10] [流程] 第 3 轮数据已提交保存；保存角度=Step1最终角度 34.425246170033205；Step8最终角度=34.50980888310997 仅用于关闭激光/排查，不覆盖保存角度。
+[2026-07-27 15:27:11] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:27:11] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=run_workflow_cycle_4_before_run_one_cycle
+[2026-07-27 15:27:11] 
+[2026-07-27 15:27:11] ############################################################
+[2026-07-27 15:27:11] 开始第 4 轮循环测量
+[2026-07-27 15:27:11] ############################################################
+[2026-07-27 15:27:11] ========== Step 1：Bmask最长边角度检测 current_angle ==========
+[2026-07-27 15:27:11] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=runtime_rule_ab_params/step1_bmask_longest_edge_angle
+[2026-07-27 15:27:11] ========== YOLO-OBB角度检测：current_angle_yolo_obb ==========
+[2026-07-27 15:27:11] [YOLO-OBB角度-current_angle_yolo_obb] angle=34.49430046091999, conf=0.9269974827766418, class=bn_up, overlay=measurement_output\save\07.27\20260727_152523\ab_angle_realtime_yolo_obb\20260727_152711_783_current_angle_yolo_obb_YOLO_OBB_overlay.png
+[2026-07-27 15:27:11] [角度检测-current_angle] 已使用当前帧 Bmask 最长边角度作为本轮 baseline：34.49430046091999°；source=yolo_obb_long_edge
+[2026-07-27 15:27:11] ========== Step 2：生成保存路径 ==========
+[2026-07-27 15:27:12] ========== 生成最终存储路径 ==========
+[2026-07-27 15:27:12] [保存路径] run_session_dir=measurement_output\save\07.27\20260727_152523
+[2026-07-27 15:27:12] [保存路径] spectrum_csv=measurement_output\save\07.27\20260727_152523\cycle_0004_152712_073_spectrum.csv
+[2026-07-27 15:27:12] [流程] 本周期 Step 7-14 子循环次数：1
+[2026-07-27 15:27:12] ========== Step 3：照明光 OFF，等待稳定 ==========
+[2026-07-27 15:27:12] [照明光] OFF
+[2026-07-27 15:27:13] [照明光] OFF 后稳定等待：1.200 s
+[2026-07-27 15:27:13] [照明光] OFF 后稳定等待：1.200 s（由“稳定等待/ms”控制）
+[2026-07-27 15:27:15] ========== Step 4：LabVIEW 光谱采集 ==========
+[2026-07-27 15:27:15] ========== LabVIEW 采集光谱 ==========
+[2026-07-27 15:27:16] [光谱] 已从CSV读取：labview_csv_output\measure_004_20260727_152716.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-27 15:27:16] [TCP] 已通过 LabVIEWTCPServer.request_measure() 直接获取真实光谱结果
+[2026-07-27 15:27:16] [横坐标xlsx] 已读取：516中心波长.xlsx，sheet=Sheet1，点数=1024
+[2026-07-27 15:27:16] [LabVIEW] 采集完成：index=4, method=request_measure, num_points=1024, csv_path=labview_csv_output\measure_004_20260727_152716.csv
+[2026-07-27 15:27:16] [光谱] 真实采集完成：num_points=1024, x_points=1024, plot_x_points=1024, raw_original_peak=1129.0, raw_filtered_peak=1129.0, raw_median_peak=1107.0, fit_peak=1107.0
+[2026-07-27 15:27:16] [光谱] 阈值去除后点数=1024，阈值=3000.0；5点中值滤波后点数=1024
+[2026-07-27 15:27:16] ========== Step 5：照明光 ON ==========
+[2026-07-27 15:27:16] [照明光] ON
+[2026-07-27 15:27:16] ========== Step 6：保存数据（异步线程，使用 Step1 最终角度） ==========
+[2026-07-27 15:27:16] ========== 保存本轮测量结果 ==========
+[2026-07-27 15:27:16] [异步保存] 第 4 轮保存线程已启动：save-cycle-0004；提交准备耗时=0.001 s
+[2026-07-27 15:27:16] [Step 6] 异步保存任务提交耗时：0.009 s；保存角度=Step1最终角度；append_plot_point=False
+[2026-07-27 15:27:16] [保存] 光谱 CSV：measurement_output\save\07.27\20260727_152523\cycle_0004_152712_073_spectrum.csv；wavelength列已写入中心波长；已写入本轮角度 angle_deg=34.49430046091999
+[2026-07-27 15:27:16] [保存] Summary CSV 已更新：measurement_output\save\07.27\measurement_summary.csv
+[2026-07-27 15:27:16] ========== Step 7-14 子循环第 1/1 次开始 ==========
+[2026-07-27 15:27:16] ========== Step 7：打开激光 ==========
+[2026-07-27 15:27:16] [保存] Excel汇总已追加第 4 轮：measurement_output\save\07.27\measurement_summary_20260727_152325.xlsx
+[2026-07-27 15:27:17] [激光开关] MOVE axis=2, steps=400
+[2026-07-27 15:27:17] [异步保存] 第 4 轮保存完成
+[2026-07-27 15:27:18] [激光开关] ON 完成：axis=2, steps=400
+[2026-07-27 15:27:18] ========== Step 8：A推动B，并用当前帧Bmask最长边检测B角度 ==========
+[2026-07-27 15:27:18] ========== RuleAB：Step7实时双线程，Bmask最长边监控角度 ==========
+[2026-07-27 15:27:18] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_start
+[2026-07-27 15:27:18] ========== YOLO-OBB角度检测：step7_realtime_frame_000001 ==========
+[2026-07-27 15:27:18] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:27:18] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_controller_step_1
+[2026-07-27 15:27:18] [Step7实时控制] step=1: 执行一次 C边沿路线运动；route_points=29；pause保留但可被stop_event打断。
+[2026-07-27 15:27:18] [YOLO-OBB角度-step7_realtime_frame_000001] angle=34.334411626882826, conf=0.9272264838218689, class=bn_up, overlay=measurement_output\save\07.27\20260727_152523\ab_angle_realtime_yolo_obb\20260727_152718_793_step7_realtime_frame_000001_YOLO_OBB_overlay.png
+[2026-07-27 15:27:18] [Step7实时角度] 角度变化已达到阈值：final_angle=34.334412°, baseline=34.49430046091999, delta=0.160° >= 0.010°；停止/暂停Stage34当前推动，不再使用6°上限/overshoot判定；不在Step7角度线程关闭激光，后续由完整测量主流程正常关激光，并继续完整测量。
+[2026-07-27 15:27:19] [Step7实时] 已发送 stage.stop_all()；reason=angle_delta_ge_target_min_no_laser_off
+[2026-07-27 15:27:19] [Bmask] source=feature, area=959222, center_jump=0.0
+[2026-07-27 15:27:19] [Step7实时] 结束：ok=True, overshoot=False, reason=realtime_bmask_longest_edge_delta_ge_target_min_continue_measurement, final_angle=34.334411626882826, final_delta=0.1598888340371616, records=2, csv=measurement_output\save\07.27\20260727_152523\ab_angle_realtime_bmask_longest_edge\step7_realtime_angle_records.csv
+[2026-07-27 15:27:20] ========== Step 9：检测颜色区域中心，必要时移动1/2通道 ==========
+[2026-07-27 15:27:20] ========== Step9：颜色检测区域中心对齐，必要时移动1/2通道 ==========
+[2026-07-27 15:27:20] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:27:21] [Bmask] source=feature, area=959154, center_jump=0.0
+[2026-07-27 15:27:21] [Step9-颜色中心] cycle=1, 已对齐：center=(571.27,526.53), target=(569.41,532.94), dx=-1.85, dy=6.41, tol=10.0
+[2026-07-27 15:27:22] ========== Step 10：补焦判断（循环等待） ==========
+[2026-07-27 15:27:23] [聚焦补焦] FocusScore_ratio=0.9998 在允许区间[0.9500, 1.0500] 内，不触发补焦
+[2026-07-27 15:27:23] [补焦判断] FocusScore 已达标，退出等待循环（第 1 次检查）
+[2026-07-27 15:27:23] ========== Step 11：照明光 OFF，等待稳定 ==========
+[2026-07-27 15:27:23] [照明光] OFF
+[2026-07-27 15:27:24] [照明光] OFF 后稳定等待：1.200 s
+[2026-07-27 15:27:24] [照明光] OFF 后稳定等待：1.200 s（由“稳定等待/ms”控制）
+[2026-07-27 15:27:26] ========== Step 12：LabVIEW 光谱采集 ==========
+[2026-07-27 15:27:26] ========== LabVIEW 采集光谱 ==========
+[2026-07-27 15:27:27] [光谱] 已从CSV读取：labview_csv_output\measure_004_20260727_152727.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-27 15:27:27] [TCP] 已通过 LabVIEWTCPServer.request_measure() 直接获取真实光谱结果
+[2026-07-27 15:27:27] [横坐标xlsx] 已读取：516中心波长.xlsx，sheet=Sheet1，点数=1024
+[2026-07-27 15:27:27] [LabVIEW] 采集完成：index=4, method=request_measure, num_points=1024, csv_path=labview_csv_output\measure_004_20260727_152727.csv
+[2026-07-27 15:27:27] [光谱] 真实采集完成：num_points=1024, x_points=1024, plot_x_points=1024, raw_original_peak=1142.0, raw_filtered_peak=1142.0, raw_median_peak=1104.0, fit_peak=1104.0
+[2026-07-27 15:27:27] [光谱] 阈值去除后点数=1024，阈值=3000.0；5点中值滤波后点数=1024
+[2026-07-27 15:27:27] ========== Step 13：照明光 ON ==========
+[2026-07-27 15:27:27] [照明光] ON
+[2026-07-27 15:27:27] ========== Step 14：保存数据（异步线程，使用 Step1 最终角度） ==========
+[2026-07-27 15:27:27] ========== 保存本轮测量结果 ==========
+[2026-07-27 15:27:27] [异步保存] 第 4 轮保存线程已启动：save-cycle-0004；提交准备耗时=0.005 s
+[2026-07-27 15:27:27] [Step 14] 异步保存任务提交耗时：0.009 s；保存角度=Step1最终角度；append_plot_point=True
+[2026-07-27 15:27:27] [保存] 光谱 CSV：measurement_output\save\07.27\20260727_152523\cycle_0004_152712_073_spectrum.csv；wavelength列已写入中心波长；已写入本轮角度 angle_deg=34.49430046091999
+[2026-07-27 15:27:27] ========== Step 7-14 子循环第 1/1 次结束 ==========
+[2026-07-27 15:27:27] [保存] Summary CSV 已更新：measurement_output\save\07.27\measurement_summary.csv
+[2026-07-27 15:27:27] ========== Step 7-14 子循环结束：关闭激光 ==========
+[2026-07-27 15:27:27] [激光开关] MOVE axis=2, steps=-400
+[2026-07-27 15:27:27] [保存] Excel汇总已追加第 4 轮：measurement_output\save\07.27\measurement_summary_20260727_152325.xlsx
+[2026-07-27 15:27:27] [绘图] 已追加数据点：cycle=4, angle=34.49430046091999, fit_peak=1104.0
+[2026-07-27 15:27:27] [异步保存] 第 4 轮保存完成
+[2026-07-27 15:27:29] [激光开关] OFF 完成：axis=2, steps=-400
+[2026-07-27 15:27:29] [激光开关] 子循环结束，主流程正常关闭激光
+[2026-07-27 15:27:29] [流程] 第 4 轮数据已提交保存；保存角度=Step1最终角度 34.49430046091999；Step8最终角度=34.334411626882826 仅用于关闭激光/排查，不覆盖保存角度。
+[2026-07-27 15:27:29] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:27:29] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=run_workflow_cycle_5_before_run_one_cycle
+[2026-07-27 15:27:30] 
+[2026-07-27 15:27:30] ############################################################
+[2026-07-27 15:27:30] 开始第 5 轮循环测量
+[2026-07-27 15:27:30] ############################################################
+[2026-07-27 15:27:30] ========== Step 1：Bmask最长边角度检测 current_angle ==========
+[2026-07-27 15:27:30] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=runtime_rule_ab_params/step1_bmask_longest_edge_angle
+[2026-07-27 15:27:30] ========== YOLO-OBB角度检测：current_angle_yolo_obb ==========
+[2026-07-27 15:27:30] [YOLO-OBB角度-current_angle_yolo_obb] angle=34.38852960833415, conf=0.9281439781188965, class=bn_up, overlay=measurement_output\save\07.27\20260727_152523\ab_angle_realtime_yolo_obb\20260727_152730_628_current_angle_yolo_obb_YOLO_OBB_overlay.png
+[2026-07-27 15:27:30] [角度检测-current_angle] 已使用当前帧 Bmask 最长边角度作为本轮 baseline：34.38852960833415°；source=yolo_obb_long_edge
+[2026-07-27 15:27:30] ========== Step 2：生成保存路径 ==========
+[2026-07-27 15:27:30] ========== 生成最终存储路径 ==========
+[2026-07-27 15:27:30] [保存路径] run_session_dir=measurement_output\save\07.27\20260727_152523
+[2026-07-27 15:27:30] [保存路径] spectrum_csv=measurement_output\save\07.27\20260727_152523\cycle_0005_152730_976_spectrum.csv
+[2026-07-27 15:27:31] [流程] 本周期 Step 7-14 子循环次数：1
+[2026-07-27 15:27:31] ========== Step 3：照明光 OFF，等待稳定 ==========
+[2026-07-27 15:27:31] [照明光] OFF
+[2026-07-27 15:27:32] [照明光] OFF 后稳定等待：1.200 s
+[2026-07-27 15:27:32] [照明光] OFF 后稳定等待：1.200 s（由“稳定等待/ms”控制）
+[2026-07-27 15:27:34] ========== Step 4：LabVIEW 光谱采集 ==========
+[2026-07-27 15:27:34] ========== LabVIEW 采集光谱 ==========
+[2026-07-27 15:27:35] [光谱] 已从CSV读取：labview_csv_output\measure_005_20260727_152735.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-27 15:27:35] [TCP] 已通过 LabVIEWTCPServer.request_measure() 直接获取真实光谱结果
+[2026-07-27 15:27:35] [横坐标xlsx] 已读取：516中心波长.xlsx，sheet=Sheet1，点数=1024
+[2026-07-27 15:27:35] [LabVIEW] 采集完成：index=5, method=request_measure, num_points=1024, csv_path=labview_csv_output\measure_005_20260727_152735.csv
+[2026-07-27 15:27:35] [光谱] 真实采集完成：num_points=1024, x_points=1024, plot_x_points=1024, raw_original_peak=1138.0, raw_filtered_peak=1138.0, raw_median_peak=1104.0, fit_peak=1104.0
+[2026-07-27 15:27:35] [光谱] 阈值去除后点数=1024，阈值=3000.0；5点中值滤波后点数=1024
+[2026-07-27 15:27:35] ========== Step 5：照明光 ON ==========
+[2026-07-27 15:27:35] [照明光] ON
+[2026-07-27 15:27:35] ========== Step 6：保存数据（异步线程，使用 Step1 最终角度） ==========
+[2026-07-27 15:27:35] ========== 保存本轮测量结果 ==========
+[2026-07-27 15:27:35] [异步保存] 第 5 轮保存线程已启动：save-cycle-0005；提交准备耗时=0.001 s
+[2026-07-27 15:27:35] [Step 6] 异步保存任务提交耗时：0.008 s；保存角度=Step1最终角度；append_plot_point=False
+[2026-07-27 15:27:35] [保存] 光谱 CSV：measurement_output\save\07.27\20260727_152523\cycle_0005_152730_976_spectrum.csv；wavelength列已写入中心波长；已写入本轮角度 angle_deg=34.38852960833415
+[2026-07-27 15:27:35] ========== Step 7-14 子循环第 1/1 次开始 ==========
+[2026-07-27 15:27:35] [保存] Summary CSV 已更新：measurement_output\save\07.27\measurement_summary.csv
+[2026-07-27 15:27:35] ========== Step 7：打开激光 ==========
+[2026-07-27 15:27:35] [保存] Excel汇总已追加第 5 轮：measurement_output\save\07.27\measurement_summary_20260727_152325.xlsx
+[2026-07-27 15:27:35] [激光开关] MOVE axis=2, steps=400
+[2026-07-27 15:27:35] [异步保存] 第 5 轮保存完成
+[2026-07-27 15:27:37] [激光开关] ON 完成：axis=2, steps=400
+[2026-07-27 15:27:37] ========== Step 8：A推动B，并用当前帧Bmask最长边检测B角度 ==========
+[2026-07-27 15:27:37] ========== RuleAB：Step7实时双线程，Bmask最长边监控角度 ==========
+[2026-07-27 15:27:37] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_start
+[2026-07-27 15:27:37] ========== YOLO-OBB角度检测：step7_realtime_frame_000001 ==========
+[2026-07-27 15:27:37] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:27:37] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_controller_step_1
+[2026-07-27 15:27:37] [Step7实时控制] step=1: 执行一次 C边沿路线运动；route_points=29；pause保留但可被stop_event打断。
+[2026-07-27 15:27:37] [YOLO-OBB角度-step7_realtime_frame_000001] angle=34.44508678813395, conf=0.9270089864730835, class=bn_up, overlay=measurement_output\save\07.27\20260727_152523\ab_angle_realtime_yolo_obb\20260727_152737_516_step7_realtime_frame_000001_YOLO_OBB_overlay.png
+[2026-07-27 15:27:37] [Step7实时角度] 角度变化已达到阈值：final_angle=34.445087°, baseline=34.38852960833415, delta=0.057° >= 0.010°；停止/暂停Stage34当前推动，不再使用6°上限/overshoot判定；不在Step7角度线程关闭激光，后续由完整测量主流程正常关激光，并继续完整测量。
+[2026-07-27 15:27:37] [Step7实时] 已发送 stage.stop_all()；reason=angle_delta_ge_target_min_no_laser_off
+[2026-07-27 15:27:38] [Bmask] source=feature, area=959223, center_jump=0.0
+[2026-07-27 15:27:38] [Step7实时] 结束：ok=True, overshoot=False, reason=realtime_bmask_longest_edge_delta_ge_target_min_continue_measurement, final_angle=34.44508678813395, final_delta=0.05655717979979613, records=2, csv=measurement_output\save\07.27\20260727_152523\ab_angle_realtime_bmask_longest_edge\step7_realtime_angle_records.csv
+[2026-07-27 15:27:38] ========== Step 9：检测颜色区域中心，必要时移动1/2通道 ==========
+[2026-07-27 15:27:39] ========== Step9：颜色检测区域中心对齐，必要时移动1/2通道 ==========
+[2026-07-27 15:27:39] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:27:40] [Bmask] source=feature, area=959319, center_jump=0.0
+[2026-07-27 15:27:40] [Step9-颜色中心] cycle=1, 已对齐：center=(571.06,526.82), target=(569.41,532.94), dx=-1.65, dy=6.12, tol=10.0
+[2026-07-27 15:27:40] ========== Step 10：补焦判断（循环等待） ==========
+[2026-07-27 15:27:41] [聚焦补焦] FocusScore_ratio=1.0287 在允许区间[0.9500, 1.0500] 内，不触发补焦
+[2026-07-27 15:27:41] [补焦判断] FocusScore 已达标，退出等待循环（第 1 次检查）
+[2026-07-27 15:27:41] ========== Step 11：照明光 OFF，等待稳定 ==========
+[2026-07-27 15:27:41] [照明光] OFF
+[2026-07-27 15:27:42] [照明光] OFF 后稳定等待：1.200 s
+[2026-07-27 15:27:43] [照明光] OFF 后稳定等待：1.200 s（由“稳定等待/ms”控制）
+[2026-07-27 15:27:44] ========== Step 12：LabVIEW 光谱采集 ==========
+[2026-07-27 15:27:44] ========== LabVIEW 采集光谱 ==========
+[2026-07-27 15:27:45] [光谱] 已从CSV读取：labview_csv_output\measure_005_20260727_152745.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-27 15:27:45] [TCP] 已通过 LabVIEWTCPServer.request_measure() 直接获取真实光谱结果
+[2026-07-27 15:27:45] [横坐标xlsx] 已读取：516中心波长.xlsx，sheet=Sheet1，点数=1024
+[2026-07-27 15:27:45] [LabVIEW] 采集完成：index=5, method=request_measure, num_points=1024, csv_path=labview_csv_output\measure_005_20260727_152745.csv
+[2026-07-27 15:27:45] [光谱] 真实采集完成：num_points=1024, x_points=1024, plot_x_points=1024, raw_original_peak=1144.0, raw_filtered_peak=1144.0, raw_median_peak=1106.0, fit_peak=1106.0
+[2026-07-27 15:27:45] [光谱] 阈值去除后点数=1024，阈值=3000.0；5点中值滤波后点数=1024
+[2026-07-27 15:27:45] ========== Step 13：照明光 ON ==========
+[2026-07-27 15:27:45] [照明光] ON
+[2026-07-27 15:27:45] ========== Step 14：保存数据（异步线程，使用 Step1 最终角度） ==========
+[2026-07-27 15:27:46] ========== 保存本轮测量结果 ==========
+[2026-07-27 15:27:46] [异步保存] 第 5 轮保存线程已启动：save-cycle-0005；提交准备耗时=0.002 s
+[2026-07-27 15:27:46] [Step 14] 异步保存任务提交耗时：0.111 s；保存角度=Step1最终角度；append_plot_point=True
+[2026-07-27 15:27:46] [保存] 光谱 CSV：measurement_output\save\07.27\20260727_152523\cycle_0005_152730_976_spectrum.csv；wavelength列已写入中心波长；已写入本轮角度 angle_deg=34.38852960833415
+[2026-07-27 15:27:46] ========== Step 7-14 子循环第 1/1 次结束 ==========
+[2026-07-27 15:27:46] [保存] Summary CSV 已更新：measurement_output\save\07.27\measurement_summary.csv
+[2026-07-27 15:27:46] ========== Step 7-14 子循环结束：关闭激光 ==========
+[2026-07-27 15:27:46] [激光开关] MOVE axis=2, steps=-400
+[2026-07-27 15:27:46] [保存] Excel汇总已追加第 5 轮：measurement_output\save\07.27\measurement_summary_20260727_152325.xlsx
+[2026-07-27 15:27:46] [绘图] 已追加数据点：cycle=5, angle=34.38852960833415, fit_peak=1106.0
+[2026-07-27 15:27:46] [异步保存] 第 5 轮保存完成
+[2026-07-27 15:27:47] [激光开关] OFF 完成：axis=2, steps=-400
+[2026-07-27 15:27:47] [激光开关] 子循环结束，主流程正常关闭激光
+[2026-07-27 15:27:48] [流程] 第 5 轮数据已提交保存；保存角度=Step1最终角度 34.38852960833415；Step8最终角度=34.44508678813395 仅用于关闭激光/排查，不覆盖保存角度。
+[2026-07-27 15:27:48] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:27:48] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=run_workflow_cycle_6_before_run_one_cycle
+[2026-07-27 15:27:48] 
+[2026-07-27 15:27:48] ############################################################
+[2026-07-27 15:27:48] 开始第 6 轮循环测量
+[2026-07-27 15:27:48] ############################################################
+[2026-07-27 15:27:48] ========== Step 1：Bmask最长边角度检测 current_angle ==========
+[2026-07-27 15:27:48] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=runtime_rule_ab_params/step1_bmask_longest_edge_angle
+[2026-07-27 15:27:48] ========== YOLO-OBB角度检测：current_angle_yolo_obb ==========
+[2026-07-27 15:27:48] [YOLO-OBB角度-current_angle_yolo_obb] angle=34.444263962344905, conf=0.9278237819671631, class=bn_up, overlay=measurement_output\save\07.27\20260727_152523\ab_angle_realtime_yolo_obb\20260727_152748_750_current_angle_yolo_obb_YOLO_OBB_overlay.png
+[2026-07-27 15:27:49] [角度检测-current_angle] 已使用当前帧 Bmask 最长边角度作为本轮 baseline：34.444263962344905°；source=yolo_obb_long_edge
+[2026-07-27 15:27:49] ========== Step 2：生成保存路径 ==========
+[2026-07-27 15:27:49] ========== 生成最终存储路径 ==========
+[2026-07-27 15:27:49] [保存路径] run_session_dir=measurement_output\save\07.27\20260727_152523
+[2026-07-27 15:27:49] [保存路径] spectrum_csv=measurement_output\save\07.27\20260727_152523\cycle_0006_152749_238_spectrum.csv
+[2026-07-27 15:27:49] [流程] 本周期 Step 7-14 子循环次数：1
+[2026-07-27 15:27:49] ========== Step 3：照明光 OFF，等待稳定 ==========
+[2026-07-27 15:27:49] [照明光] OFF
+[2026-07-27 15:27:50] [照明光] OFF 后稳定等待：1.200 s
+[2026-07-27 15:27:50] [照明光] OFF 后稳定等待：1.200 s（由“稳定等待/ms”控制）
+[2026-07-27 15:27:52] ========== Step 4：LabVIEW 光谱采集 ==========
+[2026-07-27 15:27:52] ========== LabVIEW 采集光谱 ==========
+[2026-07-27 15:27:53] [光谱] 已从CSV读取：labview_csv_output\measure_006_20260727_152753.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-27 15:27:53] [TCP] 已通过 LabVIEWTCPServer.request_measure() 直接获取真实光谱结果
+[2026-07-27 15:27:53] [横坐标xlsx] 已读取：516中心波长.xlsx，sheet=Sheet1，点数=1024
+[2026-07-27 15:27:53] [LabVIEW] 采集完成：index=6, method=request_measure, num_points=1024, csv_path=labview_csv_output\measure_006_20260727_152753.csv
+[2026-07-27 15:27:53] [光谱] 真实采集完成：num_points=1024, x_points=1024, plot_x_points=1024, raw_original_peak=1146.0, raw_filtered_peak=1146.0, raw_median_peak=1105.0, fit_peak=1105.0
+[2026-07-27 15:27:53] [光谱] 阈值去除后点数=1024，阈值=3000.0；5点中值滤波后点数=1024
+[2026-07-27 15:27:53] ========== Step 5：照明光 ON ==========
+[2026-07-27 15:27:53] [照明光] ON
+[2026-07-27 15:27:53] ========== Step 6：保存数据（异步线程，使用 Step1 最终角度） ==========
+[2026-07-27 15:27:54] ========== 保存本轮测量结果 ==========
+[2026-07-27 15:27:54] [异步保存] 第 6 轮保存线程已启动：save-cycle-0006；提交准备耗时=0.006 s
+[2026-07-27 15:27:54] [Step 6] 异步保存任务提交耗时：0.008 s；保存角度=Step1最终角度；append_plot_point=False
+[2026-07-27 15:27:54] [保存] 光谱 CSV：measurement_output\save\07.27\20260727_152523\cycle_0006_152749_238_spectrum.csv；wavelength列已写入中心波长；已写入本轮角度 angle_deg=34.444263962344905
+[2026-07-27 15:27:54] ========== Step 7-14 子循环第 1/1 次开始 ==========
+[2026-07-27 15:27:54] [保存] Summary CSV 已更新：measurement_output\save\07.27\measurement_summary.csv
+[2026-07-27 15:27:54] ========== Step 7：打开激光 ==========
+[2026-07-27 15:27:54] [保存] Excel汇总已追加第 6 轮：measurement_output\save\07.27\measurement_summary_20260727_152325.xlsx
+[2026-07-27 15:27:54] [激光开关] MOVE axis=2, steps=400
+[2026-07-27 15:27:54] [异步保存] 第 6 轮保存完成
+[2026-07-27 15:27:55] [激光开关] ON 完成：axis=2, steps=400
+[2026-07-27 15:27:55] ========== Step 8：A推动B，并用当前帧Bmask最长边检测B角度 ==========
+[2026-07-27 15:27:55] ========== RuleAB：Step7实时双线程，Bmask最长边监控角度 ==========
+[2026-07-27 15:27:55] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_start
+[2026-07-27 15:27:55] ========== YOLO-OBB角度检测：step7_realtime_frame_000001 ==========
+[2026-07-27 15:27:55] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:27:55] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_controller_step_1
+[2026-07-27 15:27:55] [Step7实时控制] step=1: 执行一次 C边沿路线运动；route_points=29；pause保留但可被stop_event打断。
+[2026-07-27 15:27:55] [YOLO-OBB角度-step7_realtime_frame_000001] angle=34.389608049540385, conf=0.927407443523407, class=bn_up, overlay=measurement_output\save\07.27\20260727_152523\ab_angle_realtime_yolo_obb\20260727_152755_811_step7_realtime_frame_000001_YOLO_OBB_overlay.png
+[2026-07-27 15:27:55] [Step7实时角度] 角度变化已达到阈值：final_angle=34.389608°, baseline=34.444263962344905, delta=0.055° >= 0.010°；停止/暂停Stage34当前推动，不再使用6°上限/overshoot判定；不在Step7角度线程关闭激光，后续由完整测量主流程正常关激光，并继续完整测量。
+[2026-07-27 15:27:56] [Step7实时] 已发送 stage.stop_all()；reason=angle_delta_ge_target_min_no_laser_off
+[2026-07-27 15:27:56] [Bmask] source=feature, area=959114, center_jump=0.0
+[2026-07-27 15:27:57] [Step7实时] 结束：ok=True, overshoot=False, reason=realtime_bmask_longest_edge_delta_ge_target_min_continue_measurement, final_angle=34.389608049540385, final_delta=0.05465591280452031, records=2, csv=measurement_output\save\07.27\20260727_152523\ab_angle_realtime_bmask_longest_edge\step7_realtime_angle_records.csv
+[2026-07-27 15:27:57] ========== Step 9：检测颜色区域中心，必要时移动1/2通道 ==========
+[2026-07-27 15:27:57] ========== Step9：颜色检测区域中心对齐，必要时移动1/2通道 ==========
+[2026-07-27 15:27:57] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:27:58] [Bmask] source=feature, area=959117, center_jump=0.0
+[2026-07-27 15:27:58] [Step9-颜色中心] cycle=1, 已对齐：center=(570.86,527.08), target=(569.41,532.94), dx=-1.45, dy=5.86, tol=10.0
+[2026-07-27 15:27:59] ========== Step 10：补焦判断（循环等待） ==========
+[2026-07-27 15:27:59] [聚焦补焦] FocusScore_ratio=1.0206 在允许区间[0.9500, 1.0500] 内，不触发补焦
+[2026-07-27 15:27:59] [补焦判断] FocusScore 已达标，退出等待循环（第 1 次检查）
+[2026-07-27 15:28:00] ========== Step 11：照明光 OFF，等待稳定 ==========
+[2026-07-27 15:28:00] [照明光] OFF
+[2026-07-27 15:28:01] [照明光] OFF 后稳定等待：1.200 s
+[2026-07-27 15:28:01] [照明光] OFF 后稳定等待：1.200 s（由“稳定等待/ms”控制）
+[2026-07-27 15:28:02] ========== Step 12：LabVIEW 光谱采集 ==========
+[2026-07-27 15:28:02] ========== LabVIEW 采集光谱 ==========
+[2026-07-27 15:28:03] [光谱] 已从CSV读取：labview_csv_output\measure_006_20260727_152803.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-27 15:28:03] [TCP] 已通过 LabVIEWTCPServer.request_measure() 直接获取真实光谱结果
+[2026-07-27 15:28:04] [横坐标xlsx] 已读取：516中心波长.xlsx，sheet=Sheet1，点数=1024
+[2026-07-27 15:28:04] [LabVIEW] 采集完成：index=6, method=request_measure, num_points=1024, csv_path=labview_csv_output\measure_006_20260727_152803.csv
+[2026-07-27 15:28:04] [光谱] 真实采集完成：num_points=1024, x_points=1024, plot_x_points=1024, raw_original_peak=1138.0, raw_filtered_peak=1138.0, raw_median_peak=1104.0, fit_peak=1104.0
+[2026-07-27 15:28:04] [光谱] 阈值去除后点数=1024，阈值=3000.0；5点中值滤波后点数=1024
+[2026-07-27 15:28:04] ========== Step 13：照明光 ON ==========
+[2026-07-27 15:28:04] [照明光] ON
+[2026-07-27 15:28:04] ========== Step 14：保存数据（异步线程，使用 Step1 最终角度） ==========
+[2026-07-27 15:28:04] ========== 保存本轮测量结果 ==========
+[2026-07-27 15:28:04] [异步保存] 第 6 轮保存线程已启动：save-cycle-0006；提交准备耗时=0.005 s
+[2026-07-27 15:28:04] [Step 14] 异步保存任务提交耗时：0.039 s；保存角度=Step1最终角度；append_plot_point=True
+[2026-07-27 15:28:04] [保存] 光谱 CSV：measurement_output\save\07.27\20260727_152523\cycle_0006_152749_238_spectrum.csv；wavelength列已写入中心波长；已写入本轮角度 angle_deg=34.444263962344905
+[2026-07-27 15:28:04] ========== Step 7-14 子循环第 1/1 次结束 ==========
+[2026-07-27 15:28:04] [保存] Summary CSV 已更新：measurement_output\save\07.27\measurement_summary.csv
+[2026-07-27 15:28:04] ========== Step 7-14 子循环结束：关闭激光 ==========
+[2026-07-27 15:28:04] [保存] Excel汇总已追加第 6 轮：measurement_output\save\07.27\measurement_summary_20260727_152325.xlsx
+[2026-07-27 15:28:04] [绘图] 已追加数据点：cycle=6, angle=34.444263962344905, fit_peak=1104.0
+[2026-07-27 15:28:04] [激光开关] MOVE axis=2, steps=-400
+[2026-07-27 15:28:04] [异步保存] 第 6 轮保存完成
+[2026-07-27 15:28:06] [激光开关] OFF 完成：axis=2, steps=-400
+[2026-07-27 15:28:06] [激光开关] 子循环结束，主流程正常关闭激光
+[2026-07-27 15:28:06] [流程] 第 6 轮数据已提交保存；保存角度=Step1最终角度 34.444263962344905；Step8最终角度=34.389608049540385 仅用于关闭激光/排查，不覆盖保存角度。
+[2026-07-27 15:28:07] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:28:07] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=run_workflow_cycle_7_before_run_one_cycle
+[2026-07-27 15:28:07] 
+[2026-07-27 15:28:07] ############################################################
+[2026-07-27 15:28:07] 开始第 7 轮循环测量
+[2026-07-27 15:28:07] ############################################################
+[2026-07-27 15:28:07] ========== Step 1：Bmask最长边角度检测 current_angle ==========
+[2026-07-27 15:28:07] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=runtime_rule_ab_params/step1_bmask_longest_edge_angle
+[2026-07-27 15:28:07] ========== YOLO-OBB角度检测：current_angle_yolo_obb ==========
+[2026-07-27 15:28:07] [YOLO-OBB角度-current_angle_yolo_obb] angle=34.459714055960376, conf=0.9278352856636047, class=bn_up, overlay=measurement_output\save\07.27\20260727_152523\ab_angle_realtime_yolo_obb\20260727_152807_907_current_angle_yolo_obb_YOLO_OBB_overlay.png
+[2026-07-27 15:28:07] [角度检测-current_angle] 已使用当前帧 Bmask 最长边角度作为本轮 baseline：34.459714055960376°；source=yolo_obb_long_edge
+[2026-07-27 15:28:08] ========== Step 2：生成保存路径 ==========
+[2026-07-27 15:28:08] ========== 生成最终存储路径 ==========
+[2026-07-27 15:28:08] [保存路径] run_session_dir=measurement_output\save\07.27\20260727_152523
+[2026-07-27 15:28:08] [保存路径] spectrum_csv=measurement_output\save\07.27\20260727_152523\cycle_0007_152808_138_spectrum.csv
+[2026-07-27 15:28:08] [流程] 本周期 Step 7-14 子循环次数：1
+[2026-07-27 15:28:08] ========== Step 3：照明光 OFF，等待稳定 ==========
+[2026-07-27 15:28:08] [照明光] OFF
+[2026-07-27 15:28:09] [照明光] OFF 后稳定等待：1.200 s
+[2026-07-27 15:28:09] [照明光] OFF 后稳定等待：1.200 s（由“稳定等待/ms”控制）
+[2026-07-27 15:28:10] ========== Step 4：LabVIEW 光谱采集 ==========
+[2026-07-27 15:28:10] ========== LabVIEW 采集光谱 ==========
+[2026-07-27 15:28:12] [光谱] 已从CSV读取：labview_csv_output\measure_007_20260727_152812.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-27 15:28:12] [TCP] 已通过 LabVIEWTCPServer.request_measure() 直接获取真实光谱结果
+[2026-07-27 15:28:12] [横坐标xlsx] 已读取：516中心波长.xlsx，sheet=Sheet1，点数=1024
+[2026-07-27 15:28:12] [LabVIEW] 采集完成：index=7, method=request_measure, num_points=1024, csv_path=labview_csv_output\measure_007_20260727_152812.csv
+[2026-07-27 15:28:12] [光谱] 真实采集完成：num_points=1024, x_points=1024, plot_x_points=1024, raw_original_peak=1133.0, raw_filtered_peak=1133.0, raw_median_peak=1107.0, fit_peak=1107.0
+[2026-07-27 15:28:12] [光谱] 阈值去除后点数=1024，阈值=3000.0；5点中值滤波后点数=1024
+[2026-07-27 15:28:12] ========== Step 5：照明光 ON ==========
+[2026-07-27 15:28:12] [照明光] ON
+[2026-07-27 15:28:12] ========== Step 6：保存数据（异步线程，使用 Step1 最终角度） ==========
+[2026-07-27 15:28:12] ========== 保存本轮测量结果 ==========
+[2026-07-27 15:28:12] [异步保存] 第 7 轮保存线程已启动：save-cycle-0007；提交准备耗时=0.008 s
+[2026-07-27 15:28:12] [Step 6] 异步保存任务提交耗时：0.096 s；保存角度=Step1最终角度；append_plot_point=False
+[2026-07-27 15:28:12] [保存] 光谱 CSV：measurement_output\save\07.27\20260727_152523\cycle_0007_152808_138_spectrum.csv；wavelength列已写入中心波长；已写入本轮角度 angle_deg=34.459714055960376
+[2026-07-27 15:28:12] ========== Step 7-14 子循环第 1/1 次开始 ==========
+[2026-07-27 15:28:12] ========== Step 7：打开激光 ==========
+[2026-07-27 15:28:12] [保存] Summary CSV 已更新：measurement_output\save\07.27\measurement_summary.csv
+[2026-07-27 15:28:12] [激光开关] MOVE axis=2, steps=400
+[2026-07-27 15:28:12] [保存] Excel汇总已追加第 7 轮：measurement_output\save\07.27\measurement_summary_20260727_152325.xlsx
+[2026-07-27 15:28:12] [异步保存] 第 7 轮保存完成
+[2026-07-27 15:28:14] [激光开关] ON 完成：axis=2, steps=400
+[2026-07-27 15:28:14] ========== Step 8：A推动B，并用当前帧Bmask最长边检测B角度 ==========
+[2026-07-27 15:28:14] ========== RuleAB：Step7实时双线程，Bmask最长边监控角度 ==========
+[2026-07-27 15:28:14] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_start
+[2026-07-27 15:28:14] ========== YOLO-OBB角度检测：step7_realtime_frame_000001 ==========
+[2026-07-27 15:28:14] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:28:14] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_controller_step_1
+[2026-07-27 15:28:14] [Step7实时控制] step=1: 执行一次 C边沿路线运动；route_points=29；pause保留但可被stop_event打断。
+[2026-07-27 15:28:14] [YOLO-OBB角度-step7_realtime_frame_000001] angle=34.461890103478794, conf=0.926815390586853, class=bn_up, overlay=measurement_output\save\07.27\20260727_152523\ab_angle_realtime_yolo_obb\20260727_152814_433_step7_realtime_frame_000001_YOLO_OBB_overlay.png
+[2026-07-27 15:28:15] [Bmask] source=feature, area=958932, center_jump=0.0
+[2026-07-27 15:28:15] ========== YOLO-OBB角度检测：step7_realtime_frame_000002 ==========
+[2026-07-27 15:28:15] [YOLO-OBB角度-step7_realtime_frame_000002] angle=34.47631455866926, conf=0.9276859760284424, class=bn_up, overlay=measurement_output\save\07.27\20260727_152523\ab_angle_realtime_yolo_obb\20260727_152815_870_step7_realtime_frame_000002_YOLO_OBB_overlay.png
+[2026-07-27 15:28:15] [Step7实时角度] 角度变化已达到阈值：final_angle=34.476315°, baseline=34.459714055960376, delta=0.017° >= 0.010°；停止/暂停Stage34当前推动，不再使用6°上限/overshoot判定；不在Step7角度线程关闭激光，后续由完整测量主流程正常关激光，并继续完整测量。
+[2026-07-27 15:28:18] [RuleAB-Route] step=1, cur_idx=14/28, target_idx=15, route_index_order=visual_CCW, user_desired_direction=visual_CCW, actual_index_step=1, route_signed_area=-96451.50, loop=True, mode=soft_safe_too_far_tangent_plus_normal, route_distance_px=184.69058606010643, safe_band=[120.00,180.00], nearest_route_xy=[573.8170480442957, 484.50548553321914], safe_target_xy=[488.6570500158341, 361.0236053410532], A=(469.0,332.5), current_target=(481.2,366.2), final_move_target=(475.6,347.0), error_dist=35.86px, move_vec=(6.6,14.6), image_action=DOWN, stage_action=CH4/CH4: move_step=5, dry_run=False, pause_interrupted=True, oscillation_detected=False
+[2026-07-27 15:28:18] [Step7实时] 已发送 stage.stop_all()；reason=angle_delta_ge_target_min_no_laser_off
+[2026-07-27 15:28:18] [Step7实时] 结束：ok=True, overshoot=False, reason=realtime_bmask_longest_edge_delta_ge_target_min_continue_measurement, final_angle=34.47631455866926, final_delta=0.016600502708882914, records=3, csv=measurement_output\save\07.27\20260727_152523\ab_angle_realtime_bmask_longest_edge\step7_realtime_angle_records.csv
+[2026-07-27 15:28:19] ========== Step 9：检测颜色区域中心，必要时移动1/2通道 ==========
+[2026-07-27 15:28:19] ========== Step9：颜色检测区域中心对齐，必要时移动1/2通道 ==========
+[2026-07-27 15:28:19] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:28:20] [Bmask] source=feature, area=958808, center_jump=0.0
+[2026-07-27 15:28:20] [Step9-颜色中心] cycle=1, 已对齐：center=(570.92,526.71), target=(569.41,532.94), dx=-1.51, dy=6.23, tol=10.0
+[2026-07-27 15:28:21] ========== Step 10：补焦判断（循环等待） ==========
+[2026-07-27 15:28:21] [聚焦补焦] FocusScore_ratio=0.9987 在允许区间[0.9500, 1.0500] 内，不触发补焦
+[2026-07-27 15:28:22] [补焦判断] FocusScore 已达标，退出等待循环（第 1 次检查）
+[2026-07-27 15:28:22] ========== Step 11：照明光 OFF，等待稳定 ==========
+[2026-07-27 15:28:22] [照明光] OFF
+[2026-07-27 15:28:23] [照明光] OFF 后稳定等待：1.200 s
+[2026-07-27 15:28:23] [照明光] OFF 后稳定等待：1.200 s（由“稳定等待/ms”控制）
+[2026-07-27 15:28:24] ========== Step 12：LabVIEW 光谱采集 ==========
+[2026-07-27 15:28:24] ========== LabVIEW 采集光谱 ==========
+[2026-07-27 15:28:25] [光谱] 已从CSV读取：labview_csv_output\measure_007_20260727_152825.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-27 15:28:25] [TCP] 已通过 LabVIEWTCPServer.request_measure() 直接获取真实光谱结果
+[2026-07-27 15:28:26] [横坐标xlsx] 已读取：516中心波长.xlsx，sheet=Sheet1，点数=1024
+[2026-07-27 15:28:26] [LabVIEW] 采集完成：index=7, method=request_measure, num_points=1024, csv_path=labview_csv_output\measure_007_20260727_152825.csv
+[2026-07-27 15:28:26] [光谱] 真实采集完成：num_points=1024, x_points=1024, plot_x_points=1024, raw_original_peak=1142.0, raw_filtered_peak=1142.0, raw_median_peak=1104.0, fit_peak=1104.0
+[2026-07-27 15:28:26] [光谱] 阈值去除后点数=1024，阈值=3000.0；5点中值滤波后点数=1024
+[2026-07-27 15:28:26] ========== Step 13：照明光 ON ==========
+[2026-07-27 15:28:26] [照明光] ON
+[2026-07-27 15:28:26] ========== Step 14：保存数据（异步线程，使用 Step1 最终角度） ==========
+[2026-07-27 15:28:26] ========== 保存本轮测量结果 ==========
+[2026-07-27 15:28:26] [异步保存] 第 7 轮保存线程已启动：save-cycle-0007；提交准备耗时=0.001 s
+[2026-07-27 15:28:26] [保存] 光谱 CSV：measurement_output\save\07.27\20260727_152523\cycle_0007_152808_138_spectrum.csv；wavelength列已写入中心波长；已写入本轮角度 angle_deg=34.459714055960376
+[2026-07-27 15:28:26] [Step 14] 异步保存任务提交耗时：0.010 s；保存角度=Step1最终角度；append_plot_point=True
+[2026-07-27 15:28:26] [保存] Summary CSV 已更新：measurement_output\save\07.27\measurement_summary.csv
+[2026-07-27 15:28:26] ========== Step 7-14 子循环第 1/1 次结束 ==========
+[2026-07-27 15:28:26] [保存] Excel汇总已追加第 7 轮：measurement_output\save\07.27\measurement_summary_20260727_152325.xlsx
+[2026-07-27 15:28:26] ========== Step 7-14 子循环结束：关闭激光 ==========
+[2026-07-27 15:28:26] [绘图] 已追加数据点：cycle=7, angle=34.459714055960376, fit_peak=1104.0
+[2026-07-27 15:28:26] [激光开关] MOVE axis=2, steps=-400
+[2026-07-27 15:28:26] [异步保存] 第 7 轮保存完成
+[2026-07-27 15:28:28] [激光开关] OFF 完成：axis=2, steps=-400
+[2026-07-27 15:28:28] [激光开关] 子循环结束，主流程正常关闭激光
+[2026-07-27 15:28:28] [流程] 第 7 轮数据已提交保存；保存角度=Step1最终角度 34.459714055960376；Step8最终角度=34.47631455866926 仅用于关闭激光/排查，不覆盖保存角度。
+[2026-07-27 15:28:28] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:28:28] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=run_workflow_cycle_8_before_run_one_cycle
+[2026-07-27 15:28:28] 
+[2026-07-27 15:28:28] ############################################################
+[2026-07-27 15:28:28] 开始第 8 轮循环测量
+[2026-07-27 15:28:28] ############################################################
+[2026-07-27 15:28:28] ========== Step 1：Bmask最长边角度检测 current_angle ==========
+[2026-07-27 15:28:28] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=runtime_rule_ab_params/step1_bmask_longest_edge_angle
+[2026-07-27 15:28:28] ========== YOLO-OBB角度检测：current_angle_yolo_obb ==========
+[2026-07-27 15:28:28] [YOLO-OBB角度-current_angle_yolo_obb] angle=34.436482250939065, conf=0.9287087321281433, class=bn_up, overlay=measurement_output\save\07.27\20260727_152523\ab_angle_realtime_yolo_obb\20260727_152828_685_current_angle_yolo_obb_YOLO_OBB_overlay.png
+[2026-07-27 15:28:29] [角度检测-current_angle] 已使用当前帧 Bmask 最长边角度作为本轮 baseline：34.436482250939065°；source=yolo_obb_long_edge
+[2026-07-27 15:28:29] ========== Step 2：生成保存路径 ==========
+[2026-07-27 15:28:29] ========== 生成最终存储路径 ==========
+[2026-07-27 15:28:29] [保存路径] run_session_dir=measurement_output\save\07.27\20260727_152523
+[2026-07-27 15:28:29] [保存路径] spectrum_csv=measurement_output\save\07.27\20260727_152523\cycle_0008_152829_981_spectrum.csv
+[2026-07-27 15:28:29] [流程] 本周期 Step 7-14 子循环次数：1
+[2026-07-27 15:28:29] ========== Step 3：照明光 OFF，等待稳定 ==========
+[2026-07-27 15:28:30] [照明光] OFF
+[2026-07-27 15:28:31] [照明光] OFF 后稳定等待：1.200 s
+[2026-07-27 15:28:31] [照明光] OFF 后稳定等待：1.200 s（由“稳定等待/ms”控制）
+[2026-07-27 15:28:32] ========== Step 4：LabVIEW 光谱采集 ==========
+[2026-07-27 15:28:32] ========== LabVIEW 采集光谱 ==========
+[2026-07-27 15:28:33] [光谱] 已从CSV读取：labview_csv_output\measure_008_20260727_152833.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-27 15:28:33] [TCP] 已通过 LabVIEWTCPServer.request_measure() 直接获取真实光谱结果
+[2026-07-27 15:28:33] [横坐标xlsx] 已读取：516中心波长.xlsx，sheet=Sheet1，点数=1024
+[2026-07-27 15:28:33] [LabVIEW] 采集完成：index=8, method=request_measure, num_points=1024, csv_path=labview_csv_output\measure_008_20260727_152833.csv
+[2026-07-27 15:28:33] [光谱] 真实采集完成：num_points=1024, x_points=1024, plot_x_points=1024, raw_original_peak=1137.0, raw_filtered_peak=1137.0, raw_median_peak=1102.0, fit_peak=1102.0
+[2026-07-27 15:28:33] [光谱] 阈值去除后点数=1024，阈值=3000.0；5点中值滤波后点数=1024
+[2026-07-27 15:28:34] ========== Step 5：照明光 ON ==========
+[2026-07-27 15:28:34] [照明光] ON
+[2026-07-27 15:28:34] ========== Step 6：保存数据（异步线程，使用 Step1 最终角度） ==========
+[2026-07-27 15:28:34] ========== 保存本轮测量结果 ==========
+[2026-07-27 15:28:34] [异步保存] 第 8 轮保存线程已启动：save-cycle-0008；提交准备耗时=0.007 s
+[2026-07-27 15:28:34] [Step 6] 异步保存任务提交耗时：0.009 s；保存角度=Step1最终角度；append_plot_point=False
+[2026-07-27 15:28:34] [保存] 光谱 CSV：measurement_output\save\07.27\20260727_152523\cycle_0008_152829_981_spectrum.csv；wavelength列已写入中心波长；已写入本轮角度 angle_deg=34.436482250939065
+[2026-07-27 15:28:34] ========== Step 7-14 子循环第 1/1 次开始 ==========
+[2026-07-27 15:28:34] [保存] Summary CSV 已更新：measurement_output\save\07.27\measurement_summary.csv
+[2026-07-27 15:28:34] ========== Step 7：打开激光 ==========
+[2026-07-27 15:28:34] [激光开关] MOVE axis=2, steps=400
+[2026-07-27 15:28:34] [保存] Excel汇总已追加第 8 轮：measurement_output\save\07.27\measurement_summary_20260727_152325.xlsx
+[2026-07-27 15:28:34] [异步保存] 第 8 轮保存完成
+[2026-07-27 15:28:35] [激光开关] ON 完成：axis=2, steps=400
+[2026-07-27 15:28:35] ========== Step 8：A推动B，并用当前帧Bmask最长边检测B角度 ==========
+[2026-07-27 15:28:35] ========== RuleAB：Step7实时双线程，Bmask最长边监控角度 ==========
+[2026-07-27 15:28:36] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_start
+[2026-07-27 15:28:36] ========== YOLO-OBB角度检测：step7_realtime_frame_000001 ==========
+[2026-07-27 15:28:36] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:28:36] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_controller_step_1
+[2026-07-27 15:28:36] [Step7实时控制] step=1: 执行一次 C边沿路线运动；route_points=29；pause保留但可被stop_event打断。
+[2026-07-27 15:28:36] [YOLO-OBB角度-step7_realtime_frame_000001] angle=34.565213340584265, conf=0.9280726313591003, class=bn_up, overlay=measurement_output\save\07.27\20260727_152523\ab_angle_realtime_yolo_obb\20260727_152836_251_step7_realtime_frame_000001_YOLO_OBB_overlay.png
+[2026-07-27 15:28:36] [Step7实时角度] 角度变化已达到阈值：final_angle=34.565213°, baseline=34.436482250939065, delta=0.129° >= 0.010°；停止/暂停Stage34当前推动，不再使用6°上限/overshoot判定；不在Step7角度线程关闭激光，后续由完整测量主流程正常关激光，并继续完整测量。
+[2026-07-27 15:28:36] [Step7实时] 已发送 stage.stop_all()；reason=angle_delta_ge_target_min_no_laser_off
+[2026-07-27 15:28:37] [Bmask] source=feature, area=959018, center_jump=0.0
+[2026-07-27 15:28:37] [Step7实时] 结束：ok=True, overshoot=False, reason=realtime_bmask_longest_edge_delta_ge_target_min_continue_measurement, final_angle=34.565213340584265, final_delta=0.12873108964519986, records=2, csv=measurement_output\save\07.27\20260727_152523\ab_angle_realtime_bmask_longest_edge\step7_realtime_angle_records.csv
+[2026-07-27 15:28:37] ========== Step 9：检测颜色区域中心，必要时移动1/2通道 ==========
+[2026-07-27 15:28:37] ========== Step9：颜色检测区域中心对齐，必要时移动1/2通道 ==========
+[2026-07-27 15:28:38] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:28:38] [Bmask] source=feature, area=959068, center_jump=0.0
+[2026-07-27 15:28:39] [Step9-颜色中心] cycle=1, 已对齐：center=(570.77,526.47), target=(569.41,532.94), dx=-1.35, dy=6.47, tol=10.0
+[2026-07-27 15:28:39] ========== Step 10：补焦判断（循环等待） ==========
+[2026-07-27 15:28:40] [聚焦补焦] FocusScore_ratio=0.9354 超出允许区间[0.9500, 1.0500]，连续低分计数=1/3
+[2026-07-27 15:28:40] [补焦判断] 分数未达标（score=0.9354401639202221），继续等待（第 1 次检查）
+[2026-07-27 15:28:40] [补焦判断] 等待 1.5s 后再次检查...
+[2026-07-27 15:28:42] [聚焦补焦] FocusScore_ratio=0.9899 在允许区间[0.9500, 1.0500] 内，不触发补焦
+[2026-07-27 15:28:42] [补焦判断] FocusScore 已达标，退出等待循环（第 2 次检查）
+[2026-07-27 15:28:42] ========== Step 11：照明光 OFF，等待稳定 ==========
+[2026-07-27 15:28:42] [照明光] OFF
+[2026-07-27 15:28:44] [照明光] OFF 后稳定等待：1.200 s
+[2026-07-27 15:28:44] [照明光] OFF 后稳定等待：1.200 s（由“稳定等待/ms”控制）
+[2026-07-27 15:28:45] ========== Step 12：LabVIEW 光谱采集 ==========
+[2026-07-27 15:28:45] ========== LabVIEW 采集光谱 ==========
+[2026-07-27 15:28:46] [光谱] 已从CSV读取：labview_csv_output\measure_008_20260727_152846.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-27 15:28:46] [TCP] 已通过 LabVIEWTCPServer.request_measure() 直接获取真实光谱结果
+[2026-07-27 15:28:46] [横坐标xlsx] 已读取：516中心波长.xlsx，sheet=Sheet1，点数=1024
+[2026-07-27 15:28:46] [LabVIEW] 采集完成：index=8, method=request_measure, num_points=1024, csv_path=labview_csv_output\measure_008_20260727_152846.csv
+[2026-07-27 15:28:46] [光谱] 真实采集完成：num_points=1024, x_points=1024, plot_x_points=1024, raw_original_peak=1150.0, raw_filtered_peak=1150.0, raw_median_peak=1104.0, fit_peak=1104.0
+[2026-07-27 15:28:46] [光谱] 阈值去除后点数=1024，阈值=3000.0；5点中值滤波后点数=1024
+[2026-07-27 15:28:46] ========== Step 13：照明光 ON ==========
+[2026-07-27 15:28:46] [照明光] ON
+[2026-07-27 15:28:47] ========== Step 14：保存数据（异步线程，使用 Step1 最终角度） ==========
+[2026-07-27 15:28:47] ========== 保存本轮测量结果 ==========
+[2026-07-27 15:28:47] [异步保存] 第 8 轮保存线程已启动：save-cycle-0008；提交准备耗时=0.004 s
+[2026-07-27 15:28:47] [Step 14] 异步保存任务提交耗时：0.160 s；保存角度=Step1最终角度；append_plot_point=True
+[2026-07-27 15:28:47] [保存] 光谱 CSV：measurement_output\save\07.27\20260727_152523\cycle_0008_152829_981_spectrum.csv；wavelength列已写入中心波长；已写入本轮角度 angle_deg=34.436482250939065
+[2026-07-27 15:28:47] ========== Step 7-14 子循环第 1/1 次结束 ==========
+[2026-07-27 15:28:47] [保存] Summary CSV 已更新：measurement_output\save\07.27\measurement_summary.csv
+[2026-07-27 15:28:47] ========== Step 7-14 子循环结束：关闭激光 ==========
+[2026-07-27 15:28:47] [保存] Excel汇总已追加第 8 轮：measurement_output\save\07.27\measurement_summary_20260727_152325.xlsx
+[2026-07-27 15:28:47] [激光开关] MOVE axis=2, steps=-400
+[2026-07-27 15:28:47] [绘图] 已追加数据点：cycle=8, angle=34.436482250939065, fit_peak=1104.0
+[2026-07-27 15:28:47] [异步保存] 第 8 轮保存完成
+[2026-07-27 15:28:48] [激光开关] OFF 完成：axis=2, steps=-400
+[2026-07-27 15:28:48] [激光开关] 子循环结束，主流程正常关闭激光
+[2026-07-27 15:28:49] [流程] 第 8 轮数据已提交保存；保存角度=Step1最终角度 34.436482250939065；Step8最终角度=34.565213340584265 仅用于关闭激光/排查，不覆盖保存角度。
+[2026-07-27 15:28:49] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:28:49] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=run_workflow_cycle_9_before_run_one_cycle
+[2026-07-27 15:28:49] 
+[2026-07-27 15:28:49] ############################################################
+[2026-07-27 15:28:49] 开始第 9 轮循环测量
+[2026-07-27 15:28:49] ############################################################
+[2026-07-27 15:28:49] ========== Step 1：Bmask最长边角度检测 current_angle ==========
+[2026-07-27 15:28:49] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=runtime_rule_ab_params/step1_bmask_longest_edge_angle
+[2026-07-27 15:28:49] ========== YOLO-OBB角度检测：current_angle_yolo_obb ==========
+[2026-07-27 15:28:49] [YOLO-OBB角度-current_angle_yolo_obb] angle=34.51960575674042, conf=0.9288573265075684, class=bn_up, overlay=measurement_output\save\07.27\20260727_152523\ab_angle_realtime_yolo_obb\20260727_152849_794_current_angle_yolo_obb_YOLO_OBB_overlay.png
+[2026-07-27 15:28:50] [角度检测-current_angle] 已使用当前帧 Bmask 最长边角度作为本轮 baseline：34.51960575674042°；source=yolo_obb_long_edge
+[2026-07-27 15:28:50] ========== Step 2：生成保存路径 ==========
+[2026-07-27 15:28:50] ========== 生成最终存储路径 ==========
+[2026-07-27 15:28:50] [保存路径] run_session_dir=measurement_output\save\07.27\20260727_152523
+[2026-07-27 15:28:50] [保存路径] spectrum_csv=measurement_output\save\07.27\20260727_152523\cycle_0009_152850_516_spectrum.csv
+[2026-07-27 15:28:50] [流程] 本周期 Step 7-14 子循环次数：1
+[2026-07-27 15:28:50] ========== Step 3：照明光 OFF，等待稳定 ==========
+[2026-07-27 15:28:50] [照明光] OFF
+[2026-07-27 15:28:52] [照明光] OFF 后稳定等待：1.200 s
+[2026-07-27 15:28:52] [照明光] OFF 后稳定等待：1.200 s（由“稳定等待/ms”控制）
+[2026-07-27 15:28:53] ========== Step 4：LabVIEW 光谱采集 ==========
+[2026-07-27 15:28:53] ========== LabVIEW 采集光谱 ==========
+[2026-07-27 15:28:54] [光谱] 已从CSV读取：labview_csv_output\measure_009_20260727_152854.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-27 15:28:54] [TCP] 已通过 LabVIEWTCPServer.request_measure() 直接获取真实光谱结果
+[2026-07-27 15:28:54] [横坐标xlsx] 已读取：516中心波长.xlsx，sheet=Sheet1，点数=1024
+[2026-07-27 15:28:54] [LabVIEW] 采集完成：index=9, method=request_measure, num_points=1024, csv_path=labview_csv_output\measure_009_20260727_152854.csv
+[2026-07-27 15:28:54] [光谱] 真实采集完成：num_points=1024, x_points=1024, plot_x_points=1024, raw_original_peak=1147.0, raw_filtered_peak=1147.0, raw_median_peak=1104.0, fit_peak=1104.0
+[2026-07-27 15:28:54] [光谱] 阈值去除后点数=1024，阈值=3000.0；5点中值滤波后点数=1024
+[2026-07-27 15:28:54] ========== Step 5：照明光 ON ==========
+[2026-07-27 15:28:54] [照明光] ON
+[2026-07-27 15:28:54] ========== Step 6：保存数据（异步线程，使用 Step1 最终角度） ==========
+[2026-07-27 15:28:55] ========== 保存本轮测量结果 ==========
+[2026-07-27 15:28:55] [异步保存] 第 9 轮保存线程已启动：save-cycle-0009；提交准备耗时=0.003 s
+[2026-07-27 15:28:55] [Step 6] 异步保存任务提交耗时：0.020 s；保存角度=Step1最终角度；append_plot_point=False
+[2026-07-27 15:28:55] [保存] 光谱 CSV：measurement_output\save\07.27\20260727_152523\cycle_0009_152850_516_spectrum.csv；wavelength列已写入中心波长；已写入本轮角度 angle_deg=34.51960575674042
+[2026-07-27 15:28:55] ========== Step 7-14 子循环第 1/1 次开始 ==========
+[2026-07-27 15:28:55] [保存] Summary CSV 已更新：measurement_output\save\07.27\measurement_summary.csv
+[2026-07-27 15:28:55] ========== Step 7：打开激光 ==========
+[2026-07-27 15:28:55] [保存] Excel汇总已追加第 9 轮：measurement_output\save\07.27\measurement_summary_20260727_152325.xlsx
+[2026-07-27 15:28:55] [激光开关] MOVE axis=2, steps=400
+[2026-07-27 15:28:55] [异步保存] 第 9 轮保存完成
+[2026-07-27 15:28:56] [激光开关] ON 完成：axis=2, steps=400
+[2026-07-27 15:28:56] ========== Step 8：A推动B，并用当前帧Bmask最长边检测B角度 ==========
+[2026-07-27 15:28:56] ========== RuleAB：Step7实时双线程，Bmask最长边监控角度 ==========
+[2026-07-27 15:28:56] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_start
+[2026-07-27 15:28:56] ========== YOLO-OBB角度检测：step7_realtime_frame_000001 ==========
+[2026-07-27 15:28:56] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:28:56] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_controller_step_1
+[2026-07-27 15:28:57] [Step7实时控制] step=1: 执行一次 C边沿路线运动；route_points=29；pause保留但可被stop_event打断。
+[2026-07-27 15:28:57] [YOLO-OBB角度-step7_realtime_frame_000001] angle=34.62888724423368, conf=0.9296725392341614, class=bn_up, overlay=measurement_output\save\07.27\20260727_152523\ab_angle_realtime_yolo_obb\20260727_152856_988_step7_realtime_frame_000001_YOLO_OBB_overlay.png
+[2026-07-27 15:28:57] [Step7实时角度] 角度变化已达到阈值：final_angle=34.628887°, baseline=34.51960575674042, delta=0.109° >= 0.010°；停止/暂停Stage34当前推动，不再使用6°上限/overshoot判定；不在Step7角度线程关闭激光，后续由完整测量主流程正常关激光，并继续完整测量。
+[2026-07-27 15:28:57] [Step7实时] 已发送 stage.stop_all()；reason=angle_delta_ge_target_min_no_laser_off
+[2026-07-27 15:28:57] [Bmask] source=feature, area=959246, center_jump=0.0
+[2026-07-27 15:28:58] [Step7实时] 结束：ok=True, overshoot=False, reason=realtime_bmask_longest_edge_delta_ge_target_min_continue_measurement, final_angle=34.62888724423368, final_delta=0.10928148749326283, records=2, csv=measurement_output\save\07.27\20260727_152523\ab_angle_realtime_bmask_longest_edge\step7_realtime_angle_records.csv
+[2026-07-27 15:28:58] ========== Step 9：检测颜色区域中心，必要时移动1/2通道 ==========
+[2026-07-27 15:28:58] ========== Step9：颜色检测区域中心对齐，必要时移动1/2通道 ==========
+[2026-07-27 15:28:58] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:28:59] [Bmask] source=feature, area=956545, center_jump=0.0
+[2026-07-27 15:28:59] [Step9-颜色中心] cycle=1, 已对齐：center=(567.58,527.14), target=(569.41,532.94), dx=1.83, dy=5.80, tol=10.0
+[2026-07-27 15:29:00] ========== Step 10：补焦判断（循环等待） ==========
+[2026-07-27 15:29:00] [聚焦补焦] FocusScore_ratio=0.6289 超出允许区间[0.9500, 1.0500]，连续低分计数=1/3
+[2026-07-27 15:29:00] [补焦判断] 分数未达标（score=0.6289291817064879），继续等待（第 1 次检查）
+[2026-07-27 15:29:00] [补焦判断] 等待 1.5s 后再次检查...
+[2026-07-27 15:29:02] [聚焦补焦] FocusScore_ratio=0.6330 超出允许区间[0.9500, 1.0500]，连续低分计数=2/3
+[2026-07-27 15:29:02] [补焦判断] 分数未达标（score=0.6330225149186757），继续等待（第 2 次检查）
+[2026-07-27 15:29:03] [补焦判断] 等待 1.5s 后再次检查...
+[2026-07-27 15:29:05] [聚焦补焦] FocusScore_ratio=0.6209 超出允许区间[0.9500, 1.0500]，连续低分计数=3/3
+[2026-07-27 15:29:05] [聚焦补焦] 触发补焦，启动闭环搜索
+[2026-07-27 15:29:05] ========== 闭环补焦 #6 开始: strategy=hill_climb, target=0.95 ==========
+[2026-07-27 15:29:05] [补焦-start] iter=0, z=0, score=0.6245
+[2026-07-27 15:29:06] [补焦-probe_plus] iter=1, z=10, score=0.6252
+[2026-07-27 15:29:07] [补焦-search] iter=4, z=20, score=0.6127
+[2026-07-27 15:29:07] [补焦-search] iter=5, z=30, score=0.6089
+[2026-07-27 15:29:08] [补焦-search] iter=6, z=40, score=0.5937
+[2026-07-27 15:29:08] [补焦] 连续 3 次无提升，停止
+[2026-07-27 15:29:08] [补焦] 回退到最佳位置: best_pos=10, current_pos=40
+[2026-07-27 15:29:09] [补焦-return_to_best] iter=7, z=10, score=0.5888
+[2026-07-27 15:29:09] ========== 闭环补焦 #6 结束: ok=False, best_score=0.6252, best_z=10 ==========
+[2026-07-27 15:29:09] [聚焦补焦] 闭环结束：ok=False, best_score=0.6252179074254411
+[2026-07-27 15:29:09] [聚焦补焦] 搜索未达标（best=0.6252179074254411），下次将尝试更大范围搜索
+[2026-07-27 15:29:09] [补焦判断] 补焦已触发但未成功（score=0.6209412503486457），继续等待（第 3 次检查）
+[2026-07-27 15:29:09] [补焦判断] 等待 1.5s 后再次检查...
+[2026-07-27 15:29:11] [聚焦补焦] FocusScore_ratio=0.6058 超出允许区间[0.9500, 1.0500]，连续低分计数=4/3
+[2026-07-27 15:29:11] [聚焦补焦] 触发补焦，启动闭环搜索
+[2026-07-27 15:29:11] [聚焦补焦] 上次 hill_climb 搜索未达标，本次切换为 full_sweep
+[2026-07-27 15:29:11] ========== 闭环补焦 #7 开始: strategy=hill_climb, target=0.95 ==========
+[2026-07-27 15:29:12] [补焦-start] iter=0, z=0, score=0.6005
+[2026-07-27 15:29:13] [补焦-probe_plus] iter=1, z=10, score=0.6001
+[2026-07-27 15:29:13] [补焦-probe_return] iter=2, z=0, score=0.5929
+[2026-07-27 15:29:14] [补焦-probe_minus] iter=3, z=-10, score=0.5949
+[2026-07-27 15:29:15] [补焦-probe_return] iter=4, z=0, score=0.5940
+[2026-07-27 15:29:15] [补焦] 双向试探均无明显提升，停止
+[2026-07-27 15:29:15] ========== 闭环补焦 #7 结束: ok=True, best_score=0.6058, best_z=0 ==========
+[2026-07-27 15:29:15] [聚焦补焦] 闭环结束：ok=True, best_score=0.6058150286419892
+[2026-07-27 15:29:15] [聚焦补焦] 搜索未达标（best=0.6058150286419892），下次将尝试更大范围搜索
+[2026-07-27 15:29:15] [补焦判断] 补焦搜索正常结束但分数未达标（score=0.6058150286419892），继续等待（第 4 次检查）
+[2026-07-27 15:29:15] [补焦判断] 等待 1.5s 后再次检查...
+[2026-07-27 15:29:17] [聚焦补焦] FocusScore_ratio=0.5884 超出允许区间[0.9500, 1.0500]，连续低分计数=5/3
+[2026-07-27 15:29:17] [聚焦补焦] 触发补焦，启动闭环搜索
+[2026-07-27 15:29:17] [聚焦补焦] 上次 hill_climb 搜索未达标，本次切换为 full_sweep
+[2026-07-27 15:29:17] ========== 闭环补焦 #8 开始: strategy=hill_climb, target=0.95 ==========
+[2026-07-27 15:29:18] [补焦-start] iter=0, z=0, score=0.5928
+[2026-07-27 15:29:19] [补焦-probe_plus] iter=1, z=10, score=0.5943
+[2026-07-27 15:29:20] [补焦-search] iter=4, z=20, score=0.5887
+[2026-07-27 15:29:21] [补焦-search] iter=5, z=30, score=0.5801
+[2026-07-27 15:29:21] [补焦-search] iter=6, z=40, score=0.5726
+[2026-07-27 15:29:21] [补焦] 连续 3 次无提升，停止
+[2026-07-27 15:29:21] [补焦] 回退到最佳位置: best_pos=10, current_pos=40
+[2026-07-27 15:29:22] [补焦-return_to_best] iter=7, z=10, score=0.5699
+[2026-07-27 15:29:22] ========== 闭环补焦 #8 结束: ok=False, best_score=0.5943, best_z=10 ==========
+[2026-07-27 15:29:22] [聚焦补焦] 闭环结束：ok=False, best_score=0.594292261356525
+[2026-07-27 15:29:22] [聚焦补焦] 搜索未达标（best=0.594292261356525），下次将尝试更大范围搜索
+[2026-07-27 15:29:22] [补焦判断] 补焦已触发但未成功（score=0.58841771287766），继续等待（第 5 次检查）
+[2026-07-27 15:29:22] [补焦判断] 等待 1.5s 后再次检查...
+[2026-07-27 15:29:24] [聚焦补焦] FocusScore_ratio=0.5743 超出允许区间[0.9500, 1.0500]，连续低分计数=6/3
+[2026-07-27 15:29:24] [聚焦补焦] 触发补焦，启动闭环搜索
+[2026-07-27 15:29:24] [聚焦补焦] 上次 hill_climb 搜索未达标，本次切换为 full_sweep
+[2026-07-27 15:29:24] ========== 闭环补焦 #9 开始: strategy=hill_climb, target=0.95 ==========
+[2026-07-27 15:29:25] [补焦-start] iter=0, z=0, score=0.5765
+[2026-07-27 15:29:26] [补焦-probe_plus] iter=1, z=10, score=0.5747
+[2026-07-27 15:29:27] [补焦-probe_return] iter=2, z=0, score=0.5672
+[2026-07-27 15:29:28] [补焦-probe_minus] iter=3, z=-10, score=0.5779
+[2026-07-27 15:29:28] [补焦-search] iter=4, z=-20, score=0.5775
+[2026-07-27 15:29:29] [补焦-search] iter=5, z=-30, score=0.5772
+[2026-07-27 15:29:30] [补焦-search] iter=6, z=-40, score=0.5851
+[2026-07-27 15:29:31] [补焦-search] iter=7, z=-50, score=0.5849
+[2026-07-27 15:29:32] [补焦-search] iter=8, z=-60, score=0.5927
+[2026-07-27 15:29:33] [补焦-search] iter=9, z=-70, score=0.5898
+[2026-07-27 15:29:34] [补焦-search] iter=10, z=-80, score=0.5996
+[2026-07-27 15:29:35] [补焦-search] iter=11, z=-90, score=0.6008
+[2026-07-27 15:29:36] [补焦-search] iter=12, z=-100, score=0.6095
+[2026-07-27 15:29:36] [补焦-search] iter=13, z=-110, score=0.6096
+[2026-07-27 15:29:37] [补焦-search] iter=14, z=-120, score=0.6196
+[2026-07-27 15:29:38] [补焦-search] iter=15, z=-130, score=0.6220
+[2026-07-27 15:29:39] [补焦-search] iter=16, z=-140, score=0.6190
+[2026-07-27 15:29:40] [补焦-search] iter=17, z=-150, score=0.6274
+[2026-07-27 15:29:41] [补焦-search] iter=18, z=-160, score=0.6299
+[2026-07-27 15:29:41] [补焦-search] iter=19, z=-170, score=0.6369
+[2026-07-27 15:29:42] [补焦-search] iter=20, z=-180, score=0.6407
+[2026-07-27 15:29:43] [补焦-search] iter=21, z=-190, score=0.6431
+[2026-07-27 15:29:44] [补焦-search] iter=22, z=-200, score=0.6477
+[2026-07-27 15:29:44] [补焦-search] iter=23, z=-210, score=0.6550
+[2026-07-27 15:29:45] [补焦-search] iter=24, z=-220, score=0.6607
+[2026-07-27 15:29:46] [补焦-search] iter=25, z=-230, score=0.6664
+[2026-07-27 15:29:47] [补焦-search] iter=26, z=-240, score=0.6747
+[2026-07-27 15:29:48] [补焦-search] iter=27, z=-250, score=0.6735
+[2026-07-27 15:29:49] [补焦-search] iter=28, z=-260, score=0.6758
+[2026-07-27 15:29:50] [补焦-search] iter=29, z=-270, score=0.6837
+[2026-07-27 15:29:50] [补焦-search] iter=30, z=-280, score=0.6892
+[2026-07-27 15:29:51] [补焦-search] iter=31, z=-290, score=0.6920
+[2026-07-27 15:29:52] [补焦-search] iter=32, z=-300, score=0.7037
+[2026-07-27 15:29:53] [补焦-search] iter=33, z=-310, score=0.7016
+[2026-07-27 15:29:54] [补焦-search] iter=34, z=-320, score=0.7111
+[2026-07-27 15:29:55] [补焦-search] iter=35, z=-330, score=0.7113
+[2026-07-27 15:29:56] [补焦-search] iter=36, z=-340, score=0.7173
+[2026-07-27 15:29:56] [补焦-search] iter=37, z=-350, score=0.7399
+[2026-07-27 15:29:57] [补焦-search] iter=38, z=-360, score=0.7393
+[2026-07-27 15:29:58] [补焦-search] iter=39, z=-370, score=0.7415
+[2026-07-27 15:29:59] [补焦-search] iter=40, z=-380, score=0.7446
+[2026-07-27 15:29:59] ========== 闭环补焦 #9 结束: ok=False, best_score=0.7446, best_z=-380 ==========
+[2026-07-27 15:29:59] [聚焦补焦] 闭环结束：ok=False, best_score=0.7446231265928258
+[2026-07-27 15:29:59] [聚焦补焦] 搜索未达标（best=0.7446231265928258），下次将尝试更大范围搜索
+[2026-07-27 15:29:59] [补焦判断] 补焦已触发但未成功（score=0.5742950450221964），继续等待（第 6 次检查）
+[2026-07-27 15:29:59] [补焦判断] 等待 1.5s 后再次检查...
+[2026-07-27 15:30:01] [聚焦补焦] FocusScore_ratio=0.7428 超出允许区间[0.9500, 1.0500]，连续低分计数=7/3
+[2026-07-27 15:30:01] [聚焦补焦] 触发补焦，启动闭环搜索
+[2026-07-27 15:30:01] [聚焦补焦] 上次 hill_climb 搜索未达标，本次切换为 full_sweep
+[2026-07-27 15:30:01] ========== 闭环补焦 #10 开始: strategy=hill_climb, target=0.95 ==========
+[2026-07-27 15:30:02] [补焦-start] iter=0, z=0, score=0.7449
+[2026-07-27 15:30:02] [补焦-probe_plus] iter=1, z=10, score=0.7377
+[2026-07-27 15:30:03] [补焦-probe_return] iter=2, z=0, score=0.7303
+[2026-07-27 15:30:04] [补焦-probe_minus] iter=3, z=-10, score=0.7408
+[2026-07-27 15:30:05] [补焦-probe_return] iter=4, z=0, score=0.7429
+[2026-07-27 15:30:05] [补焦] 双向试探均无明显提升，停止
+[2026-07-27 15:30:05] ========== 闭环补焦 #10 结束: ok=True, best_score=0.7428, best_z=0 ==========
+[2026-07-27 15:30:05] [聚焦补焦] 闭环结束：ok=True, best_score=0.7428130235977112
+[2026-07-27 15:30:05] [聚焦补焦] 搜索未达标（best=0.7428130235977112），下次将尝试更大范围搜索
+[2026-07-27 15:30:05] [补焦判断] 补焦搜索正常结束但分数未达标（score=0.7428130235977112），继续等待（第 7 次检查）
+[2026-07-27 15:30:05] [补焦判断] 等待 1.5s 后再次检查...
+[2026-07-27 15:30:07] [聚焦补焦] FocusScore_ratio=0.7289 超出允许区间[0.9500, 1.0500]，连续低分计数=8/3
+[2026-07-27 15:30:07] [聚焦补焦] 触发补焦，启动闭环搜索
+[2026-07-27 15:30:07] [聚焦补焦] 上次 hill_climb 搜索未达标，本次切换为 full_sweep
+[2026-07-27 15:30:07] ========== 闭环补焦 #11 开始: strategy=hill_climb, target=0.95 ==========
+[2026-07-27 15:30:08] [补焦-start] iter=0, z=0, score=0.7330
+[2026-07-27 15:30:09] [补焦-probe_plus] iter=1, z=10, score=0.7261
+[2026-07-27 15:30:09] [补焦-probe_return] iter=2, z=0, score=0.7099
+[2026-07-27 15:30:10] [补焦-probe_minus] iter=3, z=-10, score=0.7174
+[2026-07-27 15:30:12] [补焦-probe_return] iter=4, z=0, score=0.7187
+[2026-07-27 15:30:12] [补焦] 双向试探均无明显提升，停止
+[2026-07-27 15:30:12] ========== 闭环补焦 #11 结束: ok=True, best_score=0.7289, best_z=0 ==========
+[2026-07-27 15:30:12] [聚焦补焦] 闭环结束：ok=True, best_score=0.7288945170296814
+[2026-07-27 15:30:12] [聚焦补焦] 搜索未达标（best=0.7288945170296814），下次将尝试更大范围搜索
+[2026-07-27 15:30:12] [补焦判断] 补焦搜索正常结束但分数未达标（score=0.7288945170296814），继续等待（第 8 次检查）
+[2026-07-27 15:30:12] [补焦判断] 等待 1.5s 后再次检查...
+[2026-07-27 15:30:14] [聚焦补焦] FocusScore_ratio=0.7079 超出允许区间[0.9500, 1.0500]，连续低分计数=9/3
+[2026-07-27 15:30:14] [聚焦补焦] 触发补焦，启动闭环搜索
+[2026-07-27 15:30:14] [聚焦补焦] 上次 hill_climb 搜索未达标，本次切换为 full_sweep
+[2026-07-27 15:30:14] ========== 闭环补焦 #12 开始: strategy=hill_climb, target=0.95 ==========
+[2026-07-27 15:30:14] [补焦-start] iter=0, z=0, score=0.7130
+[2026-07-27 15:30:15] [补焦-probe_plus] iter=1, z=10, score=0.7058
+[2026-07-27 15:30:16] [补焦-probe_return] iter=2, z=0, score=0.6916
+[2026-07-27 15:30:17] [补焦-probe_minus] iter=3, z=-10, score=0.6924
+[2026-07-27 15:30:18] [补焦-probe_return] iter=4, z=0, score=0.6910
+[2026-07-27 15:30:18] [补焦] 双向试探均无明显提升，停止
+[2026-07-27 15:30:18] ========== 闭环补焦 #12 结束: ok=True, best_score=0.7079, best_z=0 ==========
+[2026-07-27 15:30:18] [聚焦补焦] 闭环结束：ok=True, best_score=0.7078910390373683
+[2026-07-27 15:30:18] [聚焦补焦] 搜索未达标（best=0.7078910390373683），下次将尝试更大范围搜索
+[2026-07-27 15:30:18] [补焦判断] 补焦搜索正常结束但分数未达标（score=0.7078910390373683），继续等待（第 9 次检查）
+[2026-07-27 15:30:18] [补焦判断] 等待 1.5s 后再次检查...
+[2026-07-27 15:30:20] [聚焦补焦] FocusScore_ratio=0.6731 超出允许区间[0.9500, 1.0500]，连续低分计数=10/3
+[2026-07-27 15:30:20] [聚焦补焦] 触发补焦，启动闭环搜索
+[2026-07-27 15:30:20] [聚焦补焦] 上次 hill_climb 搜索未达标，本次切换为 full_sweep
+[2026-07-27 15:30:20] ========== 闭环补焦 #13 开始: strategy=hill_climb, target=0.95 ==========
+[2026-07-27 15:30:20] [补焦-start] iter=0, z=0, score=0.6758
+[2026-07-27 15:30:21] [补焦-probe_plus] iter=1, z=10, score=0.6739
+[2026-07-27 15:30:22] [补焦-probe_return] iter=2, z=0, score=0.6614
+[2026-07-27 15:30:23] [补焦-probe_minus] iter=3, z=-10, score=0.6619
+[2026-07-27 15:30:24] [补焦-probe_return] iter=4, z=0, score=0.6621
+[2026-07-27 15:30:24] [补焦] 双向试探均无明显提升，停止
+[2026-07-27 15:30:24] ========== 闭环补焦 #13 结束: ok=True, best_score=0.6731, best_z=0 ==========
+[2026-07-27 15:30:24] [聚焦补焦] 闭环结束：ok=True, best_score=0.6730980413815246
+[2026-07-27 15:30:24] [聚焦补焦] 搜索未达标（best=0.6730980413815246），下次将尝试更大范围搜索
+[2026-07-27 15:30:24] [补焦判断] 补焦搜索正常结束但分数未达标（score=0.6730980413815246），继续等待（第 10 次检查）
+[2026-07-27 15:30:24] [补焦判断] 等待 1.5s 后再次检查...
+[2026-07-27 15:30:26] [聚焦补焦] FocusScore_ratio=0.6568 超出允许区间[0.9500, 1.0500]，连续低分计数=11/3
+[2026-07-27 15:30:26] [聚焦补焦] 触发补焦，启动闭环搜索
+[2026-07-27 15:30:26] [聚焦补焦] 上次 hill_climb 搜索未达标，本次切换为 full_sweep
+[2026-07-27 15:30:26] ========== 闭环补焦 #14 开始: strategy=hill_climb, target=0.95 ==========
+[2026-07-27 15:30:26] [补焦-start] iter=0, z=0, score=0.6498
+[2026-07-27 15:30:27] [补焦-probe_plus] iter=1, z=10, score=0.6569
+[2026-07-27 15:30:28] [补焦-probe_return] iter=2, z=0, score=0.6435
+[2026-07-27 15:30:29] [补焦-probe_minus] iter=3, z=-10, score=0.6484
+[2026-07-27 15:30:30] [补焦-probe_return] iter=4, z=0, score=0.6533
+[2026-07-27 15:30:30] [补焦] 双向试探均无明显提升，停止
+[2026-07-27 15:30:30] ========== 闭环补焦 #14 结束: ok=True, best_score=0.6568, best_z=0 ==========
+[2026-07-27 15:30:30] [聚焦补焦] 闭环结束：ok=True, best_score=0.6568210643546348
+[2026-07-27 15:30:30] [聚焦补焦] 搜索未达标（best=0.6568210643546348），下次将尝试更大范围搜索
+[2026-07-27 15:30:30] [补焦判断] 补焦搜索正常结束但分数未达标（score=0.6568210643546348），继续等待（第 11 次检查）
+[2026-07-27 15:30:30] [补焦判断] 等待 1.5s 后再次检查...
+[2026-07-27 15:30:32] [聚焦补焦] FocusScore_ratio=0.6343 超出允许区间[0.9500, 1.0500]，连续低分计数=12/3
+[2026-07-27 15:30:32] [聚焦补焦] 触发补焦，启动闭环搜索
+[2026-07-27 15:30:32] [聚焦补焦] 上次 hill_climb 搜索未达标，本次切换为 full_sweep
+[2026-07-27 15:30:32] ========== 闭环补焦 #15 开始: strategy=hill_climb, target=0.95 ==========
+[2026-07-27 15:30:33] [补焦-start] iter=0, z=0, score=0.6359
+[2026-07-27 15:30:34] [补焦-probe_plus] iter=1, z=10, score=0.6231
+[2026-07-27 15:30:35] [补焦-probe_return] iter=2, z=0, score=0.6354
+[2026-07-27 15:30:36] [补焦-probe_minus] iter=3, z=-10, score=0.6332
+[2026-07-27 15:30:36] [补焦-probe_return] iter=4, z=0, score=0.6404
+[2026-07-27 15:30:36] [补焦] 双向试探均无明显提升，停止
+[2026-07-27 15:30:36] ========== 闭环补焦 #15 结束: ok=True, best_score=0.6343, best_z=0 ==========
+[2026-07-27 15:30:36] [聚焦补焦] 闭环结束：ok=True, best_score=0.6343265651189396
+[2026-07-27 15:30:36] [聚焦补焦] 搜索未达标（best=0.6343265651189396），下次将尝试更大范围搜索
+[2026-07-27 15:30:36] [补焦判断] 补焦搜索正常结束但分数未达标（score=0.6343265651189396），继续等待（第 12 次检查）
+[2026-07-27 15:30:36] [补焦判断] 等待 1.5s 后再次检查...
+[2026-07-27 15:30:39] [聚焦补焦] FocusScore_ratio=0.6350 超出允许区间[0.9500, 1.0500]，连续低分计数=13/3
+[2026-07-27 15:30:39] [聚焦补焦] 触发补焦，启动闭环搜索
+[2026-07-27 15:30:39] [聚焦补焦] 上次 hill_climb 搜索未达标，本次切换为 full_sweep
+[2026-07-27 15:30:39] ========== 闭环补焦 #16 开始: strategy=hill_climb, target=0.95 ==========
+[2026-07-27 15:30:39] [补焦-start] iter=0, z=0, score=0.6306
+[2026-07-27 15:30:40] [补焦-probe_plus] iter=1, z=10, score=0.6303
+[2026-07-27 15:30:41] [补焦-probe_return] iter=2, z=0, score=0.6277
+[2026-07-27 15:30:42] [补焦-probe_minus] iter=3, z=-10, score=0.6322
+[2026-07-27 15:30:42] [补焦-probe_return] iter=4, z=0, score=0.6265
+[2026-07-27 15:30:42] [补焦] 双向试探均无明显提升，停止
+[2026-07-27 15:30:42] ========== 闭环补焦 #16 结束: ok=True, best_score=0.6350, best_z=0 ==========
+[2026-07-27 15:30:42] [聚焦补焦] 闭环结束：ok=True, best_score=0.634992344329526
+[2026-07-27 15:30:42] [聚焦补焦] 搜索未达标（best=0.634992344329526），下次将尝试更大范围搜索
+[2026-07-27 15:30:42] [补焦判断] 补焦搜索正常结束但分数未达标（score=0.634992344329526），继续等待（第 13 次检查）
+[2026-07-27 15:30:42] [补焦判断] 等待 1.5s 后再次检查...
+[2026-07-27 15:30:45] [聚焦补焦] FocusScore_ratio=0.6251 超出允许区间[0.9500, 1.0500]，连续低分计数=14/3
+[2026-07-27 15:30:45] [聚焦补焦] 触发补焦，启动闭环搜索
+[2026-07-27 15:30:45] [聚焦补焦] 上次 hill_climb 搜索未达标，本次切换为 full_sweep
+[2026-07-27 15:30:45] ========== 闭环补焦 #17 开始: strategy=hill_climb, target=0.95 ==========
+[2026-07-27 15:30:45] [补焦-start] iter=0, z=0, score=0.6283
+[2026-07-27 15:30:46] [补焦-probe_plus] iter=1, z=10, score=0.6258
+[2026-07-27 15:30:47] [补焦-probe_return] iter=2, z=0, score=0.6229
+[2026-07-27 15:30:48] [补焦-probe_minus] iter=3, z=-10, score=0.6186
+[2026-07-27 15:30:49] [补焦-probe_return] iter=4, z=0, score=0.6219
+[2026-07-27 15:30:49] [补焦] 双向试探均无明显提升，停止
+[2026-07-27 15:30:49] ========== 闭环补焦 #17 结束: ok=True, best_score=0.6251, best_z=0 ==========
+[2026-07-27 15:30:49] [聚焦补焦] 闭环结束：ok=True, best_score=0.6250761942922505
+[2026-07-27 15:30:49] [聚焦补焦] 搜索未达标（best=0.6250761942922505），下次将尝试更大范围搜索
+[2026-07-27 15:30:49] [补焦判断] 补焦搜索正常结束但分数未达标（score=0.6250761942922505），继续等待（第 14 次检查）
+[2026-07-27 15:30:49] [补焦判断] 等待 1.5s 后再次检查...
+[2026-07-27 15:30:51] [聚焦补焦] FocusScore_ratio=0.6156 超出允许区间[0.9500, 1.0500]，连续低分计数=15/3
+[2026-07-27 15:30:51] [聚焦补焦] 触发补焦，启动闭环搜索
+[2026-07-27 15:30:51] [聚焦补焦] 上次 hill_climb 搜索未达标，本次切换为 full_sweep
+[2026-07-27 15:30:51] ========== 闭环补焦 #18 开始: strategy=hill_climb, target=0.95 ==========
+[2026-07-27 15:30:51] [补焦-start] iter=0, z=0, score=0.6144
+[2026-07-27 15:30:52] [补焦-probe_plus] iter=1, z=10, score=0.6161
+[2026-07-27 15:30:53] [补焦-probe_return] iter=2, z=0, score=0.6114
+[2026-07-27 15:30:53] [补焦-probe_minus] iter=3, z=-10, score=0.6117
+[2026-07-27 15:30:54] [补焦-probe_return] iter=4, z=0, score=0.6171
+[2026-07-27 15:30:54] [补焦] 双向试探均无明显提升，停止
+[2026-07-27 15:30:54] ========== 闭环补焦 #18 结束: ok=True, best_score=0.6156, best_z=0 ==========
+[2026-07-27 15:30:54] [聚焦补焦] 闭环结束：ok=True, best_score=0.6155731197980695
+[2026-07-27 15:30:54] [聚焦补焦] 搜索未达标（best=0.6155731197980695），下次将尝试更大范围搜索
+[2026-07-27 15:30:54] [补焦判断] 补焦搜索正常结束但分数未达标（score=0.6155731197980695），继续等待（第 15 次检查）
+[2026-07-27 15:30:55] [补焦判断] 等待 1.5s 后再次检查...
+[2026-07-27 15:30:57] [聚焦补焦] FocusScore_ratio=0.6094 超出允许区间[0.9500, 1.0500]，连续低分计数=16/3
+[2026-07-27 15:30:57] [聚焦补焦] 触发补焦，启动闭环搜索
+[2026-07-27 15:30:57] [聚焦补焦] 上次 hill_climb 搜索未达标，本次切换为 full_sweep
+[2026-07-27 15:30:57] ========== 闭环补焦 #19 开始: strategy=hill_climb, target=0.95 ==========
+[2026-07-27 15:30:57] [补焦-start] iter=0, z=0, score=0.6168
+[2026-07-27 15:30:58] [补焦-probe_plus] iter=1, z=10, score=0.6128
+[2026-07-27 15:30:59] [补焦-search] iter=4, z=20, score=0.6040
+[2026-07-27 15:31:00] [补焦-search] iter=5, z=30, score=0.5983
+[2026-07-27 15:31:00] [补焦-search] iter=6, z=40, score=0.5870
+[2026-07-27 15:31:00] [补焦] 连续 3 次无提升，停止
+[2026-07-27 15:31:00] [补焦] 回退到最佳位置: best_pos=10, current_pos=40
+[2026-07-27 15:31:01] [补焦-return_to_best] iter=7, z=10, score=0.5824
+[2026-07-27 15:31:01] ========== 闭环补焦 #19 结束: ok=False, best_score=0.6128, best_z=10 ==========
+[2026-07-27 15:31:01] [聚焦补焦] 闭环结束：ok=False, best_score=0.6127779138915234
+[2026-07-27 15:31:01] [聚焦补焦] 搜索未达标（best=0.6127779138915234），下次将尝试更大范围搜索
+[2026-07-27 15:31:01] [补焦判断] 补焦已触发但未成功（score=0.6093600683030607），继续等待（第 16 次检查）
+[2026-07-27 15:31:01] [补焦判断] 等待 1.5s 后再次检查...
+[2026-07-27 15:31:04] [聚焦补焦] FocusScore_ratio=0.5908 超出允许区间[0.9500, 1.0500]，连续低分计数=17/3
+[2026-07-27 15:31:04] [聚焦补焦] 触发补焦，启动闭环搜索
+[2026-07-27 15:31:04] [聚焦补焦] 上次 hill_climb 搜索未达标，本次切换为 full_sweep
+[2026-07-27 15:31:04] ========== 闭环补焦 #20 开始: strategy=hill_climb, target=0.95 ==========
+[2026-07-27 15:31:04] [补焦-start] iter=0, z=0, score=0.5864
+[2026-07-27 15:31:05] [补焦-probe_plus] iter=1, z=10, score=0.5908
+[2026-07-27 15:31:06] [补焦-probe_return] iter=2, z=0, score=0.5804
+[2026-07-27 15:31:07] [补焦-probe_minus] iter=3, z=-10, score=0.5833
+[2026-07-27 15:31:07] [补焦-probe_return] iter=4, z=0, score=0.5928
+[2026-07-27 15:31:07] [补焦] 双向试探均无明显提升，停止
+[2026-07-27 15:31:07] ========== 闭环补焦 #20 结束: ok=True, best_score=0.5908, best_z=0 ==========
+[2026-07-27 15:31:07] [聚焦补焦] 闭环结束：ok=True, best_score=0.5907617744463729
+[2026-07-27 15:31:07] [聚焦补焦] 搜索未达标（best=0.5907617744463729），下次将尝试更大范围搜索
+[2026-07-27 15:31:07] [补焦判断] 补焦搜索正常结束但分数未达标（score=0.5907617744463729），继续等待（第 17 次检查）
+[2026-07-27 15:31:08] [补焦判断] 等待 1.5s 后再次检查...
+[2026-07-27 15:31:10] [聚焦补焦] FocusScore_ratio=0.5849 超出允许区间[0.9500, 1.0500]，连续低分计数=18/3
+[2026-07-27 15:31:10] [聚焦补焦] 触发补焦，启动闭环搜索
+[2026-07-27 15:31:10] [聚焦补焦] 上次 hill_climb 搜索未达标，本次切换为 full_sweep
+[2026-07-27 15:31:10] ========== 闭环补焦 #21 开始: strategy=hill_climb, target=0.95 ==========
+[2026-07-27 15:31:10] [补焦-start] iter=0, z=0, score=0.5781
+[2026-07-27 15:31:11] [补焦-probe_plus] iter=1, z=10, score=0.5812
+[2026-07-27 15:31:12] [补焦-probe_return] iter=2, z=0, score=0.5760
+[2026-07-27 15:31:13] [补焦-probe_minus] iter=3, z=-10, score=0.5772
+[2026-07-27 15:31:13] [补焦-probe_return] iter=4, z=0, score=0.5829
+[2026-07-27 15:31:13] [补焦] 双向试探均无明显提升，停止
+[2026-07-27 15:31:13] ========== 闭环补焦 #21 结束: ok=True, best_score=0.5849, best_z=0 ==========
+[2026-07-27 15:31:13] [聚焦补焦] 闭环结束：ok=True, best_score=0.5848745710926192
+[2026-07-27 15:31:13] [聚焦补焦] 搜索未达标（best=0.5848745710926192），下次将尝试更大范围搜索
+[2026-07-27 15:31:14] [补焦判断] 补焦搜索正常结束但分数未达标（score=0.5848745710926192），继续等待（第 18 次检查）
+[2026-07-27 15:31:14] [补焦判断] 等待 1.5s 后再次检查...
+[2026-07-27 15:31:16] [聚焦补焦] FocusScore_ratio=0.5807 超出允许区间[0.9500, 1.0500]，连续低分计数=19/3
+[2026-07-27 15:31:16] [聚焦补焦] 触发补焦，启动闭环搜索
+[2026-07-27 15:31:16] [聚焦补焦] 上次 hill_climb 搜索未达标，本次切换为 full_sweep
+[2026-07-27 15:31:16] ========== 闭环补焦 #22 开始: strategy=hill_climb, target=0.95 ==========
+[2026-07-27 15:31:16] [补焦-start] iter=0, z=0, score=0.5805
+[2026-07-27 15:31:17] [补焦-probe_plus] iter=1, z=10, score=0.5740
+[2026-07-27 15:31:18] [补焦-probe_return] iter=2, z=0, score=0.5737
+[2026-07-27 15:31:19] [补焦-probe_minus] iter=3, z=-10, score=0.5799
+[2026-07-27 15:31:20] [补焦-probe_return] iter=4, z=0, score=0.5768
+[2026-07-27 15:31:20] [补焦] 双向试探均无明显提升，停止
+[2026-07-27 15:31:20] ========== 闭环补焦 #22 结束: ok=True, best_score=0.5807, best_z=0 ==========
+[2026-07-27 15:31:20] [聚焦补焦] 闭环结束：ok=True, best_score=0.5806935471591056
+[2026-07-27 15:31:20] [聚焦补焦] 搜索未达标（best=0.5806935471591056），下次将尝试更大范围搜索
+[2026-07-27 15:31:20] [补焦判断] 补焦搜索正常结束但分数未达标（score=0.5806935471591056），继续等待（第 19 次检查）
+[2026-07-27 15:31:20] [补焦判断] 等待 1.5s 后再次检查...
+[2026-07-27 15:31:22] [聚焦补焦] FocusScore_ratio=0.5778 超出允许区间[0.9500, 1.0500]，连续低分计数=20/3
+[2026-07-27 15:31:22] [聚焦补焦] 触发补焦，启动闭环搜索
+[2026-07-27 15:31:22] [聚焦补焦] 上次 hill_climb 搜索未达标，本次切换为 full_sweep
+[2026-07-27 15:31:22] ========== 闭环补焦 #23 开始: strategy=hill_climb, target=0.95 ==========
+[2026-07-27 15:31:23] [补焦-start] iter=0, z=0, score=0.5751
+[2026-07-27 15:31:24] [补焦-probe_plus] iter=1, z=10, score=0.5810
+[2026-07-27 15:31:25] [补焦-search] iter=4, z=20, score=0.5701
+[2026-07-27 15:31:26] [补焦-search] iter=5, z=30, score=0.5606
+[2026-07-27 15:31:26] [补焦-search] iter=6, z=40, score=0.5606
+[2026-07-27 15:31:26] [补焦] 连续 3 次无提升，停止
+[2026-07-27 15:31:26] [补焦] 回退到最佳位置: best_pos=10, current_pos=40
+[2026-07-27 15:31:27] [补焦-return_to_best] iter=7, z=10, score=0.5581
+[2026-07-27 15:31:27] ========== 闭环补焦 #23 结束: ok=False, best_score=0.5810, best_z=10 ==========
+[2026-07-27 15:31:27] [聚焦补焦] 闭环结束：ok=False, best_score=0.5810221674233572
+[2026-07-27 15:31:27] [聚焦补焦] 搜索未达标（best=0.5810221674233572），下次将尝试更大范围搜索
+[2026-07-27 15:31:27] [补焦判断] 补焦已触发但未成功（score=0.5777754762753806），继续等待（第 20 次检查）
+[2026-07-27 15:31:28] [补焦判断] 已达到最大检查次数 20，继续进入下一步
+[2026-07-27 15:31:28] ========== Step 11：照明光 OFF，等待稳定 ==========
+[2026-07-27 15:31:28] [照明光] OFF
+[2026-07-27 15:31:29] [照明光] OFF 后稳定等待：1.200 s
+[2026-07-27 15:31:29] [照明光] OFF 后稳定等待：1.200 s（由“稳定等待/ms”控制）
+[2026-07-27 15:31:30] ========== Step 12：LabVIEW 光谱采集 ==========
+[2026-07-27 15:31:30] ========== LabVIEW 采集光谱 ==========
+[2026-07-27 15:31:31] [光谱] 已从CSV读取：labview_csv_output\measure_009_20260727_153131.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-27 15:31:31] [TCP] 已通过 LabVIEWTCPServer.request_measure() 直接获取真实光谱结果
+[2026-07-27 15:31:31] [横坐标xlsx] 已读取：516中心波长.xlsx，sheet=Sheet1，点数=1024
+[2026-07-27 15:31:31] [LabVIEW] 采集完成：index=9, method=request_measure, num_points=1024, csv_path=labview_csv_output\measure_009_20260727_153131.csv
+[2026-07-27 15:31:31] [光谱] 真实采集完成：num_points=1024, x_points=1024, plot_x_points=1024, raw_original_peak=1124.0, raw_filtered_peak=1124.0, raw_median_peak=1101.0, fit_peak=1101.0
+[2026-07-27 15:31:31] [光谱] 阈值去除后点数=1024，阈值=3000.0；5点中值滤波后点数=1024
+[2026-07-27 15:31:31] ========== Step 13：照明光 ON ==========
+[2026-07-27 15:31:32] [照明光] ON
+[2026-07-27 15:31:32] ========== Step 14：保存数据（异步线程，使用 Step1 最终角度） ==========
+[2026-07-27 15:31:32] ========== 保存本轮测量结果 ==========
+[2026-07-27 15:31:32] [异步保存] 第 9 轮保存线程已启动：save-cycle-0009；提交准备耗时=0.002 s
+[2026-07-27 15:31:32] [保存] 光谱 CSV：measurement_output\save\07.27\20260727_152523\cycle_0009_152850_516_spectrum.csv；wavelength列已写入中心波长；已写入本轮角度 angle_deg=34.51960575674042
+[2026-07-27 15:31:32] [Step 14] 异步保存任务提交耗时：0.094 s；保存角度=Step1最终角度；append_plot_point=True
+[2026-07-27 15:31:32] ========== Step 7-14 子循环第 1/1 次结束 ==========
+[2026-07-27 15:31:32] [保存] Summary CSV 已更新：measurement_output\save\07.27\measurement_summary.csv
+[2026-07-27 15:31:32] ========== Step 7-14 子循环结束：关闭激光 ==========
+[2026-07-27 15:31:32] [保存] Excel汇总已追加第 9 轮：measurement_output\save\07.27\measurement_summary_20260727_152325.xlsx
+[2026-07-27 15:31:32] [激光开关] MOVE axis=2, steps=-400
+[2026-07-27 15:31:32] [绘图] 已追加数据点：cycle=9, angle=34.51960575674042, fit_peak=1101.0
+[2026-07-27 15:31:32] [异步保存] 第 9 轮保存完成
+[2026-07-27 15:31:33] [激光开关] OFF 完成：axis=2, steps=-400
+[2026-07-27 15:31:33] [激光开关] 子循环结束，主流程正常关闭激光
+[2026-07-27 15:31:34] [流程] 第 9 轮数据已提交保存；保存角度=Step1最终角度 34.51960575674042；Step8最终角度=34.62888724423368 仅用于关闭激光/排查，不覆盖保存角度。
+[2026-07-27 15:31:34] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:31:34] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=run_workflow_cycle_10_before_run_one_cycle
+[2026-07-27 15:31:35] 
+[2026-07-27 15:31:35] ############################################################
+[2026-07-27 15:31:35] 开始第 10 轮循环测量
+[2026-07-27 15:31:35] ############################################################
+[2026-07-27 15:31:35] ========== Step 1：Bmask最长边角度检测 current_angle ==========
+[2026-07-27 15:31:35] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=runtime_rule_ab_params/step1_bmask_longest_edge_angle
+[2026-07-27 15:31:35] ========== YOLO-OBB角度检测：current_angle_yolo_obb ==========
+[2026-07-27 15:31:35] [YOLO-OBB角度-current_angle_yolo_obb] angle=34.17019777701941, conf=0.9256760478019714, class=bn_up, overlay=measurement_output\save\07.27\20260727_152523\ab_angle_realtime_yolo_obb\20260727_153135_332_current_angle_yolo_obb_YOLO_OBB_overlay.png
+[2026-07-27 15:31:35] [角度检测-current_angle] 已使用当前帧 Bmask 最长边角度作为本轮 baseline：34.17019777701941°；source=yolo_obb_long_edge
+[2026-07-27 15:31:35] ========== Step 2：生成保存路径 ==========
+[2026-07-27 15:31:35] ========== 生成最终存储路径 ==========
+[2026-07-27 15:31:35] [保存路径] run_session_dir=measurement_output\save\07.27\20260727_152523
+[2026-07-27 15:31:35] [保存路径] spectrum_csv=measurement_output\save\07.27\20260727_152523\cycle_0010_153135_677_spectrum.csv
+[2026-07-27 15:31:35] [流程] 本周期 Step 7-14 子循环次数：1
+[2026-07-27 15:31:35] ========== Step 3：照明光 OFF，等待稳定 ==========
+[2026-07-27 15:31:35] [照明光] OFF
+[2026-07-27 15:31:37] [照明光] OFF 后稳定等待：1.200 s
+[2026-07-27 15:31:37] [照明光] OFF 后稳定等待：1.200 s（由“稳定等待/ms”控制）
+[2026-07-27 15:31:38] ========== Step 4：LabVIEW 光谱采集 ==========
+[2026-07-27 15:31:38] ========== LabVIEW 采集光谱 ==========
+[2026-07-27 15:31:39] [光谱] 已从CSV读取：labview_csv_output\measure_010_20260727_153139.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-27 15:31:39] [TCP] 已通过 LabVIEWTCPServer.request_measure() 直接获取真实光谱结果
+[2026-07-27 15:31:39] [横坐标xlsx] 已读取：516中心波长.xlsx，sheet=Sheet1，点数=1024
+[2026-07-27 15:31:39] [LabVIEW] 采集完成：index=10, method=request_measure, num_points=1024, csv_path=labview_csv_output\measure_010_20260727_153139.csv
+[2026-07-27 15:31:39] [光谱] 真实采集完成：num_points=1024, x_points=1024, plot_x_points=1024, raw_original_peak=1134.0, raw_filtered_peak=1134.0, raw_median_peak=1105.0, fit_peak=1105.0
+[2026-07-27 15:31:39] [光谱] 阈值去除后点数=1024，阈值=3000.0；5点中值滤波后点数=1024
+[2026-07-27 15:31:39] ========== Step 5：照明光 ON ==========
+[2026-07-27 15:31:40] [照明光] ON
+[2026-07-27 15:31:40] ========== Step 6：保存数据（异步线程，使用 Step1 最终角度） ==========
+[2026-07-27 15:31:40] ========== 保存本轮测量结果 ==========
+[2026-07-27 15:31:40] [异步保存] 第 10 轮保存线程已启动：save-cycle-0010；提交准备耗时=0.003 s
+[2026-07-27 15:31:40] [保存] 光谱 CSV：measurement_output\save\07.27\20260727_152523\cycle_0010_153135_677_spectrum.csv；wavelength列已写入中心波长；已写入本轮角度 angle_deg=34.17019777701941
+[2026-07-27 15:31:40] [Step 6] 异步保存任务提交耗时：0.012 s；保存角度=Step1最终角度；append_plot_point=False
+[2026-07-27 15:31:40] ========== Step 7-14 子循环第 1/1 次开始 ==========
+[2026-07-27 15:31:40] [保存] Summary CSV 已更新：measurement_output\save\07.27\measurement_summary.csv
+[2026-07-27 15:31:40] ========== Step 7：打开激光 ==========
+[2026-07-27 15:31:40] [激光开关] MOVE axis=2, steps=400
+[2026-07-27 15:31:40] [保存] Excel汇总已追加第 10 轮：measurement_output\save\07.27\measurement_summary_20260727_152325.xlsx
+[2026-07-27 15:31:40] [异步保存] 第 10 轮保存完成
+[2026-07-27 15:31:41] [激光开关] ON 完成：axis=2, steps=400
+[2026-07-27 15:31:41] ========== Step 8：A推动B，并用当前帧Bmask最长边检测B角度 ==========
+[2026-07-27 15:31:41] ========== RuleAB：Step7实时双线程，Bmask最长边监控角度 ==========
+[2026-07-27 15:31:41] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_start
+[2026-07-27 15:31:41] ========== YOLO-OBB角度检测：step7_realtime_frame_000001 ==========
+[2026-07-27 15:31:41] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:31:41] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_controller_step_1
+[2026-07-27 15:31:41] [Step7实时控制] step=1: 执行一次 C边沿路线运动；route_points=29；pause保留但可被stop_event打断。
+[2026-07-27 15:31:42] [YOLO-OBB角度-step7_realtime_frame_000001] angle=33.765289537375196, conf=0.9281842112541199, class=bn_up, overlay=measurement_output\save\07.27\20260727_152523\ab_angle_realtime_yolo_obb\20260727_153142_054_step7_realtime_frame_000001_YOLO_OBB_overlay.png
+[2026-07-27 15:31:42] [Step7实时角度] 角度变化已达到阈值：final_angle=33.765290°, baseline=34.17019777701941, delta=0.405° >= 0.010°；停止/暂停Stage34当前推动，不再使用6°上限/overshoot判定；不在Step7角度线程关闭激光，后续由完整测量主流程正常关激光，并继续完整测量。
+[2026-07-27 15:31:42] [Step7实时] 已发送 stage.stop_all()；reason=angle_delta_ge_target_min_no_laser_off
+[2026-07-27 15:31:42] [Bmask] source=feature, area=956266, center_jump=0.0
+[2026-07-27 15:31:43] [Step7实时] 结束：ok=True, overshoot=False, reason=realtime_bmask_longest_edge_delta_ge_target_min_continue_measurement, final_angle=33.765289537375196, final_delta=0.4049082396442145, records=2, csv=measurement_output\save\07.27\20260727_152523\ab_angle_realtime_bmask_longest_edge\step7_realtime_angle_records.csv
+[2026-07-27 15:31:43] ========== Step 9：检测颜色区域中心，必要时移动1/2通道 ==========
+[2026-07-27 15:31:43] ========== Step9：颜色检测区域中心对齐，必要时移动1/2通道 ==========
+[2026-07-27 15:31:44] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:31:45] [Bmask] source=feature, area=956084, center_jump=0.0
+[2026-07-27 15:31:45] [Step9-颜色中心] cycle=1, 已对齐：center=(565.79,526.71), target=(569.41,532.94), dx=3.62, dy=6.23, tol=10.0
+[2026-07-27 15:31:46] ========== Step 10：补焦判断（循环等待） ==========
+[2026-07-27 15:31:46] [聚焦补焦] FocusScore_ratio=0.5640 超出允许区间[0.9500, 1.0500]，连续低分计数=21/3
+[2026-07-27 15:31:46] [聚焦补焦] 触发补焦，启动闭环搜索
+[2026-07-27 15:31:46] [聚焦补焦] 上次 hill_climb 搜索未达标，本次切换为 full_sweep
+[2026-07-27 15:31:46] ========== 闭环补焦 #24 开始: strategy=hill_climb, target=0.95 ==========
+[2026-07-27 15:31:47] [补焦-start] iter=0, z=0, score=0.5624
+[2026-07-27 15:31:48] [补焦-probe_plus] iter=1, z=10, score=0.5620
+[2026-07-27 15:31:49] [补焦-probe_return] iter=2, z=0, score=0.5627
+[2026-07-27 15:31:49] [补焦-probe_minus] iter=3, z=-10, score=0.5615
+[2026-07-27 15:31:50] [补焦-probe_return] iter=4, z=0, score=0.5610
+[2026-07-27 15:31:50] [补焦] 双向试探均无明显提升，停止
+[2026-07-27 15:31:50] ========== 闭环补焦 #24 结束: ok=True, best_score=0.5640, best_z=0 ==========
+[2026-07-27 15:31:50] [聚焦补焦] 闭环结束：ok=True, best_score=0.5639819682768323
+[2026-07-27 15:31:50] [聚焦补焦] 搜索未达标（best=0.5639819682768323），下次将尝试更大范围搜索
+[2026-07-27 15:31:50] [补焦判断] 补焦搜索正常结束但分数未达标（score=0.5639819682768323），继续等待（第 1 次检查）
+[2026-07-27 15:31:50] [补焦判断] 等待 1.5s 后再次检查...
+[2026-07-27 15:31:53] [聚焦补焦] FocusScore_ratio=0.5624 超出允许区间[0.9500, 1.0500]，连续低分计数=22/3
+[2026-07-27 15:31:53] [聚焦补焦] 触发补焦，启动闭环搜索
+[2026-07-27 15:31:53] [聚焦补焦] 上次 hill_climb 搜索未达标，本次切换为 full_sweep
+[2026-07-27 15:31:53] ========== 闭环补焦 #25 开始: strategy=hill_climb, target=0.95 ==========
+[2026-07-27 15:31:53] [补焦-start] iter=0, z=0, score=0.5603
+[2026-07-27 15:31:54] [补焦-probe_plus] iter=1, z=10, score=0.5604
+[2026-07-27 15:31:55] [补焦-probe_return] iter=2, z=0, score=0.5550
+[2026-07-27 15:31:56] [补焦-probe_minus] iter=3, z=-10, score=0.5568
+[2026-07-27 15:31:57] [补焦-probe_return] iter=4, z=0, score=0.5636
+[2026-07-27 15:31:57] [补焦] 双向试探均无明显提升，停止
+[2026-07-27 15:31:57] ========== 闭环补焦 #25 结束: ok=True, best_score=0.5624, best_z=0 ==========
+[2026-07-27 15:31:57] [聚焦补焦] 闭环结束：ok=True, best_score=0.5623853044058456
+[2026-07-27 15:31:57] [聚焦补焦] 搜索未达标（best=0.5623853044058456），下次将尝试更大范围搜索
+[2026-07-27 15:31:57] [补焦判断] 补焦搜索正常结束但分数未达标（score=0.5623853044058456），继续等待（第 2 次检查）
+[2026-07-27 15:31:57] [补焦判断] 等待 1.5s 后再次检查...
+[2026-07-27 15:31:59] [聚焦补焦] FocusScore_ratio=0.5532 超出允许区间[0.9500, 1.0500]，连续低分计数=23/3
+[2026-07-27 15:31:59] [聚焦补焦] 触发补焦，启动闭环搜索
+[2026-07-27 15:31:59] [聚焦补焦] 上次 hill_climb 搜索未达标，本次切换为 full_sweep
+[2026-07-27 15:31:59] ========== 闭环补焦 #26 开始: strategy=hill_climb, target=0.95 ==========
+[2026-07-27 15:31:59] [补焦-start] iter=0, z=0, score=0.5580
+[2026-07-27 15:32:00] [补焦-probe_plus] iter=1, z=10, score=0.5608
+[2026-07-27 15:32:01] [补焦-search] iter=4, z=20, score=0.5616
+[2026-07-27 15:32:02] [补焦-search] iter=5, z=30, score=0.5586
+[2026-07-27 15:32:03] [补焦-search] iter=6, z=40, score=0.5548
+[2026-07-27 15:32:03] [补焦] 连续 3 次无提升，停止
+[2026-07-27 15:32:03] [补焦] 回退到最佳位置: best_pos=10, current_pos=40
+[2026-07-27 15:32:04] [补焦-return_to_best] iter=7, z=10, score=0.5540
+[2026-07-27 15:32:04] ========== 闭环补焦 #26 结束: ok=False, best_score=0.5608, best_z=10 ==========
+[2026-07-27 15:32:04] [聚焦补焦] 闭环结束：ok=False, best_score=0.5607511098498739
+[2026-07-27 15:32:04] [聚焦补焦] 搜索未达标（best=0.5607511098498739），下次将尝试更大范围搜索
+[2026-07-27 15:32:04] [补焦判断] 补焦已触发但未成功（score=0.5531733005864086），继续等待（第 3 次检查）
+[2026-07-27 15:32:04] [补焦判断] 等待 1.5s 后再次检查...
+[2026-07-27 15:32:06] [聚焦补焦] FocusScore_ratio=0.5581 超出允许区间[0.9500, 1.0500]，连续低分计数=24/3
+[2026-07-27 15:32:06] [聚焦补焦] 触发补焦，启动闭环搜索
+[2026-07-27 15:32:06] [聚焦补焦] 上次 hill_climb 搜索未达标，本次切换为 full_sweep
+[2026-07-27 15:32:06] ========== 闭环补焦 #27 开始: strategy=hill_climb, target=0.95 ==========
+[2026-07-27 15:32:06] [补焦-start] iter=0, z=0, score=0.5562
+[2026-07-27 15:32:07] [补焦-probe_plus] iter=1, z=10, score=0.5494
+[2026-07-27 15:32:08] [补焦-probe_return] iter=2, z=0, score=0.5551
+[2026-07-27 15:32:09] [补焦-probe_minus] iter=3, z=-10, score=0.5569
+[2026-07-27 15:32:10] [补焦-probe_return] iter=4, z=0, score=0.5502
+[2026-07-27 15:32:10] [补焦] 双向试探均无明显提升，停止
+[2026-07-27 15:32:10] ========== 闭环补焦 #27 结束: ok=True, best_score=0.5581, best_z=0 ==========
+[2026-07-27 15:32:10] [聚焦补焦] 闭环结束：ok=True, best_score=0.5580826256427891
+[2026-07-27 15:32:10] [聚焦补焦] 搜索未达标（best=0.5580826256427891），下次将尝试更大范围搜索
+[2026-07-27 15:32:10] [补焦判断] 补焦搜索正常结束但分数未达标（score=0.5580826256427891），继续等待（第 4 次检查）
+[2026-07-27 15:32:10] [补焦判断] 等待 1.5s 后再次检查...
+[2026-07-27 15:32:12] [聚焦补焦] FocusScore_ratio=0.5487 超出允许区间[0.9500, 1.0500]，连续低分计数=25/3
+[2026-07-27 15:32:12] [聚焦补焦] 触发补焦，启动闭环搜索
+[2026-07-27 15:32:12] [聚焦补焦] 上次 hill_climb 搜索未达标，本次切换为 full_sweep
+[2026-07-27 15:32:12] ========== 闭环补焦 #28 开始: strategy=hill_climb, target=0.95 ==========
+[2026-07-27 15:32:13] [补焦-start] iter=0, z=0, score=0.5518
+[2026-07-27 15:32:14] [补焦-probe_plus] iter=1, z=10, score=0.5493
+[2026-07-27 15:32:15] [补焦-probe_return] iter=2, z=0, score=0.5508
+[2026-07-27 15:32:16] [补焦-probe_minus] iter=3, z=-10, score=0.5539
+[2026-07-27 15:32:16] [补焦-search] iter=4, z=-20, score=0.5521
+[2026-07-27 15:32:17] [补焦-search] iter=5, z=-30, score=0.5504
+[2026-07-27 15:32:18] [补焦-search] iter=6, z=-40, score=0.5537
+[2026-07-27 15:32:18] [补焦] 连续 3 次无提升，停止
+[2026-07-27 15:32:18] [补焦] 回退到最佳位置: best_pos=-10, current_pos=-40
+[2026-07-27 15:32:19] [补焦-return_to_best] iter=7, z=-10, score=0.5528
+[2026-07-27 15:32:19] ========== 闭环补焦 #28 结束: ok=False, best_score=0.5539, best_z=-10 ==========
+[2026-07-27 15:32:19] [聚焦补焦] 闭环结束：ok=False, best_score=0.5539487760645575
+[2026-07-27 15:32:19] [聚焦补焦] 搜索未达标（best=0.5539487760645575），下次将尝试更大范围搜索
+[2026-07-27 15:32:19] [补焦判断] 补焦已触发但未成功（score=0.5487347791229462），继续等待（第 5 次检查）
+[2026-07-27 15:32:19] [补焦判断] 等待 1.5s 后再次检查...
+[2026-07-27 15:32:21] [聚焦补焦] FocusScore_ratio=0.5496 超出允许区间[0.9500, 1.0500]，连续低分计数=26/3
+[2026-07-27 15:32:21] [聚焦补焦] 触发补焦，启动闭环搜索
+[2026-07-27 15:32:21] [聚焦补焦] 上次 hill_climb 搜索未达标，本次切换为 full_sweep
+[2026-07-27 15:32:21] ========== 闭环补焦 #29 开始: strategy=hill_climb, target=0.95 ==========
+[2026-07-27 15:32:21] [补焦-start] iter=0, z=0, score=0.5506
+[2026-07-27 15:32:22] [补焦-probe_plus] iter=1, z=10, score=0.5482
+[2026-07-27 15:32:23] [补焦-probe_return] iter=2, z=0, score=0.5461
+[2026-07-27 15:32:24] [补焦-probe_minus] iter=3, z=-10, score=0.5501
+[2026-07-27 15:32:25] [补焦-probe_return] iter=4, z=0, score=0.5496
+[2026-07-27 15:32:25] [补焦] 双向试探均无明显提升，停止
+[2026-07-27 15:32:25] ========== 闭环补焦 #29 结束: ok=True, best_score=0.5496, best_z=0 ==========
+[2026-07-27 15:32:25] [聚焦补焦] 闭环结束：ok=True, best_score=0.5495678128737934
+[2026-07-27 15:32:25] [聚焦补焦] 搜索未达标（best=0.5495678128737934），下次将尝试更大范围搜索
+[2026-07-27 15:32:25] [补焦判断] 补焦搜索正常结束但分数未达标（score=0.5495678128737934），继续等待（第 6 次检查）
+[2026-07-27 15:32:25] [补焦判断] 等待 1.5s 后再次检查...
+[2026-07-27 15:32:27] [聚焦补焦] FocusScore_ratio=0.5456 超出允许区间[0.9500, 1.0500]，连续低分计数=27/3
+[2026-07-27 15:32:27] [聚焦补焦] 触发补焦，启动闭环搜索
+[2026-07-27 15:32:27] [聚焦补焦] 上次 hill_climb 搜索未达标，本次切换为 full_sweep
+[2026-07-27 15:32:27] ========== 闭环补焦 #30 开始: strategy=hill_climb, target=0.95 ==========
+[2026-07-27 15:32:28] [补焦-start] iter=0, z=0, score=0.5505
+[2026-07-27 15:32:28] [补焦-probe_plus] iter=1, z=10, score=0.5495
+[2026-07-27 15:32:29] [补焦-search] iter=4, z=20, score=0.5493
+[2026-07-27 15:32:30] [补焦-search] iter=5, z=30, score=0.5373
+[2026-07-27 15:32:31] [补焦-search] iter=6, z=40, score=0.5439
+[2026-07-27 15:32:31] [补焦] 连续 3 次无提升，停止
+[2026-07-27 15:32:31] [补焦] 回退到最佳位置: best_pos=10, current_pos=40
+[2026-07-27 15:32:32] [补焦-return_to_best] iter=7, z=10, score=0.5399
+[2026-07-27 15:32:32] ========== 闭环补焦 #30 结束: ok=False, best_score=0.5495, best_z=10 ==========
+[2026-07-27 15:32:32] [聚焦补焦] 闭环结束：ok=False, best_score=0.5494983022773456
+[2026-07-27 15:32:32] [聚焦补焦] 搜索未达标（best=0.5494983022773456），下次将尝试更大范围搜索
+[2026-07-27 15:32:32] [补焦判断] 补焦已触发但未成功（score=0.5456111516567954），继续等待（第 7 次检查）
+[2026-07-27 15:32:32] [补焦判断] 等待 1.5s 后再次检查...
+[2026-07-27 15:32:34] [聚焦补焦] FocusScore_ratio=0.5444 超出允许区间[0.9500, 1.0500]，连续低分计数=28/3
+[2026-07-27 15:32:34] [聚焦补焦] 触发补焦，启动闭环搜索
+[2026-07-27 15:32:34] [聚焦补焦] 上次 hill_climb 搜索未达标，本次切换为 full_sweep
+[2026-07-27 15:32:34] ========== 闭环补焦 #31 开始: strategy=hill_climb, target=0.95 ==========
+[2026-07-27 15:32:35] [补焦-start] iter=0, z=0, score=0.5416
+[2026-07-27 15:32:36] [补焦-probe_plus] iter=1, z=10, score=0.5460
+[2026-07-27 15:32:37] [补焦-probe_return] iter=2, z=0, score=0.5375
+[2026-07-27 15:32:37] [补焦-probe_minus] iter=3, z=-10, score=0.5533
+[2026-07-27 15:32:38] [补焦-search] iter=4, z=-20, score=0.5372
+[2026-07-27 15:32:39] [补焦-search] iter=5, z=-30, score=0.5409
+[2026-07-27 15:32:39] [补焦-search] iter=6, z=-40, score=0.5463
+[2026-07-27 15:32:39] [补焦] 连续 3 次无提升，停止
+[2026-07-27 15:32:39] [补焦] 回退到最佳位置: best_pos=-10, current_pos=-40
+[2026-07-27 15:32:40] [补焦-return_to_best] iter=7, z=-10, score=0.5428
+[2026-07-27 15:32:40] ========== 闭环补焦 #31 结束: ok=False, best_score=0.5533, best_z=-10 ==========
+[2026-07-27 15:32:40] [聚焦补焦] 闭环结束：ok=False, best_score=0.553297318987052
+[2026-07-27 15:32:40] [聚焦补焦] 搜索未达标（best=0.553297318987052），下次将尝试更大范围搜索
+[2026-07-27 15:32:40] [补焦判断] 补焦已触发但未成功（score=0.5444071956268712），继续等待（第 8 次检查）
+[2026-07-27 15:32:40] [补焦判断] 等待 1.5s 后再次检查...
+[2026-07-27 15:32:42] [聚焦补焦] FocusScore_ratio=0.5359 超出允许区间[0.9500, 1.0500]，连续低分计数=29/3
+[2026-07-27 15:32:42] [聚焦补焦] 触发补焦，启动闭环搜索
+[2026-07-27 15:32:42] [聚焦补焦] 上次 hill_climb 搜索未达标，本次切换为 full_sweep
+[2026-07-27 15:32:42] ========== 闭环补焦 #32 开始: strategy=hill_climb, target=0.95 ==========
+[2026-07-27 15:32:43] [补焦-start] iter=0, z=0, score=0.5426
+[2026-07-27 15:32:44] [补焦-probe_plus] iter=1, z=10, score=0.5436
+[2026-07-27 15:32:44] [补焦-search] iter=4, z=20, score=0.5400
+[2026-07-27 15:32:45] [补焦-search] iter=5, z=30, score=0.5418
+[2026-07-27 15:32:46] [补焦-search] iter=6, z=40, score=0.5376
+[2026-07-27 15:32:46] [补焦] 连续 3 次无提升，停止
+[2026-07-27 15:32:46] [补焦] 回退到最佳位置: best_pos=10, current_pos=40
+[2026-07-27 15:32:47] [补焦-return_to_best] iter=7, z=10, score=0.5369
+[2026-07-27 15:32:47] ========== 闭环补焦 #32 结束: ok=False, best_score=0.5436, best_z=10 ==========
+[2026-07-27 15:32:47] [聚焦补焦] 闭环结束：ok=False, best_score=0.543640137949374
+[2026-07-27 15:32:47] [聚焦补焦] 搜索未达标（best=0.543640137949374），下次将尝试更大范围搜索
+[2026-07-27 15:32:47] [补焦判断] 补焦已触发但未成功（score=0.5359383387941286），继续等待（第 9 次检查）
+[2026-07-27 15:32:47] [补焦判断] 等待 1.5s 后再次检查...
+[2026-07-27 15:32:49] [聚焦补焦] FocusScore_ratio=0.5396 超出允许区间[0.9500, 1.0500]，连续低分计数=30/3
+[2026-07-27 15:32:49] [聚焦补焦] 触发补焦，启动闭环搜索
+[2026-07-27 15:32:49] [聚焦补焦] 上次 hill_climb 搜索未达标，本次切换为 full_sweep
+[2026-07-27 15:32:49] ========== 闭环补焦 #33 开始: strategy=hill_climb, target=0.95 ==========
+[2026-07-27 15:32:49] [补焦-start] iter=0, z=0, score=0.5448
+[2026-07-27 15:32:50] [补焦-probe_plus] iter=1, z=10, score=0.6825
+[2026-07-27 15:32:51] [补焦-search] iter=4, z=20, score=1.0288
+[2026-07-27 15:32:51] [补焦] best_score=1.0288 >= target=0.95，停止
+[2026-07-27 15:32:51] ========== 闭环补焦 #33 结束: ok=True, best_score=1.0288, best_z=20 ==========
+[2026-07-27 15:32:51] [聚焦补焦] 闭环结束：ok=True, best_score=1.0288196213245244
+[2026-07-27 15:32:51] [补焦判断] 补焦搜索正常结束但分数未达标（score=0.5396333851428784），继续等待（第 10 次检查）
+[2026-07-27 15:32:52] [补焦判断] 等待 1.5s 后再次检查...
+[2026-07-27 15:32:54] [聚焦补焦] FocusScore_ratio=0.6867 超出允许区间[0.9500, 1.0500]，连续低分计数=1/3
+[2026-07-27 15:32:54] [补焦判断] 分数未达标（score=0.6867314115574905），继续等待（第 11 次检查）
+[2026-07-27 15:32:54] [补焦判断] 等待 1.5s 后再次检查...
+[2026-07-27 15:32:56] [聚焦补焦] FocusScore_ratio=0.6891 超出允许区间[0.9500, 1.0500]，连续低分计数=2/3
+[2026-07-27 15:32:56] [补焦判断] 分数未达标（score=0.6891159966554），继续等待（第 12 次检查）
+[2026-07-27 15:32:56] [补焦判断] 等待 1.5s 后再次检查...
+[2026-07-27 15:32:58] [聚焦补焦] FocusScore_ratio=0.6857 超出允许区间[0.9500, 1.0500]，连续低分计数=3/3
+[2026-07-27 15:32:58] [聚焦补焦] 触发补焦，启动闭环搜索
+[2026-07-27 15:32:58] ========== 闭环补焦 #34 开始: strategy=hill_climb, target=0.95 ==========
+[2026-07-27 15:32:59] [补焦-start] iter=0, z=0, score=0.6877
+[2026-07-27 15:33:00] [补焦-probe_plus] iter=1, z=10, score=0.6782
+[2026-07-27 15:33:01] [补焦-probe_return] iter=2, z=0, score=0.6775
+[2026-07-27 15:33:02] [补焦-probe_minus] iter=3, z=-10, score=0.6745
+[2026-07-27 15:33:02] [补焦-probe_return] iter=4, z=0, score=0.6760
+[2026-07-27 15:33:02] [补焦] 双向试探均无明显提升，停止
+[2026-07-27 15:33:02] ========== 闭环补焦 #34 结束: ok=True, best_score=0.6857, best_z=0 ==========
+[2026-07-27 15:33:02] [聚焦补焦] 闭环结束：ok=True, best_score=0.6856516172629605
+[2026-07-27 15:33:02] [聚焦补焦] 搜索未达标（best=0.6856516172629605），下次将尝试更大范围搜索
+[2026-07-27 15:33:03] [补焦判断] 补焦搜索正常结束但分数未达标（score=0.6856516172629605），继续等待（第 13 次检查）
+[2026-07-27 15:33:03] [补焦判断] 等待 1.5s 后再次检查...
+[2026-07-27 15:33:05] [聚焦补焦] FocusScore_ratio=0.6641 超出允许区间[0.9500, 1.0500]，连续低分计数=4/3
+[2026-07-27 15:33:05] [聚焦补焦] 触发补焦，启动闭环搜索
+[2026-07-27 15:33:05] [聚焦补焦] 上次 hill_climb 搜索未达标，本次切换为 full_sweep
+[2026-07-27 15:33:05] ========== 闭环补焦 #35 开始: strategy=hill_climb, target=0.95 ==========
+[2026-07-27 15:33:05] [补焦-start] iter=0, z=0, score=0.6686
+[2026-07-27 15:33:06] [补焦-probe_plus] iter=1, z=10, score=0.6657
+[2026-07-27 15:33:07] [补焦-probe_return] iter=2, z=0, score=0.6503
+[2026-07-27 15:33:08] [补焦-probe_minus] iter=3, z=-10, score=0.6573
+[2026-07-27 15:33:09] [补焦-probe_return] iter=4, z=0, score=0.6567
+[2026-07-27 15:33:09] [补焦] 双向试探均无明显提升，停止
+[2026-07-27 15:33:09] ========== 闭环补焦 #35 结束: ok=True, best_score=0.6641, best_z=0 ==========
+[2026-07-27 15:33:09] [聚焦补焦] 闭环结束：ok=True, best_score=0.6641340778982945
+[2026-07-27 15:33:09] [聚焦补焦] 搜索未达标（best=0.6641340778982945），下次将尝试更大范围搜索
+[2026-07-27 15:33:09] [补焦判断] 补焦搜索正常结束但分数未达标（score=0.6641340778982945），继续等待（第 14 次检查）
+[2026-07-27 15:33:09] [补焦判断] 等待 1.5s 后再次检查...
+[2026-07-27 15:33:11] [聚焦补焦] FocusScore_ratio=0.6499 超出允许区间[0.9500, 1.0500]，连续低分计数=5/3
+[2026-07-27 15:33:11] [聚焦补焦] 触发补焦，启动闭环搜索
+[2026-07-27 15:33:11] [聚焦补焦] 上次 hill_climb 搜索未达标，本次切换为 full_sweep
+[2026-07-27 15:33:11] ========== 闭环补焦 #36 开始: strategy=hill_climb, target=0.95 ==========
+[2026-07-27 15:33:11] [补焦-start] iter=0, z=0, score=0.6493
+[2026-07-27 15:33:13] [补焦-probe_plus] iter=1, z=10, score=0.6437
+[2026-07-27 15:33:13] [补焦-probe_return] iter=2, z=0, score=0.6308
+[2026-07-27 15:33:14] [补焦-probe_minus] iter=3, z=-10, score=0.6428
+[2026-07-27 15:33:15] [补焦-probe_return] iter=4, z=0, score=0.6401
+[2026-07-27 15:33:15] [补焦] 双向试探均无明显提升，停止
+[2026-07-27 15:33:15] ========== 闭环补焦 #36 结束: ok=True, best_score=0.6499, best_z=0 ==========
+[2026-07-27 15:33:15] [聚焦补焦] 闭环结束：ok=True, best_score=0.6498808670894861
+[2026-07-27 15:33:15] [聚焦补焦] 搜索未达标（best=0.6498808670894861），下次将尝试更大范围搜索
+[2026-07-27 15:33:15] [补焦判断] 补焦搜索正常结束但分数未达标（score=0.6498808670894861），继续等待（第 15 次检查）
+[2026-07-27 15:33:15] [补焦判断] 等待 1.5s 后再次检查...
+[2026-07-27 15:33:17] [聚焦补焦] FocusScore_ratio=0.6367 超出允许区间[0.9500, 1.0500]，连续低分计数=6/3
+[2026-07-27 15:33:17] [聚焦补焦] 触发补焦，启动闭环搜索
+[2026-07-27 15:33:17] [聚焦补焦] 上次 hill_climb 搜索未达标，本次切换为 full_sweep
+[2026-07-27 15:33:17] ========== 闭环补焦 #37 开始: strategy=hill_climb, target=0.95 ==========
+[2026-07-27 15:33:18] [补焦-start] iter=0, z=0, score=0.6277
+[2026-07-27 15:33:19] [补焦-probe_plus] iter=1, z=10, score=0.6343
+[2026-07-27 15:33:19] [补焦-probe_return] iter=2, z=0, score=0.6214
+[2026-07-27 15:33:20] [补焦-probe_minus] iter=3, z=-10, score=0.6257
+[2026-07-27 15:33:21] [补焦-probe_return] iter=4, z=0, score=0.6304
+[2026-07-27 15:33:21] [补焦] 双向试探均无明显提升，停止
+[2026-07-27 15:33:21] ========== 闭环补焦 #37 结束: ok=True, best_score=0.6367, best_z=0 ==========
+[2026-07-27 15:33:21] [聚焦补焦] 闭环结束：ok=True, best_score=0.6366931342599207
+[2026-07-27 15:33:21] [聚焦补焦] 搜索未达标（best=0.6366931342599207），下次将尝试更大范围搜索
+[2026-07-27 15:33:21] [补焦判断] 补焦搜索正常结束但分数未达标（score=0.6366931342599207），继续等待（第 16 次检查）
+[2026-07-27 15:33:21] [补焦判断] 等待 1.5s 后再次检查...
+[2026-07-27 15:33:23] [聚焦补焦] FocusScore_ratio=0.6205 超出允许区间[0.9500, 1.0500]，连续低分计数=7/3
+[2026-07-27 15:33:23] [聚焦补焦] 触发补焦，启动闭环搜索
+[2026-07-27 15:33:23] [聚焦补焦] 上次 hill_climb 搜索未达标，本次切换为 full_sweep
+[2026-07-27 15:33:23] ========== 闭环补焦 #38 开始: strategy=hill_climb, target=0.95 ==========
+[2026-07-27 15:33:24] [补焦-start] iter=0, z=0, score=0.6229
+[2026-07-27 15:33:25] [补焦-probe_plus] iter=1, z=10, score=0.6110
+[2026-07-27 15:33:26] [补焦-probe_return] iter=2, z=0, score=0.7675
+[2026-07-27 15:33:26] [补焦-probe_minus] iter=3, z=-10, score=0.9693
+[2026-07-27 15:33:26] [补焦] best_score=0.9693 >= target=0.95，停止
+[2026-07-27 15:33:26] ========== 闭环补焦 #38 结束: ok=True, best_score=0.9693, best_z=-10 ==========
+[2026-07-27 15:33:26] [聚焦补焦] 闭环结束：ok=True, best_score=0.9692601258941075
+[2026-07-27 15:33:26] [补焦判断] 补焦搜索正常结束但分数未达标（score=0.6205248298554003），继续等待（第 17 次检查）
+[2026-07-27 15:33:26] [补焦判断] 等待 1.5s 后再次检查...
+[2026-07-27 15:33:29] [聚焦补焦] FocusScore_ratio=0.9717 在允许区间[0.9500, 1.0500] 内，不触发补焦
+[2026-07-27 15:33:29] [补焦判断] FocusScore 已达标，退出等待循环（第 18 次检查）
+[2026-07-27 15:33:29] ========== Step 11：照明光 OFF，等待稳定 ==========
+[2026-07-27 15:33:29] [照明光] OFF
+[2026-07-27 15:33:30] [照明光] OFF 后稳定等待：1.200 s
+[2026-07-27 15:33:30] [照明光] OFF 后稳定等待：1.200 s（由“稳定等待/ms”控制）
+[2026-07-27 15:33:31] ========== Step 12：LabVIEW 光谱采集 ==========
+[2026-07-27 15:33:31] ========== LabVIEW 采集光谱 ==========
+[2026-07-27 15:33:32] [光谱] 已从CSV读取：labview_csv_output\measure_010_20260727_153332.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-27 15:33:32] [TCP] 已通过 LabVIEWTCPServer.request_measure() 直接获取真实光谱结果
+[2026-07-27 15:33:32] [横坐标xlsx] 已读取：516中心波长.xlsx，sheet=Sheet1，点数=1024
+[2026-07-27 15:33:32] [LabVIEW] 采集完成：index=10, method=request_measure, num_points=1024, csv_path=labview_csv_output\measure_010_20260727_153332.csv
+[2026-07-27 15:33:33] [光谱] 真实采集完成：num_points=1024, x_points=1024, plot_x_points=1024, raw_original_peak=1149.0, raw_filtered_peak=1149.0, raw_median_peak=1104.0, fit_peak=1104.0
+[2026-07-27 15:33:33] [光谱] 阈值去除后点数=1024，阈值=3000.0；5点中值滤波后点数=1024
+[2026-07-27 15:33:33] ========== Step 13：照明光 ON ==========
+[2026-07-27 15:33:33] [照明光] ON
+[2026-07-27 15:33:33] ========== Step 14：保存数据（异步线程，使用 Step1 最终角度） ==========
+[2026-07-27 15:33:33] ========== 保存本轮测量结果 ==========
+[2026-07-27 15:33:33] [异步保存] 第 10 轮保存线程已启动：save-cycle-0010；提交准备耗时=0.001 s
+[2026-07-27 15:33:33] [Step 14] 异步保存任务提交耗时：0.024 s；保存角度=Step1最终角度；append_plot_point=True
+[2026-07-27 15:33:33] [保存] 光谱 CSV：measurement_output\save\07.27\20260727_152523\cycle_0010_153135_677_spectrum.csv；wavelength列已写入中心波长；已写入本轮角度 angle_deg=34.17019777701941
+[2026-07-27 15:33:33] ========== Step 7-14 子循环第 1/1 次结束 ==========
+[2026-07-27 15:33:33] [保存] Summary CSV 已更新：measurement_output\save\07.27\measurement_summary.csv
+[2026-07-27 15:33:33] ========== Step 7-14 子循环结束：关闭激光 ==========
+[2026-07-27 15:33:33] [保存] Excel汇总已追加第 10 轮：measurement_output\save\07.27\measurement_summary_20260727_152325.xlsx
+[2026-07-27 15:33:33] [激光开关] MOVE axis=2, steps=-400
+[2026-07-27 15:33:33] [绘图] 已追加数据点：cycle=10, angle=34.17019777701941, fit_peak=1104.0
+[2026-07-27 15:33:33] [异步保存] 第 10 轮保存完成
+[2026-07-27 15:33:35] [激光开关] OFF 完成：axis=2, steps=-400
+[2026-07-27 15:33:35] [激光开关] 子循环结束，主流程正常关闭激光
+[2026-07-27 15:33:35] [流程] 第 10 轮数据已提交保存；保存角度=Step1最终角度 34.17019777701941；Step8最终角度=33.765289537375196 仅用于关闭激光/排查，不覆盖保存角度。
+[2026-07-27 15:33:36] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-27 15:33:36] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.27\20260727_152523\full_calibration_static_c；reason=run_workflow_cycle_11_before_run_one_cycle
+[2026-07-27 15:33:36] ========== 结束测量 ==========
+[2026-07-27 15:33:36] [流程] 测量结束，照明光保持当前状态，不额外发送 ON/OFF
+[2026-07-27 15:33:36] [保存] Excel汇总文件已保存：measurement_output\save\07.27\measurement_summary_20260727_152325.xlsx
+[2026-07-27 15:33:36] [流程] 正在测量 = False
