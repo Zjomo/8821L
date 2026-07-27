@@ -1,5 +1,5 @@
 {
-  "created_at": "2026-07-27 15:24:43",
+  "created_at": "2026-07-27 23:34:11",
   "capture_area": [
     116,
     98,
@@ -8,147 +8,119 @@
   ],
   "positive_points": [
     [
-      552.9411764705883,
-      514.1176470588235
+      515.2941176470588,
+      329.4117647058824
     ],
     [
-      537.6470588235294,
-      540.0
+      514.1176470588235,
+      392.94117647058823
     ],
     [
-      557.6470588235294,
-      564.7058823529412
+      532.9411764705883,
+      401.1764705882353
     ],
     [
-      564.7058823529412,
-      575.2941176470588
+      568.2352941176471,
+      357.64705882352945
     ],
     [
-      578.8235294117648,
-      577.6470588235294
-    ],
-    [
-      598.8235294117648,
-      551.7647058823529
-    ],
-    [
-      600.0,
-      523.5294117647059
-    ],
-    [
-      598.8235294117648,
-      508.2352941176471
+      545.8823529411765,
+      328.2352941176471
     ]
   ],
   "negative_points": [
     [
-      520.0,
-      491.7647058823529
+      429.4117647058824,
+      201.1764705882353
     ],
     [
-      462.3529411764706,
-      457.64705882352945
+      444.70588235294116,
+      222.35294117647058
     ],
     [
-      482.3529411764706,
-      472.94117647058823
-    ],
-    [
-      442.3529411764706,
-      452.94117647058823
+      430.5882352941177,
+      247.05882352941177
     ],
     [
       428.2352941176471,
-      438.8235294117647
+      278.8235294117647
     ],
     [
-      460.0,
-      311.7647058823529
+      476.47058823529414,
+      312.94117647058823
     ],
     [
-      445.88235294117646,
-      340.0
+      465.88235294117646,
+      390.5882352941177
     ],
     [
-      483.5294117647059,
-      367.05882352941177
+      507.05882352941177,
+      448.2352941176471
     ],
     [
-      487.05882352941177,
-      340.0
-    ],
-    [
-      471.7647058823529,
-      363.5294117647059
-    ],
-    [
-      510.5882352941177,
-      572.9411764705883
-    ],
-    [
-      544.7058823529412,
-      611.7647058823529
+      607.0588235294118,
+      468.2352941176471
     ]
   ],
   "saved_static_c_mask_type": "quadrilateral",
   "c_prompt_component_clean_debug": {
     "enabled": true,
     "reason": "kept_component_with_most_positive_prompts",
-    "input_area_px": 9667,
-    "output_area_px": 9667,
-    "positive_point_count": 8,
-    "negative_point_count": 12,
+    "input_area_px": 10764,
+    "output_area_px": 10764,
+    "positive_point_count": 5,
+    "negative_point_count": 8,
     "component_count": 1,
     "components": [
       {
         "label": 1,
-        "area_px": 9667,
-        "pos_hits": 8,
+        "area_px": 10764,
+        "pos_hits": 5,
         "neg_hits": 0,
-        "pos_near_pixels": 968,
+        "pos_near_pixels": 595,
         "neg_near_pixels": 0,
-        "score": 896809.1765767419
+        "score": 559509.2840554098
       }
     ],
     "selected_component": {
       "label": 1,
-      "area_px": 9667,
-      "pos_hits": 8,
+      "area_px": 10764,
+      "pos_hits": 5,
       "neg_hits": 0,
-      "pos_near_pixels": 968,
+      "pos_near_pixels": 595,
       "neg_near_pixels": 0,
-      "score": 896809.1765767419
+      "score": 559509.2840554098
     },
     "area_ratio_output_over_input": 1.0
   },
-  "quad_fit_method": "approxPolyDP_eps_ratio_0.0522",
+  "quad_fit_method": "approxPolyDP_eps_ratio_0.0433",
   "quad_points_xy": [
     [
-      518.0,
-      523.0
+      534.0,
+      309.0
     ],
     [
-      576.0,
-      483.0
+      595.0,
+      366.0
     ],
     [
-      633.0,
-      523.0
+      540.0,
+      433.0
     ],
     [
-      579.0,
-      598.0
+      476.0,
+      372.0
     ]
   ],
   "edge_route_source": "static_c_quad_points_three_line_safety_band",
-  "edge_route_points_count": 29,
+  "edge_route_points_count": 31,
   "outer_edge_points_count": 0,
   "edge_route_spacing_px": 12.0,
   "edge_route_safe_clearance_px": 150.0,
   "edge_route_follow_direction": 1,
-  "raw_sam2_mask_area_px": 9667,
-  "sam2_mask_area_px": 9667,
-  "quad_mask_area_px": 6746,
+  "raw_sam2_mask_area_px": 10764,
+  "sam2_mask_area_px": 10764,
+  "quad_mask_area_px": 7524,
   "files": {
     "static_c_mask": "static_c_mask.png",
     "static_c_pixels_yx": "static_c_pixels_yx.npy",

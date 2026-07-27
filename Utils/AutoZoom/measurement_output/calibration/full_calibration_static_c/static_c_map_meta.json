@@ -1,6 +1,6 @@
 {
-  "created_at": "2026-07-27 15:25:01",
-  "created_time": 1785137101.2936535,
+  "created_at": "2026-07-27 23:34:18",
+  "created_time": 1785166458.7071977,
   "source": "full_calibration_static_c",
   "source_static_c_mask": "E:\\CWB\\8821L\\Utils\\AutoZoom\\measurement_output\\rule_ab_follow_c_only\\_static_c_map_library\\default_static_c_map\\static_c_mask.png",
   "runtime_static_c_dir": "E:\\CWB\\8821L\\Utils\\AutoZoom\\measurement_output\\calibration\\full_calibration_static_c",
@@ -9,33 +9,33 @@
   "edge_route_path": "E:\\CWB\\8821L\\Utils\\AutoZoom\\measurement_output\\calibration\\full_calibration_static_c\\static_c_edge_route.json",
   "pixels_path": "E:\\CWB\\8821L\\Utils\\AutoZoom\\measurement_output\\calibration\\full_calibration_static_c\\static_c_pixels_yx.npy",
   "bbox": [
-    518.0,
-    483.0,
-    633.0,
-    598.0
+    476.0,
+    309.0,
+    595.0,
+    433.0
   ],
   "center": [
-    576.3314556774385,
-    534.6900385413578
+    536.0438596491229,
+    370.3543328017012
   ],
-  "area": 6612.5,
-  "mask_area_px": 6746,
+  "area": 7395.5,
+  "mask_area_px": 7524,
   "contour": [
     [
-      576.0,
-      483.0
+      534.0,
+      309.0
     ],
     [
-      518.0,
-      523.0
+      476.0,
+      372.0
     ],
     [
-      579.0,
-      598.0
+      540.0,
+      433.0
     ],
     [
-      633.0,
-      523.0
+      595.0,
+      366.0
     ]
   ],
   "purpose": "strict_full_calibration_c_for_measurement_run",

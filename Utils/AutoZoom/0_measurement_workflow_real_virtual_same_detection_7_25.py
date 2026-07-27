@@ -172,7 +172,7 @@ class MeasurementConfig:
     virtual_spectrum_sigma: float = float(_cfg("virtual_spectrum_sigma", 18.0))
     virtual_spectrum_noise: float = float(_cfg("virtual_spectrum_noise", 15.0))
 
-    max_cycles: int = int(_cfg("max_cycles", 10))
+    max_cycles: int = int(_cfg("max_cycles", 1))
 
     # 新循环结构：每个外循环周期内 Step 7-14 子循环的重复次数
     # 默认 1 表示与旧结构最接近；0 表示跳过子循环，只做 Step 1-6 的初始光谱采集
@@ -623,7 +623,7 @@ class MeasurementConfig:
     focus_z_accel: int = int(_cfg("focus_z_accel", 100))
     focus_search_strategy: str = str(_cfg("focus_search_strategy", "hill_climb"))
     focus_max_checks_per_cycle: int = int(_cfg("focus_max_checks_per_cycle", 20))
-    focus_check_interval_s: float = float(_cfg("focus_check_interval_s", 1.5))
+    focus_check_interval_s: float = float(_cfg("focus_check_interval_s", 0.2))
 
     def __post_init__(self):
         """
@@ -3014,7 +3014,6 @@ class MeasurementWorkflow:
         self.log("[照明光] OFF")
 
         time.sleep(self.cfg.stable_wait_ms/1000.0)
-        self.log(f"[照明光] OFF 后稳定等待：{self.cfg.stable_wait_ms/1000:.3f} s")
 
         self.notify_update()
 
@@ -12391,7 +12390,8 @@ class MeasurementWorkflow:
                     "[保存] 本轮没有可保存的光谱数组：不会再用1000伪造光谱；"
                     "请检查 Step 4 的 TCP 返回是否包含 raw_y/intensity/values 或有效 csv_path"
                 )
-
+            
+            # 保存当前Summary实时数据
             self._append_summary_csv(
                 cycle_index=cycle_index,
                 angle_before_result=angle_before_result,
@@ -13366,6 +13366,8 @@ class MeasurementWorkflow:
         Step 5：照明光 ON
         Step 6：保存本轮数据；保存角度使用 Step1 的 YOLO-OBB baseline 原始角度
 
+
+
         Step 7：打开激光
         Step 8：A推动B（logic/rule_ab.py），每次运动后检测B对边角度；
                 Step7 角度只用于关闭激光/是否继续推动，不再覆盖本轮保存角度。
@@ -13468,19 +13470,17 @@ class MeasurementWorkflow:
                     return False
 
             self.log("========== Step 2：生成保存路径 ==========")
-            paths = self.build_save_path(cycle_index)
-
-            # Step 7-14 子循环
-            sub_loop_count = max(0, int(getattr(self.cfg, "sub_loop_iterations_per_cycle", 1)))
-            self.log(f"[流程] 本周期 Step 7-14 子循环次数：{sub_loop_count}")
-
-            # 角度-拟合峰值列表每轮只追加一个点：
-            # 有子循环时取最后一轮子循环的结果；无子循环时取初始光谱采集的结果。
-            initial_append_plot = sub_loop_count == 0
+            # 初始光谱采集使用序号0，所以生成路径时也使用序号0
+            paths = self.build_save_path(0)
 
             # Step 3-6：初始光谱采集（在激光操作之前）
+            # 第一轮循环（初始光谱采集）使用序号0
+            # 角度-拟合峰值列表：无子循环时才在初始光谱采集时追加绘图点（序号0）
+            sub_loop_count = max(0, int(getattr(self.cfg, "sub_loop_iterations_per_cycle", 1)))
+            initial_append_plot = sub_loop_count == 0
+
             if not self._acquire_and_save_spectrum(
-                cycle_index=cycle_index,
+                cycle_index=0,  # 初始光谱采集使用序号0
                 paths=paths,
                 angle_result=angle_result,
                 off_label="Step 3",
@@ -13491,9 +13491,18 @@ class MeasurementWorkflow:
             ):
                 return False
 
+
+
+            # Step 7-14 子循环
+            self.log(f"[流程] 本周期 Step 7-14 子循环次数：{sub_loop_count}")
+
             last_rule_ab_result: Dict[str, Any] = {}
             last_rule_ac_result: Dict[str, Any] = {}
             last_autofocus_result: Dict[str, Any] = {}
+
+            # 子循环
+            # 保存主循环序号，用于子循环结束后恢复
+            main_cycle_index = cycle_index
 
             for sub_idx in range(1, sub_loop_count + 1):
                 if self.stop_requested:
@@ -13502,7 +13511,87 @@ class MeasurementWorkflow:
                     self._set_midrun_recalibration(cycle_index, f"Step 7-14 子循环第 {sub_idx} 次开始前")
                     return False
 
+                # 在子循环内部，将cycle_index更新为子循环序号
+                cycle_index = sub_idx
+                self.context["cycle_index"] = cycle_index
+                self.notify_update()
+
                 self.log(f"========== Step 7-14 子循环第 {sub_idx}/{sub_loop_count} 次开始 ==========")
+
+                self.log("========== Step 1：Bmask最长边角度检测 current_angle ==========")
+                angle_result = {"ok": False, "angle_deg": None, "reason": "bmask_longest_edge_not_run"}
+                follower_for_angle = None
+                try:
+                    follower_for_angle = self._ensure_rule_ab_follower_with_startup_retry(
+                        label="step1_bmask_longest_edge_angle"
+                    )
+                    self.apply_runtime_rule_ab_params_to_follower(follower_for_angle, reason="step1_bmask_longest_edge_angle")
+                    self._ensure_rule_ab_feature_tracker_installed(follower_for_angle, self._get_loaded_calibration_state())
+                    angle_result = self.detect_step7_yolo_obb_angle_once(
+                        follower=follower_for_angle,
+                        label="current_angle_bmask_longest_edge",
+                        baseline_angle=None,
+                        allow_fail=True,
+                        allow_close_from_relocation=False,
+                    )
+                    if angle_result.get("ok", False) and angle_result.get("angle_deg") is not None:
+                        self.log(
+                            f"[角度检测-current_angle] 已使用当前帧 Bmask 最长边角度作为本轮 baseline："
+                            f"{angle_result.get('angle_deg')}°；source={angle_result.get('angle_source')}"
+                        )
+                    else:
+                        self.log(
+                            f"[角度检测-current_angle] Bmask 最长边 baseline 计算失败，"
+                            f"不再回退 A 最近边作为主角度来源；reason={angle_result.get('reason')}"
+                        )
+                except Exception as e:
+                    self.log(f"[角度检测-current_angle] Bmask 最长边 baseline 计算异常：{e}")
+                    angle_result = {"ok": False, "angle_deg": None, "reason": str(e), "angle_source": "failed_no_close"}
+
+                if angle_result.get("ok", False) and angle_result.get("angle_deg") is not None:
+                    current_angle = float(angle_result["angle_deg"])
+                else:
+                    current_angle = None
+                    reason = angle_result.get("reason")
+                    self.log(
+                        "[角度检测-current_angle] 本轮 Bmask 最长边角度无效；"
+                        "不再把它当作整次测量失败，本轮不进入 Step7，直接跳过并继续下一轮。"
+                        f" reason={reason}"
+                    )
+                    self.context["last_angle_result"] = angle_result
+                    return self._skip_current_cycle_without_stopping_measurement(
+                        cycle_index=cycle_index,
+                        phase="Step1_Bmask_longest_edge_baseline",
+                        reason=reason,
+                        close_laser_if_on=False,
+                    )
+
+                # 兼容旧显示/保存字段：angle_before 作为本轮 Step1 baseline，angle_after 不再使用。
+                self.context["angle_before"] = current_angle
+                self.context["angle_after"] = None
+                self.context["save_angle_deg"] = current_angle
+                self.context["angle_before_after_delta"] = None
+                self.context["last_angle_result"] = angle_result
+                self.context["previous_cycle_angle"] = self.previous_cycle_angle
+                if self.previous_cycle_angle is not None and current_angle is not None:
+                    self.context["angle_delta"] = self.angle_diff_deg(current_angle, self.previous_cycle_angle)
+                else:
+                    self.context["angle_delta"] = None
+                self.notify_update()
+
+                if current_angle is not None:
+                    self.previous_cycle_angle = float(current_angle)
+
+                # 仅在第一轮主循环且未建立参考图时建立聚焦参考；必须完成 ROI 选择
+                # 注意：这里检查主循环序号(main_cycle_index)而不是子循环序号(cycle_index)
+                if main_cycle_index == 1 and sub_idx == 1 and not self._focus_reference_ready:
+                    if not self.capture_focus_reference(cycle_index):
+                        self.log("[流程] 聚焦参考图建立失败，无法继续测量")
+                        self.stop_requested = True
+                        return False
+
+                self.log("========== Step 2：生成保存路径 ==========")
+                paths = self.build_save_path(cycle_index)
 
                 # Step 7：打开激光
                 self.log("========== Step 7：打开激光 ==========")
@@ -13586,6 +13675,26 @@ class MeasurementWorkflow:
                     self.stop_requested = True
                     self.notify_update()
                     return False
+                
+                # Step8 成功：角度检测通过，判断是否已达到阈值并关闭激光
+                final_delta = rule_ab_result.get("final_delta", 0)
+                target_min = rule_ab_result.get("target_min")
+                if target_min is not None and final_delta >= target_min:
+                    # 角度达到阈值，尝试关闭激光
+                    if self.context.get("laser_on", False):
+                        try:
+                            self.laser_off()
+                            self.log(f"[RuleAB] Step8 角度达到阈值={target_min}，激光已关闭")
+                        except Exception as e:
+                            self.log(f"[RuleAB] Step8 角度达到阈值={target_min}，但关闭激光失败：{e}")
+                            self.context["laser_off_failed_after_step8"] = True
+                            self.context["laser_off_failed_reason"] = str(e)
+                else:
+                    self.log(f"[RuleAB] Step8 角度检测通过但最终_delta={final_delta} < 阈值={target_min}")
+
+
+                
+
 
                 # Step 9：检测颜色区域中心，必要时移动1/2通道
                 self.log("========== Step 9：检测颜色区域中心，必要时移动1/2通道 ==========")
@@ -13679,6 +13788,11 @@ class MeasurementWorkflow:
 
                 self.log(f"========== Step 7-14 子循环第 {sub_idx}/{sub_loop_count} 次结束 ==========")
 
+            # 子循环结束后恢复主循环序号
+            cycle_index = main_cycle_index
+            self.context["cycle_index"] = cycle_index
+            self.notify_update()
+
             # 子循环结束后关闭激光（安全兜底）
             self.log("========== Step 7-14 子循环结束：关闭激光 ==========")
             try:
@@ -13721,21 +13835,36 @@ class MeasurementWorkflow:
             return True
 
         except Exception as e:
-            self.log(f"[错误] 第 {cycle_index} 轮测量失败：{e}")
+            # 判断是否在子循环中发生的错误
+            in_sub_loop = 'main_cycle_index' in locals() and cycle_index != main_cycle_index
+            if in_sub_loop:
+                # 子循环内的错误，cycle_index是子循环序号
+                self.log(f"[错误] 主循环第 {main_cycle_index} 轮，子循环第 {cycle_index} 次测量失败：{e}")
+                error_path = error_dir / f"error_cycle_{main_cycle_index:04d}_sub_{cycle_index:04d}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+                error_info = {
+                    "main_cycle_index": main_cycle_index,
+                    "sub_cycle_index": cycle_index,
+                    "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "error": str(e),
+                    "traceback": traceback.format_exc(),
+                    "context": self._safe_context_for_json(),
+                }
+            else:
+                # 主循环中的错误
+                self.log(f"[错误] 第 {cycle_index} 轮测量失败：{e}")
+                error_path = error_dir / f"error_cycle_{cycle_index:04d}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+                error_info = {
+                    "cycle_index": cycle_index,
+                    "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "error": str(e),
+                    "traceback": traceback.format_exc(),
+                    "context": self._safe_context_for_json(),
+                }
+
             self.log(traceback.format_exc())
 
             error_dir = self.output_root / "errors"
             error_dir.mkdir(parents=True, exist_ok=True)
-
-            error_path = error_dir / f"error_cycle_{cycle_index:04d}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-
-            error_info = {
-                "cycle_index": cycle_index,
-                "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "error": str(e),
-                "traceback": traceback.format_exc(),
-                "context": self._safe_context_for_json(),
-            }
 
             with error_path.open("w", encoding="utf-8") as f:
                 json.dump(error_info, f, ensure_ascii=False, indent=2)
@@ -13826,6 +13955,12 @@ class MeasurementWorkflow:
                 self.log("[流程] 停止测量：激光已 OFF")
         except Exception as e:
             self.log(f"[流程] 停止测量时关闭激光失败：{e}")
+
+        # 兜底：将当前未完成轮的已有数据刷入 measurement_summary.csv，防止数据丢失
+        try:
+            self._flush_unsaved_cycle_to_csv()
+        except Exception as e:
+            self.log(f"[流程] 停止测量时刷新未保存 CSV 失败：{e}")
 
         self.save_summary_xlsx()
         self.notify_update()
