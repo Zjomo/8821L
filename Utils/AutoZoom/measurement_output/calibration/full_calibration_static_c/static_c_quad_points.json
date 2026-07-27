@@ -1,47 +1,20 @@
 {
-  "method": "circle_like_minAreaRect_external_quad_circularity_0.830_aspect_0.909_fill_0.893",
-  "shape_type": "circle_external_rect",
-  "shape_detection": {
-    "ok": true,
-    "is_circle_like": true,
-    "circularity": 0.8295971923514328,
-    "aspect_ratio": 0.90919280365886,
-    "enclosing_fill_ratio": 0.8932058418399874,
-    "area_px": 10242.5,
-    "perimeter_px": 393.88938903808594,
-    "reason": "circle_like",
-    "min_area_rect_size_wh": [
-      120.00481414794922,
-      109.10751342773438
-    ],
-    "min_enclosing_circle": [
-      555.69873046875,
-      387.88568115234375,
-      60.41604232788086
-    ],
-    "thresholds": {
-      "circularity_threshold": 0.78,
-      "min_aspect_ratio": 0.72,
-      "min_enclosing_fill_ratio": 0.58
-    }
-  },
-  "source_mask": "static_c_sam2_mask.png",
   "points_xy": [
     [
-      553.4887084960938,
-      304.262451171875
+      512.0,
+      377.0
     ],
     [
-      634.2217407226562,
-      377.6561279296875
+      470.0,
+      434.0
     ],
     [
-      553.4977416992188,
-      466.4525146484375
+      529.0,
+      479.0
     ],
     [
-      472.76470947265625,
-      393.058837890625
+      568.0,
+      416.0
     ]
   ]
 }

@@ -622,6 +622,8 @@ class MeasurementConfig:
     focus_z_speed: int = int(_cfg("focus_z_speed", 100))
     focus_z_accel: int = int(_cfg("focus_z_accel", 100))
     focus_search_strategy: str = str(_cfg("focus_search_strategy", "hill_climb"))
+    focus_max_checks_per_cycle: int = int(_cfg("focus_max_checks_per_cycle", 20))
+    focus_check_interval_s: float = float(_cfg("focus_check_interval_s", 1.5))
 
     def __post_init__(self):
         """
@@ -1342,6 +1344,7 @@ class MeasurementWorkflow:
         self._focus_controller: Optional[AutofocusController] = None
         self._focus_simulator: Optional[Any] = None
         self._focus_consecutive_low_count: int = 0
+        self._last_autofocus_search_failed: bool = False
         self._focus_autofocus_event_counter: int = 0
 
     def _init_log_manager(self) -> None:
@@ -2479,7 +2482,7 @@ class MeasurementWorkflow:
             raise RuntimeError("当前环境无法导入 pylablib.devices.Newport；请安装 pylablib 或切换 hardware_mode=virtual。")
 
         self.log("[激光开关] 正在连接 Newport 8743-CL / Picomotor")
-        self.laser_stage = Newport.Picomotor8742(conn=r'8743-CL-12116', backend="network")
+        self.laser_stage = Newport.Picomotor8742(0)
 
         try:
             self.log(f"[激光开关] ID: {self.laser_stage.get_id()}")
@@ -13216,7 +13219,21 @@ class MeasurementWorkflow:
         try:
             self.log("[聚焦补焦] 触发补焦，启动闭环搜索")
             controller = self._ensure_focus_controller()
-            autofocus_result = controller.run_closed_loop(initial_focus_score=score)
+
+            # 策略降级机制：如果上一次 hill_climb 结束但分数未达标，本次改用 full_sweep
+            current_strategy = str(getattr(self.cfg, "focus_search_strategy", "hill_climb"))
+            _last_search_failed = getattr(self, "_last_autofocus_search_failed", False)
+            if _last_search_failed and current_strategy != "full_sweep":
+                self.log(f"[聚焦补焦] 上次 {current_strategy} 搜索未达标，本次切换为 full_sweep")
+                original_strategy = self.cfg.focus_search_strategy
+                self.cfg.focus_search_strategy = "full_sweep"
+                try:
+                    autofocus_result = controller.run_closed_loop(initial_focus_score=score)
+                finally:
+                    self.cfg.focus_search_strategy = original_strategy
+            else:
+                autofocus_result = controller.run_closed_loop(initial_focus_score=score)
+
             result["autofocus_ok"] = bool(autofocus_result.get("ok", False))
             final_score = autofocus_result.get("best_score")
             self.log(
@@ -13227,6 +13244,11 @@ class MeasurementWorkflow:
                 final_score, trigger_ratio, absolute
             ):
                 self._focus_consecutive_low_count = 0
+                self._last_autofocus_search_failed = False
+            else:
+                # 搜索正常结束但分数未达标，标记下次需要使用更宽范围策略
+                self._last_autofocus_search_failed = True
+                self.log(f"[聚焦补焦] 搜索未达标（best={final_score}），下次将尝试更大范围搜索")
         except Exception as e:
             self.log(f"[聚焦补焦] 闭环补焦异常：{e}")
             self.log(traceback.format_exc())
@@ -13577,18 +13599,62 @@ class MeasurementWorkflow:
                     self.notify_update()
                     return False
 
-                # Step 10：补焦判断
-                self.log("========== Step 10：补焦判断 ==========")
-                try:
-                    autofocus_result = self.run_autofocus_if_needed(cycle_index)
-                    last_autofocus_result = autofocus_result
-                    self.context["last_autofocus_result"] = autofocus_result
-                    self.notify_update()
-                except Exception as e:
-                    self.log(f"[补焦判断] 异常：{e}")
-                    self.log(traceback.format_exc())
-                    last_autofocus_result = {"score": None, "triggered": False, "autofocus_ok": False, "error": str(e)}
-                    self.context["last_autofocus_result"] = last_autofocus_result
+                # Step 10：补焦判断（循环等待直到补焦完成或分数达标）
+                self.log("========== Step 10：补焦判断（循环等待） ==========")
+                autofocus_check_count = 0
+                max_autofocus_checks = int(self.cfg.focus_max_checks_per_cycle) if hasattr(self.cfg, 'focus_max_checks_per_cycle') else 20
+                while autofocus_check_count < max_autofocus_checks:
+                    autofocus_check_count += 1
+                    try:
+                        autofocus_result = self.run_autofocus_if_needed(cycle_index)
+                        last_autofocus_result = autofocus_result
+                        self.context["last_autofocus_result"] = autofocus_result
+                        self.notify_update()
+
+                        # 仅以分数达标作为退出条件（autofocus_ok 只代表搜索正常结束，不代表达标）
+                        score = autofocus_result.get("score")
+                        triggered = autofocus_result.get("triggered", False)
+                        autofocus_ok = autofocus_result.get("autofocus_ok", False)
+
+                        if score is not None and focus_score_ratio_in_tolerance(
+                            score,
+                            float(self.cfg.focus_trigger_ratio),
+                            bool(self.cfg.focus_trigger_absolute)
+                        ):
+                            self.log(f"[补焦判断] FocusScore 已达标，退出等待循环（第 {autofocus_check_count} 次检查）")
+                            break
+
+                        # 未达标，记录当前状态并继续等待
+                        if triggered and not autofocus_ok:
+                            self.log(f"[补焦判断] 补焦已触发但未成功（score={score}），继续等待（第 {autofocus_check_count} 次检查）")
+                        elif triggered and autofocus_ok:
+                            self.log(f"[补焦判断] 补焦搜索正常结束但分数未达标（score={score}），继续等待（第 {autofocus_check_count} 次检查）")
+                        else:
+                            self.log(f"[补焦判断] 分数未达标（score={score}），继续等待（第 {autofocus_check_count} 次检查）")
+
+                        # 等待一个间隔后再次检查
+                        if autofocus_check_count < max_autofocus_checks:
+                            wait_s = float(self.cfg.focus_check_interval_s) if hasattr(self.cfg, 'focus_check_interval_s') else 1.5
+                            self.log(f"[补焦判断] 等待 {wait_s:.1f}s 后再次检查...")
+                            time.sleep(wait_s)
+                            
+                    except Exception as e:
+                        self.log(f"[补焦判断] 异常：{e}")
+                        self.log(traceback.format_exc())
+                        last_autofocus_result = {"score": None, "triggered": False, "autofocus_ok": False, "error": str(e)}
+                        self.context["last_autofocus_result"] = last_autofocus_result
+                        # 异常后等待一会再重试
+                        time.sleep(1.0)
+                        continue
+                    
+                    if self.stop_requested:
+                        return False
+                    if self._is_midrun_recalibration_requested():
+                        self._set_midrun_recalibration(cycle_index, f"Step 10 子循环第 {sub_idx} 次")
+                        return False
+                
+                if autofocus_check_count >= max_autofocus_checks:
+                    self.log(f"[补焦判断] 已达到最大检查次数 {max_autofocus_checks}，继续进入下一步")
 
                 if self.stop_requested:
                     return False
