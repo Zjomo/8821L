@@ -1,53 +1,53 @@
 {
-  "method": "approxPolyDP_eps_ratio_0.0433",
+  "method": "approxPolyDP_eps_ratio_0.0640",
   "points_xy": [
     [
-      534.0,
+      396.0,
+      345.0
+    ],
+    [
+      443.0,
       309.0
     ],
     [
-      595.0,
-      366.0
+      510.0,
+      355.0
     ],
     [
-      540.0,
-      433.0
-    ],
-    [
-      476.0,
-      372.0
+      458.0,
+      425.0
     ]
   ],
-  "raw_sam2_mask_area_px": 10764,
-  "sam2_mask_area_px": 10764,
-  "quad_mask_area_px": 7524,
+  "raw_sam2_mask_area_px": 9842,
+  "sam2_mask_area_px": 9842,
+  "quad_mask_area_px": 6671,
   "c_prompt_component_clean_debug": {
     "enabled": true,
     "reason": "kept_component_with_most_positive_prompts",
-    "input_area_px": 10764,
-    "output_area_px": 10764,
-    "positive_point_count": 5,
-    "negative_point_count": 8,
+    "input_area_px": 9842,
+    "output_area_px": 9842,
+    "positive_point_count": 6,
+    "negative_point_count": 7,
     "component_count": 1,
     "components": [
       {
         "label": 1,
-        "area_px": 10764,
-        "pos_hits": 5,
+        "area_px": 9842,
+        "pos_hits": 6,
         "neg_hits": 0,
-        "pos_near_pixels": 595,
+        "pos_near_pixels": 722,
         "neg_near_pixels": 0,
-        "score": 559509.2840554098
+        "score": 672209.1945158216
       }
     ],
     "selected_component": {
       "label": 1,
-      "area_px": 10764,
-      "pos_hits": 5,
+      "area_px": 9842,
+      "pos_hits": 6,
       "neg_hits": 0,
-      "pos_near_pixels": 595,
+      "pos_near_pixels": 722,
       "neg_near_pixels": 0,
-      "score": 559509.2840554098
+      "score": 672209.1945158216
     },
     "area_ratio_output_over_input": 1.0
   }

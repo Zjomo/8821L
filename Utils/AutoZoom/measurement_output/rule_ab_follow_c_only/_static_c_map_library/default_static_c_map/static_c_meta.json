@@ -1,5 +1,5 @@
 {
-  "created_at": "2026-07-27 23:34:11",
+  "created_at": "2026-07-28 15:30:50",
   "capture_area": [
     116,
     98,
@@ -8,119 +8,119 @@
   ],
   "positive_points": [
     [
-      515.2941176470588,
-      329.4117647058824
+      447.05882352941177,
+      323.5294117647059
     ],
     [
-      514.1176470588235,
-      392.94117647058823
+      411.7647058823529,
+      349.4117647058824
     ],
     [
-      532.9411764705883,
-      401.1764705882353
+      424.70588235294116,
+      389.4117647058824
     ],
     [
-      568.2352941176471,
-      357.64705882352945
+      443.5294117647059,
+      398.8235294117647
     ],
     [
-      545.8823529411765,
-      328.2352941176471
+      469.4117647058824,
+      385.88235294117646
+    ],
+    [
+      483.5294117647059,
+      361.1764705882353
     ]
   ],
   "negative_points": [
     [
-      429.4117647058824,
-      201.1764705882353
+      376.47058823529414,
+      197.64705882352942
     ],
     [
-      444.70588235294116,
-      222.35294117647058
+      358.8235294117647,
+      223.52941176470588
     ],
     [
-      430.5882352941177,
-      247.05882352941177
+      381.1764705882353,
+      256.47058823529414
     ],
     [
-      428.2352941176471,
-      278.8235294117647
+      345.88235294117646,
+      274.11764705882354
     ],
     [
-      476.47058823529414,
-      312.94117647058823
+      377.64705882352945,
+      300.0
     ],
     [
-      465.88235294117646,
-      390.5882352941177
+      384.70588235294116,
+      384.70588235294116
     ],
     [
-      507.05882352941177,
+      383.5294117647059,
       448.2352941176471
-    ],
-    [
-      607.0588235294118,
-      468.2352941176471
     ]
   ],
   "saved_static_c_mask_type": "quadrilateral",
   "c_prompt_component_clean_debug": {
     "enabled": true,
     "reason": "kept_component_with_most_positive_prompts",
-    "input_area_px": 10764,
-    "output_area_px": 10764,
-    "positive_point_count": 5,
-    "negative_point_count": 8,
+    "input_area_px": 9842,
+    "output_area_px": 9842,
+    "positive_point_count": 6,
+    "negative_point_count": 7,
     "component_count": 1,
     "components": [
       {
         "label": 1,
-        "area_px": 10764,
-        "pos_hits": 5,
+        "area_px": 9842,
+        "pos_hits": 6,
         "neg_hits": 0,
-        "pos_near_pixels": 595,
+        "pos_near_pixels": 722,
         "neg_near_pixels": 0,
-        "score": 559509.2840554098
+        "score": 672209.1945158216
       }
     ],
     "selected_component": {
       "label": 1,
-      "area_px": 10764,
-      "pos_hits": 5,
+      "area_px": 9842,
+      "pos_hits": 6,
       "neg_hits": 0,
-      "pos_near_pixels": 595,
+      "pos_near_pixels": 722,
       "neg_near_pixels": 0,
-      "score": 559509.2840554098
+      "score": 672209.1945158216
     },
     "area_ratio_output_over_input": 1.0
   },
-  "quad_fit_method": "approxPolyDP_eps_ratio_0.0433",
+  "quad_fit_method": "approxPolyDP_eps_ratio_0.0640",
   "quad_points_xy": [
     [
-      534.0,
+      396.0,
+      345.0
+    ],
+    [
+      443.0,
       309.0
     ],
     [
-      595.0,
-      366.0
+      510.0,
+      355.0
     ],
     [
-      540.0,
-      433.0
-    ],
-    [
-      476.0,
-      372.0
+      458.0,
+      425.0
     ]
   ],
   "edge_route_source": "static_c_quad_points_three_line_safety_band",
-  "edge_route_points_count": 31,
+  "edge_route_points_count": 29,
   "outer_edge_points_count": 0,
   "edge_route_spacing_px": 12.0,
   "edge_route_safe_clearance_px": 150.0,
   "edge_route_follow_direction": 1,
-  "raw_sam2_mask_area_px": 10764,
-  "sam2_mask_area_px": 10764,
-  "quad_mask_area_px": 7524,
+  "raw_sam2_mask_area_px": 9842,
+  "sam2_mask_area_px": 9842,
+  "quad_mask_area_px": 6671,
   "files": {
     "static_c_mask": "static_c_mask.png",
     "static_c_pixels_yx": "static_c_pixels_yx.npy",

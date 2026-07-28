@@ -174,8 +174,10 @@ class MeasurementConfig:
 
     max_cycles: int = int(_cfg("max_cycles", 1))
 
-    # 新循环结构：每个外循环周期内 Step 7-14 子循环的重复次数
-    # 默认 1 表示与旧结构最接近；0 表示跳过子循环，只做 Step 1-6 的初始光谱采集
+    # 新循环结构：
+    # max_cycles固定为1，表示只执行一次主循环框架
+    # sub_loop_iterations_per_cycle控制实际的循环次数（理解为主循环次数）
+    # 序号分配：0=初始光谱采集，1-N=实际主循环（原子循环）
     sub_loop_iterations_per_cycle: int = int(_cfg("sub_loop_iterations_per_cycle", 1))
 
     # 这个不是照明光时间，而是信号发生器 CH1 ON 的持续时间
@@ -13470,17 +13472,17 @@ class MeasurementWorkflow:
                     return False
 
             self.log("========== Step 2：生成保存路径 ==========")
-            # 初始光谱采集使用序号0，所以生成路径时也使用序号0
+            # 初始光谱采集使用序号0（基准测量）
             paths = self.build_save_path(0)
 
-            # Step 3-6：初始光谱采集（在激光操作之前）
-            # 第一轮循环（初始光谱采集）使用序号0
-            # 角度-拟合峰值列表：无子循环时才在初始光谱采集时追加绘图点（序号0）
+            # Step 3-6：初始光谱采集（基准测量，序号0）
+            # 这是所有后续测量的基准参考
+            # 角度-拟合峰值列表：无实际主循环时才在初始光谱采集时追加绘图点（序号0）
             sub_loop_count = max(0, int(getattr(self.cfg, "sub_loop_iterations_per_cycle", 1)))
             initial_append_plot = sub_loop_count == 0
 
             if not self._acquire_and_save_spectrum(
-                cycle_index=0,  # 初始光谱采集使用序号0
+                cycle_index=0,  # 初始光谱采集使用序号0（基准）
                 paths=paths,
                 angle_result=angle_result,
                 off_label="Step 3",
@@ -13493,30 +13495,31 @@ class MeasurementWorkflow:
 
 
 
-            # Step 7-14 子循环
-            self.log(f"[流程] 本周期 Step 7-14 子循环次数：{sub_loop_count}")
+            # Step 7-14 实际主循环（原子循环）
+            # 每次子循环使用序号1, 2, 3...作为实际的主循环序号
+            self.log(f"[流程] 本周期实际主循环次数：{sub_loop_count}（序号1-{sub_loop_count}）")
 
             last_rule_ab_result: Dict[str, Any] = {}
             last_rule_ac_result: Dict[str, Any] = {}
             last_autofocus_result: Dict[str, Any] = {}
 
-            # 子循环
-            # 保存主循环序号，用于子循环结束后恢复
+            # 实际主循环（原子循环）
+            # 保存框架主循环序号，用于循环结束后恢复（框架主循环序号始终为1）
             main_cycle_index = cycle_index
 
             for sub_idx in range(1, sub_loop_count + 1):
                 if self.stop_requested:
                     return False
                 if self._is_midrun_recalibration_requested():
-                    self._set_midrun_recalibration(cycle_index, f"Step 7-14 子循环第 {sub_idx} 次开始前")
+                    self._set_midrun_recalibration(cycle_index, f"实际主循环第 {sub_idx} 次开始前")
                     return False
 
-                # 在子循环内部，将cycle_index更新为子循环序号
+                # 在实际主循环内部，将cycle_index更新为实际主循环序号（1, 2, 3...）
                 cycle_index = sub_idx
                 self.context["cycle_index"] = cycle_index
                 self.notify_update()
 
-                self.log(f"========== Step 7-14 子循环第 {sub_idx}/{sub_loop_count} 次开始 ==========")
+                self.log(f"========== 实际主循环第 {sub_idx}/{sub_loop_count} 次开始 ==========")
 
                 self.log("========== Step 1：Bmask最长边角度检测 current_angle ==========")
                 angle_result = {"ok": False, "angle_deg": None, "reason": "bmask_longest_edge_not_run"}
@@ -13583,14 +13586,14 @@ class MeasurementWorkflow:
                     self.previous_cycle_angle = float(current_angle)
 
                 # 仅在第一轮主循环且未建立参考图时建立聚焦参考；必须完成 ROI 选择
-                # 注意：这里检查主循环序号(main_cycle_index)而不是子循环序号(cycle_index)
+                # 注意：这里检查框架主循环序号(main_cycle_index=1)和实际主循环序号(sub_idx=1)
                 if main_cycle_index == 1 and sub_idx == 1 and not self._focus_reference_ready:
                     if not self.capture_focus_reference(cycle_index):
                         self.log("[流程] 聚焦参考图建立失败，无法继续测量")
                         self.stop_requested = True
                         return False
 
-                self.log("========== Step 2：生成保存路径 ==========")
+                self.log(f"========== 实际主循环第 {sub_idx} 次生成保存路径 ==========")
                 paths = self.build_save_path(cycle_index)
 
                 # Step 7：打开激光
@@ -13628,7 +13631,7 @@ class MeasurementWorkflow:
                 last_rule_ab_result = rule_ab_result
 
                 if self._is_midrun_recalibration_requested() or str(rule_ab_result.get("reason", "")) == "midrun_recalibration_requested":
-                    self._set_midrun_recalibration(cycle_index, f"Step 8 子循环第 {sub_idx} 次")
+                    self._set_midrun_recalibration(cycle_index, f"实际主循环第 {sub_idx} 次 RuleAB")
                     self.context["last_rule_ab_result"] = rule_ab_result
                     self.notify_update()
                     return False
@@ -13704,7 +13707,7 @@ class MeasurementWorkflow:
                 self.notify_update()
 
                 if self._is_midrun_recalibration_requested() or str(rule_ac_result.get("reason", "")) == "midrun_recalibration_requested":
-                    self._set_midrun_recalibration(cycle_index, f"Step 9 子循环第 {sub_idx} 次")
+                    self._set_midrun_recalibration(cycle_index, f"实际主循环第 {sub_idx} 次 RuleAC")
                     self.notify_update()
                     return False
 
@@ -13759,7 +13762,7 @@ class MeasurementWorkflow:
                     if self.stop_requested:
                         return False
                     if self._is_midrun_recalibration_requested():
-                        self._set_midrun_recalibration(cycle_index, f"Step 10 子循环第 {sub_idx} 次")
+                        self._set_midrun_recalibration(cycle_index, f"实际主循环第 {sub_idx} 次补焦")
                         return False
                 
                 if autofocus_check_count >= max_autofocus_checks:
@@ -13768,12 +13771,11 @@ class MeasurementWorkflow:
                 if self.stop_requested:
                     return False
                 if self._is_midrun_recalibration_requested():
-                    self._set_midrun_recalibration(cycle_index, f"Step 10 子循环第 {sub_idx} 次")
+                    self._set_midrun_recalibration(cycle_index, f"实际主循环第 {sub_idx} 次补焦检查")
                     return False
 
                 # Step 11-14：光谱采集与保存
-                # 只有最后一轮子循环才向角度-拟合峰值列表追加绘图点，保证列表条目数等于 max_cycles。
-                is_last_sub_loop = sub_idx == sub_loop_count
+                # 每轮实际主循环都向角度-拟合峰值列表追加绘图点（序号1, 2, 3...）
                 if not self._acquire_and_save_spectrum(
                     cycle_index=cycle_index,
                     paths=paths,
@@ -13782,27 +13784,27 @@ class MeasurementWorkflow:
                     acquire_label="Step 12",
                     on_label="Step 13",
                     save_label="Step 14",
-                    append_plot_point=is_last_sub_loop,
+                    append_plot_point=True,  # 每轮实际主循环都追加绘图点
                 ):
                     return False
 
-                self.log(f"========== Step 7-14 子循环第 {sub_idx}/{sub_loop_count} 次结束 ==========")
+                self.log(f"========== 实际主循环第 {sub_idx}/{sub_loop_count} 次结束 ==========")
 
-            # 子循环结束后恢复主循环序号
+            # 实际主循环结束后恢复框架主循环序号
             cycle_index = main_cycle_index
             self.context["cycle_index"] = cycle_index
             self.notify_update()
 
-            # 子循环结束后关闭激光（安全兜底）
-            self.log("========== Step 7-14 子循环结束：关闭激光 ==========")
+            # 实际主循环结束后关闭激光（安全兜底）
+            self.log("========== 实际主循环结束：关闭激光 ==========")
             try:
                 if bool(self.context.get("laser_on", False)):
                     self.laser_off()
-                    self.log("[激光开关] 子循环结束，主流程正常关闭激光")
+                    self.log("[激光开关] 实际主循环结束，主流程正常关闭激光")
                 else:
-                    self.log("[激光开关] 子循环结束，但 laser_on=False，主流程跳过重复关激光")
+                    self.log("[激光开关] 实际主循环结束，但 laser_on=False，主流程跳过重复关激光")
             except Exception as e:
-                self.log(f"[激光开关] 子循环结束后正常关闭激光失败：{e}")
+                self.log(f"[激光开关] 实际主循环结束后正常关闭激光失败：{e}")
                 self.context["laser_off_failed_after_step7"] = True
                 self.context["laser_off_failed_reason"] = str(e)
                 self.stop_requested = True

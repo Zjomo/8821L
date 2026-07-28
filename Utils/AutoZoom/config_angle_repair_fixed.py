@@ -17,7 +17,8 @@
 """
 
 DEFAULT_CONFIG = {
-    'max_cycles': 10,
+    'max_cycles': 1,  # 主循环固定为1次
+    'sub_loop_iterations_per_cycle': 3,  # 子循环次数（实际的主循环次数）
     'signal_on_time_ms': 50.0,
     'stable_wait_ms': 1200,
     'laser_axis': 2,
@@ -31,7 +32,7 @@ DEFAULT_CONFIG = {
     'angle_delta_max_deg': 4.0,
     'signal_time_factor': 1.5,
     'save_root': 'measurement_output',
-    'light_port': 'COM20',
+    'light_port': 'COM17',
     'hardware_mode': 'real',
     'rigol_visa': 'USB0::0x1AB1::0x0641::DG4E192200870::INSTR',
     'rigol_timeout_ms': 3000,
@@ -46,7 +47,7 @@ DEFAULT_CONFIG = {
     'ch2_freq_hz': 6000.0,
     'ch2_duty_percent': 3.0,
     'ch2_delay_s': 0.0,
-    'angle_model_path': r'.\vision\best_wan12.2.pt',
+    'angle_model_path': r'E:\CWB\8821L\Utils\AutoZoom\best.pt',
     'capture_area': (116, 98, 1112, 886),
     'angle_output_dir': 'outputs/captured_frames',
     'angle_num': 0,
