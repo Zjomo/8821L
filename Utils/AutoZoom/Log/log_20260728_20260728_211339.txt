@@ -1,0 +1,11 @@
+[2026-07-28 21:13:39] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmpebx2x7od\save\07.28\measurement_summary_20260728_211339.xlsx
+[2026-07-28 21:13:39] [保存光谱数据] 已保存：C:\Users\Mr\AppData\Local\Temp\tmpebx2x7od\custom_save\measurement_summary_background_light_20260728_211339.xlsx
+[2026-07-28 21:13:39] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmph4349cyf\save\07.28\measurement_summary_20260728_211339.xlsx
+[2026-07-28 21:13:39] [保存光谱数据] 已保存：C:\Users\Mr\AppData\Local\Temp\tmph4349cyf\save\07.28\measurement_summary_20260728_211339.xlsx
+[2026-07-28 21:13:39] [保存] Excel汇总文件已创建：measurement_output\save\07.28\measurement_summary_20260728_211339.xlsx
+[2026-07-28 21:13:39] [聚焦ROI] 即将弹出全屏 ROI 选择窗口；请拖拽矩形框选补焦区域后按 Enter/N 确认
+[2026-07-28 21:13:39] [聚焦ROI] 全屏 ROI 已选择：(235, 117, 264, 282)，saf_capture_area 已同步为全屏 (0, 0, 1920, 1080)；capture_area / focus_roi 保持不变
+[2026-07-28 21:13:39] [聚焦ROI] 即将弹出全屏 ROI 选择窗口；请拖拽矩形框选补焦区域后按 Enter/N 确认
+[2026-07-28 21:13:39] [聚焦ROI] 选区过小，请重新拖拽选择更大区域
+[2026-07-28 21:13:39] [聚焦ROI] 选区过小，请重新拖拽选择更大区域
+[2026-07-28 21:13:39] [聚焦ROI] 用户取消了 ROI 选择

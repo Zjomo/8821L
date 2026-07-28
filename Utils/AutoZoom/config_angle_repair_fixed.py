@@ -47,7 +47,7 @@ DEFAULT_CONFIG = {
     'ch2_freq_hz': 6000.0,
     'ch2_duty_percent': 3.0,
     'ch2_delay_s': 0.0,
-    'angle_model_path': r'E:\CWB\8821L\Utils\AutoZoom\best.pt',
+    'angle_model_path': r'E:\jupyter file\2_Optics\8821L\Utils\AutoZoom\best.pt',
     'capture_area': (116, 98, 1112, 886),
     'angle_output_dir': 'outputs/captured_frames',
     'angle_num': 0,
@@ -65,7 +65,7 @@ DEFAULT_CONFIG = {
     'stop_when_delta_w_not_enough': False,
     'rule_ab_enable_stage': True,
     'rule_ab_max_steps': 15,
-    'rule_ab_angle_delta_min_deg': 3.5,
+    'rule_ab_angle_delta_min_deg': 0.01, # 角度跳变最小阈值，默认：3.5，测试先改为0.01
     'rule_ab_angle_delta_max_deg': 6.0,
     # Step7 角度修复：当前帧角度相对上一帧跳变超过该阈值时，
     # 用当前 B mask 轮廓全部边角度修复，取最接近上一帧角度的结果。
@@ -169,7 +169,8 @@ DEFAULT_CONFIG = {
     'rule_ac_stage_device_id': '97101208',
     'rule_ac_target_x_px': 449.412,
     'rule_ac_target_y_px': 360.0,
-    'rule_ac_center_tolerance_px': 10.0,
+    'rule_ac_center_tolerance_px': 50.0,    # 中心位置容差，默认：10px，测试先改为50px
+    'rule_ac_center_tolerance_ratio': 0.05,
     'rule_ac_loop_interval_s': 0.1,
     'rule_ac_stage12_velocity': 10,
     'rule_ac_stage12_acceleration': 10,

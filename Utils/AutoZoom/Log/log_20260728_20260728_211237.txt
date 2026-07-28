@@ -1,0 +1,2 @@
+[2026-07-28 21:12:38] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmpj2vu2lg4\save\07.28\measurement_summary_20260728_211237.xlsx
+[2026-07-28 21:12:38] [保存光谱数据] 已保存：C:\Users\Mr\AppData\Local\Temp\tmpj2vu2lg4\custom_save\measurement_summary_background_light_20260728_211238.xlsx

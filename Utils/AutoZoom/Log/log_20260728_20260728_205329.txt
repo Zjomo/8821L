@@ -1,0 +1,5 @@
+[2026-07-28 20:53:29] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmp3ge6exzf\save\07.28\measurement_summary_20260728_205329.xlsx
+[2026-07-28 20:53:29] [绘图] 已追加数据点：cycle=0, angle=25.5, fit_peak=1234.56
+[2026-07-28 20:53:29] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmp5wh4o_v6\save\07.28\measurement_summary_20260728_205329.xlsx
+[2026-07-28 20:53:29] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmpqrscwq_0\save\07.28\measurement_summary_20260728_205329.xlsx
+[2026-07-28 20:53:29] [绘图] 已追加数据点：cycle=0, angle=30.0, fit_peak=200.0

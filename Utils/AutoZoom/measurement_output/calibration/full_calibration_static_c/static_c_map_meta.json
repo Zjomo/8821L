@@ -1,41 +1,41 @@
 {
-  "created_at": "2026-07-28 15:30:58",
-  "created_time": 1785223858.8150024,
+  "created_at": "2026-07-28 21:24:58",
+  "created_time": 1785245098.254962,
   "source": "full_calibration_static_c",
-  "source_static_c_mask": "E:\\CWB\\8821L\\Utils\\AutoZoom\\measurement_output\\rule_ab_follow_c_only\\_static_c_map_library\\default_static_c_map\\static_c_mask.png",
-  "runtime_static_c_dir": "E:\\CWB\\8821L\\Utils\\AutoZoom\\measurement_output\\calibration\\full_calibration_static_c",
+  "source_static_c_mask": "E:\\jupyter file\\2_Optics\\8821L\\Utils\\AutoZoom\\measurement_output\\rule_ab_follow_c_only\\_static_c_map_library\\default_static_c_map\\static_c_mask.png",
+  "runtime_static_c_dir": "E:\\jupyter file\\2_Optics\\8821L\\Utils\\AutoZoom\\measurement_output\\calibration\\full_calibration_static_c",
   "static_c_map_name": "full_calibration_static_c",
-  "mask_path": "E:\\CWB\\8821L\\Utils\\AutoZoom\\measurement_output\\calibration\\full_calibration_static_c\\static_c_mask.png",
-  "edge_route_path": "E:\\CWB\\8821L\\Utils\\AutoZoom\\measurement_output\\calibration\\full_calibration_static_c\\static_c_edge_route.json",
-  "pixels_path": "E:\\CWB\\8821L\\Utils\\AutoZoom\\measurement_output\\calibration\\full_calibration_static_c\\static_c_pixels_yx.npy",
+  "mask_path": "E:\\jupyter file\\2_Optics\\8821L\\Utils\\AutoZoom\\measurement_output\\calibration\\full_calibration_static_c\\static_c_mask.png",
+  "edge_route_path": "E:\\jupyter file\\2_Optics\\8821L\\Utils\\AutoZoom\\measurement_output\\calibration\\full_calibration_static_c\\static_c_edge_route.json",
+  "pixels_path": "E:\\jupyter file\\2_Optics\\8821L\\Utils\\AutoZoom\\measurement_output\\calibration\\full_calibration_static_c\\static_c_pixels_yx.npy",
   "bbox": [
-    396.0,
-    309.0,
-    510.0,
-    425.0
+    428.0,
+    363.0,
+    536.0,
+    478.0
   ],
   "center": [
-    452.92399940038973,
-    361.494828361565
+    483.1901451027811,
+    417.4059854897219
   ],
-  "area": 6538.0,
-  "mask_area_px": 6671,
+  "area": 6479.5,
+  "mask_area_px": 6616,
   "contour": [
     [
-      443.0,
-      309.0
+      475.0,
+      363.0
     ],
     [
-      396.0,
-      345.0
+      428.0,
+      426.0
     ],
     [
-      458.0,
-      425.0
+      493.0,
+      478.0
     ],
     [
-      510.0,
-      355.0
+      536.0,
+      396.0
     ]
   ],
   "purpose": "strict_full_calibration_c_for_measurement_run",

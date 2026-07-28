@@ -643,9 +643,6 @@ class MeasurementConfig:
         if getattr(self, "saf_focus_roi", None) == default_saf_focus:
             self.saf_focus_roi = tuple(int(v) for v in self.focus_roi)
 
-    # 单次光谱采集后是否自动保存完整光谱数据到 xlsx
-    save_single_spectrum_enabled: bool = bool(_cfg("save_single_spectrum_enabled", True))
-
     # 运行日志实时保存到文件
     save_log_to_file: bool = bool(_cfg("save_log_to_file", True))
     log_dir: str = str(_cfg("log_dir", "./Log"))
@@ -11756,11 +11753,16 @@ class MeasurementWorkflow:
         self.notify_update()
         return result
 
-    def save_single_spectrum_to_xlsx(self) -> Optional[Path]:
+    def save_single_spectrum_to_xlsx(
+        self,
+        save_dir: Optional[Path] = None,
+        tag: str = "",
+    ) -> Optional[Path]:
         """
         将当前 context 中的光谱数据保存为 xlsx。
 
-        文件路径：{output_root}/save/{MM.DD}/measurement_summary_YYYYMMDD_HHMMSS.xlsx
+        文件路径：save_dir / measurement_summary_{tag}_{timestamp}.xlsx
+        若 save_dir 为 None，默认使用 {output_root}/save/{MM.DD}。
         工作表：光谱数据，列包括波长/索引、原始强度、阈值滤波、中值滤波、拟合曲线。
         """
         try:
@@ -11774,9 +11776,13 @@ class MeasurementWorkflow:
                 self.log("[保存光谱数据] 无原始光谱数据，跳过保存")
                 return None
 
-            save_dir = self._get_today_save_dir()
+            if save_dir is None:
+                save_dir = self._get_today_save_dir()
+            else:
+                save_dir.mkdir(parents=True, exist_ok=True)
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            xlsx_path = save_dir / f"measurement_summary_{timestamp}.xlsx"
+            tag_part = f"{tag}_" if tag else ""
+            xlsx_path = save_dir / f"measurement_summary_{tag_part}{timestamp}.xlsx"
 
             wb = Workbook()
             ws = wb.active
@@ -13476,10 +13482,11 @@ class MeasurementWorkflow:
             paths = self.build_save_path(0)
 
             # Step 3-6：初始光谱采集（基准测量，序号0）
-            # 这是所有后续测量的基准参考
-            # 角度-拟合峰值列表：无实际主循环时才在初始光谱采集时追加绘图点（序号0）
+            # 这是所有后续测量的基准参考。
+            # 无论是否存在实际主循环，都向角度-拟合峰值列表追加序号 0 的初始化点，
+            # 确保右侧列表显示"第一轮初始化"的角度与拟合峰值。
             sub_loop_count = max(0, int(getattr(self.cfg, "sub_loop_iterations_per_cycle", 1)))
-            initial_append_plot = sub_loop_count == 0
+            initial_append_plot = True
 
             if not self._acquire_and_save_spectrum(
                 cycle_index=0,  # 初始光谱采集使用序号0（基准）
@@ -13520,7 +13527,8 @@ class MeasurementWorkflow:
                 self.notify_update()
 
                 self.log(f"========== 实际主循环第 {sub_idx}/{sub_loop_count} 次开始 ==========")
-
+                
+                '''
                 self.log("========== Step 1：Bmask最长边角度检测 current_angle ==========")
                 angle_result = {"ok": False, "angle_deg": None, "reason": "bmask_longest_edge_not_run"}
                 follower_for_angle = None
@@ -13595,6 +13603,7 @@ class MeasurementWorkflow:
 
                 self.log(f"========== 实际主循环第 {sub_idx} 次生成保存路径 ==========")
                 paths = self.build_save_path(cycle_index)
+                '''
 
                 # Step 7：打开激光
                 self.log("========== Step 7：打开激光 ==========")
@@ -13773,6 +13782,83 @@ class MeasurementWorkflow:
                 if self._is_midrun_recalibration_requested():
                     self._set_midrun_recalibration(cycle_index, f"实际主循环第 {sub_idx} 次补焦检查")
                     return False
+                
+                # 角度测量 + 光谱角度数据保存
+                self.log("========== Step 1：Bmask最长边角度检测 current_angle ==========")
+                angle_result = {"ok": False, "angle_deg": None, "reason": "bmask_longest_edge_not_run"}
+                follower_for_angle = None
+                try:
+                    follower_for_angle = self._ensure_rule_ab_follower_with_startup_retry(
+                        label="step1_bmask_longest_edge_angle"
+                    )
+                    self.apply_runtime_rule_ab_params_to_follower(follower_for_angle, reason="step1_bmask_longest_edge_angle")
+                    self._ensure_rule_ab_feature_tracker_installed(follower_for_angle, self._get_loaded_calibration_state())
+                    angle_result = self.detect_step7_yolo_obb_angle_once(
+                        follower=follower_for_angle,
+                        label="current_angle_bmask_longest_edge",
+                        baseline_angle=None,
+                        allow_fail=True,
+                        allow_close_from_relocation=False,
+                    )
+                    if angle_result.get("ok", False) and angle_result.get("angle_deg") is not None:
+                        self.log(
+                            f"[角度检测-current_angle] 已使用当前帧 Bmask 最长边角度作为本轮 baseline："
+                            f"{angle_result.get('angle_deg')}°；source={angle_result.get('angle_source')}"
+                        )
+                    else:
+                        self.log(
+                            f"[角度检测-current_angle] Bmask 最长边 baseline 计算失败，"
+                            f"不再回退 A 最近边作为主角度来源；reason={angle_result.get('reason')}"
+                        )
+                except Exception as e:
+                    self.log(f"[角度检测-current_angle] Bmask 最长边 baseline 计算异常：{e}")
+                    angle_result = {"ok": False, "angle_deg": None, "reason": str(e), "angle_source": "failed_no_close"}
+
+                if angle_result.get("ok", False) and angle_result.get("angle_deg") is not None:
+                    current_angle = float(angle_result["angle_deg"])
+                else:
+                    current_angle = None
+                    reason = angle_result.get("reason")
+                    self.log(
+                        "[角度检测-current_angle] 本轮 Bmask 最长边角度无效；"
+                        "不再把它当作整次测量失败，本轮不进入 Step7，直接跳过并继续下一轮。"
+                        f" reason={reason}"
+                    )
+                    self.context["last_angle_result"] = angle_result
+                    return self._skip_current_cycle_without_stopping_measurement(
+                        cycle_index=cycle_index,
+                        phase="Step1_Bmask_longest_edge_baseline",
+                        reason=reason,
+                        close_laser_if_on=False,
+                    )
+
+                # 兼容旧显示/保存字段：angle_before 作为本轮 Step1 baseline，angle_after 不再使用。
+                self.context["angle_before"] = current_angle
+                self.context["angle_after"] = None
+                self.context["save_angle_deg"] = current_angle
+                self.context["angle_before_after_delta"] = None
+                self.context["last_angle_result"] = angle_result
+                self.context["previous_cycle_angle"] = self.previous_cycle_angle
+                if self.previous_cycle_angle is not None and current_angle is not None:
+                    self.context["angle_delta"] = self.angle_diff_deg(current_angle, self.previous_cycle_angle)
+                else:
+                    self.context["angle_delta"] = None
+                self.notify_update()
+
+                if current_angle is not None:
+                    self.previous_cycle_angle = float(current_angle)
+
+                # 仅在第一轮主循环且未建立参考图时建立聚焦参考；必须完成 ROI 选择
+                # 注意：这里检查框架主循环序号(main_cycle_index=1)和实际主循环序号(sub_idx=1)
+                if main_cycle_index == 1 and sub_idx == 1 and not self._focus_reference_ready:
+                    if not self.capture_focus_reference(cycle_index):
+                        self.log("[流程] 聚焦参考图建立失败，无法继续测量")
+                        self.stop_requested = True
+                        return False
+
+                self.log(f"========== 实际主循环第 {sub_idx} 次生成保存路径 ==========")
+                paths = self.build_save_path(cycle_index)                
+
 
                 # Step 11-14：光谱采集与保存
                 # 每轮实际主循环都向角度-拟合峰值列表追加绘图点（序号1, 2, 3...）
@@ -14534,7 +14620,6 @@ class MeasurementWorkflowGUI:
         self.tcp_command_var = tk.StringVar(value=cfg0.tcp_command)
         self.tcp_status_var = tk.StringVar(value="TCP状态：未启动")
         self.tcp_result_var = tk.StringVar(value="最近光谱：None")
-        self.save_single_spectrum_var = tk.BooleanVar(value=cfg0.save_single_spectrum_enabled)
 
         # 日志保存配置
         self.save_log_to_file_var = tk.BooleanVar(value=getattr(cfg0, "save_log_to_file", True))
@@ -14603,9 +14688,7 @@ class MeasurementWorkflowGUI:
         ttk.Button(tcp_buttons, text="等待READY", command=self.wait_ready_thread).grid(row=0, column=1, padx=4, pady=3, sticky="ew")
         ttk.Button(tcp_buttons, text="单次光谱采集", command=self.measure_spectrum_once_thread).grid(row=1, column=0, padx=4, pady=3, sticky="ew")
         ttk.Button(tcp_buttons, text="关闭TCP", command=self.close_tcp_thread).grid(row=1, column=1, padx=4, pady=3, sticky="ew")
-        ttk.Checkbutton(
-            tcp_buttons, text="自动保存光谱数据", variable=self.save_single_spectrum_var
-        ).grid(row=2, column=0, columnspan=2, padx=4, pady=3, sticky="w")
+        ttk.Button(tcp_buttons, text="保存当前光谱数据（背景光）", command=self.save_current_spectrum_background_light_thread).grid(row=2, column=0, columnspan=2, padx=4, pady=3, sticky="ew")
 
         # 日志保存配置：复选框 + 日志目录输入框（独占一行，避免拥挤）
         log_save_frame = ttk.Frame(tcp_frame)
@@ -15189,7 +15272,6 @@ class MeasurementWorkflowGUI:
             self.tcp_port_var,
             self.tcp_output_dir_var,
             self.tcp_command_var,
-            self.save_single_spectrum_var,
             self.save_log_to_file_var,
             self.log_dir_var,
             self.spectrometer_backend_var,
@@ -16655,9 +16737,10 @@ class MeasurementWorkflowGUI:
         for p in points:
             try:
                 # cycle_index 是完整测量的真实轮次号，遇到 Step1 YOLO-OBB 无检测等情况会跳过保存，
-                # 因此真实 cycle_index 可能是 1,7,12...。右侧“序号”用于显示有效记录序号，
-                # 必须连续，避免误以为数据写入错乱。真实轮次仍保存在 point["cycle_index"]、CSV/XLSX 和日志中。
-                record_index = len(list_points) + 1
+                # 因此真实 cycle_index 可能是 1,7,12...。右侧“序号”从 0 开始连续编号：
+                # 初始光谱采集（cycle_index=0）显示为序号 0，后续有效记录依次为 1,2,3...。
+                # 真实轮次仍保存在 point["cycle_index"]、CSV/XLSX 和日志中。
+                record_index = len(list_points)
 
                 angle = p.get("angle_deg")
                 fit_peak = p.get("fit_peak")
@@ -18199,18 +18282,33 @@ class MeasurementWorkflowGUI:
             self.set_var(self.tcp_status_var, "TCP状态：采集完成")
             self.refresh_result_labels(wf)
 
-            if self.save_single_spectrum_var.get():
-                try:
-                    saved_path = wf.save_single_spectrum_to_xlsx()
-                    if saved_path is not None:
-                        self.log(f"[TCP] 已自动保存光谱数据：{saved_path}")
-                except Exception as e:
-                    self.log(f"[TCP] 自动保存光谱数据失败：{e}")
-                    self.log(traceback.format_exc())
-
         except Exception as e:
             self.set_var(self.tcp_status_var, "TCP状态：采集失败")
             self.log(f"[TCP] 单次采集失败：{e}")
+            self.log(traceback.format_exc())
+
+    def save_current_spectrum_background_light_thread(self):
+        self.run_in_thread(self.save_current_spectrum_background_light)
+
+    def save_current_spectrum_background_light(self):
+        """将当前 context 中的实时光谱数据保存到 ./measurement_output/save/{MM.DD}。"""
+        try:
+            wf = self.ensure_workflow()
+            date_dir = datetime.now().strftime("%m.%d")
+            save_dir = Path("./measurement_output/save") / date_dir
+            saved_path = wf.save_single_spectrum_to_xlsx(
+                save_dir=save_dir,
+                tag="background_light",
+            )
+            if saved_path is not None:
+                self.set_var(self.tcp_status_var, f"已保存背景光光谱：{saved_path}")
+                self.log(f"[TCP] 已保存当前光谱数据（背景光）：{saved_path}")
+            else:
+                self.set_var(self.tcp_status_var, "保存失败：无可用光谱数据")
+                self.log("[TCP] 保存当前光谱数据（背景光）失败：无可用光谱数据")
+        except Exception as e:
+            self.set_var(self.tcp_status_var, "保存失败")
+            self.log(f"[TCP] 保存当前光谱数据（背景光）失败：{e}")
             self.log(traceback.format_exc())
 
     def select_step9_target_thread(self):
