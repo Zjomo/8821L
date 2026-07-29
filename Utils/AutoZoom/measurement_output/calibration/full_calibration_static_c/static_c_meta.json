@@ -1,6 +1,6 @@
 {
-  "created_at": "2026-07-30 03:36:41",
-  "created_time": 1785353801.0650876,
+  "created_at": "2026-07-30 03:55:34",
+  "created_time": 1785354934.8215756,
   "source": "full_calibration_static_c",
   "source_static_c_mask": "F:\\0_My_jupyter\\2_Optics\\8821L\\Utils\\AutoZoom\\measurement_output\\rule_ab_follow_c_only\\_static_c_map_library\\default_static_c_map\\static_c_mask.png",
   "runtime_static_c_dir": "F:\\0_My_jupyter\\2_Optics\\8821L\\Utils\\AutoZoom\\measurement_output\\calibration\\full_calibration_static_c",
@@ -9,33 +9,33 @@
   "edge_route_path": "F:\\0_My_jupyter\\2_Optics\\8821L\\Utils\\AutoZoom\\measurement_output\\calibration\\full_calibration_static_c\\static_c_edge_route.json",
   "pixels_path": "F:\\0_My_jupyter\\2_Optics\\8821L\\Utils\\AutoZoom\\measurement_output\\calibration\\full_calibration_static_c\\static_c_pixels_yx.npy",
   "bbox": [
-    328.0,
+    327.0,
     316.0,
-    472.0,
-    463.0
+    463.0,
+    458.0
   ],
   "center": [
-    400.18308687615524,
-    386.40064695009244
+    397.77640377393055,
+    386.26728954841076
   ],
-  "area": 10661.5,
-  "mask_area_px": 10820,
+  "area": 10730.5,
+  "mask_area_px": 10917,
   "contour": [
     [
-      392.0,
+      380.0,
       316.0
     ],
     [
-      328.0,
-      385.0
+      327.0,
+      408.0
     ],
     [
-      407.0,
-      463.0
+      423.0,
+      458.0
     ],
     [
-      472.0,
-      376.0
+      463.0,
+      358.0
     ]
   ],
   "purpose": "strict_full_calibration_c_for_measurement_run",

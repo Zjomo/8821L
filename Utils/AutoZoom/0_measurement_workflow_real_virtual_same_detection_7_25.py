@@ -7462,12 +7462,47 @@ class MeasurementWorkflow:
         stage_action = "STAY/no_stage_move"
         if action_id != 0:
             if stop_event is not None and stop_event.is_set():
+                # 即使 stop_event 已设置，也保存当前帧的路线 overlay 便于排查
+                _early_overlay_path = ""
+                try:
+                    _early_overlay_path = self._save_step7_route_overlay_image(
+                        image_rgb=image_rgb,
+                        route_points=route_points,
+                        a_center=a_center,
+                        target_xy=current_target_xy,
+                        route_index=current_route_index,
+                        step_idx=step_idx,
+                        action_name=image_action,
+                        error_dist=float(math.hypot(float(current_target_xy[0] - a_center[0]), float(current_target_xy[1] - a_center[1]))),
+                        min_route_points=min_route_points,
+                        max_route_points=max_route_points,
+                        base_route_points=base_route_points,
+                        target_idx=target_idx,
+                        direction=direction,
+                        route_loop=loop_route,
+                        route_distance_px=float(route_distance_px) if route_distance_px is not None else None,
+                        safe_band=(float(min_d), float(max_d)),
+                        target_mode=target_mode,
+                        nearest_route_xy=nearest_route_xy,
+                        safe_target_xy=safe_target_xy,
+                        final_move_target_xy=final_move_target_xy,
+                        image_action=image_action,
+                        stage_action="STAY/stop_event_set",
+                        oscillation_detected=oscillation_detected,
+                        route_index_order=route_index_order,
+                        user_desired_direction=user_desired_direction,
+                        actual_index_step=direction,
+                        route_signed_area=route_signed_area,
+                    )
+                except Exception as _e:
+                    self.log(f"[Step7实时控制] stop_event 提前返回时保存 overlay 失败：{_e}")
                 return False, {
                     "route_enabled": True,
                     "reason": "stop_event_set_before_stage34_move",
                     "step": int(step_idx),
                     "action_id": int(action_id),
                     "action_name": image_action,
+                    "route_overlay_path": _early_overlay_path,
                 }
             if phase_state is not None:
                 phase_state["phase"] = "moving"
