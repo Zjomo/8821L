@@ -1,0 +1,21 @@
+{
+  "settings_version": "0.0.6",
+  "datasets_dir": "F:\\0_My_jupyter\\2_Optics\\8821L\\datasets",
+  "weights_dir": "weights",
+  "runs_dir": "runs",
+  "uuid": "303970536c3cc5644d22a4bf1cb9f10f228083a50110610b570fa080eef91939",
+  "sync": true,
+  "api_key": "",
+  "openai_api_key": "",
+  "clearml": true,
+  "comet": true,
+  "dvc": true,
+  "hub": true,
+  "mlflow": true,
+  "neptune": true,
+  "raytune": true,
+  "tensorboard": false,
+  "wandb": false,
+  "vscode_msg": true,
+  "openvino_msg": true
+}

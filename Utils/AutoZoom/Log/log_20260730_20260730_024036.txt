@@ -1,0 +1,301 @@
+[2026-07-30 02:41:17] ############################################################
+[2026-07-30 02:41:17] 开始第 1 轮循环测量
+[2026-07-30 02:41:17] ############################################################
+[2026-07-30 02:41:17] ========== Step 1：Bmask最长边角度检测 current_angle ==========
+[2026-07-30 02:41:17] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_024116\full_calibration_static_c；reason=ensure_rule_ab_follower
+[2026-07-30 02:41:17] [RuleAB] 初始化 A推动B 模块：enable_stage=False, max_steps=10000000, full_calibration_loaded=True, confirm_first_frame_segmentation=False, static_c_map_dir=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_024116\full_calibration_static_c
+[2026-07-30 02:41:17,713] [INFO] Loaded checkpoint sucessfully
+[2026-07-30 02:41:18,300] [INFO] Loaded checkpoint sucessfully
+[2026-07-30 02:41:18,402] [INFO] SAM2 video predictor 初始化成功，
+将优先用于 A/B 连续帧跟踪。
+[2026-07-30 02:41:18,402] [WARNING] enable_stage=False：当前只计算
+动作，不实际移动。
+[2026-07-30 02:41:18] [RuleAB][virtual] 已把 follower.stage 替换为
+虚拟 Stage34；后续硬件动作只写日志。
+[2026-07-30 02:41:18,448] [INFO] 已从磁盘加载固定 C map: F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_024116\full_calibration_static_c
+[2026-07-30 02:41:18,449] [WARNING] [完整标定] 缺少 B 正点，将以空
+ B mask 初始化（YOLO-OBB 版本不再依赖 Bmask）。
+[2026-07-30 02:41:18,450] [INFO] [完整标定] 使用预加载 A 点 + static C map 初始化：A+=5, B+=0, C_pixels=9059。
+[2026-07-30 02:41:18,450] [WARNING] [SAM2 初始化] B 正点为空，将以
+空 B mask 初始化（YOLO-OBB 版本不需要 Bmask）。
+[2026-07-30 02:41:18,452] [INFO] For numpy array image, we assume 
+(HxWxC) format
+[2026-07-30 02:41:18,491] [INFO] Computing image embeddings for the provided image...
+[2026-07-30 02:41:18,534] [INFO] Image embeddings computed.
+[2026-07-30 02:41:18,934] [INFO] 已保存 A/B 初始化模板：A_template=(124, 123, 3), B_template=(886, 1112, 3), A_center=(566.6, 236.2), B_center=(555.5, 442.5)
+[2026-07-30 02:41:18,939] [INFO] SAM2 A/B 初始化完成，并复用固定 C map: A=5 positive + 12 negative, B=0 positive + 0 negative, C_static_pixels=9059
+[2026-07-30 02:41:18] [完整测量标定] initialize_abc_with_calibration() 初始化失败，尝试其他方式：boolean index did not match indexed array along dimension 2; dimension is 3 but corresponding boolean dimension is 1
+[2026-07-30 02:41:18,959] [INFO] 开始初始化：如果已有确认 C map， 
+则只点击 A/B；否则点击 A/B/C 并确认保存 C map。
+[2026-07-30 02:41:18,959] [INFO] 已从当前 GUI 进程内存复用固定 C map: F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_024116\full_calibration_static_c::default_static_c_map
+[2026-07-30 02:41:18] [完整测量标定] 外部 RuleAB 模块没有发现专用
+非交互初始化接口，将尝试用预注入 A/B/C 点调用 initialize_abc_with_first_frame()；如果仍弹窗，需要修改 logic/actual_nano_boundary_following...py 读取 preloaded 点。
+[2026-07-30 02:41:18,984] [INFO] 已从当前 GUI 进程内存复用固定 C map: F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_024116\full_calibration_static_c::default_static_c_map
+[2026-07-30 02:41:18,984] [WARNING] [完整标定] 缺少 B 正点，将以空
+ B mask 初始化（YOLO-OBB 版本不再依赖 Bmask）。
+[2026-07-30 02:41:18,985] [INFO] [完整标定] 使用预加载 A 点 + static C map 初始化：A+=5, B+=0, C_pixels=9059。
+[2026-07-30 02:41:18,986] [WARNING] [SAM2 初始化] B 正点为空，将以
+空 B mask 初始化（YOLO-OBB 版本不需要 Bmask）。
+[2026-07-30 02:41:18,988] [INFO] For numpy array image, we assume 
+(HxWxC) format
+[2026-07-30 02:41:19,004] [INFO] Computing image embeddings for the provided image...
+[2026-07-30 02:41:19,011] [INFO] Image embeddings computed.       
+[2026-07-30 02:41:19,130] [INFO] 已保存 A/B 初始化模板：A_template=(124, 123, 3), B_template=(886, 1112, 3), A_center=(566.6, 236.2), B_center=(555.5, 442.5)
+[2026-07-30 02:41:19,134] [INFO] SAM2 A/B 初始化完成，并复用固定 C map: A=5 positive + 12 negative, B=0 positive + 0 negative, C_static_pixels=9059
+[2026-07-30 02:41:19,146] [INFO] 准备关闭实际闭环程序。
+[2026-07-30 02:41:19,146] [INFO] CSV 已保存: measurement_output\rule_ab_from_measurement\run_20260730_024117\actual_nano_boundary_log.csv
+[2026-07-30 02:41:19] [RuleAB启动重试] step1_bmask_longest_edge_angle: 初始化/首帧读取失败 attempt=1/5: RuleAB 初始化失败。当前外部 
+ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模 
+块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。；transient_frame_read_error=False
+[2026-07-30 02:41:19] [虚拟Thorlabs] stop_all()
+[2026-07-30 02:41:19,165] [INFO] Stage34 已关闭。
+[2026-07-30 02:41:19] [虚拟Thorlabs] close(serial=97101208)       
+[2026-07-30 02:41:19] [RuleAB启动重试] 已释放本次 RuleAB follower
+，准备下一帧重试；reason=step1_bmask_longest_edge_angle/attempt=1: RuleAB 初始化失败。当前外部 ActualNanoBoundaryFollower 版本可能仍
+只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。
+[2026-07-30 02:41:19] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_024116\full_calibration_static_c；reason=ensure_rule_ab_follower
+[2026-07-30 02:41:19] [RuleAB] 初始化 A推动B 模块：enable_stage=False, max_steps=10000000, full_calibration_loaded=True, confirm_first_frame_segmentation=False, static_c_map_dir=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_024116\full_calibration_static_c
+[2026-07-30 02:41:20,285] [INFO] Loaded checkpoint sucessfully
+[2026-07-30 02:41:20,580] [INFO] Loaded checkpoint sucessfully
+[2026-07-30 02:41:20,628] [INFO] SAM2 video predictor 初始化成功，
+将优先用于 A/B 连续帧跟踪。
+[2026-07-30 02:41:20,628] [WARNING] enable_stage=False：当前只计算
+动作，不实际移动。
+[2026-07-30 02:41:20] [RuleAB][virtual] 已把 follower.stage 替换为
+虚拟 Stage34；后续硬件动作只写日志。
+[2026-07-30 02:41:20,651] [INFO] 已从当前 GUI 进程内存复用固定 C map: F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_024116\full_calibration_static_c::default_static_c_map
+[2026-07-30 02:41:20,652] [WARNING] [完整标定] 缺少 B 正点，将以空
+ B mask 初始化（YOLO-OBB 版本不再依赖 Bmask）。
+[2026-07-30 02:41:20,653] [INFO] [完整标定] 使用预加载 A 点 + static C map 初始化：A+=5, B+=0, C_pixels=9059。
+[2026-07-30 02:41:20,653] [WARNING] [SAM2 初始化] B 正点为空，将以
+空 B mask 初始化（YOLO-OBB 版本不需要 Bmask）。
+[2026-07-30 02:41:20,655] [INFO] For numpy array image, we assume 
+(HxWxC) format
+[2026-07-30 02:41:20,671] [INFO] Computing image embeddings for the provided image...
+[2026-07-30 02:41:20,679] [INFO] Image embeddings computed.       
+[2026-07-30 02:41:20,860] [INFO] 已保存 A/B 初始化模板：A_template=(124, 123, 3), B_template=(886, 1112, 3), A_center=(566.6, 236.2), B_center=(555.5, 442.5)
+[2026-07-30 02:41:20,864] [INFO] SAM2 A/B 初始化完成，并复用固定 C map: A=5 positive + 12 negative, B=0 positive + 0 negative, C_static_pixels=9059
+[2026-07-30 02:41:20] [完整测量标定] initialize_abc_with_calibration() 初始化失败，尝试其他方式：boolean index did not match indexed array along dimension 2; dimension is 3 but corresponding boolean dimension is 1
+[2026-07-30 02:41:20,883] [INFO] 开始初始化：如果已有确认 C map，
+则只点击 A/B；否则点击 A/B/C 并确认保存 C map。
+[2026-07-30 02:41:20,884] [INFO] 已从当前 GUI 进程内存复用固定 C map: F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_024116\full_calibration_static_c::default_static_c_map
+[2026-07-30 02:41:20] [完整测量标定] 外部 RuleAB 模块没有发现专用
+非交互初始化接口，将尝试用预注入 A/B/C 点调用 initialize_abc_with_first_frame()；如果仍弹窗，需要修改 logic/actual_nano_boundary_following...py 读取 preloaded 点。
+[2026-07-30 02:41:20,907] [INFO] 已从当前 GUI 进程内存复用固定 C map: F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_024116\full_calibration_static_c::default_static_c_map
+[2026-07-30 02:41:20,908] [WARNING] [完整标定] 缺少 B 正点，将以空
+ B mask 初始化（YOLO-OBB 版本不再依赖 Bmask）。
+[2026-07-30 02:41:20,909] [INFO] [完整标定] 使用预加载 A 点 + static C map 初始化：A+=5, B+=0, C_pixels=9059。
+[2026-07-30 02:41:20,909] [WARNING] [SAM2 初始化] B 正点为空，将以
+空 B mask 初始化（YOLO-OBB 版本不需要 Bmask）。
+[2026-07-30 02:41:20,911] [INFO] For numpy array image, we assume 
+(HxWxC) format
+[2026-07-30 02:41:20,927] [INFO] Computing image embeddings for the provided image...
+[2026-07-30 02:41:20,933] [INFO] Image embeddings computed.
+[2026-07-30 02:41:21,054] [INFO] 已保存 A/B 初始化模板：A_template=(124, 123, 3), B_template=(886, 1112, 3), A_center=(566.6, 236.2), B_center=(555.5, 442.5)
+[2026-07-30 02:41:21,058] [INFO] SAM2 A/B 初始化完成，并复用固定 C map: A=5 positive + 12 negative, B=0 positive + 0 negative, C_static_pixels=9059
+[2026-07-30 02:41:21,072] [INFO] 准备关闭实际闭环程序。
+[2026-07-30 02:41:21,073] [INFO] CSV 已保存: measurement_output\rule_ab_from_measurement\run_20260730_024119\actual_nano_boundary_log.csv
+[2026-07-30 02:41:21] [RuleAB启动重试] step1_bmask_longest_edge_angle: 初始化/首帧读取失败 attempt=2/5: RuleAB 初始化失败。当前外部 
+ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模 
+块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。；transient_frame_read_error=False
+[2026-07-30 02:41:21] [虚拟Thorlabs] stop_all()
+[2026-07-30 02:41:21,093] [INFO] Stage34 已关闭。
+[2026-07-30 02:41:21] [虚拟Thorlabs] close(serial=97101208)       
+[2026-07-30 02:41:21] [RuleAB启动重试] 已释放本次 RuleAB follower
+，准备下一帧重试；reason=step1_bmask_longest_edge_angle/attempt=2: RuleAB 初始化失败。当前外部 ActualNanoBoundaryFollower 版本可能仍
+只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。
+[2026-07-30 02:41:21] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_024116\full_calibration_static_c；reason=ensure_rule_ab_follower
+[2026-07-30 02:41:21] [RuleAB] 初始化 A推动B 模块：enable_stage=False, max_steps=10000000, full_calibration_loaded=True, confirm_first_frame_segmentation=False, static_c_map_dir=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_024116\full_calibration_static_c
+[2026-07-30 02:41:22,277] [INFO] Loaded checkpoint sucessfully
+[2026-07-30 02:41:22,569] [INFO] Loaded checkpoint sucessfully
+[2026-07-30 02:41:22,610] [INFO] SAM2 video predictor 初始化成功，
+将优先用于 A/B 连续帧跟踪。
+[2026-07-30 02:41:22,611] [WARNING] enable_stage=False：当前只计算
+动作，不实际移动。
+[2026-07-30 02:41:22] [RuleAB][virtual] 已把 follower.stage 替换为
+虚拟 Stage34；后续硬件动作只写日志。
+[2026-07-30 02:41:22,638] [INFO] 已从当前 GUI 进程内存复用固定 C map: F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_024116\full_calibration_static_c::default_static_c_map
+[2026-07-30 02:41:22,639] [WARNING] [完整标定] 缺少 B 正点，将以空
+ B mask 初始化（YOLO-OBB 版本不再依赖 Bmask）。
+[2026-07-30 02:41:22,640] [INFO] [完整标定] 使用预加载 A 点 + static C map 初始化：A+=5, B+=0, C_pixels=9059。
+[2026-07-30 02:41:22,640] [WARNING] [SAM2 初始化] B 正点为空，将以
+空 B mask 初始化（YOLO-OBB 版本不需要 Bmask）。
+[2026-07-30 02:41:22,642] [INFO] For numpy array image, we assume 
+(HxWxC) format
+[2026-07-30 02:41:22,658] [INFO] Computing image embeddings for the provided image...
+[2026-07-30 02:41:22,663] [INFO] Image embeddings computed.       
+[2026-07-30 02:41:22,844] [INFO] 已保存 A/B 初始化模板：A_template=(124, 123, 3), B_template=(886, 1112, 3), A_center=(566.6, 236.2), B_center=(555.5, 442.5)
+[2026-07-30 02:41:22,847] [INFO] SAM2 A/B 初始化完成，并复用固定 C map: A=5 positive + 12 negative, B=0 positive + 0 negative, C_static_pixels=9059
+[2026-07-30 02:41:22] [完整测量标定] initialize_abc_with_calibration() 初始化失败，尝试其他方式：boolean index did not match indexed array along dimension 2; dimension is 3 but corresponding boolean dimension is 1
+[2026-07-30 02:41:22,865] [INFO] 开始初始化：如果已有确认 C map， 
+则只点击 A/B；否则点击 A/B/C 并确认保存 C map。
+[2026-07-30 02:41:22,866] [INFO] 已从当前 GUI 进程内存复用固定 C map: F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_024116\full_calibration_static_c::default_static_c_map
+[2026-07-30 02:41:22] [完整测量标定] 外部 RuleAB 模块没有发现专用
+非交互初始化接口，将尝试用预注入 A/B/C 点调用 initialize_abc_with_first_frame()；如果仍弹窗，需要修改 logic/actual_nano_boundary_following...py 读取 preloaded 点。
+[2026-07-30 02:41:22,886] [INFO] 已从当前 GUI 进程内存复用固定 C map: F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_024116\full_calibration_static_c::default_static_c_map
+[2026-07-30 02:41:22,886] [WARNING] [完整标定] 缺少 B 正点，将以空
+ B mask 初始化（YOLO-OBB 版本不再依赖 Bmask）。
+[2026-07-30 02:41:22,888] [INFO] [完整标定] 使用预加载 A 点 + static C map 初始化：A+=5, B+=0, C_pixels=9059。
+[2026-07-30 02:41:22,888] [WARNING] [SAM2 初始化] B 正点为空，将以
+空 B mask 初始化（YOLO-OBB 版本不需要 Bmask）。
+[2026-07-30 02:41:22,889] [INFO] For numpy array image, we assume 
+(HxWxC) format
+[2026-07-30 02:41:22,904] [INFO] Computing image embeddings for the provided image...
+[2026-07-30 02:41:22,909] [INFO] Image embeddings computed.       
+[2026-07-30 02:41:23,035] [INFO] 已保存 A/B 初始化模板：A_template=(124, 123, 3), B_template=(886, 1112, 3), A_center=(566.6, 236.2), B_center=(555.5, 442.5)
+[2026-07-30 02:41:23,040] [INFO] SAM2 A/B 初始化完成，并复用固定 C map: A=5 positive + 12 negative, B=0 positive + 0 negative, C_static_pixels=9059
+[2026-07-30 02:41:23,055] [INFO] 准备关闭实际闭环程序。
+[2026-07-30 02:41:23,055] [INFO] CSV 已保存: measurement_output\rule_ab_from_measurement\run_20260730_024121\actual_nano_boundary_log.csv
+[2026-07-30 02:41:23] [RuleAB启动重试] step1_bmask_longest_edge_angle: 初始化/首帧读取失败 attempt=3/5: RuleAB 初始化失败。当前外部 
+ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模 
+块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。；transient_frame_read_error=False
+[2026-07-30 02:41:23] [虚拟Thorlabs] stop_all()
+[2026-07-30 02:41:23,076] [INFO] Stage34 已关闭。
+[2026-07-30 02:41:23] [虚拟Thorlabs] close(serial=97101208)
+[2026-07-30 02:41:23] [RuleAB启动重试] 已释放本次 RuleAB follower 
+，准备下一帧重试；reason=step1_bmask_longest_edge_angle/attempt=3: RuleAB 初始化失败。当前外部 ActualNanoBoundaryFollower 版本可能仍
+只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。
+[2026-07-30 02:41:23] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_024116\full_calibration_static_c；reason=ensure_rule_ab_follower
+[2026-07-30 02:41:23] [RuleAB] 初始化 A推动B 模块：enable_stage=False, max_steps=10000000, full_calibration_loaded=True, confirm_first_frame_segmentation=False, static_c_map_dir=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_024116\full_calibration_static_c
+[2026-07-30 02:41:24,156] [INFO] Loaded checkpoint sucessfully
+[2026-07-30 02:41:24,461] [INFO] Loaded checkpoint sucessfully
+[2026-07-30 02:41:24,515] [INFO] SAM2 video predictor 初始化成功，
+将优先用于 A/B 连续帧跟踪。
+[2026-07-30 02:41:24,516] [WARNING] enable_stage=False：当前只计算
+动作，不实际移动。
+[2026-07-30 02:41:24] [RuleAB][virtual] 已把 follower.stage 替换为
+虚拟 Stage34；后续硬件动作只写日志。
+[2026-07-30 02:41:24,540] [INFO] 已从当前 GUI 进程内存复用固定 C map: F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_024116\full_calibration_static_c::default_static_c_map
+[2026-07-30 02:41:24,541] [WARNING] [完整标定] 缺少 B 正点，将以空
+ B mask 初始化（YOLO-OBB 版本不再依赖 Bmask）。
+[2026-07-30 02:41:24,542] [INFO] [完整标定] 使用预加载 A 点 + static C map 初始化：A+=5, B+=0, C_pixels=9059。
+[2026-07-30 02:41:24,542] [WARNING] [SAM2 初始化] B 正点为空，将以
+空 B mask 初始化（YOLO-OBB 版本不需要 Bmask）。
+[2026-07-30 02:41:24,544] [INFO] For numpy array image, we assume 
+(HxWxC) format
+[2026-07-30 02:41:24,562] [INFO] Computing image embeddings for the provided image...
+[2026-07-30 02:41:24,567] [INFO] Image embeddings computed.
+[2026-07-30 02:41:24,742] [INFO] 已保存 A/B 初始化模板：A_template=(124, 123, 3), B_template=(886, 1112, 3), A_center=(566.6, 236.2), B_center=(555.5, 442.5)
+[2026-07-30 02:41:24,746] [INFO] SAM2 A/B 初始化完成，并复用固定 C map: A=5 positive + 12 negative, B=0 positive + 0 negative, C_static_pixels=9059
+[2026-07-30 02:41:24] [完整测量标定] initialize_abc_with_calibration() 初始化失败，尝试其他方式：boolean index did not match indexed array along dimension 2; dimension is 3 but corresponding boolean dimension is 1
+[2026-07-30 02:41:24,765] [INFO] 开始初始化：如果已有确认 C map， 
+则只点击 A/B；否则点击 A/B/C 并确认保存 C map。
+[2026-07-30 02:41:24,766] [INFO] 已从当前 GUI 进程内存复用固定 C map: F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_024116\full_calibration_static_c::default_static_c_map
+[2026-07-30 02:41:24] [完整测量标定] 外部 RuleAB 模块没有发现专用
+非交互初始化接口，将尝试用预注入 A/B/C 点调用 initialize_abc_with_first_frame()；如果仍弹窗，需要修改 logic/actual_nano_boundary_following...py 读取 preloaded 点。
+[2026-07-30 02:41:24,789] [INFO] 已从当前 GUI 进程内存复用固定 C map: F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_024116\full_calibration_static_c::default_static_c_map
+[2026-07-30 02:41:24,789] [WARNING] [完整标定] 缺少 B 正点，将以空
+ B mask 初始化（YOLO-OBB 版本不再依赖 Bmask）。
+[2026-07-30 02:41:24,791] [INFO] [完整标定] 使用预加载 A 点 + static C map 初始化：A+=5, B+=0, C_pixels=9059。
+[2026-07-30 02:41:24,791] [WARNING] [SAM2 初始化] B 正点为空，将以
+空 B mask 初始化（YOLO-OBB 版本不需要 Bmask）。
+[2026-07-30 02:41:24,793] [INFO] For numpy array image, we assume 
+(HxWxC) format
+[2026-07-30 02:41:24,809] [INFO] Computing image embeddings for the provided image...
+[2026-07-30 02:41:24,814] [INFO] Image embeddings computed.
+[2026-07-30 02:41:24,982] [INFO] 已保存 A/B 初始化模板：A_template=(124, 123, 3), B_template=(886, 1112, 3), A_center=(566.6, 236.2), B_center=(555.5, 442.5)
+[2026-07-30 02:41:24,986] [INFO] SAM2 A/B 初始化完成，并复用固定 C map: A=5 positive + 12 negative, B=0 positive + 0 negative, C_static_pixels=9059
+[2026-07-30 02:41:25,001] [INFO] 准备关闭实际闭环程序。
+[2026-07-30 02:41:25,001] [INFO] CSV 已保存: measurement_output\rule_ab_from_measurement\run_20260730_024123\actual_nano_boundary_log.csv
+[2026-07-30 02:41:25] [RuleAB启动重试] step1_bmask_longest_edge_angle: 初始化/首帧读取失败 attempt=4/5: RuleAB 初始化失败。当前外部 
+ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模 
+块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。；transient_frame_read_error=False
+[2026-07-30 02:41:25] [虚拟Thorlabs] stop_all()
+[2026-07-30 02:41:25,021] [INFO] Stage34 已关闭。
+[2026-07-30 02:41:25] [虚拟Thorlabs] close(serial=97101208)       
+[2026-07-30 02:41:25] [RuleAB启动重试] 已释放本次 RuleAB follower
+，准备下一帧重试；reason=step1_bmask_longest_edge_angle/attempt=4: RuleAB 初始化失败。当前外部 ActualNanoBoundaryFollower 版本可能仍
+只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。
+[2026-07-30 02:41:25] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_024116\full_calibration_static_c；reason=ensure_rule_ab_follower
+[2026-07-30 02:41:25] [RuleAB] 初始化 A推动B 模块：enable_stage=False, max_steps=10000000, full_calibration_loaded=True, confirm_first_frame_segmentation=False, static_c_map_dir=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_024116\full_calibration_static_c
+[2026-07-30 02:41:26,089] [INFO] Loaded checkpoint sucessfully
+[2026-07-30 02:41:26,387] [INFO] Loaded checkpoint sucessfully
+[2026-07-30 02:41:26,429] [INFO] SAM2 video predictor 初始化成功，
+将优先用于 A/B 连续帧跟踪。
+[2026-07-30 02:41:26,429] [WARNING] enable_stage=False：当前只计算
+动作，不实际移动。
+[2026-07-30 02:41:26] [RuleAB][virtual] 已把 follower.stage 替换为
+虚拟 Stage34；后续硬件动作只写日志。
+[2026-07-30 02:41:26,455] [INFO] 已从当前 GUI 进程内存复用固定 C map: F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_024116\full_calibration_static_c::default_static_c_map
+[2026-07-30 02:41:26,455] [WARNING] [完整标定] 缺少 B 正点，将以空
+ B mask 初始化（YOLO-OBB 版本不再依赖 Bmask）。
+[2026-07-30 02:41:26,457] [INFO] [完整标定] 使用预加载 A 点 + static C map 初始化：A+=5, B+=0, C_pixels=9059。
+[2026-07-30 02:41:26,457] [WARNING] [SAM2 初始化] B 正点为空，将以
+空 B mask 初始化（YOLO-OBB 版本不需要 Bmask）。
+[2026-07-30 02:41:26,459] [INFO] For numpy array image, we assume 
+(HxWxC) format
+[2026-07-30 02:41:26,474] [INFO] Computing image embeddings for the provided image...
+[2026-07-30 02:41:26,480] [INFO] Image embeddings computed.       
+[2026-07-30 02:41:26,658] [INFO] 已保存 A/B 初始化模板：A_template=(124, 123, 3), B_template=(886, 1112, 3), A_center=(566.6, 236.2), B_center=(555.5, 442.5)
+[2026-07-30 02:41:26,661] [INFO] SAM2 A/B 初始化完成，并复用固定 C map: A=5 positive + 12 negative, B=0 positive + 0 negative, C_static_pixels=9059
+[2026-07-30 02:41:26] [完整测量标定] initialize_abc_with_calibration() 初始化失败，尝试其他方式：boolean index did not match indexed array along dimension 2; dimension is 3 but corresponding boolean dimension is 1
+[2026-07-30 02:41:26,678] [INFO] 开始初始化：如果已有确认 C map， 
+则只点击 A/B；否则点击 A/B/C 并确认保存 C map。
+[2026-07-30 02:41:26,679] [INFO] 已从当前 GUI 进程内存复用固定 C map: F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_024116\full_calibration_static_c::default_static_c_map
+[2026-07-30 02:41:26] [完整测量标定] 外部 RuleAB 模块没有发现专用
+非交互初始化接口，将尝试用预注入 A/B/C 点调用 initialize_abc_with_first_frame()；如果仍弹窗，需要修改 logic/actual_nano_boundary_following...py 读取 preloaded 点。
+[2026-07-30 02:41:26,704] [INFO] 已从当前 GUI 进程内存复用固定 C map: F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_024116\full_calibration_static_c::default_static_c_map
+[2026-07-30 02:41:26,705] [WARNING] [完整标定] 缺少 B 正点，将以空
+ B mask 初始化（YOLO-OBB 版本不再依赖 Bmask）。
+[2026-07-30 02:41:26,707] [INFO] [完整标定] 使用预加载 A 点 + static C map 初始化：A+=5, B+=0, C_pixels=9059。
+[2026-07-30 02:41:26,707] [WARNING] [SAM2 初始化] B 正点为空，将以
+空 B mask 初始化（YOLO-OBB 版本不需要 Bmask）。
+[2026-07-30 02:41:26,708] [INFO] For numpy array image, we assume 
+(HxWxC) format
+[2026-07-30 02:41:26,723] [INFO] Computing image embeddings for the provided image...
+[2026-07-30 02:41:26,729] [INFO] Image embeddings computed.       
+[2026-07-30 02:41:26,851] [INFO] 已保存 A/B 初始化模板：A_template=(124, 123, 3), B_template=(886, 1112, 3), A_center=(566.6, 236.2), B_center=(555.5, 442.5)
+[2026-07-30 02:41:26,855] [INFO] SAM2 A/B 初始化完成，并复用固定 C map: A=5 positive + 12 negative, B=0 positive + 0 negative, C_static_pixels=9059
+[2026-07-30 02:41:26,868] [INFO] 准备关闭实际闭环程序。
+[2026-07-30 02:41:26,868] [INFO] CSV 已保存: measurement_output\rule_ab_from_measurement\run_20260730_024125\actual_nano_boundary_log.csv
+[2026-07-30 02:41:26] [RuleAB启动重试] step1_bmask_longest_edge_angle: 初始化/首帧读取失败 attempt=5/5: RuleAB 初始化失败。当前外部 
+ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模 
+块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。；transient_frame_read_error=False
+[2026-07-30 02:41:26] [虚拟Thorlabs] stop_all()
+[2026-07-30 02:41:26,886] [INFO] Stage34 已关闭。
+[2026-07-30 02:41:26] [虚拟Thorlabs] close(serial=97101208)
+[2026-07-30 02:41:26] [RuleAB启动重试] 已释放本次 RuleAB follower 
+，准备下一帧重试；reason=step1_bmask_longest_edge_angle/attempt=5: RuleAB 初始化失败。当前外部 ActualNanoBoundaryFollower 版本可能仍
+只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。
+[2026-07-30 02:41:26] [角度检测-current_angle] Bmask 最长边 baseline 计算异常：step1_bmask_longest_edge_angle: RuleAB 初始化/首帧读 
+取连续失败 5 次，最后错误：RuleAB 初始化失败。当前外部 ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state 
+。
+[2026-07-30 02:41:26] [角度检测-current_angle] 本轮 Bmask 最长边角
+度无效；不再把它当作整次测量失败，本轮不进入 Step7，直接跳过并继续
+下一轮。 reason=step1_bmask_longest_edge_angle: RuleAB 初始化/首帧
+读取连续失败 5 次，最后错误：RuleAB 初始化失败。当前外部 ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。
+[2026-07-30 02:41:26] [完整测量-跳过本轮] 第 1 轮在 Step1_Bmask_longest_edge_baseline 发生 Bmask/角度检测失败；不结束完整循环、不关 
+闭全部设备，进入下一轮。reason=step1_bmask_longest_edge_angle: RuleAB 初始化/首帧读取连续失败 5 次，最后错误：RuleAB 初始化失败。当 
+前外部 ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要
+在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 
+calibration_state。
+[2026-07-30 02:41:27] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_024116\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[配置同步] RuleAB 参数变化，下一次运行将重新初始化 A推动B 模块
+[配置同步] 已同步当前参数：max_cycles=1, signal_on_time_ms=50.0（来源：自动计算下一轮）, stable_wait_ms=1200, factor=1.5, angle_range=[1.0, 4.0], angle_num=0, angle_cw=0, raw_remove_above=3000.0, median_filter_window=5, x_axis_xlsx_path=516中心波长.xlsx, save_root=measurement_output, rule_ab_ac_clearance=[120.0, 150.0, 180.0], rule_ab_ac_correction_mode=nearest_normal, 
+rule_ab_overlap_threshold=1.0, rule_ab_target=[0.01, 6.0], rule_ac_threshold_px=100.0        
+[2026-07-30 02:41:27] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_024116\full_calibration_static_c；reason=run_workflow_cycle_2_before_run_one_cycle
+[流程] 当前 cycle_index=2 已超过 GUI 当前循环次数 max_cycles=1，结束循环
+[2026-07-30 02:41:27] ========== 结束测量 ==========
+[2026-07-30 02:41:27] [流程] 测量结束，照明光保持当前状态，不额外发送 ON/OFF
+[2026-07-30 02:41:27] [保存] Excel汇总文件已保存：measurement_output\save\07.30\measurement_summary_20260730_024036.xlsx
+[2026-07-30 02:41:27] [流程] 正在测量 = False
+
+
+
+
+
+
+[2026-07-30 02:44:43] [流程] 收到停止请求
+[2026-07-30 02:44:43] [流程] 停止测量时刷新未保存 CSV 失败：'MeasurementWorkflow' object has no attribute '_flush_unsaved_cycle_to_csv'
+[2026-07-30 02:44:43] [保存] Excel汇总文件已保存：measurement_output\save\07.30\measurement_summary_20260730_024036.xlsx
+[2026-07-30 02:44:43] ========== 关闭全部设备：关闭硬件安全相关对象，保留 LabVIEW TCP ==========
+[2026-07-30 02:44:43] [保存] Excel汇总文件已保存：measurement_output\save\07.30\measurement_summary_20260730_024036.xlsx
+[2026-07-30 02:44:43] [虚拟照明] OFF：未控制真实硬件
+[2026-07-30 02:44:43] [照明光] OFF
+[2026-07-30 02:44:44] [虚拟照明] close：未释放真实硬件
+[2026-07-30 02:44:44] [照明光] 关闭全部设备时已关闭/释放照明光对象
+[2026-07-30 02:44:44] [虚拟Newport] close()：未释放真实硬件
+[2026-07-30 02:44:44] [激光开关] GUI关闭时已关闭 Newport 控制器连接
+[2026-07-30 02:44:44] [TCP] 关闭全部设备：保留 LabVIEW TCP Server，不关闭、不置 None、不修改 READY 状态
+[2026-07-30 02:44:44] [聚焦] 已释放所有 Focus 组件
+[2026-07-30 02:44:44] [运行态重置] 已清理上一轮停止/失败后的运行缓存；可以重新标定并重新运行完整测量。
