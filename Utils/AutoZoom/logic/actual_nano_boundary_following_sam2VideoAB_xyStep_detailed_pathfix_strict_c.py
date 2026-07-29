@@ -7,7 +7,7 @@ import math
 import sys
 import time
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional, Any
 import cv2
@@ -23,6 +23,15 @@ if SAM2_REPO_ROOT.exists() and str(SAM2_REPO_ROOT) not in sys.path:
 
 from vision.screen_capture import FixedRegionScreenCapture
 from control.stage34_wait_done_then_pause import Stage34
+
+# ROI 排除工具（手动排除干扰图案）
+from .roi_exclusion import (
+    apply_roi_exclusion,
+    polygons_to_mask,
+    draw_roi_overlay,
+    normalize_roi_polygons,
+    select_roi_polygons_interactively,
+)
 
 
 # ============================================================
@@ -140,6 +149,10 @@ class RuntimeConfig:
 
     # 固定 C map 保存目录。为空时默认使用 output_dir/_static_c_map_library/static_c_map_name。
     static_c_map_dir: str = ""
+
+    # 手动排除 ROI：多个多边形，每个 ROI 是闭合顶点序列。
+    # 在 SAM2 分割 A/B/C 后会被应用：mask &= ~roi_mask。
+    exclude_roi_polygons: List[List[List[float]]] = field(default_factory=list)
 
     # --------------------------------------------------------
     # B 目标边选择方式
@@ -1519,6 +1532,41 @@ class SAM2ABCSegmenter:
         self.static_c_center: Optional[Vec2] = None
         self.static_c_pixel_yx: Optional[np.ndarray] = None
 
+        # 手动排除 ROI mask：True 表示需要排除的像素。
+        self.exclude_roi_mask: Optional[np.ndarray] = None
+
+    def set_exclude_roi_mask(
+        self,
+        mask: Optional[np.ndarray] = None,
+        polygons: Optional[Any] = None,
+        image_shape_hw: Optional[Tuple[int, int]] = None,
+    ) -> None:
+        """
+        设置 ROI 排除 mask。
+
+        参数
+        ----------
+        mask : np.ndarray or None
+            直接传入排除 mask。为 None 时尝试从 polygons 生成。
+        polygons : Any
+            ROI 多边形列表。
+        image_shape_hw : tuple(int, int) or None
+            目标图像尺寸 (H, W)。当 mask 为 None 且 polygons 不为空时需要。
+        """
+        if mask is not None:
+            self.exclude_roi_mask = mask.astype(bool, copy=False)
+            return
+
+        if polygons is None or image_shape_hw is None:
+            self.exclude_roi_mask = None
+            return
+
+        self.exclude_roi_mask = polygons_to_mask(image_shape_hw, polygons)
+
+    def _apply_exclude_roi(self, mask: np.ndarray, inplace: bool = False) -> np.ndarray:
+        """对 mask 应用 ROI 排除。"""
+        return apply_roi_exclusion(mask, self.exclude_roi_mask, inplace=inplace)
+
     def _crop_template_by_bbox(
         self,
         image_rgb: np.ndarray,
@@ -1742,6 +1790,8 @@ class SAM2ABCSegmenter:
             )
 
         c_mask = static_c_mask.astype(bool).copy()
+        # 对 static C map 也应用 ROI 排除（ROI 属于标定内容）。
+        c_mask = self._apply_exclude_roi(c_mask, inplace=False)
         self._basic_mask_check("C_static", c_mask)
 
         self.a_init_point = a_positive_points[0]
@@ -2295,7 +2345,10 @@ class SAM2ABCSegmenter:
         debug["ok"] = True
         debug["reason"] = "sam2_video_tracking_success"
         self.last_video_tracking_debug = debug
-        return a_mask.astype(bool), b_mask.astype(bool), debug
+        # 对 video tracking 输出也应用 ROI 排除。
+        a_mask = self._apply_exclude_roi(a_mask.astype(bool), inplace=False)
+        b_mask = self._apply_exclude_roi(b_mask.astype(bool), inplace=False)
+        return a_mask, b_mask, debug
 
     def infer_abc(self, image_rgb: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
@@ -2624,7 +2677,8 @@ class SAM2ABCSegmenter:
             raise RuntimeError("SAM2 point prompt 没有返回 mask。")
 
         best_idx = int(np.argmax(np.asarray(scores).reshape(-1)))
-        return masks[best_idx].astype(bool)
+        best_mask = masks[best_idx].astype(bool)
+        return self._apply_exclude_roi(best_mask, inplace=False)
 
     def _sample_positive_points_from_mask(
         self,
@@ -2911,7 +2965,8 @@ class SAM2ABCSegmenter:
         scores_arr = np.asarray(scores).reshape(-1)
         candidates: List[Dict[str, Any]] = []
         for i, m in enumerate(masks):
-            cand_mask = m.astype(bool)
+            # 先应用 ROI 排除，再参与时序评分，避免选中 ROI 挖空前的错误候选。
+            cand_mask = self._apply_exclude_roi(m.astype(bool), inplace=False)
             sam2_score = float(scores_arr[i]) if i < len(scores_arr) else 0.0
             info = self._score_a_candidate_mask(
                 candidate_mask=cand_mask,
@@ -3039,7 +3094,8 @@ class SAM2ABCSegmenter:
         scores_arr = np.asarray(scores).reshape(-1)
         candidates: List[Dict[str, Any]] = []
         for i, m in enumerate(masks):
-            cand_mask = m.astype(bool)
+            # 先应用 ROI 排除，再参与时序评分，避免选中 ROI 挖空前的错误候选。
+            cand_mask = self._apply_exclude_roi(m.astype(bool), inplace=False)
             sam2_score = float(scores_arr[i]) if i < len(scores_arr) else 0.0
             info = self._score_b_candidate_mask(
                 candidate_mask=cand_mask,
@@ -3137,7 +3193,8 @@ class SAM2ABCSegmenter:
             raise RuntimeError("SAM2 box+multi-point prompt 没有返回 mask。")
 
         best_idx = int(np.argmax(np.asarray(scores).reshape(-1)))
-        return masks[best_idx].astype(bool)
+        best_mask = masks[best_idx].astype(bool)
+        return self._apply_exclude_roi(best_mask, inplace=False)
 
     def _basic_mask_check(self, name: str, mask: np.ndarray) -> None:
         area = float(mask.sum())
@@ -3186,7 +3243,8 @@ def select_a_b_c_points_interactively(
     image_rgb: np.ndarray,
     window_name: str = "SAM2 init: A/B/C multi positive + negative",
     scale: float = 0.85,
-) -> Tuple[PointPromptSet, PointPromptSet, PointPromptSet]:
+    existing_roi_polygons: Any = None,
+) -> Tuple[PointPromptSet, PointPromptSet, PointPromptSet, List[List[List[float]]]]:
     """
     第一帧初始化点选择。
 
@@ -3204,6 +3262,7 @@ def select_a_b_c_points_interactively(
         Z：撤销当前目标最后一个点，优先撤销负点，没有负点时撤销正点。
         Backspace：回到上一个目标。
         ESC：取消。
+        点选全部完成后按 E 进入 ROI 模式，绘制需要排除的干扰区域。
 
     点提示原则：
         - 正点：点在“确定属于当前目标”的内部区域，尽量不要点边界。
@@ -3383,14 +3442,23 @@ def select_a_b_c_points_interactively(
         len(c_prompt.negative_points),
     )
 
-    return a_prompt, b_prompt, c_prompt
+    # 点选完成后，进入 ROI 绘制模式（用户可按 E 进入/退出，或直接 Enter 跳过）。
+    roi_polygons = select_roi_polygons_interactively(
+        image_bgr=image_bgr,
+        existing_polygons=existing_roi_polygons,
+        window_name="Draw ROI for A/B/C segmentation (E=toggle, ESC=cancel)",
+        scale=scale,
+    )
+
+    return a_prompt, b_prompt, c_prompt, roi_polygons
 
 
 def select_a_b_points_interactively(
     image_rgb: np.ndarray,
     window_name: str = "SAM2 init: A/B only, reuse static C map",
     scale: float = 0.85,
-) -> Tuple[PointPromptSet, PointPromptSet]:
+    existing_roi_polygons: Any = None,
+) -> Tuple[PointPromptSet, PointPromptSet, List[List[List[float]]]]:
     """
     复用固定 C map 时，只需要重新选择 A、B 的正点和负点。
 
@@ -3403,6 +3471,7 @@ def select_a_b_points_interactively(
         Z：撤销当前目标最后一个点，优先撤销负点。
         Backspace：回到上一个目标。
         ESC：取消。
+        点选全部完成后按 E 进入 ROI 模式，绘制需要排除的干扰区域。
     """
     if scale <= 0:
         scale = 1.0
@@ -3512,7 +3581,16 @@ def select_a_b_points_interactively(
         len(a_prompt.positive_points), len(a_prompt.negative_points),
         len(b_prompt.positive_points), len(b_prompt.negative_points),
     )
-    return a_prompt, b_prompt
+
+    # 点选完成后，进入 ROI 绘制模式（用户可按 E 进入/退出，或直接 Enter 跳过）。
+    roi_polygons = select_roi_polygons_interactively(
+        image_bgr=image_bgr,
+        existing_polygons=existing_roi_polygons,
+        window_name="Draw ROI for A/B segmentation (E=toggle, ESC=cancel)",
+        scale=scale,
+    )
+
+    return a_prompt, b_prompt, roi_polygons
 
 def confirm_first_frame_segmentation_interactively(
     image_rgb: np.ndarray,
@@ -3859,6 +3937,25 @@ class ActualNanoBoundaryFollower:
             temporal_position_match_min_score=cfg.temporal_position_match_min_score,
             temporal_position_match_use_last_image_template=cfg.temporal_position_match_use_last_image_template,
         )
+
+        # 将手动 ROI 排除区域设置到分割器；后续帧 A/B/C 分割时都会应用。
+        try:
+            image_shape_hw = (
+                int(cfg.capture_area[3]),
+                int(cfg.capture_area[2]),
+            )
+            self.abc_segmenter.set_exclude_roi_mask(
+                polygons=getattr(cfg, "exclude_roi_polygons", []),
+                image_shape_hw=image_shape_hw,
+            )
+            if self.abc_segmenter.exclude_roi_mask is not None:
+                logger.info(
+                    "已应用手动 ROI 排除区域：polygons=%d, excluded_pixels=%d",
+                    len(getattr(cfg, "exclude_roi_polygons", [])),
+                    int(self.abc_segmenter.exclude_roi_mask.sum()),
+                )
+        except Exception as e:
+            logger.warning("初始化 ROI 排除 mask 失败：%s", e)
 
         self.stage: Optional[Stage34] = None
 
@@ -4313,6 +4410,7 @@ class ActualNanoBoundaryFollower:
             - 全程不调用 select_a_b_points_interactively / select_a_b_c_points_interactively；
             - 默认也不弹确认窗口。
         """
+        exclude_roi_polygons: List[List[List[float]]] = []
         if calibration_state is not None:
             try:
                 data = calibration_state.to_dict() if hasattr(calibration_state, "to_dict") else calibration_state
@@ -4324,6 +4422,7 @@ class ActualNanoBoundaryFollower:
                     c_positive_points = c_positive_points or data.get("global_c_positive_points")
                     c_negative_points = c_negative_points or data.get("global_c_negative_points")
                     static_c_map_dir = static_c_map_dir or str(data.get("static_c_map_dir", "") or "")
+                    exclude_roi_polygons = data.get("exclude_roi_polygons", []) or []
             except Exception:
                 pass
 
@@ -4352,6 +4451,26 @@ class ActualNanoBoundaryFollower:
                 self.cfg.force_reselect_c_each_run = False
             except Exception:
                 pass
+
+        # 同步 ROI 到 cfg 与 segmenter，确保非交互初始化也能排除干扰区域。
+        try:
+            self.cfg.exclude_roi_polygons = normalize_roi_polygons(exclude_roi_polygons)
+            image_shape_hw = (
+                int(self.cfg.capture_area[3]),
+                int(self.cfg.capture_area[2]),
+            )
+            self.abc_segmenter.set_exclude_roi_mask(
+                polygons=self.cfg.exclude_roi_polygons,
+                image_shape_hw=image_shape_hw,
+            )
+            if self.abc_segmenter.exclude_roi_mask is not None:
+                logger.info(
+                    "[完整标定] 已应用手动 ROI 排除区域：polygons=%d, excluded_pixels=%d",
+                    len(self.cfg.exclude_roi_polygons),
+                    int(self.abc_segmenter.exclude_roi_mask.sum()),
+                )
+        except Exception as e:
+            logger.warning("[完整标定] 同步 ROI 排除 mask 失败：%s", e)
 
         image_rgb = self.capturer.capture()
         reusable_c = self.get_reusable_static_c_map()
@@ -4467,6 +4586,27 @@ class ActualNanoBoundaryFollower:
             )
         logger.info("[完整标定] RuleAB 已完成非交互 A/B/C 初始化。")
 
+    def _apply_roi_from_first_frame_interactive(
+        self,
+        roi_polygons: List[List[List[float]]],
+        image_shape_hw: Tuple[int, int],
+    ) -> None:
+        """把交互式首帧绘制的 ROI 同步到 cfg 与 segmenter。"""
+        try:
+            self.cfg.exclude_roi_polygons = normalize_roi_polygons(roi_polygons)
+            self.abc_segmenter.set_exclude_roi_mask(
+                polygons=self.cfg.exclude_roi_polygons,
+                image_shape_hw=image_shape_hw,
+            )
+            if self.abc_segmenter.exclude_roi_mask is not None:
+                logger.info(
+                    "[首帧交互] 已应用手动 ROI 排除区域：polygons=%d, excluded_pixels=%d",
+                    len(self.cfg.exclude_roi_polygons),
+                    int(self.abc_segmenter.exclude_roi_mask.sum()),
+                )
+        except Exception as e:
+            logger.warning("[首帧交互] 同步 ROI 排除 mask 失败：%s", e)
+
     def initialize_abc_with_first_frame(self) -> None:
         logger.info(
             "开始初始化：如果已有确认 C map，则只点击 A/B；否则点击 A/B/C 并确认保存 C map。"
@@ -4510,11 +4650,13 @@ class ActualNanoBoundaryFollower:
             )
 
             while True:
-                a_prompt, b_prompt = select_a_b_points_interactively(
+                a_prompt, b_prompt, roi_polygons = select_a_b_points_interactively(
                     image_rgb=image_rgb,
                     window_name="SAM2 init: click A/B only, reuse confirmed C map",
                     scale=self.cfg.init_window_scale,
+                    existing_roi_polygons=getattr(self.cfg, "exclude_roi_polygons", []),
                 )
+                self._apply_roi_from_first_frame_interactive(roi_polygons, image_rgb.shape[:2])
 
                 a_mask, b_mask, c_mask = self.abc_segmenter.initialize_ab_with_static_c_map(
                     image_rgb=image_rgb,
@@ -4585,11 +4727,13 @@ class ActualNanoBoundaryFollower:
         )
 
         while True:
-            a_prompt, b_prompt, c_prompt = select_a_b_c_points_interactively(
+            a_prompt, b_prompt, c_prompt, roi_polygons = select_a_b_c_points_interactively(
                 image_rgb=image_rgb,
                 window_name="SAM2 init: A/B/C multi pos+neg fixed",
                 scale=self.cfg.init_window_scale,
+                existing_roi_polygons=getattr(self.cfg, "exclude_roi_polygons", []),
             )
+            self._apply_roi_from_first_frame_interactive(roi_polygons, image_rgb.shape[:2])
 
             a_mask, b_mask, c_mask = self.abc_segmenter.initialize_with_points(
                 image_rgb=image_rgb,

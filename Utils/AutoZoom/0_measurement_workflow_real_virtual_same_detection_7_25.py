@@ -722,6 +722,10 @@ class CalibrationState:
     step9_color_morph_kernel: int = 5
     step9_center_tolerance_px: float = 5.0
 
+    # 手动排除 ROI：多个多边形，每个 ROI 是闭合顶点序列。
+    # 用于排除显微镜视野中的干扰图案（如表情包）。
+    exclude_roi_polygons: List[List[List[float]]] = field(default_factory=list)
+
     notes: str = ""
 
     @staticmethod
@@ -732,6 +736,49 @@ class CalibrationState:
         for p in points:
             try:
                 out.append([float(p[0]), float(p[1])])
+            except Exception:
+                continue
+        return out
+
+    @staticmethod
+    def _normalize_roi_polygons(raw: Any) -> List[List[List[float]]]:
+        """把 ROI 多边形描述归一化为 List[List[List[float]]]。"""
+        out: List[List[List[float]]] = []
+        if not raw:
+            return out
+        if isinstance(raw, np.ndarray):
+            raw = raw.tolist()
+        if not isinstance(raw, (list, tuple)):
+            return out
+
+        # 如果 raw 是二维点列表，包成单个多边形
+        if len(raw) > 0 and not isinstance(raw[0], (list, tuple, dict)):
+            try:
+                poly = [[float(p[0]), float(p[1])] for p in raw]
+                if len(poly) >= 3:
+                    out.append(poly)
+            except Exception:
+                pass
+            return out
+
+        for item in raw:
+            if item is None:
+                continue
+            if isinstance(item, np.ndarray):
+                item = item.tolist()
+            if not isinstance(item, (list, tuple)) or len(item) == 0:
+                continue
+            try:
+                poly: List[List[float]] = []
+                for p in item:
+                    if isinstance(p, dict):
+                        x = float(p.get("x", p.get("X", 0.0)))
+                        y = float(p.get("y", p.get("Y", 0.0)))
+                    else:
+                        x, y = float(p[0]), float(p[1])
+                    poly.append([x, y])
+                if len(poly) >= 3:
+                    out.append(poly)
             except Exception:
                 continue
         return out
@@ -751,6 +798,8 @@ class CalibrationState:
         state.rule_ab_b_negative_points = cls._points_to_lists(state.rule_ab_b_negative_points)
         state.global_c_positive_points = cls._points_to_lists(state.global_c_positive_points)
         state.global_c_negative_points = cls._points_to_lists(state.global_c_negative_points)
+        # ROI 多边形归一化：兼容 list/tuple/dict 等多种描述。
+        state.exclude_roi_polygons = cls._normalize_roi_polygons(state.exclude_roi_polygons)
         # HSV seed 是 [h,s,v] 三元组，不能用 _points_to_lists 截成二维点。
         hsv_seeds: List[List[float]] = []
         for p in (state.b_positive_hsv_seeds or []):
@@ -2027,6 +2076,7 @@ class MeasurementWorkflow:
             "preloaded_b_negative_points": b_neg,
             "preloaded_c_positive_points": c_pos,
             "preloaded_c_negative_points": c_neg,
+            "exclude_roi_polygons": state.exclude_roi_polygons,
         }
 
         targets = [follower, getattr(follower, "cfg", None), getattr(follower, "abc_segmenter", None), getattr(follower, "segmenter", None)]
@@ -3425,6 +3475,7 @@ class MeasurementWorkflow:
             stage_ch4_pause_after_move_s=float(self.cfg.rule_ab_stage_ch4_pause_after_move_s),
             stage_x_sign=int(self.cfg.rule_ab_stage_x_sign),
             stage_y_sign=int(self.cfg.rule_ab_stage_y_sign),
+            exclude_roi_polygons=(state.exclude_roi_polygons if state is not None else []),
         )
         # 如果已经加载完整标定，强制关闭 RuleAB 的交互式第一帧确认和 C 重选。
         if state is not None:
@@ -15541,15 +15592,20 @@ class MeasurementWorkflowGUI:
         image_rgb: np.ndarray,
         window_name: str = "SAM2 C only: left=positive, right=negative",
         scale: float = 0.85,
-    ) -> Tuple[List[Tuple[float, float]], List[Tuple[float, float]]]:
+        existing_roi_polygons: Any = None,
+    ) -> Tuple[List[Tuple[float, float]], List[Tuple[float, float]], List[List[List[float]]]]:
         """
         只为 C 进行交互式点提示：
             左键：C 正点，可以多个；
             右键：C 负点，可以多个；
             R：清空；
-            Enter/N：完成；
+            Enter/N：完成点选；
+            点选完成后按 E 进入 ROI 模式，绘制需要排除的干扰区域；
             ESC：取消。
+        返回 C 正负点和 ROI 多边形。
         """
+        from logic.roi_exclusion import select_roi_polygons_interactively
+
         if scale <= 0:
             scale = 1.0
 
@@ -15567,7 +15623,8 @@ class MeasurementWorkflowGUI:
             lines = [
                 "C-only SAM2 segmentation",
                 "Left click: C positive point | Right click: C negative point",
-                "N/Enter: finish | R: reset | ESC: cancel",
+                "N/Enter: finish point selection | R: reset | ESC: cancel",
+                "After points, press E to draw ROI polygons for excluded regions",
                 f"C positive={len(pos)}, negative={len(neg)}",
             ]
             for i, s in enumerate(lines):
@@ -15617,15 +15674,26 @@ class MeasurementWorkflowGUI:
         def to_original(points: List[Tuple[int, int]]) -> List[Tuple[float, float]]:
             return [(float(x) / scale, float(y) / scale) for x, y in points]
 
-        return to_original(pos), to_original(neg)
+        original_pos = to_original(pos)
+        original_neg = to_original(neg)
+
+        # 点选完成后，进入 ROI 绘制模式（用户可按 E 进入/退出，或直接 Enter 跳过）。
+        roi_polygons = select_roi_polygons_interactively(
+            image_bgr=image_bgr,
+            existing_polygons=existing_roi_polygons,
+            window_name="Draw ROI for C segmentation (E=toggle, ESC=cancel)",
+            scale=scale,
+        )
+        return original_pos, original_neg, roi_polygons
 
     def _predict_c_mask_by_sam2_points(
         self,
         image_rgb: np.ndarray,
         positive_points: List[Tuple[float, float]],
         negative_points: List[Tuple[float, float]],
+        roi_polygons: Any = None,
     ) -> np.ndarray:
-        """调用 SAM2 ImagePredictor，仅根据 C 的正负点分割 C。"""
+        """调用 SAM2 ImagePredictor，仅根据 C 的正负点分割 C，并应用 ROI 排除干扰区域。"""
         try:
             import torch
             from sam2.build_sam import build_sam2
@@ -15702,6 +15770,20 @@ class MeasurementWorkflowGUI:
         area = int(mask.sum())
         if area <= 0:
             raise RuntimeError("SAM2 返回的 C mask 为空。")
+
+        # 应用手动 ROI 排除区域
+        if roi_polygons:
+            try:
+                from logic.roi_exclusion import polygons_to_mask
+                h, w = mask.shape[:2]
+                exclude_mask = polygons_to_mask((h, w), roi_polygons)
+                if exclude_mask is not None:
+                    mask = mask.astype(bool)
+                    mask[exclude_mask] = False
+                    area = int(mask.sum())
+                    self.log(f"[RuleAB-C] 已应用 ROI 排除：polygons={len(roi_polygons)}, remaining_area={area}")
+            except Exception as e:
+                self.log(f"[RuleAB-C] 应用 ROI 排除失败：{e}")
 
         sel_score = float(np.asarray(scores).reshape(-1)[best_idx])
         selected_component = (prompt_clean_debug.get("component_clean_debug") or {}).get("selected_component", {}) if isinstance(prompt_clean_debug, dict) else {}
@@ -15876,6 +15958,7 @@ class MeasurementWorkflowGUI:
         positive_points: List[Tuple[float, float]],
         negative_points: List[Tuple[float, float]],
         save_dir: Path,
+        roi_polygons: Any = None,
     ) -> Path:
         """
         保存 C 固定分割结果，供“选择C文件夹”加载。
@@ -16188,6 +16271,22 @@ class MeasurementWorkflowGUI:
             cv2.putText(route_overlay, "A motion route EMPTY", (12, 28), cv2.FONT_HERSHEY_SIMPLEX, 0.70, (0, 0, 255), 2, cv2.LINE_AA)
         cv2.imwrite(str(route_overlay_path), route_overlay)
 
+        # 保存手动 ROI 排除区域（如果标定时绘制了）。
+        roi_json_path = save_dir / "exclude_roi_polygons.json"
+        roi_overlay_path = save_dir / "static_c_roi_overlay.png"
+        roi_polys: List[List[List[float]]] = []
+        try:
+            from logic.roi_exclusion import normalize_roi_polygons, draw_roi_overlay
+            roi_polys = normalize_roi_polygons(roi_polygons)
+            if roi_polys:
+                with roi_json_path.open("w", encoding="utf-8") as f:
+                    json.dump({"exclude_roi_polygons": roi_polys}, f, ensure_ascii=False, indent=2)
+                roi_overlay = draw_roi_overlay(frame_bgr, roi_polys, color=(0, 0, 255), alpha=0.35)
+                cv2.imwrite(str(roi_overlay_path), roi_overlay)
+                self.log(f"[RuleAB-C] 已保存 ROI 排除区域：polygons={len(roi_polys)}")
+        except Exception as e:
+            self.log(f"[RuleAB-C] 保存 ROI 排除区域失败：{e}")
+
         cfg_gui = self.build_config_from_ui()
         meta = {
             "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -16207,6 +16306,7 @@ class MeasurementWorkflowGUI:
             "raw_sam2_mask_area_px": int(c_raw_sam2_bool.sum()),
             "sam2_mask_area_px": int(c_sam2_bool.sum()),
             "quad_mask_area_px": int(c_quad_bool.sum()),
+            "exclude_roi_polygons": roi_polys,
             "c_prompt_component_clean_debug": c_prompt_clean_debug,
             "files": {
                 "static_c_mask": str(mask_path.name),
@@ -16227,6 +16327,8 @@ class MeasurementWorkflowGUI:
                 "static_c_overlay": str(overlay_path.name),
                 "static_c_quad_overlay": str(quad_overlay_path.name),
                 "static_c_edge_route_overlay": str(route_overlay_path.name),
+                "exclude_roi_polygons_json": str(roi_json_path.name),
+                "static_c_roi_overlay": str(roi_overlay_path.name),
             },
         }
         with meta_path.open("w", encoding="utf-8") as f:
@@ -16272,20 +16374,26 @@ class MeasurementWorkflowGUI:
                 save_dir = save_root / "rule_ab_follow_c_only" / "_static_c_map_library" / safe_map_name
 
             image_rgb = self._capture_current_rule_ab_frame(output_dir=save_dir)
-            pos, neg = self._select_c_points_interactively(
+            pos, neg, roi_polygons = self._select_c_points_interactively(
                 image_rgb=image_rgb,
                 window_name="SAM2 C only: left positive, right negative",
                 scale=float(getattr(cfg_gui, "rule_ab_confirm_window_scale", 0.85)),
             )
 
-            self.log(f"[RuleAB-C] C 点提示：positive={len(pos)}, negative={len(neg)}")
-            c_mask = self._predict_c_mask_by_sam2_points(image_rgb=image_rgb, positive_points=pos, negative_points=neg)
+            self.log(f"[RuleAB-C] C 点提示：positive={len(pos)}, negative={len(neg)}, ROIs={len(roi_polygons)}")
+            c_mask = self._predict_c_mask_by_sam2_points(
+                image_rgb=image_rgb,
+                positive_points=pos,
+                negative_points=neg,
+                roi_polygons=roi_polygons,
+            )
             saved_dir = self._save_static_c_map_result(
                 image_rgb=image_rgb,
                 c_mask=c_mask,
                 positive_points=pos,
                 negative_points=neg,
                 save_dir=save_dir,
+                roi_polygons=roi_polygons,
             )
 
             self.rule_ab_static_c_map_dir_var.set(str(saved_dir))
@@ -17121,11 +17229,15 @@ class MeasurementWorkflowGUI:
         object_name: str,
         window_name: str,
         scale: float = 0.85,
-    ) -> Tuple[List[Tuple[float, float]], List[Tuple[float, float]]]:
+        existing_roi_polygons: Any = None,
+    ) -> Tuple[List[Tuple[float, float]], List[Tuple[float, float]], List[List[List[float]]]]:
         """
         通用点选窗口：左键正点，右键负点，Enter/N完成，R重选。
-        返回截图区域原始坐标。
+        点选完成后按 E 进入 ROI 模式，绘制需要排除的干扰区域。
+        返回截图区域原始坐标和 ROI 多边形。
         """
+        from logic.roi_exclusion import select_roi_polygons_interactively
+
         if scale <= 0:
             scale = 1.0
         image_bgr = cv2.cvtColor(np.asarray(image_rgb), cv2.COLOR_RGB2BGR)
@@ -17141,7 +17253,8 @@ class MeasurementWorkflowGUI:
             lines = [
                 f"{object_name} point calibration",
                 "Left click: positive point | Right click: negative point",
-                "Enter/N: finish | R: reset | ESC/Q: cancel",
+                "Enter/N: finish point selection | R: reset | ESC/Q: cancel",
+                "After points, press E to draw ROI polygons for excluded regions",
                 f"positive={len(pos)}, negative={len(neg)}",
             ]
             for i, text in enumerate(lines):
@@ -17185,7 +17298,17 @@ class MeasurementWorkflowGUI:
                 pass
 
         to_original = lambda pts: [(float(x) / scale, float(y) / scale) for x, y in pts]
-        return to_original(pos), to_original(neg)
+        original_pos = to_original(pos)
+        original_neg = to_original(neg)
+
+        # 点选完成后，进入 ROI 绘制模式（用户可按 E 进入/退出，或直接 Enter 跳过）。
+        roi_polygons = select_roi_polygons_interactively(
+            image_bgr=image_bgr,
+            existing_polygons=existing_roi_polygons,
+            window_name=f"Draw ROI for {object_name} (E=toggle, ESC=cancel)",
+            scale=scale,
+        )
+        return original_pos, original_neg, roi_polygons
 
     @staticmethod
     def _normalize_points_xy_for_gui(points: Any) -> List[Tuple[float, float]]:
@@ -17276,13 +17399,19 @@ class MeasurementWorkflowGUI:
             out_dir = Path(cfg.save_root) / "calibration" / "rule_ab_a"
             out_dir.mkdir(parents=True, exist_ok=True)
             image_rgb = self._capture_current_rule_ab_frame(output_dir=out_dir)
-            pos, neg = self._select_object_points_interactively(image_rgb, "RuleAB-A", "Calibration RuleAB A: left positive, right negative")
-
             state = self._current_or_new_calibration_state()
+            pos, neg, roi_polygons = self._select_object_points_interactively(
+                image_rgb,
+                "RuleAB-A",
+                "Calibration RuleAB A: left positive, right negative",
+                existing_roi_polygons=state.exclude_roi_polygons,
+            )
+
             state.rule_ab_a_positive_points = [[float(x), float(y)] for x, y in pos]
             state.rule_ab_a_negative_points = [[float(x), float(y)] for x, y in neg]
+            state.exclude_roi_polygons = roi_polygons
             self._save_calibration_file_raw(state)
-            self.log(f"[完整测量标定] RuleAB-A 标定完成：A+={len(pos)}, A-={len(neg)}")
+            self.log(f"[完整测量标定] RuleAB-A 标定完成：A+={len(pos)}, A-={len(neg)}, ROIs={len(roi_polygons)}")
         except Exception as e:
             self.log(f"[完整测量标定] RuleAB-A 标定失败：{e}")
             self.log(traceback.format_exc())
@@ -17310,27 +17439,41 @@ class MeasurementWorkflowGUI:
             save_dir = save_root / "rule_ab_follow_c_only" / "_static_c_map_library" / safe_map_name
 
             image_rgb = self._capture_current_rule_ab_frame(output_dir=save_dir)
-            pos, neg = self._select_c_points_interactively(
+            state = self._current_or_new_calibration_state()
+            pos, neg, roi_polygons = self._select_c_points_interactively(
                 image_rgb=image_rgb,
                 window_name="Calibration Global C: left positive, right negative",
                 scale=float(getattr(cfg_gui, "rule_ab_confirm_window_scale", 0.85)),
+                existing_roi_polygons=state.exclude_roi_polygons,
             )
-            c_mask = self._predict_c_mask_by_sam2_points(image_rgb=image_rgb, positive_points=pos, negative_points=neg)
-            saved_dir = self._save_static_c_map_result(image_rgb=image_rgb, c_mask=c_mask, positive_points=pos, negative_points=neg, save_dir=save_dir)
+            c_mask = self._predict_c_mask_by_sam2_points(
+                image_rgb=image_rgb,
+                positive_points=pos,
+                negative_points=neg,
+                roi_polygons=roi_polygons,
+            )
+            saved_dir = self._save_static_c_map_result(
+                image_rgb=image_rgb,
+                c_mask=c_mask,
+                positive_points=pos,
+                negative_points=neg,
+                save_dir=save_dir,
+                roi_polygons=roi_polygons,
+            )
 
             self.rule_ab_static_c_map_dir_var.set(str(saved_dir))
             self.rule_ab_load_static_c_map_var.set(True)
             self.rule_ab_force_reselect_c_var.set(False)
 
-            state = self._current_or_new_calibration_state()
             state.global_c_positive_points = [[float(x), float(y)] for x, y in pos]
             state.global_c_negative_points = [[float(x), float(y)] for x, y in neg]
             state.static_c_map_dir = str(saved_dir)
+            state.exclude_roi_polygons = roi_polygons
             c_mask_path = Path(saved_dir) / "static_c_mask.png"
             if c_mask_path.exists():
                 state.static_c_mask_path = str(c_mask_path.resolve())
             self._save_calibration_file_raw(state)
-            self.log(f"[完整测量标定] 全局C标定完成并保存 static C：{saved_dir}")
+            self.log(f"[完整测量标定] 全局C标定完成并保存 static C：{saved_dir}，ROIs={len(roi_polygons)}")
         except Exception as e:
             self.log(f"[完整测量标定] 全局C标定失败：{e}")
             self.log(traceback.format_exc())
