@@ -1,0 +1,24 @@
+[2026-07-29 22:15:38] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmp9b9umf47\save\07.29\measurement_summary_20260729_221538.xlsx
+[2026-07-29 22:15:38] [绘图] 已追加数据点：cycle=0, angle=25.5, fit_peak=1234.56
+[2026-07-29 22:15:38] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmppgwcb52s\save\07.29\measurement_summary_20260729_221538.xlsx
+[2026-07-29 22:15:38] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmpo3hgmwcx\save\07.29\measurement_summary_20260729_221538.xlsx
+[2026-07-29 22:15:38] [绘图] 已追加数据点：cycle=0, angle=30.0, fit_peak=200.0
+[2026-07-29 22:15:38] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmp9sz9x25b\save\07.29\measurement_summary_20260729_221538.xlsx
+[2026-07-29 22:15:38] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmpqku2nhjd\save\07.29\measurement_summary_20260729_221538.xlsx
+[2026-07-29 22:15:38] [ABC特征跟踪-A清理] A正点=[(60.0, 60.0)], raw_area=81, after_exclude_bc_area=0, selected_area=0, selected_component=-1, selected_pos_hits=0, reason=empty_raw_mask
+[2026-07-29 22:15:38] [ABC特征跟踪-A清理] A 排除 B/C 后为空，尝试回退到 raw mask 按正点重新选择，允许 A 与 B/C 轻微接触。
+[2026-07-29 22:15:38] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmpwm8x1m9s\save\07.29\measurement_summary_20260729_221538.xlsx
+[2026-07-29 22:15:38] [完整测量标定] 标定包缺少 B 正点，已基于当前帧自动生成默认 B 点：(150.0, 100.0)，image_size=(200, 200)。该默认值仅用于兼容 RuleAB 初始化；YOLO-OBB 角度检测不依赖 B 点。
+[2026-07-29 22:15:38] [完整测量标定] 已通过 initialize_abc_with_calibration() 初始化 RuleAB A/B/C，未弹窗。
+[2026-07-29 22:15:38] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmp6ueykgt2\save\07.29\measurement_summary_20260729_221538.xlsx
+[2026-07-29 22:15:38] [流程] 收到停止请求
+[2026-07-29 22:15:38] [流程] 停止测量：激光已 OFF
+[2026-07-29 22:15:38] [保存] Excel汇总文件已创建：measurement_output\save\07.29\measurement_summary_20260729_221538.xlsx
+[2026-07-29 22:15:38] [聚焦ROI] 即将弹出全屏 ROI 选择窗口；请拖拽矩形框选补焦区域后按 Enter/N 确认
+[2026-07-29 22:15:38] [聚焦ROI] 全屏 ROI 已选择：(235, 117, 264, 282)，saf_capture_area 已同步为全屏 (0, 0, 1920, 1080)；capture_area / focus_roi 保持不变
+[2026-07-29 22:15:38] [聚焦ROI] 即将弹出全屏 ROI 选择窗口；请拖拽矩形框选补焦区域后按 Enter/N 确认
+[2026-07-29 22:15:38] [聚焦ROI] 选区过小，请重新拖拽选择更大区域
+[2026-07-29 22:15:38] [聚焦ROI] 选区过小，请重新拖拽选择更大区域
+[2026-07-29 22:15:38] [聚焦ROI] 用户取消了 ROI 选择
+[2026-07-29 22:15:39] [聚焦ROI] 即将弹出全屏 ROI 选择窗口；请拖拽矩形框选补焦区域后按 Enter/N 确认
+[2026-07-29 22:15:39] [聚焦ROI] 收到停止请求，取消 ROI 选择

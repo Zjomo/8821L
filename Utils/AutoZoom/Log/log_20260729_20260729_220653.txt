@@ -1,0 +1,9 @@
+[2026-07-29 22:06:53] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmpqx0ah4zh\save\07.29\measurement_summary_20260729_220653.xlsx
+[2026-07-29 22:06:53] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmpcnem6s4j\save\07.29\measurement_summary_20260729_220653.xlsx
+[2026-07-29 22:06:53] [ABC特征跟踪-A清理] A正点=[(60.0, 60.0)], raw_area=709, after_exclude_bc_area=133, selected_area=133, selected_component=1, selected_pos_hits=0, reason=selected_nearest_component_no_positive_hit
+[2026-07-29 22:06:53] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmpeabpd__j\save\07.29\measurement_summary_20260729_220653.xlsx
+[2026-07-29 22:06:53] [完整测量标定] 标定包缺少 B 正点，已基于当前帧自动生成默认 B 点：(150.0, 100.0)，image_size=(200, 200)。该默认值仅用于兼容 RuleAB 初始化；YOLO-OBB 角度检测不依赖 B 点。
+[2026-07-29 22:06:53] [完整测量标定] 已通过 initialize_abc_with_calibration() 初始化 RuleAB A/B/C，未弹窗。
+[2026-07-29 22:06:53] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmp3kk_82mb\save\07.29\measurement_summary_20260729_220653.xlsx
+[2026-07-29 22:06:53] [流程] 收到停止请求
+[2026-07-29 22:06:53] [流程] 停止测量：激光已 OFF

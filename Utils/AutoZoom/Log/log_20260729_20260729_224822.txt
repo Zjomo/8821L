@@ -1,0 +1,46 @@
+[2026-07-29 22:48:22] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmpbdjq9bhy\save\07.29\measurement_summary_20260729_224822.xlsx
+[2026-07-29 22:48:22] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmp0087mqtb\save\07.29\measurement_summary_20260729_224822.xlsx
+[2026-07-29 22:48:22] [保存光谱数据] 已保存：C:\Users\Mr\AppData\Local\Temp\tmp0087mqtb\custom_save\measurement_summary_background_light_20260729_224822.xlsx
+[2026-07-29 22:48:22] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmpe2j4xj70\save\07.29\measurement_summary_20260729_224822.xlsx
+[2026-07-29 22:48:22] [保存光谱数据] 已保存：C:\Users\Mr\AppData\Local\Temp\tmpe2j4xj70\save\07.29\measurement_summary_20260729_224822.xlsx
+[2026-07-29 22:48:22] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmplht0p9gl\save\07.29\measurement_summary_20260729_224822.xlsx
+[2026-07-29 22:48:22] [流程] 收到停止请求
+[2026-07-29 22:48:22] [流程] 停止测量：激光已 OFF
+[2026-07-29 22:48:22] [流程] 停止测量时刷新未保存 CSV 失败：'MeasurementWorkflow' object has no attribute '_flush_unsaved_cycle_to_csv'
+[2026-07-29 22:48:22] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmp2de2je77\save\07.29\measurement_summary_20260729_224822.xlsx
+[2026-07-29 22:48:22] [流程] 收到停止请求
+[2026-07-29 22:48:22] [流程] 停止测量时刷新未保存 CSV 失败：'MeasurementWorkflow' object has no attribute '_flush_unsaved_cycle_to_csv'
+[2026-07-29 22:48:22] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmpapgello3\save\07.29\measurement_summary_20260729_224822.xlsx
+[2026-07-29 22:48:22] [流程] 收到停止请求
+[2026-07-29 22:48:22] [流程] 停止测量时关闭激光失败：激光关闭失败
+[2026-07-29 22:48:22] [流程] 停止测量时刷新未保存 CSV 失败：'MeasurementWorkflow' object has no attribute '_flush_unsaved_cycle_to_csv'
+[2026-07-29 22:48:22] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmpsqpn6ynr\save\07.29\measurement_summary_20260729_224822.xlsx
+[2026-07-29 22:48:22] ========== 结束测量 ==========
+[2026-07-29 22:48:22] [流程] 测量结束，激光已 OFF
+[2026-07-29 22:48:22] [流程] 正在测量 = False
+[2026-07-29 22:48:22] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmpjf6yj_5x\save\07.29\measurement_summary_20260729_224822.xlsx
+[2026-07-29 22:48:22] ========== 关闭全部设备：关闭硬件安全相关对象，保留 LabVIEW TCP ==========
+[2026-07-29 22:48:22] [激光开关] GUI关闭时已关闭 Newport 控制器连接
+[2026-07-29 22:48:22] [聚焦] 已释放所有 Focus 组件
+[2026-07-29 22:48:22] [运行态重置] 已清理上一轮停止/失败后的运行缓存；可以重新标定并重新运行完整测量。
+[2026-07-29 22:48:22] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmp4j7nydo6\save\07.29\measurement_summary_20260729_224822.xlsx
+[2026-07-29 22:48:22] ========== 关闭全部设备：关闭硬件安全相关对象，保留 LabVIEW TCP ==========
+[2026-07-29 22:48:22] [激光开关] GUI关闭时已关闭 Newport 控制器连接
+[2026-07-29 22:48:22] [聚焦] 已释放所有 Focus 组件
+[2026-07-29 22:48:22] [运行态重置] 已清理上一轮停止/失败后的运行缓存；可以重新标定并重新运行完整测量。
+[2026-07-29 22:48:22] [保存] Excel汇总文件已创建：measurement_output\save\07.29\measurement_summary_20260729_224822.xlsx
+[2026-07-29 22:48:22] [聚焦ROI] 即将弹出全屏 ROI 选择窗口；请拖拽矩形框选补焦区域后按 Enter/N 确认
+[2026-07-29 22:48:22] [聚焦ROI] 全屏 ROI 已选择：(235, 117, 264, 282)，saf_capture_area 已同步为全屏 (0, 0, 1920, 1080)；capture_area / focus_roi 保持不变
+[2026-07-29 22:48:22] [聚焦ROI] 即将弹出全屏 ROI 选择窗口；请拖拽矩形框选补焦区域后按 Enter/N 确认
+[2026-07-29 22:48:22] [聚焦ROI] 选区过小，请重新拖拽选择更大区域
+[2026-07-29 22:48:22] [聚焦ROI] 选区过小，请重新拖拽选择更大区域
+[2026-07-29 22:48:22] [聚焦ROI] 用户取消了 ROI 选择
+[2026-07-29 22:48:22] [聚焦ROI] 即将弹出全屏 ROI 选择窗口；请拖拽矩形框选补焦区域后按 Enter/N 确认
+[2026-07-29 22:48:22] [聚焦ROI] 收到停止请求，取消 ROI 选择
+[2026-07-29 22:48:22] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmpk3j44m0_\save\07.29\measurement_summary_20260729_224822.xlsx
+[2026-07-29 22:48:22] ========== Step 1.5：建立聚焦参考图 ==========
+[2026-07-29 22:48:22] [聚焦参考] 参考图已建立并保存，不再弹出实时预览窗口
+[2026-07-29 22:48:22] [聚焦参考] 从单张图像建立参考
+[2026-07-29 22:48:23] [聚焦参考] 参考指标已保存：C:\Users\Mr\AppData\Local\Temp\tmpk3j44m0_\focus_reference\focus_reference\20260729_224822\focus_reference_metrics.csv
+[2026-07-29 22:48:23] [聚焦参考] 单图参考建立完成：highfreq_ref=0.0, tenengrad_ref=0.0, brenner_ref=0.0, red_blue_ref=0.9999999999999961
+[2026-07-29 22:48:23] [聚焦参考] 第 1 轮已建立，ROI=(300, 200, 400, 300)

@@ -1,0 +1,7 @@
+[2026-07-29 22:31:40] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmpt8lcgyri\save\07.29\measurement_summary_20260729_223140.xlsx
+[2026-07-29 22:31:40] [完整测量标定] 已通过 initialize_abc_with_calibration() 初始化 RuleAB A/B/C，未弹窗。
+[2026-07-29 22:31:40] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmppe2ix_6y\save\07.29\measurement_summary_20260729_223140.xlsx
+[2026-07-29 22:31:40] [完整测量标定] 已通过 initialize_abc_with_calibration() 初始化 RuleAB A/B/C，未弹窗。
+[2026-07-29 22:31:40] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmp21nyahj4\save\07.29\measurement_summary_20260729_223140.xlsx
+[2026-07-29 22:31:40] [完整测量标定] 已通过 initialize_abc_with_calibration() 初始化 RuleAB A/B/C，未弹窗。
+[2026-07-29 22:31:40] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmphnls176o\save\07.29\measurement_summary_20260729_223140.xlsx

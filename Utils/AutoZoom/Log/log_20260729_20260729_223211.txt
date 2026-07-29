@@ -1,0 +1,10 @@
+[2026-07-29 22:32:11] [保存] Excel汇总文件已创建：measurement_output\save\07.29\measurement_summary_20260729_223211.xlsx
+[2026-07-29 22:32:11] [完整测量标定] 已通过 initialize_abc_with_calibration() 初始化 RuleAB A/B/C，未弹窗。
+[2026-07-29 22:32:11] [完整测量标定] 已通过 initialize_abc_with_calibration() 初始化 RuleAB A/B/C，未弹窗。
+[2026-07-29 22:32:11] [完整测量标定] 已通过 initialize_abc_with_calibration() 初始化 RuleAB A/B/C，未弹窗。
+[2026-07-29 22:32:11] [完整测量标定] 已通过 initialize_abc_with_calibration() 初始化 RuleAB A/B/C，未弹窗。
+[2026-07-29 22:32:11] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmp18_jcu9z\save\07.29\measurement_summary_20260729_223211.xlsx
+[2026-07-29 22:32:11] [绘图] 已追加数据点：cycle=0, angle=25.5, fit_peak=1234.56
+[2026-07-29 22:32:11] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmpxhgd1f9r\save\07.29\measurement_summary_20260729_223211.xlsx
+[2026-07-29 22:32:11] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmp9plg2aah\save\07.29\measurement_summary_20260729_223211.xlsx
+[2026-07-29 22:32:11] [绘图] 已追加数据点：cycle=0, angle=30.0, fit_peak=200.0

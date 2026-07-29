@@ -1,0 +1,20 @@
+[2026-07-29 22:48:21] [保存] Excel汇总文件已创建：measurement_output\save\07.29\measurement_summary_20260729_224821.xlsx
+[2026-07-29 22:48:21] [完整测量标定] 标定包缺少 B 正点，已生成固定位置占位 B 点：(10.0, 10.0)，image_size=(800, 600)。该占位点仅用于兼容 RuleAB 初始化，不会用于实际测量；YOLO-OBB 角度检测不依赖 B 点。
+[2026-07-29 22:48:21] [完整测量标定] 已通过 initialize_abc_with_calibration() 初始化 RuleAB A/B/C，未弹窗。
+[2026-07-29 22:48:21] [完整测量标定] 标定包缺少 B 正点，已生成固定位置占位 B 点：(10.0, 10.0)，image_size=(800, 600)。该占位点仅用于兼容 RuleAB 初始化，不会用于实际测量；YOLO-OBB 角度检测不依赖 B 点。
+[2026-07-29 22:48:21] [完整测量标定] 已通过 initialize_abc_with_calibration() 初始化 RuleAB A/B/C，未弹窗。
+[2026-07-29 22:48:21] [完整测量标定] 标定包缺少 B 正点，已生成固定位置占位 B 点：(10.0, 10.0)，image_size=(800, 600)。该占位点仅用于兼容 RuleAB 初始化，不会用于实际测量；YOLO-OBB 角度检测不依赖 B 点。
+[2026-07-29 22:48:21] [完整测量标定] 已通过 initialize_abc_with_calibration() 初始化 RuleAB A/B/C，未弹窗。
+[2026-07-29 22:48:21] [完整测量标定] 标定包缺少 B 正点，已生成固定位置占位 B 点：(10.0, 10.0)，image_size=(800, 600)。该占位点仅用于兼容 RuleAB 初始化，不会用于实际测量；YOLO-OBB 角度检测不依赖 B 点。
+[2026-07-29 22:48:21] [完整测量标定] 已通过 initialize_abc_with_calibration() 初始化 RuleAB A/B/C，未弹窗。
+[2026-07-29 22:48:21] [完整测量标定] 标定包缺少 B 正点，已生成固定位置占位 B 点：(4.0, 4.0)，image_size=(5, 5)。该占位点仅用于兼容 RuleAB 初始化，不会用于实际测量；YOLO-OBB 角度检测不依赖 B 点。
+[2026-07-29 22:48:21] [完整测量标定] 已通过 initialize_abc_with_calibration() 初始化 RuleAB A/B/C，未弹窗。
+[2026-07-29 22:48:21] [完整测量标定] 已通过 initialize_abc_with_calibration() 初始化 RuleAB A/B/C，未弹窗。
+[2026-07-29 22:48:21] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmpvq2vz5w3\save\07.29\measurement_summary_20260729_224821.xlsx
+[2026-07-29 22:48:21] [完整测量标定] 生成占位 B 点失败：not enough values to unpack (expected 2, got 0)；将继续尝试用原始标定初始化，RuleAB 初始化可能仍因缺少 B 点而失败。
+[2026-07-29 22:48:21] [完整测量标定] 已通过 initialize_abc_with_calibration() 初始化 RuleAB A/B/C，未弹窗。
+[2026-07-29 22:48:21] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmpr33w2p6b\save\07.29\measurement_summary_20260729_224821.xlsx
+[2026-07-29 22:48:21] [完整测量标定] 已通过 initialize_abc_with_calibration() 初始化 RuleAB A/B/C，未弹窗。
+[2026-07-29 22:48:21] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmp8xdbtshl\save\07.29\measurement_summary_20260729_224821.xlsx
+[2026-07-29 22:48:21] [完整测量标定] 标定包缺少 B 正点，已生成固定位置占位 B 点：(10.0, 10.0)，image_size=(1112, 886)。该占位点仅用于兼容 RuleAB 初始化，不会用于实际测量；YOLO-OBB 角度检测不依赖 B 点。
+[2026-07-29 22:48:21] [完整测量标定] 已通过 initialize_abc_with_calibration() 初始化 RuleAB A/B/C，未弹窗。

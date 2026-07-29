@@ -1,0 +1,30 @@
+[2026-07-29 22:15:40] [保存] Excel汇总文件已创建：measurement_output\save\07.29\measurement_summary_20260729_221540.xlsx
+[2026-07-29 22:15:40] [完整测量标定] 已通过 initialize_abc_with_calibration() 初始化 RuleAB A/B/C，未弹窗。
+[2026-07-29 22:15:40] [完整测量标定] 标定包缺少 B 正点，已基于当前帧自动生成默认 B 点：(799.0, 590.0)，image_size=(800, 600)。该默认值仅用于兼容 RuleAB 初始化；YOLO-OBB 角度检测不依赖 B 点。
+[2026-07-29 22:15:40] [完整测量标定] 已通过 initialize_abc_with_calibration() 初始化 RuleAB A/B/C，未弹窗。
+[2026-07-29 22:15:40] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmpj4pc21n1\save\07.29\measurement_summary_20260729_221540.xlsx
+[2026-07-29 22:15:40] [保存光谱数据] 已保存：C:\Users\Mr\AppData\Local\Temp\tmpj4pc21n1\custom_save\measurement_summary_background_light_20260729_221540.xlsx
+[2026-07-29 22:15:40] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmpkq9hxkp5\save\07.29\measurement_summary_20260729_221540.xlsx
+[2026-07-29 22:15:40] [保存光谱数据] 已保存：C:\Users\Mr\AppData\Local\Temp\tmpkq9hxkp5\save\07.29\measurement_summary_20260729_221540.xlsx
+[2026-07-29 22:15:40] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmp5r7qx04v\save\07.29\measurement_summary_20260729_221540.xlsx
+[2026-07-29 22:15:40] [流程] 收到停止请求
+[2026-07-29 22:15:40] [流程] 停止测量：激光已 OFF
+[2026-07-29 22:15:40] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmpls8y7mlv\save\07.29\measurement_summary_20260729_221540.xlsx
+[2026-07-29 22:15:40] [流程] 收到停止请求
+[2026-07-29 22:15:40] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmpg6bm4e51\save\07.29\measurement_summary_20260729_221540.xlsx
+[2026-07-29 22:15:40] [流程] 收到停止请求
+[2026-07-29 22:15:40] [流程] 停止测量时关闭激光失败：激光关闭失败
+[2026-07-29 22:15:40] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmppymjsbo1\save\07.29\measurement_summary_20260729_221540.xlsx
+[2026-07-29 22:15:40] ========== 结束测量 ==========
+[2026-07-29 22:15:40] [流程] 测量结束，激光已 OFF
+[2026-07-29 22:15:40] [流程] 正在测量 = False
+[2026-07-29 22:15:40] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmpwgaces7f\save\07.29\measurement_summary_20260729_221540.xlsx
+[2026-07-29 22:15:40] ========== 关闭全部设备：关闭硬件安全相关对象，保留 LabVIEW TCP ==========
+[2026-07-29 22:15:40] [激光开关] GUI关闭时已关闭 Newport 控制器连接
+[2026-07-29 22:15:40] [聚焦] 已释放所有 Focus 组件
+[2026-07-29 22:15:40] [运行态重置] 已清理上一轮停止/失败后的运行缓存；可以重新标定并重新运行完整测量。
+[2026-07-29 22:15:40] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmpx_hijt3s\save\07.29\measurement_summary_20260729_221540.xlsx
+[2026-07-29 22:15:40] ========== 关闭全部设备：关闭硬件安全相关对象，保留 LabVIEW TCP ==========
+[2026-07-29 22:15:40] [激光开关] GUI关闭时已关闭 Newport 控制器连接
+[2026-07-29 22:15:40] [聚焦] 已释放所有 Focus 组件
+[2026-07-29 22:15:40] [运行态重置] 已清理上一轮停止/失败后的运行缓存；可以重新标定并重新运行完整测量。

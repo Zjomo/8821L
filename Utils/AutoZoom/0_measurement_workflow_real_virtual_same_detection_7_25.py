@@ -2056,45 +2056,9 @@ class MeasurementWorkflow:
 
         优先尝试使用“带标定点参数”的初始化接口；如果外部模块版本没有这些接口，
         就先注入属性，再调用原 initialize_abc_with_first_frame()。
-
-        兼容当前 YOLO-OBB 版本：完整标定包可能不再包含 B 正点（GUI 已删除标定 B 点入口），
-        但外部 RuleAB 模块仍强制需要 B 正点。若检测到 B 点缺失，本方法会基于当前帧自动生成
-        一个默认 B 点（优先在 A 点旁偏移，无 A 点则用图像中心），从而避免非交互初始化失败。
-        该默认点仅用于兼容 RuleAB 初始化；YOLO-OBB 角度检测并不依赖 B 点。
         """
         if follower is None:
             raise RuntimeError("RuleAB follower=None，不能初始化 A/B/C。")
-
-        # 若标定包缺少 B 正点，基于当前帧自动生成默认 B 点（A 点偏移或图像中心），
-        # 避免外部 RuleAB 模块因"缺少 B 正点"而拒绝非交互初始化。
-        b_pos = self._calib_points_to_tuples(state.rule_ab_b_positive_points)
-        if not b_pos:
-            try:
-                fallback_dir = self.output_root / "rule_ab_from_measurement" / "fallback_b"
-                frame = self._capture_current_rule_ab_frame(fallback_dir)
-                h, w = frame.shape[:2]
-                a_pos = self._calib_points_to_tuples(state.rule_ab_a_positive_points)
-                if a_pos:
-                    ax, ay = a_pos[0]
-                    offset_x = float(getattr(self.cfg, "rule_ab_auto_fallback_b_offset_x", 100.0))
-                    offset_y = float(getattr(self.cfg, "rule_ab_auto_fallback_b_offset_y", 0.0))
-                    bx = max(0.0, min(float(w - 1), ax + offset_x))
-                    by = max(0.0, min(float(h - 1), ay + offset_y))
-                else:
-                    bx = float(w) / 2.0
-                    by = float(h) / 2.0
-                state.rule_ab_b_positive_points = [[bx, by]]
-                b_pos = [(bx, by)]
-                self.log(
-                    f"[完整测量标定] 标定包缺少 B 正点，已基于当前帧自动生成默认 B 点："
-                    f"({bx:.1f}, {by:.1f})，image_size=({w}, {h})。"
-                    f"该默认值仅用于兼容 RuleAB 初始化；YOLO-OBB 角度检测不依赖 B 点。"
-                )
-            except Exception as e:
-                self.log(
-                    f"[完整测量标定] 自动生成默认 B 点失败：{e}；"
-                    f"将继续尝试用原始标定初始化，RuleAB 初始化可能仍因缺少 B 点而失败。"
-                )
 
         self._inject_calibration_into_rule_ab_follower(follower, state)
 
@@ -18291,11 +18255,11 @@ class MeasurementWorkflowGUI:
         self.run_in_thread(self.save_current_spectrum_background_light)
 
     def save_current_spectrum_background_light(self):
-        """将当前 context 中的实时光谱数据保存到 ./measurement_output/save/{MM.DD}。"""
+        """将当前 context 中的实时光谱数据保存到 ./save/{MM.DD}。"""
         try:
             wf = self.ensure_workflow()
             date_dir = datetime.now().strftime("%m.%d")
-            save_dir = Path("./measurement_output/save") / date_dir
+            save_dir = Path("./save") / date_dir
             saved_path = wf.save_single_spectrum_to_xlsx(
                 save_dir=save_dir,
                 tag="background_light",
