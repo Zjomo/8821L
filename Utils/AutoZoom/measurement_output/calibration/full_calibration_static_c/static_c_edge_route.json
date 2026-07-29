@@ -1,5 +1,9 @@
 {
+<<<<<<< HEAD
   "created_at": "2026-07-29 14:31:09",
+=======
+  "created_at": "2026-07-29 16:15:00",
+>>>>>>> 1b8c381d90ff069eb4bde229a450669cd3d428cf
   "source": "quad_points_three_line_safety_band",
   "source_mask": "measurement_output\\calibration\\full_calibration_static_c\\static_c_quad_points.json",
   "c_mask_shape_for_route": "quadrilateral",

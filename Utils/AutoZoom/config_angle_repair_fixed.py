@@ -25,7 +25,7 @@ DEFAULT_CONFIG = {
     # 激光开关步数只填写幅值：
     # 主程序会自动执行 ON=+abs(laser_on_steps)，OFF=-abs(laser_off_steps)。
     'laser_on_steps': 400,
-    'laser_off_steps': 400,
+    'laser_off_steps': 500,         # 关激光 电机步数
     'laser_speed': 5000,
     'laser_accel': 5000,
     'angle_delta_min_deg': 1.0,

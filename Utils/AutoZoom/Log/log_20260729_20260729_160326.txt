@@ -1,0 +1,37 @@
+[2026-07-29 16:03:26] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmpo9z1hcyw\save\07.29\measurement_summary_20260729_160326.xlsx
+[2026-07-29 16:03:26] [聚焦参考] 新运行会话开始，已重置补焦 ROI 与参考图状态，将在 Step 1.5 重新选择补焦基准图 ROI
+[2026-07-29 16:03:26] [运行批次] 新建本次测量文件夹：C:\Users\Mr\AppData\Local\Temp\tmpo9z1hcyw\save\07.29\20260729_160326
+[2026-07-29 16:03:26] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmpvn0a4krj\save\07.29\measurement_summary_20260729_160326.xlsx
+[2026-07-29 16:03:26] ========== Step 1.5：建立聚焦参考图 ==========
+[2026-07-29 16:03:26] [聚焦参考] 尚未选择补焦基准图 ROI，即将弹出 ROI 选择窗口
+[2026-07-29 16:03:26] [聚焦参考] ROI 选择未完成，必须选择后才能继续测量
+[2026-07-29 16:03:26] [聚焦参考] 尚未选择补焦基准图 ROI，即将弹出 ROI 选择窗口
+[2026-07-29 16:03:26] [聚焦参考] 参考图已建立并保存，不再弹出实时预览窗口
+[2026-07-29 16:03:26] [聚焦参考] 从单张图像建立参考
+[2026-07-29 16:03:26] [聚焦参考] 参考指标已保存：C:\Users\Mr\AppData\Local\Temp\tmpvn0a4krj\focus_reference\focus_reference\20260729_160326\focus_reference_metrics.csv
+[2026-07-29 16:03:26] [聚焦参考] 单图参考建立完成：highfreq_ref=0.0, tenengrad_ref=0.0, brenner_ref=0.0, red_blue_ref=0.0
+[2026-07-29 16:03:26] [聚焦参考] 第 1 轮已建立，ROI=(0, 0, 300, 300)
+[2026-07-29 16:03:26] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmpoi4l77mm\save\07.29\measurement_summary_20260729_160326.xlsx
+[2026-07-29 16:03:26] ========== Step 1.5：建立聚焦参考图 ==========
+[2026-07-29 16:03:26] [聚焦参考] 收到停止请求，取消参考建立
+[2026-07-29 16:03:26] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmp25r02i9q\save\07.29\measurement_summary_20260729_160326.xlsx
+[2026-07-29 16:03:26] 
+[2026-07-29 16:03:26] ############################################################
+[2026-07-29 16:03:26] 开始第 1 轮循环测量
+[2026-07-29 16:03:26] ############################################################
+[2026-07-29 16:03:26] ========== Step 1：Bmask最长边角度检测 current_angle ==========
+[2026-07-29 16:03:26] [RuleAB][运行中参数更新] 已下发 Stage34 参数：CH3(v=10,a=10,V=50), CH4(v=2,a=2,V=50); reason=step1_bmask_longest_edge_angle
+[2026-07-29 16:03:26] [角度检测-current_angle] 已使用当前帧 Bmask 最长边角度作为本轮 baseline：30.0°；source=test
+[2026-07-29 16:03:26] [流程] 聚焦参考图建立失败，无法继续测量
+[2026-07-29 16:03:26] [完整测量标定] 标定包缺少 B 正点，已基于当前帧自动生成默认 B 点：(200.0, 200.0)，image_size=(800, 600)。该默认值仅用于兼容 RuleAB 初始化；YOLO-OBB 角度检测不依赖 B 点。
+[2026-07-29 16:03:26] [完整测量标定] 已通过 initialize_abc_with_calibration() 初始化 RuleAB A/B/C，未弹窗。
+[2026-07-29 16:03:26] [完整测量标定] 标定包缺少 B 正点，已基于当前帧自动生成默认 B 点：(400.0, 300.0)，image_size=(800, 600)。该默认值仅用于兼容 RuleAB 初始化；YOLO-OBB 角度检测不依赖 B 点。
+[2026-07-29 16:03:26] [完整测量标定] 已通过 initialize_abc_with_calibration() 初始化 RuleAB A/B/C，未弹窗。
+[2026-07-29 16:03:26] [完整测量标定] 已通过 initialize_abc_with_calibration() 初始化 RuleAB A/B/C，未弹窗。
+[2026-07-29 16:03:26] [完整测量标定] 标定包缺少 B 正点，已基于当前帧自动生成默认 B 点：(799.0, 590.0)，image_size=(800, 600)。该默认值仅用于兼容 RuleAB 初始化；YOLO-OBB 角度检测不依赖 B 点。
+[2026-07-29 16:03:26] [完整测量标定] 已通过 initialize_abc_with_calibration() 初始化 RuleAB A/B/C，未弹窗。
+[2026-07-29 16:03:26] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmp0q17ct5m\save\07.29\measurement_summary_20260729_160326.xlsx
+[2026-07-29 16:03:26] [绘图] 已追加数据点：cycle=0, angle=25.5, fit_peak=1234.56
+[2026-07-29 16:03:26] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmpxx35c90q\save\07.29\measurement_summary_20260729_160326.xlsx
+[2026-07-29 16:03:26] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmpw151lwr6\save\07.29\measurement_summary_20260729_160326.xlsx
+[2026-07-29 16:03:26] [绘图] 已追加数据点：cycle=0, angle=30.0, fit_peak=200.0

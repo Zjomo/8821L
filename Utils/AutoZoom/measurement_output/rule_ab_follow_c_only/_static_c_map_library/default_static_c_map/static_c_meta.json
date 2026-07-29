@@ -1,5 +1,9 @@
 {
+<<<<<<< HEAD
   "created_at": "2026-07-29 14:30:56",
+=======
+  "created_at": "2026-07-29 16:15:03",
+>>>>>>> 1b8c381d90ff069eb4bde229a450669cd3d428cf
   "capture_area": [
     116,
     98,
@@ -8,6 +12,7 @@
   ],
   "positive_points": [
     [
+<<<<<<< HEAD
       554.1176470588235,
       501.1764705882353
     ],
@@ -54,10 +59,27 @@
     [
       549.4117647058823,
       557.6470588235294
+=======
+      482.3529411764706,
+      385.88235294117646
+    ],
+    [
+      451.7647058823529,
+      420.0
+    ],
+    [
+      464.7058823529412,
+      454.11764705882354
+    ],
+    [
+      510.5882352941177,
+      396.47058823529414
+>>>>>>> 1b8c381d90ff069eb4bde229a450669cd3d428cf
     ]
   ],
   "negative_points": [
     [
+<<<<<<< HEAD
       528.2352941176471,
       427.05882352941177
     ],
@@ -120,30 +142,63 @@
     [
       408.2352941176471,
       540.0
+=======
+      558.8235294117648,
+      274.11764705882354
+    ],
+    [
+      507.05882352941177,
+      332.94117647058823
+    ],
+    [
+      589.4117647058823,
+      330.5882352941177
+    ],
+    [
+      542.3529411764706,
+      502.3529411764706
+>>>>>>> 1b8c381d90ff069eb4bde229a450669cd3d428cf
     ]
   ],
   "saved_static_c_mask_type": "quadrilateral",
   "c_prompt_component_clean_debug": {
     "enabled": true,
     "reason": "kept_component_with_most_positive_prompts",
+<<<<<<< HEAD
     "input_area_px": 12509,
     "output_area_px": 12509,
     "positive_point_count": 12,
     "negative_point_count": 16,
+=======
+    "input_area_px": 10040,
+    "output_area_px": 10040,
+    "positive_point_count": 4,
+    "negative_point_count": 4,
+>>>>>>> 1b8c381d90ff069eb4bde229a450669cd3d428cf
     "component_count": 1,
     "components": [
       {
         "label": 1,
+<<<<<<< HEAD
         "area_px": 12509,
         "pos_hits": 12,
         "neg_hits": 0,
         "pos_near_pixels": 1442,
         "neg_near_pixels": 0,
         "score": 1344209.4342836034
+=======
+        "area_px": 10040,
+        "pos_hits": 4,
+        "neg_hits": 0,
+        "pos_near_pixels": 484,
+        "neg_near_pixels": 0,
+        "score": 448409.2144319899
+>>>>>>> 1b8c381d90ff069eb4bde229a450669cd3d428cf
       }
     ],
     "selected_component": {
       "label": 1,
+<<<<<<< HEAD
       "area_px": 12509,
       "pos_hits": 12,
       "neg_hits": 0,
@@ -170,6 +225,34 @@
     [
       493.0,
       537.0
+=======
+      "area_px": 10040,
+      "pos_hits": 4,
+      "neg_hits": 0,
+      "pos_near_pixels": 484,
+      "neg_near_pixels": 0,
+      "score": 448409.2144319899
+    },
+    "area_ratio_output_over_input": 1.0
+  },
+  "quad_fit_method": "approxPolyDP_eps_ratio_0.0492",
+  "quad_points_xy": [
+    [
+      478.0,
+      363.0
+    ],
+    [
+      538.0,
+      409.0
+    ],
+    [
+      493.0,
+      479.0
+    ],
+    [
+      428.0,
+      428.0
+>>>>>>> 1b8c381d90ff069eb4bde229a450669cd3d428cf
     ]
   ],
   "edge_route_source": "static_c_quad_points_three_line_safety_band",
@@ -178,9 +261,15 @@
   "edge_route_spacing_px": 12.0,
   "edge_route_safe_clearance_px": 150.0,
   "edge_route_follow_direction": 1,
+<<<<<<< HEAD
   "raw_sam2_mask_area_px": 12509,
   "sam2_mask_area_px": 12509,
   "quad_mask_area_px": 8777,
+=======
+  "raw_sam2_mask_area_px": 10040,
+  "sam2_mask_area_px": 10040,
+  "quad_mask_area_px": 6652,
+>>>>>>> 1b8c381d90ff069eb4bde229a450669cd3d428cf
   "files": {
     "static_c_mask": "static_c_mask.png",
     "static_c_pixels_yx": "static_c_pixels_yx.npy",
