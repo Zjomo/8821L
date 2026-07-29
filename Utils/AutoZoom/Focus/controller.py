@@ -122,6 +122,44 @@ class AutofocusController:
             bool(getattr(self.cfg, "autofocus_trigger_absolute", True)),
         )
 
+    def _tolerance_bounds(self) -> Tuple[float, float]:
+        """返回允许区间 [lower, upper]。
+
+        absolute=True 时为以 1.0 为中心的对称区间
+        [trigger_ratio, 2 - trigger_ratio]；否则 upper 为 inf。
+        """
+        ratio = float(self.cfg.autofocus_focus_trigger_ratio)
+        absolute = bool(getattr(self.cfg, "autofocus_trigger_absolute", True))
+        lower = min(ratio, 2.0 - ratio) if absolute else ratio
+        upper = max(ratio, 2.0 - ratio) if absolute else float("inf")
+        return lower, upper
+
+    def _update_reference_to_current(
+        self, roi_metrics: Optional[Dict[str, Any]]
+    ) -> None:
+        """用当前 ROI 指标更新聚焦参考，用于 ratio > upper 时归一化。
+
+        当 FocusScore_ratio 持续偏高（> upper）时，说明当前焦点优于参考，
+        搜索策略（最大化分数）无法把它降下来。此时用当前 ROI 指标
+        替换参考基线，使后续 ratio 归一到 ~1.0。
+        """
+        if not isinstance(roi_metrics, dict) or not roi_metrics:
+            self._log("[补焦] 当前 ROI 指标为空，跳过参考更新")
+            return
+        ref = self.scorer.focus_reference
+        if not isinstance(ref, dict):
+            ref = {}
+        ref["roi_metric_ref"] = roi_metrics
+        ref["focus_score_ref"] = 1.0
+        ref["reference_updated_reason"] = "ratio_above_upper_tolerance"
+        self.scorer.focus_reference = ref
+        self.scorer.focus_reference_ready = True
+        self._log(
+            "[补焦] 聚焦参考已更新为当前 ROI 指标 "
+            f"(highfreq={roi_metrics.get('highfreq_ratio')}, "
+            f"tenengrad={roi_metrics.get('tenengrad')})"
+        )
+
     def evaluate_trigger(
         self,
         focus_score_ratio: Optional[float],
@@ -179,6 +217,18 @@ class AutofocusController:
                     f"连续{self.consecutive_focus_low_count}轮 FocusScore_ratio "
                     f"低于 {ratio:.4f}"
                 )
+
+        # 偏高时立即触发（不等连续 N 轮）：
+        # ratio > upper 意味着当前焦点优于参考，需尽快搜索峰值并更新参考以归一化
+        if (
+            focus_score_ratio is not None
+            and absolute
+            and focus_score_ratio > upper
+        ):
+            reasons.append(
+                f"FocusScore_ratio={focus_score_ratio:.4f} > {upper:.4f}（偏高），"
+                f"立即触发补焦"
+            )
 
         if self.last_shg_ratio is not None:
             if self.last_shg_ratio < float(self.cfg.autofocus_shg_hard_ratio):
@@ -239,8 +289,13 @@ class AutofocusController:
         patience = max(1, int(self.cfg.z_patience))
         strategy = str(self.cfg.z_search_strategy or "hill_climb")
 
+        # 计算允许区间上限，传给搜索策略以避免 ratio > upper 时误判"已达目标"
+        _lower, _upper = self._tolerance_bounds()
+        upper_target = _upper if _upper != float("inf") else None
+
         self._log(
-            f"========== 闭环补焦 #{event_id} 开始: strategy={strategy}, target={target} =========="
+            f"========== 闭环补焦 #{event_id} 开始: strategy={strategy}, "
+            f"target={target}, upper_target={upper_target} =========="
         )
 
         self.z_axis.connect()
@@ -266,6 +321,7 @@ class AutofocusController:
                 max_iter=max_iter,
                 patience=patience,
                 min_improve=min_improve,
+                upper_target=upper_target,
             )
         except FocusSearchStopped:
             self._log(f"========== 闭环补焦 #{event_id} 被用户停止 ==========")
@@ -396,6 +452,23 @@ class AutofocusController:
         final_score, _ = self.scorer.score_ratio(final_roi)
         if isinstance(final_metrics, dict):
             final_metrics["focus_score_ratio"] = final_score
+
+        # 补焦后 ratio 仍 > upper 时，搜索策略（最大化分数）无法把它降下来，
+        # 此时用当前 ROI 指标更新参考基线，使后续 ratio 归一到 ~1.0
+        if final_score is not None:
+            _lower, _upper = self._tolerance_bounds()
+            if final_score > _upper:
+                self._log(
+                    f"[补焦] 补焦后 FocusScore_ratio={final_score:.4f} 仍 > "
+                    f"{_upper:.4f}（偏高），更新聚焦参考以归一化"
+                )
+                self._update_reference_to_current(final_roi)
+                # 参考更新后重新计算 ratio（应归一到 ~1.0）
+                final_score, _ = self.scorer.score_ratio(final_roi)
+                if isinstance(final_metrics, dict):
+                    final_metrics["focus_score_ratio"] = final_score
+                    final_metrics["reference_updated"] = True
+
         if final_score is not None and self._focus_ratio_in_tolerance(final_score):
             self.consecutive_focus_low_count = 0
 

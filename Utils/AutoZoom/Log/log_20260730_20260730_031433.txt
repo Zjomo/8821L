@@ -1,0 +1,1100 @@
+[2026-07-30 03:14:33] [保存] Excel汇总文件已创建：measurement_output\save\07.30\measurement_summary_20260730_031433.xlsx
+[2026-07-30 03:14:33] [照明光][virtual] 创建虚拟照明对象：port=COM17；不连接真实硬件
+[2026-07-30 03:14:33] [虚拟照明] open(port=COM17)：未连接真实照明继电器
+[2026-07-30 03:14:33] [照明光][virtual] 连接成功
+[2026-07-30 03:14:33] [虚拟照明] ON：未控制真实硬件
+[2026-07-30 03:14:33] [照明光] ON
+[2026-07-30 03:14:34] [横坐标xlsx] 已读取：516中心波长.xlsx，sheet=Sheet1，点数=1024
+[2026-07-30 03:14:38] ========== 启动虚拟 LabVIEW TCP Server ==========
+[2026-07-30 03:14:38] [虚拟TCP] start_server_async(host=127.0.0.1, port=65432)：未打开真实端口
+[2026-07-30 03:14:38] [TCP] 已调用 LabVIEWTCPServer.start_server_async() 启动 Server
+[2026-07-30 03:14:38] [TCP][virtual] LabVIEW READY：虚拟模式立即就绪
+[2026-07-30 03:14:49] [完整测量标定] 已保存标定文件：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\calibration\current_calibration.json
+[2026-07-30 03:14:57] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=12/16, B点=0/0, C点=9/20, static_C=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(449.4,360.0), HSV=(0,255,255)
+[2026-07-30 03:14:57] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=12/16, B点=0/0, C点=9/20, static_C=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(449.4,360.0), HSV=(0,255,255)
+[2026-07-30 03:14:57] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=12/16, B点=0/0, C点=9/20, static_C=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(449.4,360.0), HSV=(0,255,255)
+[2026-07-30 03:14:58] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=12/16, B点=0/0, C点=9/20, static_C=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(449.4,360.0), HSV=(0,255,255)
+[2026-07-30 03:14:58] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=12/16, B点=0/0, C点=9/20, static_C=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(449.4,360.0), HSV=(0,255,255)
+[2026-07-30 03:14:58] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=12/16, B点=0/0, C点=9/20, static_C=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(449.4,360.0), HSV=(0,255,255)
+[2026-07-30 03:14:59] [完整测量标定] 已保存标定文件：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\calibration\current_calibration.json
+[2026-07-30 03:14:59] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=12/16, B点=0/0, C点=10/15, static_C=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(-1.0,-1.0), HSV=(0,255,255)
+[2026-07-30 03:14:59] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=12/16, B点=0/0, C点=10/15, static_C=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(-1.0,-1.0), HSV=(0,255,255)
+[2026-07-30 03:14:59] [完整测量标定] 已保存标定文件：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\calibration\current_calibration.json
+[2026-07-30 03:14:59] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=12/16, B点=0/0, C点=10/15, static_C=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(454.1,376.5), HSV=(0,255,255)
+[2026-07-30 03:14:59] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=12/16, B点=0/0, C点=10/15, static_C=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(454.1,376.5), HSV=(0,255,255)
+[2026-07-30 03:14:59] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=12/16, B点=0/0, C点=10/15, static_C=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(454.1,376.5), HSV=(0,255,255)
+[2026-07-30 03:14:59] [完整测量标定] 已保存标定文件：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\calibration\current_calibration.json
+[2026-07-30 03:15:00] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=12/16, B点=0/0, C点=10/15, static_C=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(454.1,376.5), HSV=(0,255,255)
+[2026-07-30 03:15:00] [Step9-颜色中心] 新建本次 Step9 保存文件夹：measurement_output\step9_color_center_align\run_20260730_031500_209
+[2026-07-30 03:15:01] [Step9-颜色中心] 颜色检测已准备：mode=include, HSV=(64, 118, 102), area=764 px, center=(452.6112565445026, 377.29319371727746)
+[2026-07-30 03:15:01] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=12/16, B点=0/0, C点=10/15, static_C=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(454.1,376.5), HSV=(0,255,255)
+[2026-07-30 03:15:01] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=12/16, B点=0/0, C点=10/15, static_C=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(454.1,376.5), HSV=(0,255,255)
+[2026-07-30 03:15:01] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=12/16, B点=0/0, C点=10/15, static_C=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(454.1,376.5), HSV=(0,255,255)
+[2026-07-30 03:15:02] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=12/16, B点=0/0, C点=10/15, static_C=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(454.1,376.5), HSV=(0,255,255)
+[2026-07-30 03:15:02] [完整测量标定] 已保存标定文件：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\calibration\current_calibration.json
+[2026-07-30 03:15:02] [完整测量标定] 已保存标定文件：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\calibration\current_calibration.json
+[2026-07-30 03:15:04] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=12/16, B点=0/0, C点=10/15, static_C=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(454.1,376.5), HSV=(64,118,102)
+[2026-07-30 03:15:04] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=12/16, B点=0/0, C点=10/15, static_C=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(454.1,376.5), HSV=(64,118,102)
+[2026-07-30 03:15:04] [完整测量标定] 已按 quad 重建 Step7 A 路线：points=26, path=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c\static_c_edge_route.json
+[2026-07-30 03:15:04] [完整测量标定] 已创建并锁定本次完整测量专用 C 目录：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；来源=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map\static_c_mask.png；area=9746 px；外部 RuleAB 应显示 source=full_calibration_static_c
+[2026-07-30 03:15:04] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=12/16, B点=0/0, C点=10/15, static_C=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c, Step9 target=(454.1,376.5), HSV=(64,118,102)
+[2026-07-30 03:15:04] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:15:04] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:15:04] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:15:04] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:15:04] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:15:04] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:15:05] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:15:05] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:15:05] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:15:05] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:15:05] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:15:05] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:15:05] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:15:05] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:15:05] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:15:05] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:15:05] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:15:05] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:15:05] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:15:07] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:15:07] ========== 初始化实验设备 ==========
+[2026-07-30 03:15:07] [照明光] 已连接
+[2026-07-30 03:15:07] [激光开关][virtual] 创建虚拟 Newport/Picomotor8742；不连接真实硬件
+[2026-07-30 03:15:07] [激光开关] SET axis=2, cmd=VA5000
+[2026-07-30 03:15:07] [虚拟Newport] query(axis=2, cmd=VA5000)：未连接真实控制器
+[2026-07-30 03:15:07] [激光开关] SET axis=2, cmd=AC5000
+[2026-07-30 03:15:07] [虚拟Newport] query(axis=2, cmd=AC5000)：未连接真实控制器
+[2026-07-30 03:15:07] [激光开关] OK axis=2, speed=5000, accel=5000
+[2026-07-30 03:15:07] [激光开关][virtual] 虚拟激光控制器连接成功
+[2026-07-30 03:15:07] [YOLO-OBB角度] 正在初始化 YOLO-OBB 模型
+[2026-07-30 03:15:07] [YOLO-OBB角度] model_path=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\best.pt
+[2026-07-30 03:15:07] [YOLO-OBB角度] capture_area=(116, 98, 1112, 886)
+[2026-07-30 03:15:07] [YOLO-OBB角度] conf=0.5, iou=0.7, imgsz=640, device=''
+[2026-07-30 03:15:07] [YOLO-OBB角度] 初始化完成；Step1/Step7 将使用 OBB 四角长边角度
+[2026-07-30 03:15:07] ========== 实验设备初始化完成：照明光 + 激光控制器 + 角度检测 ==========
+[2026-07-30 03:15:10] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=12/16, B点=0/0, C点=10/15, static_C=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c, Step9 target=(454.1,376.5), HSV=(64,118,102)
+[2026-07-30 03:15:10] [聚焦参考] 新运行会话开始，已重置补焦 ROI 与参考图状态，将在 Step 1.5 重新选择补焦基准图 ROI
+[2026-07-30 03:15:10] [运行批次] 新建本次测量文件夹：measurement_output\save\07.30\20260730_031510
+[2026-07-30 03:15:10] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=12/16, B点=0/0, C点=10/15, static_C=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(454.1,376.5), HSV=(64,118,102)
+[2026-07-30 03:15:10] [完整测量标定] 已加载标定文件：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\calibration\current_calibration.json
+[2026-07-30 03:15:10] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=12/16, B点=0/0, C点=10/15, static_C=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(454.1,376.5), HSV=(64,118,102)
+[2026-07-30 03:15:10] [完整测量标定] 启动前检查通过：angle_source=Bmask最长边, A点=12/16, C点=10/15, Step9 target=(454.1, 376.5), HSV=(64, 118, 102)
+[2026-07-30 03:15:10] [完整测量标定] 已创建并锁定本次完整测量专用 C 目录：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；来源=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map\static_c_mask.png；area=9746 px；外部 RuleAB 应显示 source=full_calibration_static_c
+[2026-07-30 03:15:10] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=12/16, B点=0/0, C点=10/15, static_C=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c, Step9 target=(454.1,376.5), HSV=(64,118,102)
+[2026-07-30 03:15:10] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=run_workflow_after_prepare_runtime
+[2026-07-30 03:15:10] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:15:10] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:15:10] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:15:10] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:15:10] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=run_workflow_cycle_1_before_run_one_cycle
+[2026-07-30 03:15:10] 
+[2026-07-30 03:15:10] ############################################################
+[2026-07-30 03:15:10] 开始第 1 轮循环测量
+[2026-07-30 03:15:10] ############################################################
+[2026-07-30 03:15:10] ========== Step 1：Bmask最长边角度检测 current_angle ==========
+[2026-07-30 03:15:10] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=ensure_rule_ab_follower
+[2026-07-30 03:15:10] [RuleAB] 初始化 A推动B 模块：enable_stage=False, max_steps=10000000, full_calibration_loaded=True, confirm_first_frame_segmentation=False, static_c_map_dir=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c
+[2026-07-30 03:15:11] [RuleAB][virtual] 已把 follower.stage 替换为虚拟 Stage34；后续硬件动作只写日志。
+[2026-07-30 03:15:12] [完整测量标定] 已通过 initialize_abc_with_calibration() 初始化 RuleAB A/B/C，未弹窗。
+[2026-07-30 03:15:12] [ABC特征跟踪] 已安装：SAM2 仅用于首帧模板建立；后续帧仅使用 feature tracker；Bmask 失败不 fallback、不 hold_last；角度修复已禁用，直接使用 YOLO-OBB 原始角度。
+[2026-07-30 03:15:12] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=runtime_rule_ab_params/step1_bmask_longest_edge_angle
+[2026-07-30 03:15:12] [虚拟Thorlabs] setup_channel(CH3, V=50, v=10, a=10)
+[2026-07-30 03:15:12] [虚拟Thorlabs] setup_channel(CH4, V=50, v=2, a=2)
+[2026-07-30 03:15:12] [RuleAB][运行中参数更新] 已下发 Stage34 参数：CH3(v=10,a=10,V=50), CH4(v=2,a=2,V=50); reason=step1_bmask_longest_edge_angle
+[2026-07-30 03:15:12] ========== YOLO-OBB角度检测：current_angle_yolo_obb ==========
+[2026-07-30 03:15:12] [YOLO-OBB角度-current_angle_yolo_obb] angle=69.70545811741385, conf=0.9145841598510742, class=bn_up, overlay=measurement_output\save\07.30\20260730_031510\ab_angle_realtime_yolo_obb\20260730_031512_495_current_angle_yolo_obb_YOLO_OBB_overlay.png
+[2026-07-30 03:15:12] [角度检测-current_angle] 已使用当前帧 Bmask 最长边角度作为本轮 baseline：69.70545811741385°；source=yolo_obb_long_edge
+[2026-07-30 03:15:12] ========== Step 1.5：建立聚焦参考图 ==========
+[2026-07-30 03:15:12] [聚焦参考] 尚未选择补焦基准图 ROI，即将弹出 ROI 选择窗口
+[2026-07-30 03:15:12] [聚焦ROI] 即将弹出全屏 ROI 选择窗口；请拖拽矩形框选补焦区域后按 Enter/N 确认
+[2026-07-30 03:15:16] [聚焦ROI] 全屏 ROI 已选择：(443, 391, 212, 172)，saf_capture_area 已同步为全屏 (0, 0, 1920, 1080)；capture_area / focus_roi 保持不变
+[2026-07-30 03:15:16] [聚焦参考] 参考图已建立并保存，不再弹出实时预览窗口
+[2026-07-30 03:15:16] [聚焦参考] 从单张图像建立参考
+[2026-07-30 03:15:17] [聚焦参考] 参考指标已保存：measurement_output\focus_reference\focus_reference\20260730_031516\focus_reference_metrics.csv
+[2026-07-30 03:15:17] [聚焦参考] 单图参考建立完成：highfreq_ref=0.010012149033474246, tenengrad_ref=360.8830627468188, brenner_ref=12.136443772331223, red_blue_ref=0.39459366287477604
+[2026-07-30 03:15:17] [聚焦参考] 第 1 轮已建立，ROI=(443, 391, 212, 172)
+[2026-07-30 03:15:17] ========== Step 2：生成保存路径 ==========
+[2026-07-30 03:15:17] ========== 生成最终存储路径 ==========
+[2026-07-30 03:15:17] [保存路径] run_session_dir=measurement_output\save\07.30\20260730_031510
+[2026-07-30 03:15:17] [保存路径] spectrum_csv=measurement_output\save\07.30\20260730_031510\cycle_0000_031517_254_spectrum.csv
+[2026-07-30 03:15:17] ========== Step 3：照明光 OFF，等待稳定 ==========
+[2026-07-30 03:15:17] [虚拟照明] OFF：未控制真实硬件
+[2026-07-30 03:15:17] [照明光] OFF
+[2026-07-30 03:15:18] [照明光] OFF 后稳定等待：1.200 s（由“稳定等待/ms”控制）
+[2026-07-30 03:15:19] ========== Step 4：LabVIEW 光谱采集 ==========
+[2026-07-30 03:15:19] ========== LabVIEW 采集光谱 ==========
+[2026-07-30 03:15:19] [光谱][virtual] 固定值光谱结果：num_points=1024, raw_original_peak=1000.0, raw_filtered_peak=1000.0, raw_median_peak=1000.0, fit_peak=1000.0；未调用 LabVIEW/TCP/阈值滤波/中值滤波/拟合处理
+[2026-07-30 03:15:19] ========== Step 5：照明光 ON ==========
+[2026-07-30 03:15:19] [虚拟照明] ON：未控制真实硬件
+[2026-07-30 03:15:19] [照明光] ON
+[2026-07-30 03:15:19] ========== Step 6：保存数据（异步线程，使用 Step1 最终角度） ==========
+[2026-07-30 03:15:20] ========== 保存本轮测量结果 ==========
+[2026-07-30 03:15:20] [异步保存] 第 0 轮保存线程已启动：save-cycle-0000；提交准备耗时=0.001 s
+[2026-07-30 03:15:20] [保存] 光谱 CSV：measurement_output\save\07.30\20260730_031510\cycle_0000_031517_254_spectrum.csv；wavelength列已写入中心波长；已写入本轮角度 angle_deg=69.70545811741385
+[2026-07-30 03:15:20] [Step 6] 异步保存任务提交耗时：0.008 s；保存角度=Step1最终角度；append_plot_point=True
+[2026-07-30 03:15:20] [保存] Summary CSV 已更新：measurement_output\save\07.30\measurement_summary.csv
+[2026-07-30 03:15:20] [流程] 本周期实际主循环次数：3（序号1-3）
+[2026-07-30 03:15:20] [保存] Excel汇总已追加第 0 轮：measurement_output\save\07.30\measurement_summary_20260730_031433.xlsx
+[2026-07-30 03:15:20] [绘图] 已追加数据点：cycle=0, angle=69.70545811741385, fit_peak=1000.0
+[2026-07-30 03:15:20] ========== 实际主循环第 1/3 次开始 ==========
+[2026-07-30 03:15:20] ========== Step 7：打开激光 ==========
+[2026-07-30 03:15:20] [激光开关] MOVE axis=2, steps=400
+[2026-07-30 03:15:20] [虚拟Newport] move_by(axis=2, steps=400.0)，virtual_pos=400.0；未控制真实硬件
+[2026-07-30 03:15:20] [虚拟Newport] wait_move(axis=2)：立即完成
+[2026-07-30 03:15:20] [激光开关] ON 完成：axis=2, steps=400
+[2026-07-30 03:15:20] [异步保存] 第 0 轮保存完成
+[2026-07-30 03:15:20] ========== Step 8：A推动B，并用当前帧Bmask最长边检测B角度 ==========
+[2026-07-30 03:15:20] [RuleAB][virtual] 完整测量 Step8 使用真实视觉/角度逻辑，但 Stage34 为虚拟动作：不连接、不控制真实 3/4 通道。
+[2026-07-30 03:15:20] ========== RuleAB：Step7实时双线程，Bmask最长边监控角度 ==========
+[2026-07-30 03:15:20] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_start
+[2026-07-30 03:15:20] ========== YOLO-OBB角度检测：step7_realtime_frame_000001 ==========
+[2026-07-30 03:15:20] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:15:20] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=runtime_rule_ab_params/sync_config_from_ui_to_workflow
+[2026-07-30 03:15:20] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_controller_step_1
+[2026-07-30 03:15:20] [Step7实时控制] step=1: 执行一次 C边沿路线运动；route_points=35；pause保留但可被stop_event打断。
+[2026-07-30 03:15:20] [YOLO-OBB角度-step7_realtime_frame_000001] angle=70.70344970005704, conf=0.9162266254425049, class=bn_up, overlay=measurement_output\save\07.30\20260730_031510\ab_angle_realtime_yolo_obb\20260730_031520_778_step7_realtime_frame_000001_YOLO_OBB_overlay.png
+[2026-07-30 03:15:20] [Step7实时角度] 角度变化已达到阈值：final_angle=70.703450°, baseline=69.70545811741385, delta=0.998° >= 0.010°；停止/暂停Stage34当前推动，不再使用6°上限/overshoot判定；不在Step7角度线程关闭激光，后续由完整测量主流程正常关激光，并继续完整测量。
+[2026-07-30 03:15:20] [虚拟Thorlabs] stop_all()
+[2026-07-30 03:15:20] [Step7实时] 已发送 stage.stop_all()；reason=angle_delta_ge_target_min_no_laser_off
+[2026-07-30 03:15:20] [ABC特征跟踪] 首帧 original_capture 失败 attempt=1/5: A mask 面积突变: old=11120.0, new=37104.0, ratio=3.34；等待下一帧重试。
+[2026-07-30 03:15:21] [ABC特征跟踪] 首帧 original_capture 失败 attempt=2/5: A mask 面积突变: old=11120.0, new=37085.0, ratio=3.33；等待下一帧重试。
+[2026-07-30 03:15:21] [ABC特征跟踪] 首帧 original_capture 失败 attempt=3/5: A mask 面积突变: old=11120.0, new=37143.0, ratio=3.34；等待下一帧重试。
+[2026-07-30 03:15:22] [ABC特征跟踪] 首帧 original_capture 失败 attempt=4/5: A mask 面积突变: old=11120.0, new=37094.0, ratio=3.34；等待下一帧重试。
+[2026-07-30 03:15:22] [ABC特征跟踪] 首帧 original_capture 失败 attempt=5/5: A mask 面积突变: old=11120.0, new=36699.0, ratio=3.30；等待下一帧重试。
+[2026-07-30 03:15:22] [RuleAB-A/B重试] Step7固定索引路线运动/step=1: A/B 分割失败 attempt=1/3: [ABC特征跟踪] 首帧 original_capture 连续失败 5 次，最后错误：A mask 面积突变: old=11120.0, new=36699.0, ratio=3.30；不停止完整测量，准备重新取下一帧。
+[2026-07-30 03:15:22] [RuleAB-A/B重试] 已清理坏 scene 缓存；reason=Step7固定索引路线运动/step=1/attempt=1: [ABC特征跟踪] 首帧 original_capture 连续失败 5 次，最后错误：A mask 面积突变: old=11120.0, new=36699.0, ratio=3.30
+[2026-07-30 03:15:23] [BColorSeed] saved b_positive_hsv_seeds count=0
+[2026-07-30 03:15:23] [BColorCenter] center_count=8, source=positive_seeds+clean_mask, b_hsv_centers=[[94.99894721863008, 46.0, 32.0], [105.16388140608525, 58.0, 35.0], [81.95548012090387, 41.0, 31.0], [99.086741704368, 71.0, 35.0], [42.719020076723886, 59.0, 52.0], [100.97879841401274, 54.0, 34.0], [104.27315020158422, 114.5, 44.5], [92.24674675800621, 60.0, 33.0]]
+[2026-07-30 03:15:23] [ABC特征跟踪] 已用首帧 SAM2 建立 A/B/C 模板；首帧开始即返回 feature_tracker_scene，后续完整测量仅使用 feature tracker；Bmask 失败不 SAM2 fallback、不 hold_last；模板目录=measurement_output\save\07.30\20260730_031510\abc_feature_templates
+[2026-07-30 03:15:23] [RuleAB-A/B重试] Step7固定索引路线运动/step=1: 第 2/3 次重新取帧分割成功。
+[2026-07-30 03:15:23] [Step7实时] 结束：ok=True, overshoot=False, reason=realtime_bmask_longest_edge_delta_ge_target_min_continue_measurement, final_angle=70.70344970005704, final_delta=0.9979915826431807, records=2, csv=measurement_output\save\07.30\20260730_031510\ab_angle_realtime_bmask_longest_edge\step7_realtime_angle_records.csv
+[2026-07-30 03:15:23] [激光开关] MOVE axis=2, steps=-500
+[2026-07-30 03:15:23] [虚拟Newport] move_by(axis=2, steps=-500.0)，virtual_pos=-100.0；未控制真实硬件
+[2026-07-30 03:15:23] [虚拟Newport] wait_move(axis=2)：立即完成
+[2026-07-30 03:15:23] [激光开关] OFF 完成：axis=2, steps=-500
+[2026-07-30 03:15:23] [RuleAB] Step8 角度达到阈值=0.01，激光已关闭
+[2026-07-30 03:15:23] ========== Step 9：检测颜色区域中心，必要时移动1/2通道 ==========
+[2026-07-30 03:15:23] ========== Step9：颜色检测区域中心对齐，必要时移动1/2通道 ==========
+[2026-07-30 03:15:23] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:15:24] [Bmask] source=feature, area=954339, center_jump=0.0
+[2026-07-30 03:15:24] [Step9-颜色中心] cycle=1, 已对齐：center=(452.06,377.63), target=(454.12,376.47), dx=2.05, dy=-1.16, tol=50.0
+[2026-07-30 03:15:25] ========== Step 10：补焦判断（循环等待） ==========
+[2026-07-30 03:15:25] [聚焦补焦] FocusScore_ratio=0.9782 在允许区间[0.9500, 1.0500] 内，不触发补焦
+[2026-07-30 03:15:25] [补焦判断] FocusScore 已达标，退出等待循环（第 1 次检查）
+[2026-07-30 03:15:25] ========== Step 1：Bmask最长边角度检测 current_angle ==========
+[2026-07-30 03:15:25] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=runtime_rule_ab_params/step1_bmask_longest_edge_angle
+[2026-07-30 03:15:25] ========== YOLO-OBB角度检测：current_angle_yolo_obb ==========
+[2026-07-30 03:15:25] [YOLO-OBB角度-current_angle_yolo_obb] angle=69.79559685679456, conf=0.9159091711044312, class=bn_up, overlay=measurement_output\save\07.30\20260730_031510\ab_angle_realtime_yolo_obb\20260730_031525_664_current_angle_yolo_obb_YOLO_OBB_overlay.png
+[2026-07-30 03:15:25] [角度检测-current_angle] 已使用当前帧 Bmask 最长边角度作为本轮 baseline：69.79559685679456°；source=yolo_obb_long_edge
+[2026-07-30 03:15:25] ========== 实际主循环第 1 次生成保存路径 ==========
+[2026-07-30 03:15:25] ========== 生成最终存储路径 ==========
+[2026-07-30 03:15:25] [保存路径] run_session_dir=measurement_output\save\07.30\20260730_031510
+[2026-07-30 03:15:25] [保存路径] spectrum_csv=measurement_output\save\07.30\20260730_031510\cycle_0001_031525_826_spectrum.csv
+[2026-07-30 03:15:25] ========== Step 11：照明光 OFF，等待稳定 ==========
+[2026-07-30 03:15:25] [虚拟照明] OFF：未控制真实硬件
+[2026-07-30 03:15:25] [照明光] OFF
+[2026-07-30 03:15:27] [照明光] OFF 后稳定等待：1.200 s（由“稳定等待/ms”控制）
+[2026-07-30 03:15:28] ========== Step 12：LabVIEW 光谱采集 ==========
+[2026-07-30 03:15:28] ========== LabVIEW 采集光谱 ==========
+[2026-07-30 03:15:28] [光谱][virtual] 固定值光谱结果：num_points=1024, raw_original_peak=1000.0, raw_filtered_peak=1000.0, raw_median_peak=1000.0, fit_peak=1000.0；未调用 LabVIEW/TCP/阈值滤波/中值滤波/拟合处理
+[2026-07-30 03:15:28] ========== Step 13：照明光 ON ==========
+[2026-07-30 03:15:28] [虚拟照明] ON：未控制真实硬件
+[2026-07-30 03:15:28] [照明光] ON
+[2026-07-30 03:15:28] ========== Step 14：保存数据（异步线程，使用 Step1 最终角度） ==========
+[2026-07-30 03:15:28] ========== 保存本轮测量结果 ==========
+[2026-07-30 03:15:28] [异步保存] 第 1 轮保存线程已启动：save-cycle-0001；提交准备耗时=0.001 s
+[2026-07-30 03:15:28] [保存] 光谱 CSV：measurement_output\save\07.30\20260730_031510\cycle_0001_031525_826_spectrum.csv；wavelength列已写入中心波长；已写入本轮角度 angle_deg=69.79559685679456
+[2026-07-30 03:15:28] [Step 14] 异步保存任务提交耗时：0.007 s；保存角度=Step1最终角度；append_plot_point=True
+[2026-07-30 03:15:28] ========== 实际主循环第 1/3 次结束 ==========
+[2026-07-30 03:15:28] [保存] Summary CSV 已更新：measurement_output\save\07.30\measurement_summary.csv
+[2026-07-30 03:15:28] ========== 实际主循环第 2/3 次开始 ==========
+[2026-07-30 03:15:28] ========== Step 7：打开激光 ==========
+[2026-07-30 03:15:28] [保存] Excel汇总已追加第 1 轮：measurement_output\save\07.30\measurement_summary_20260730_031433.xlsx
+[2026-07-30 03:15:28] [激光开关] MOVE axis=2, steps=400
+[2026-07-30 03:15:28] [绘图] 已追加数据点：cycle=1, angle=69.79559685679456, fit_peak=1000.0
+[2026-07-30 03:15:28] [虚拟Newport] move_by(axis=2, steps=400.0)，virtual_pos=300.0；未控制真实硬件
+[2026-07-30 03:15:28] [虚拟Newport] wait_move(axis=2)：立即完成
+[2026-07-30 03:15:28] [激光开关] ON 完成：axis=2, steps=400
+[2026-07-30 03:15:28] [异步保存] 第 1 轮保存完成
+[2026-07-30 03:15:28] ========== Step 8：A推动B，并用当前帧Bmask最长边检测B角度 ==========
+[2026-07-30 03:15:28] [RuleAB][virtual] 完整测量 Step8 使用真实视觉/角度逻辑，但 Stage34 为虚拟动作：不连接、不控制真实 3/4 通道。
+[2026-07-30 03:15:28] ========== RuleAB：Step7实时双线程，Bmask最长边监控角度 ==========
+[2026-07-30 03:15:28] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_start
+[2026-07-30 03:15:28] ========== YOLO-OBB角度检测：step7_realtime_frame_000001 ==========
+[2026-07-30 03:15:28] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:15:28] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=runtime_rule_ab_params/sync_config_from_ui_to_workflow
+[2026-07-30 03:15:28] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_controller_step_1
+[2026-07-30 03:15:29] [Step7实时控制] step=1: 执行一次 C边沿路线运动；route_points=35；pause保留但可被stop_event打断。
+[2026-07-30 03:15:29] [YOLO-OBB角度-step7_realtime_frame_000001] angle=69.28688710442358, conf=0.91698157787323, class=bn_up, overlay=measurement_output\save\07.30\20260730_031510\ab_angle_realtime_yolo_obb\20260730_031529_163_step7_realtime_frame_000001_YOLO_OBB_overlay.png
+[2026-07-30 03:15:29] [Step7实时角度] 角度变化已达到阈值：final_angle=69.286887°, baseline=69.79559685679456, delta=0.509° >= 0.010°；停止/暂停Stage34当前推动，不再使用6°上限/overshoot判定；不在Step7角度线程关闭激光，后续由完整测量主流程正常关激光，并继续完整测量。
+[2026-07-30 03:15:29] [虚拟Thorlabs] stop_all()
+[2026-07-30 03:15:29] [Step7实时] 已发送 stage.stop_all()；reason=angle_delta_ge_target_min_no_laser_off
+[2026-07-30 03:15:30] [Bmask] source=feature, area=954154, center_jump=0.0
+[2026-07-30 03:15:30] [Step7实时] 结束：ok=True, overshoot=False, reason=realtime_bmask_longest_edge_delta_ge_target_min_continue_measurement, final_angle=69.28688710442358, final_delta=0.5087097523709758, records=2, csv=measurement_output\save\07.30\20260730_031510\ab_angle_realtime_bmask_longest_edge\step7_realtime_angle_records.csv
+[2026-07-30 03:15:30] [激光开关] MOVE axis=2, steps=-500
+[2026-07-30 03:15:30] [虚拟Newport] move_by(axis=2, steps=-500.0)，virtual_pos=-200.0；未控制真实硬件
+[2026-07-30 03:15:30] [虚拟Newport] wait_move(axis=2)：立即完成
+[2026-07-30 03:15:30] [激光开关] OFF 完成：axis=2, steps=-500
+[2026-07-30 03:15:30] [RuleAB] Step8 角度达到阈值=0.01，激光已关闭
+[2026-07-30 03:15:30] ========== Step 9：检测颜色区域中心，必要时移动1/2通道 ==========
+[2026-07-30 03:15:30] ========== Step9：颜色检测区域中心对齐，必要时移动1/2通道 ==========
+[2026-07-30 03:15:30] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:15:31] [Bmask] source=feature, area=954579, center_jump=0.0
+[2026-07-30 03:15:31] [Step9-颜色中心] cycle=1, 已对齐：center=(451.92,377.00), target=(454.12,376.47), dx=2.20, dy=-0.53, tol=50.0
+[2026-07-30 03:15:31] ========== Step 10：补焦判断（循环等待） ==========
+[2026-07-30 03:15:32] [聚焦补焦] FocusScore_ratio=0.9526 在允许区间[0.9500, 1.0500] 内，不触发补焦
+[2026-07-30 03:15:32] [补焦判断] FocusScore 已达标，退出等待循环（第 1 次检查）
+[2026-07-30 03:15:32] ========== Step 1：Bmask最长边角度检测 current_angle ==========
+[2026-07-30 03:15:32] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=runtime_rule_ab_params/step1_bmask_longest_edge_angle
+[2026-07-30 03:15:32] ========== YOLO-OBB角度检测：current_angle_yolo_obb ==========
+[2026-07-30 03:15:32] [YOLO-OBB角度-current_angle_yolo_obb] angle=70.3018960482546, conf=0.9157522320747375, class=bn_up, overlay=measurement_output\save\07.30\20260730_031510\ab_angle_realtime_yolo_obb\20260730_031532_575_current_angle_yolo_obb_YOLO_OBB_overlay.png
+[2026-07-30 03:15:32] [角度检测-current_angle] 已使用当前帧 Bmask 最长边角度作为本轮 baseline：70.3018960482546°；source=yolo_obb_long_edge
+[2026-07-30 03:15:32] ========== 实际主循环第 2 次生成保存路径 ==========
+[2026-07-30 03:15:32] ========== 生成最终存储路径 ==========
+[2026-07-30 03:15:32] [保存路径] run_session_dir=measurement_output\save\07.30\20260730_031510
+[2026-07-30 03:15:32] [保存路径] spectrum_csv=measurement_output\save\07.30\20260730_031510\cycle_0002_031532_729_spectrum.csv
+[2026-07-30 03:15:32] ========== Step 11：照明光 OFF，等待稳定 ==========
+[2026-07-30 03:15:32] [虚拟照明] OFF：未控制真实硬件
+[2026-07-30 03:15:32] [照明光] OFF
+[2026-07-30 03:15:34] [照明光] OFF 后稳定等待：1.200 s（由“稳定等待/ms”控制）
+[2026-07-30 03:15:35] ========== Step 12：LabVIEW 光谱采集 ==========
+[2026-07-30 03:15:35] ========== LabVIEW 采集光谱 ==========
+[2026-07-30 03:15:35] [光谱][virtual] 固定值光谱结果：num_points=1024, raw_original_peak=1000.0, raw_filtered_peak=1000.0, raw_median_peak=1000.0, fit_peak=1000.0；未调用 LabVIEW/TCP/阈值滤波/中值滤波/拟合处理
+[2026-07-30 03:15:35] ========== Step 13：照明光 ON ==========
+[2026-07-30 03:15:35] [虚拟照明] ON：未控制真实硬件
+[2026-07-30 03:15:35] [照明光] ON
+[2026-07-30 03:15:35] ========== Step 14：保存数据（异步线程，使用 Step1 最终角度） ==========
+[2026-07-30 03:15:35] ========== 保存本轮测量结果 ==========
+[2026-07-30 03:15:35] [异步保存] 第 2 轮保存线程已启动：save-cycle-0002；提交准备耗时=0.001 s
+[2026-07-30 03:15:35] [Step 14] 异步保存任务提交耗时：0.003 s；保存角度=Step1最终角度；append_plot_point=True
+[2026-07-30 03:15:35] [保存] 光谱 CSV：measurement_output\save\07.30\20260730_031510\cycle_0002_031532_729_spectrum.csv；wavelength列已写入中心波长；已写入本轮角度 angle_deg=70.3018960482546
+[2026-07-30 03:15:35] ========== 实际主循环第 2/3 次结束 ==========
+[2026-07-30 03:15:35] [保存] Summary CSV 已更新：measurement_output\save\07.30\measurement_summary.csv
+[2026-07-30 03:15:35] [保存] Excel汇总已追加第 2 轮：measurement_output\save\07.30\measurement_summary_20260730_031433.xlsx
+[2026-07-30 03:15:35] [绘图] 已追加数据点：cycle=2, angle=70.3018960482546, fit_peak=1000.0
+[2026-07-30 03:15:35] ========== 实际主循环第 3/3 次开始 ==========
+[2026-07-30 03:15:35] ========== Step 7：打开激光 ==========
+[2026-07-30 03:15:35] [激光开关] MOVE axis=2, steps=400
+[2026-07-30 03:15:35] [虚拟Newport] move_by(axis=2, steps=400.0)，virtual_pos=200.0；未控制真实硬件
+[2026-07-30 03:15:35] [虚拟Newport] wait_move(axis=2)：立即完成
+[2026-07-30 03:15:35] [激光开关] ON 完成：axis=2, steps=400
+[2026-07-30 03:15:35] [异步保存] 第 2 轮保存完成
+[2026-07-30 03:15:35] ========== Step 8：A推动B，并用当前帧Bmask最长边检测B角度 ==========
+[2026-07-30 03:15:35] [RuleAB][virtual] 完整测量 Step8 使用真实视觉/角度逻辑，但 Stage34 为虚拟动作：不连接、不控制真实 3/4 通道。
+[2026-07-30 03:15:35] ========== RuleAB：Step7实时双线程，Bmask最长边监控角度 ==========
+[2026-07-30 03:15:35] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_start
+[2026-07-30 03:15:35] ========== YOLO-OBB角度检测：step7_realtime_frame_000001 ==========
+[2026-07-30 03:15:36] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:15:36] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=runtime_rule_ab_params/sync_config_from_ui_to_workflow
+[2026-07-30 03:15:36] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_controller_step_1
+[2026-07-30 03:15:36] [Step7实时控制] step=1: 执行一次 C边沿路线运动；route_points=35；pause保留但可被stop_event打断。
+[2026-07-30 03:15:36] [YOLO-OBB角度-step7_realtime_frame_000001] angle=70.20392962616037, conf=0.9177436232566833, class=bn_up, overlay=measurement_output\save\07.30\20260730_031510\ab_angle_realtime_yolo_obb\20260730_031536_170_step7_realtime_frame_000001_YOLO_OBB_overlay.png
+[2026-07-30 03:15:36] [Step7实时角度] 角度变化已达到阈值：final_angle=70.203930°, baseline=70.3018960482546, delta=0.098° >= 0.010°；停止/暂停Stage34当前推动，不再使用6°上限/overshoot判定；不在Step7角度线程关闭激光，后续由完整测量主流程正常关激光，并继续完整测量。
+[2026-07-30 03:15:36] [虚拟Thorlabs] stop_all()
+[2026-07-30 03:15:36] [Step7实时] 已发送 stage.stop_all()；reason=angle_delta_ge_target_min_no_laser_off
+[2026-07-30 03:15:37] [Bmask] source=feature, area=955727, center_jump=0.0
+[2026-07-30 03:15:37] [Step7实时] 结束：ok=True, overshoot=False, reason=realtime_bmask_longest_edge_delta_ge_target_min_continue_measurement, final_angle=70.20392962616037, final_delta=0.09796642209423112, records=2, csv=measurement_output\save\07.30\20260730_031510\ab_angle_realtime_bmask_longest_edge\step7_realtime_angle_records.csv
+[2026-07-30 03:15:37] [激光开关] MOVE axis=2, steps=-500
+[2026-07-30 03:15:37] [虚拟Newport] move_by(axis=2, steps=-500.0)，virtual_pos=-300.0；未控制真实硬件
+[2026-07-30 03:15:37] [虚拟Newport] wait_move(axis=2)：立即完成
+[2026-07-30 03:15:37] [激光开关] OFF 完成：axis=2, steps=-500
+[2026-07-30 03:15:37] [RuleAB] Step8 角度达到阈值=0.01，激光已关闭
+[2026-07-30 03:15:37] ========== Step 9：检测颜色区域中心，必要时移动1/2通道 ==========
+[2026-07-30 03:15:37] ========== Step9：颜色检测区域中心对齐，必要时移动1/2通道 ==========
+[2026-07-30 03:15:37] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:15:38] [Bmask] source=feature, area=957328, center_jump=0.0
+[2026-07-30 03:15:38] [Step9-颜色中心] cycle=1, 已对齐：center=(452.07,376.83), target=(454.12,376.47), dx=2.05, dy=-0.36, tol=50.0
+[2026-07-30 03:15:38] ========== Step 10：补焦判断（循环等待） ==========
+[2026-07-30 03:15:39] [聚焦补焦] FocusScore_ratio=0.9697 在允许区间[0.9500, 1.0500] 内，不触发补焦
+[2026-07-30 03:15:39] [补焦判断] FocusScore 已达标，退出等待循环（第 1 次检查）
+[2026-07-30 03:15:39] ========== Step 1：Bmask最长边角度检测 current_angle ==========
+[2026-07-30 03:15:39] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=runtime_rule_ab_params/step1_bmask_longest_edge_angle
+[2026-07-30 03:15:39] ========== YOLO-OBB角度检测：current_angle_yolo_obb ==========
+[2026-07-30 03:15:39] [YOLO-OBB角度-current_angle_yolo_obb] angle=69.76772740868807, conf=0.9170910716056824, class=bn_up, overlay=measurement_output\save\07.30\20260730_031510\ab_angle_realtime_yolo_obb\20260730_031539_547_current_angle_yolo_obb_YOLO_OBB_overlay.png
+[2026-07-30 03:15:39] [角度检测-current_angle] 已使用当前帧 Bmask 最长边角度作为本轮 baseline：69.76772740868807°；source=yolo_obb_long_edge
+[2026-07-30 03:15:39] ========== 实际主循环第 3 次生成保存路径 ==========
+[2026-07-30 03:15:39] ========== 生成最终存储路径 ==========
+[2026-07-30 03:15:39] [保存路径] run_session_dir=measurement_output\save\07.30\20260730_031510
+[2026-07-30 03:15:39] [保存路径] spectrum_csv=measurement_output\save\07.30\20260730_031510\cycle_0003_031539_721_spectrum.csv
+[2026-07-30 03:15:39] ========== Step 11：照明光 OFF，等待稳定 ==========
+[2026-07-30 03:15:39] [虚拟照明] OFF：未控制真实硬件
+[2026-07-30 03:15:39] [照明光] OFF
+[2026-07-30 03:15:41] [照明光] OFF 后稳定等待：1.200 s（由“稳定等待/ms”控制）
+[2026-07-30 03:15:42] ========== Step 12：LabVIEW 光谱采集 ==========
+[2026-07-30 03:15:42] ========== LabVIEW 采集光谱 ==========
+[2026-07-30 03:15:42] [光谱][virtual] 固定值光谱结果：num_points=1024, raw_original_peak=1000.0, raw_filtered_peak=1000.0, raw_median_peak=1000.0, fit_peak=1000.0；未调用 LabVIEW/TCP/阈值滤波/中值滤波/拟合处理
+[2026-07-30 03:15:42] ========== Step 13：照明光 ON ==========
+[2026-07-30 03:15:42] [虚拟照明] ON：未控制真实硬件
+[2026-07-30 03:15:42] [照明光] ON
+[2026-07-30 03:15:42] ========== Step 14：保存数据（异步线程，使用 Step1 最终角度） ==========
+[2026-07-30 03:15:42] ========== 保存本轮测量结果 ==========
+[2026-07-30 03:15:42] [异步保存] 第 3 轮保存线程已启动：save-cycle-0003；提交准备耗时=0.001 s
+[2026-07-30 03:15:42] [保存] 光谱 CSV：measurement_output\save\07.30\20260730_031510\cycle_0003_031539_721_spectrum.csv；wavelength列已写入中心波长；已写入本轮角度 angle_deg=69.76772740868807
+[2026-07-30 03:15:42] [Step 14] 异步保存任务提交耗时：0.008 s；保存角度=Step1最终角度；append_plot_point=True
+[2026-07-30 03:15:42] ========== 实际主循环第 3/3 次结束 ==========
+[2026-07-30 03:15:42] [保存] Summary CSV 已更新：measurement_output\save\07.30\measurement_summary.csv
+[2026-07-30 03:15:42] [保存] Excel汇总已追加第 3 轮：measurement_output\save\07.30\measurement_summary_20260730_031433.xlsx
+[2026-07-30 03:15:42] [绘图] 已追加数据点：cycle=3, angle=69.76772740868807, fit_peak=1000.0
+[2026-07-30 03:15:42] ========== 实际主循环结束：关闭激光 ==========
+[2026-07-30 03:15:42] [激光开关] 实际主循环结束，但 laser_on=False，主流程跳过重复关激光
+[2026-07-30 03:15:42] [异步保存] 第 3 轮保存完成
+[2026-07-30 03:15:42] [流程] 第 1 轮数据已提交保存；保存角度=Step1最终角度 69.76772740868807；Step8最终角度=70.20392962616037 仅用于关闭激光/排查，不覆盖保存角度。
+[2026-07-30 03:15:43] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:15:43] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=run_workflow_cycle_2_before_run_one_cycle
+[2026-07-30 03:15:43] ========== 结束测量 ==========
+[2026-07-30 03:15:43] [流程] 测量结束，照明光保持当前状态，不额外发送 ON/OFF
+[2026-07-30 03:15:43] [保存] Excel汇总文件已保存：measurement_output\save\07.30\measurement_summary_20260730_031433.xlsx
+[2026-07-30 03:15:43] [流程] 正在测量 = False
+[2026-07-30 03:17:40] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:17:40] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:17:46] [虚拟Thorlabs] stop_all()
+[2026-07-30 03:17:46] [虚拟Thorlabs] close(serial=97101208)
+[2026-07-30 03:17:46] [运行态重置] 已清理上一轮停止/失败后的运行缓存；可以重新标定并重新运行完整测量。
+[2026-07-30 03:17:55] [完整测量标定] 已保存标定文件：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\calibration\current_calibration.json
+[2026-07-30 03:18:04] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=12/25, B点=0/0, C点=10/15, static_C=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(454.1,376.5), HSV=(64,118,102)
+[2026-07-30 03:18:04] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=12/25, B点=0/0, C点=10/15, static_C=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(454.1,376.5), HSV=(64,118,102)
+[2026-07-30 03:18:04] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=12/25, B点=0/0, C点=10/15, static_C=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(454.1,376.5), HSV=(64,118,102)
+[2026-07-30 03:18:04] [完整测量标定] 已保存标定文件：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\calibration\current_calibration.json
+[2026-07-30 03:18:05] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=12/25, B点=0/0, C点=9/20, static_C=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(454.1,376.5), HSV=(64,118,102)
+[2026-07-30 03:18:05] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=12/25, B点=0/0, C点=9/20, static_C=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(454.1,376.5), HSV=(64,118,102)
+[2026-07-30 03:18:05] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=12/25, B点=0/0, C点=9/20, static_C=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(454.1,376.5), HSV=(64,118,102)
+[2026-07-30 03:18:06] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=12/25, B点=0/0, C点=9/20, static_C=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(454.1,376.5), HSV=(64,118,102)
+[2026-07-30 03:18:06] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=12/25, B点=0/0, C点=9/20, static_C=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(454.1,376.5), HSV=(64,118,102)
+[2026-07-30 03:18:06] [完整测量标定] 已保存标定文件：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\calibration\current_calibration.json
+[2026-07-30 03:18:07] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=12/25, B点=0/0, C点=9/20, static_C=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(455.3,382.4), HSV=(64,118,102)
+[2026-07-30 03:18:07] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=12/25, B点=0/0, C点=9/20, static_C=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(455.3,382.4), HSV=(64,118,102)
+[2026-07-30 03:18:07] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=12/25, B点=0/0, C点=9/20, static_C=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(455.3,382.4), HSV=(64,118,102)
+[2026-07-30 03:18:07] [完整测量标定] 已保存标定文件：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\calibration\current_calibration.json
+[2026-07-30 03:18:07] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=12/25, B点=0/0, C点=9/20, static_C=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(455.3,382.4), HSV=(64,118,102)
+[2026-07-30 03:18:08] [Step9-颜色中心] 新建本次 Step9 保存文件夹：measurement_output\step9_color_center_align\run_20260730_031808_003
+[2026-07-30 03:18:09] [Step9-颜色中心] 颜色检测已准备：mode=include, HSV=(67, 121, 103), area=758 px, center=(452.0013192612137, 380.7651715039578)
+[2026-07-30 03:18:09] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=12/25, B点=0/0, C点=9/20, static_C=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(455.3,382.4), HSV=(64,118,102)
+[2026-07-30 03:18:09] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=12/25, B点=0/0, C点=9/20, static_C=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(455.3,382.4), HSV=(64,118,102)
+[2026-07-30 03:18:09] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=12/25, B点=0/0, C点=9/20, static_C=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(455.3,382.4), HSV=(64,118,102)
+[2026-07-30 03:18:09] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=12/25, B点=0/0, C点=9/20, static_C=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(455.3,382.4), HSV=(64,118,102)
+[2026-07-30 03:18:09] [完整测量标定] 已保存标定文件：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\calibration\current_calibration.json
+[2026-07-30 03:18:10] [完整测量标定] 已保存标定文件：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\calibration\current_calibration.json
+[2026-07-30 03:18:12] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=12/25, B点=0/0, C点=9/20, static_C=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(455.3,382.4), HSV=(67,121,103)
+[2026-07-30 03:18:12] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=12/25, B点=0/0, C点=9/20, static_C=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(455.3,382.4), HSV=(67,121,103)
+[2026-07-30 03:18:12] [完整测量标定] 已按 quad 重建 Step7 A 路线：points=35, path=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c\static_c_edge_route.json
+[2026-07-30 03:18:12] [完整测量标定] 已创建并锁定本次完整测量专用 C 目录：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；来源=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map\static_c_mask.png；area=10406 px；外部 RuleAB 应显示 source=full_calibration_static_c
+[2026-07-30 03:18:12] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=12/25, B点=0/0, C点=9/20, static_C=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c, Step9 target=(455.3,382.4), HSV=(67,121,103)
+[2026-07-30 03:18:12] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:18:12] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:18:12] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:18:12] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:18:12] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:18:12] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:18:12] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:18:12] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:18:12] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:18:12] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:18:12] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:18:12] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:18:12] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:18:12] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:18:12] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:18:12] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:18:12] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:18:12] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:18:12] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:18:15] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:18:15] ========== 初始化实验设备 ==========
+[2026-07-30 03:18:15] [照明光] 已连接
+[2026-07-30 03:18:15] [激光开关] Newport 8743-CL 已连接
+[2026-07-30 03:18:15] [YOLO-OBB角度] 已初始化
+[2026-07-30 03:18:15] ========== 实验设备初始化完成：照明光 + 激光控制器 + 角度检测 ==========
+[2026-07-30 03:18:21] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=12/25, B点=0/0, C点=9/20, static_C=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031510\full_calibration_static_c, Step9 target=(455.3,382.4), HSV=(67,121,103)
+[2026-07-30 03:18:21] [聚焦参考] 新运行会话开始，已重置补焦 ROI 与参考图状态，将在 Step 1.5 重新选择补焦基准图 ROI
+[2026-07-30 03:18:21] [运行批次] 新建本次测量文件夹：measurement_output\save\07.30\20260730_031821
+[2026-07-30 03:18:21] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=12/25, B点=0/0, C点=9/20, static_C=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(455.3,382.4), HSV=(67,121,103)
+[2026-07-30 03:18:21] [完整测量标定] 已加载标定文件：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\calibration\current_calibration.json
+[2026-07-30 03:18:21] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=12/25, B点=0/0, C点=9/20, static_C=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(455.3,382.4), HSV=(67,121,103)
+[2026-07-30 03:18:21] [完整测量标定] 启动前检查通过：angle_source=Bmask最长边, A点=12/25, C点=9/20, Step9 target=(455.3, 382.4), HSV=(67, 121, 103)
+[2026-07-30 03:18:21] [完整测量标定] 已创建并锁定本次完整测量专用 C 目录：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；来源=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map\static_c_mask.png；area=10406 px；外部 RuleAB 应显示 source=full_calibration_static_c
+[2026-07-30 03:18:21] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=12/25, B点=0/0, C点=9/20, static_C=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c, Step9 target=(455.3,382.4), HSV=(67,121,103)
+[2026-07-30 03:18:21] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；reason=run_workflow_after_prepare_runtime
+[2026-07-30 03:18:21] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:18:21] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:18:21] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:18:21] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:18:21] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；reason=run_workflow_cycle_1_before_run_one_cycle
+[2026-07-30 03:18:21] 
+[2026-07-30 03:18:22] ############################################################
+[2026-07-30 03:18:22] 开始第 1 轮循环测量
+[2026-07-30 03:18:22] ############################################################
+[2026-07-30 03:18:22] ========== Step 1：Bmask最长边角度检测 current_angle ==========
+[2026-07-30 03:18:22] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；reason=ensure_rule_ab_follower
+[2026-07-30 03:18:22] [RuleAB] 初始化 A推动B 模块：enable_stage=False, max_steps=10000000, full_calibration_loaded=True, confirm_first_frame_segmentation=False, static_c_map_dir=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c
+[2026-07-30 03:18:22] [RuleAB][virtual] 已把 follower.stage 替换为虚拟 Stage34；后续硬件动作只写日志。
+[2026-07-30 03:18:23] [完整测量标定] 已通过 initialize_abc_with_calibration() 初始化 RuleAB A/B/C，未弹窗。
+[2026-07-30 03:18:23] [ABC特征跟踪] 已安装：SAM2 仅用于首帧模板建立；后续帧仅使用 feature tracker；Bmask 失败不 fallback、不 hold_last；角度修复已禁用，直接使用 YOLO-OBB 原始角度。
+[2026-07-30 03:18:23] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；reason=runtime_rule_ab_params/step1_bmask_longest_edge_angle
+[2026-07-30 03:18:23] [虚拟Thorlabs] setup_channel(CH3, V=50, v=10, a=10)
+[2026-07-30 03:18:23] [虚拟Thorlabs] setup_channel(CH4, V=50, v=2, a=2)
+[2026-07-30 03:18:23] [RuleAB][运行中参数更新] 已下发 Stage34 参数：CH3(v=10,a=10,V=50), CH4(v=2,a=2,V=50); reason=step1_bmask_longest_edge_angle
+[2026-07-30 03:18:23] ========== YOLO-OBB角度检测：current_angle_yolo_obb ==========
+[2026-07-30 03:18:23] [YOLO-OBB角度-current_angle_yolo_obb] angle=-80.5246855353007, conf=0.9184797406196594, class=bn_up, overlay=measurement_output\save\07.30\20260730_031821\ab_angle_realtime_yolo_obb\20260730_031823_301_current_angle_yolo_obb_YOLO_OBB_overlay.png
+[2026-07-30 03:18:23] [角度检测-current_angle] 已使用当前帧 Bmask 最长边角度作为本轮 baseline：-80.5246855353007°；source=yolo_obb_long_edge
+[2026-07-30 03:18:23] ========== Step 1.5：建立聚焦参考图 ==========
+[2026-07-30 03:18:23] [聚焦参考] 尚未选择补焦基准图 ROI，即将弹出 ROI 选择窗口
+[2026-07-30 03:18:23] [聚焦ROI] 即将弹出全屏 ROI 选择窗口；请拖拽矩形框选补焦区域后按 Enter/N 确认
+[2026-07-30 03:18:26] [聚焦ROI] 全屏 ROI 已选择：(435, 394, 190, 172)，saf_capture_area 已同步为全屏 (0, 0, 1920, 1080)；capture_area / focus_roi 保持不变
+[2026-07-30 03:18:27] [聚焦参考] 参考图已建立并保存，不再弹出实时预览窗口
+[2026-07-30 03:18:27] [聚焦参考] 从单张图像建立参考
+[2026-07-30 03:18:27] [聚焦参考] 参考指标已保存：measurement_output\focus_reference\focus_reference\20260730_031827\focus_reference_metrics.csv
+[2026-07-30 03:18:27] [聚焦参考] 单图参考建立完成：highfreq_ref=0.008756797188622765, tenengrad_ref=457.77154222766217, brenner_ref=15.238547030559925, red_blue_ref=0.3784081081741703
+[2026-07-30 03:18:27] [聚焦参考] 第 1 轮已建立，ROI=(435, 394, 190, 172)
+[2026-07-30 03:18:27] ========== Step 2：生成保存路径 ==========
+[2026-07-30 03:18:27] ========== 生成最终存储路径 ==========
+[2026-07-30 03:18:27] [保存路径] run_session_dir=measurement_output\save\07.30\20260730_031821
+[2026-07-30 03:18:27] [保存路径] spectrum_csv=measurement_output\save\07.30\20260730_031821\cycle_0000_031827_579_spectrum.csv
+[2026-07-30 03:18:27] ========== Step 3：照明光 OFF，等待稳定 ==========
+[2026-07-30 03:18:27] [虚拟照明] OFF：未控制真实硬件
+[2026-07-30 03:18:27] [照明光] OFF
+[2026-07-30 03:18:28] [照明光] OFF 后稳定等待：1.200 s（由“稳定等待/ms”控制）
+[2026-07-30 03:18:30] ========== Step 4：LabVIEW 光谱采集 ==========
+[2026-07-30 03:18:30] ========== LabVIEW 采集光谱 ==========
+[2026-07-30 03:18:30] [光谱][virtual] 固定值光谱结果：num_points=1024, raw_original_peak=1000.0, raw_filtered_peak=1000.0, raw_median_peak=1000.0, fit_peak=1000.0；未调用 LabVIEW/TCP/阈值滤波/中值滤波/拟合处理
+[2026-07-30 03:18:30] ========== Step 5：照明光 ON ==========
+[2026-07-30 03:18:30] [虚拟照明] ON：未控制真实硬件
+[2026-07-30 03:18:30] [照明光] ON
+[2026-07-30 03:18:30] ========== Step 6：保存数据（异步线程，使用 Step1 最终角度） ==========
+[2026-07-30 03:18:30] ========== 保存本轮测量结果 ==========
+[2026-07-30 03:18:30] [异步保存] 第 0 轮保存线程已启动：save-cycle-0000；提交准备耗时=0.001 s
+[2026-07-30 03:18:30] [Step 6] 异步保存任务提交耗时：0.006 s；保存角度=Step1最终角度；append_plot_point=True
+[2026-07-30 03:18:30] [保存] 光谱 CSV：measurement_output\save\07.30\20260730_031821\cycle_0000_031827_579_spectrum.csv；wavelength列已写入中心波长；已写入本轮角度 angle_deg=-80.5246855353007
+[2026-07-30 03:18:30] [流程] 本周期实际主循环次数：10（序号1-10）
+[2026-07-30 03:18:30] [保存] Summary CSV 已更新：measurement_output\save\07.30\measurement_summary.csv
+[2026-07-30 03:18:30] ========== 实际主循环第 1/10 次开始 ==========
+[2026-07-30 03:18:30] [保存] Excel汇总已追加第 0 轮：measurement_output\save\07.30\measurement_summary_20260730_031433.xlsx
+[2026-07-30 03:18:30] ========== Step 7：打开激光 ==========
+[2026-07-30 03:18:30] [绘图] 已追加数据点：cycle=0, angle=-80.5246855353007, fit_peak=1000.0
+[2026-07-30 03:18:30] [激光开关] MOVE axis=2, steps=400
+[2026-07-30 03:18:30] [虚拟Newport] move_by(axis=2, steps=400.0)，virtual_pos=100.0；未控制真实硬件
+[2026-07-30 03:18:30] [虚拟Newport] wait_move(axis=2)：立即完成
+[2026-07-30 03:18:30] [激光开关] ON 完成：axis=2, steps=400
+[2026-07-30 03:18:30] [异步保存] 第 0 轮保存完成
+[2026-07-30 03:18:30] ========== Step 8：A推动B，并用当前帧Bmask最长边检测B角度 ==========
+[2026-07-30 03:18:30] [RuleAB][virtual] 完整测量 Step8 使用真实视觉/角度逻辑，但 Stage34 为虚拟动作：不连接、不控制真实 3/4 通道。
+[2026-07-30 03:18:30] ========== RuleAB：Step7实时双线程，Bmask最长边监控角度 ==========
+[2026-07-30 03:18:30] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_start
+[2026-07-30 03:18:30] ========== YOLO-OBB角度检测：step7_realtime_frame_000001 ==========
+[2026-07-30 03:18:30] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:18:30] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；reason=runtime_rule_ab_params/sync_config_from_ui_to_workflow
+[2026-07-30 03:18:30] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_controller_step_1
+[2026-07-30 03:18:30] [Step7实时控制] step=1: 执行一次 C边沿路线运动；route_points=36；pause保留但可被stop_event打断。
+[2026-07-30 03:18:31] [YOLO-OBB角度-step7_realtime_frame_000001] angle=-80.43515962980288, conf=0.9183104634284973, class=bn_up, overlay=measurement_output\save\07.30\20260730_031821\ab_angle_realtime_yolo_obb\20260730_031830_970_step7_realtime_frame_000001_YOLO_OBB_overlay.png
+[2026-07-30 03:18:31] [Step7实时角度] 角度变化已达到阈值：final_angle=-80.435160°, baseline=-80.5246855353007, delta=0.090° >= 0.010°；停止/暂停Stage34当前推动，不再使用6°上限/overshoot判定；不在Step7角度线程关闭激光，后续由完整测量主流程正常关激光，并继续完整测量。
+[2026-07-30 03:18:31] [虚拟Thorlabs] stop_all()
+[2026-07-30 03:18:31] [Step7实时] 已发送 stage.stop_all()；reason=angle_delta_ge_target_min_no_laser_off
+[2026-07-30 03:18:31] [RuleAB-A/B重试] Step7固定索引路线运动/step=1: A/B 分割失败 attempt=1/3: 首帧 SAM2 没有得到 B mask，不能建立特征模板。；不停止完整测量，准备重新取下一帧。
+[2026-07-30 03:18:31] [RuleAB-A/B重试] 已清理坏 scene 缓存；reason=Step7固定索引路线运动/step=1/attempt=1: 首帧 SAM2 没有得到 B mask，不能建立特征模板。
+[2026-07-30 03:18:32] [BColorSeed] saved b_positive_hsv_seeds count=0
+[2026-07-30 03:18:32] [BColorCenter] center_count=7, source=positive_seeds+clean_mask, b_hsv_centers=[[99.259288117813, 71.0, 35.0], [94.72462928707806, 48.0, 32.0], [34.26190426212012, 42.0, 48.0], [82.02932347314636, 41.0, 31.0], [104.63403581830278, 57.0, 35.0], [99.99010343418615, 48.0, 33.0], [106.93319156319326, 122.0, 48.0]]
+[2026-07-30 03:18:32] [ABC特征跟踪] 已用首帧 SAM2 建立 A/B/C 模板；首帧开始即返回 feature_tracker_scene，后续完整测量仅使用 feature tracker；Bmask 失败不 SAM2 fallback、不 hold_last；模板目录=measurement_output\save\07.30\20260730_031821\abc_feature_templates
+[2026-07-30 03:18:32] [RuleAB-A/B重试] Step7固定索引路线运动/step=1: 第 2/3 次重新取帧分割成功。
+[2026-07-30 03:18:32] [Step7实时] 结束：ok=True, overshoot=False, reason=realtime_bmask_longest_edge_delta_ge_target_min_continue_measurement, final_angle=-80.43515962980288, final_delta=0.08952590549782258, records=2, csv=measurement_output\save\07.30\20260730_031821\ab_angle_realtime_bmask_longest_edge\step7_realtime_angle_records.csv
+[2026-07-30 03:18:32] [激光开关] MOVE axis=2, steps=-500
+[2026-07-30 03:18:32] [虚拟Newport] move_by(axis=2, steps=-500.0)，virtual_pos=-400.0；未控制真实硬件
+[2026-07-30 03:18:32] [虚拟Newport] wait_move(axis=2)：立即完成
+[2026-07-30 03:18:32] [激光开关] OFF 完成：axis=2, steps=-500
+[2026-07-30 03:18:32] [RuleAB] Step8 角度达到阈值=0.01，激光已关闭
+[2026-07-30 03:18:32] ========== Step 9：检测颜色区域中心，必要时移动1/2通道 ==========
+[2026-07-30 03:18:32] ========== Step9：颜色检测区域中心对齐，必要时移动1/2通道 ==========
+[2026-07-30 03:18:32] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:18:33] [Bmask] source=feature, area=954246, center_jump=0.0
+[2026-07-30 03:18:33] [Step9-颜色中心] cycle=1, 已对齐：center=(451.94,381.01), target=(455.29,382.35), dx=3.35, dy=1.34, tol=50.0
+[2026-07-30 03:18:33] ========== Step 10：补焦判断（循环等待） ==========
+[2026-07-30 03:18:34] [聚焦补焦] FocusScore_ratio=1.0001 在允许区间[0.9500, 1.0500] 内，不触发补焦
+[2026-07-30 03:18:34] [补焦判断] FocusScore 已达标，退出等待循环（第 1 次检查）
+[2026-07-30 03:18:34] ========== Step 1：Bmask最长边角度检测 current_angle ==========
+[2026-07-30 03:18:34] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；reason=runtime_rule_ab_params/step1_bmask_longest_edge_angle
+[2026-07-30 03:18:34] ========== YOLO-OBB角度检测：current_angle_yolo_obb ==========
+[2026-07-30 03:18:34] [YOLO-OBB角度-current_angle_yolo_obb] angle=-80.35871160917782, conf=0.9168735146522522, class=bn_up, overlay=measurement_output\save\07.30\20260730_031821\ab_angle_realtime_yolo_obb\20260730_031834_452_current_angle_yolo_obb_YOLO_OBB_overlay.png
+[2026-07-30 03:18:34] [角度检测-current_angle] 已使用当前帧 Bmask 最长边角度作为本轮 baseline：-80.35871160917782°；source=yolo_obb_long_edge
+[2026-07-30 03:18:34] ========== 实际主循环第 1 次生成保存路径 ==========
+[2026-07-30 03:18:34] ========== 生成最终存储路径 ==========
+[2026-07-30 03:18:34] [保存路径] run_session_dir=measurement_output\save\07.30\20260730_031821
+[2026-07-30 03:18:34] [保存路径] spectrum_csv=measurement_output\save\07.30\20260730_031821\cycle_0001_031834_644_spectrum.csv
+[2026-07-30 03:18:34] ========== Step 11：照明光 OFF，等待稳定 ==========
+[2026-07-30 03:18:34] [虚拟照明] OFF：未控制真实硬件
+[2026-07-30 03:18:34] [照明光] OFF
+[2026-07-30 03:18:35] [照明光] OFF 后稳定等待：1.200 s（由“稳定等待/ms”控制）
+[2026-07-30 03:18:37] ========== Step 12：LabVIEW 光谱采集 ==========
+[2026-07-30 03:18:37] ========== LabVIEW 采集光谱 ==========
+[2026-07-30 03:18:37] [光谱][virtual] 固定值光谱结果：num_points=1024, raw_original_peak=1000.0, raw_filtered_peak=1000.0, raw_median_peak=1000.0, fit_peak=1000.0；未调用 LabVIEW/TCP/阈值滤波/中值滤波/拟合处理
+[2026-07-30 03:18:37] ========== Step 13：照明光 ON ==========
+[2026-07-30 03:18:37] [虚拟照明] ON：未控制真实硬件
+[2026-07-30 03:18:37] [照明光] ON
+[2026-07-30 03:18:37] ========== Step 14：保存数据（异步线程，使用 Step1 最终角度） ==========
+[2026-07-30 03:18:37] ========== 保存本轮测量结果 ==========
+[2026-07-30 03:18:37] [异步保存] 第 1 轮保存线程已启动：save-cycle-0001；提交准备耗时=0.001 s
+[2026-07-30 03:18:37] [Step 14] 异步保存任务提交耗时：0.004 s；保存角度=Step1最终角度；append_plot_point=True
+[2026-07-30 03:18:37] ========== 实际主循环第 1/10 次结束 ==========
+[2026-07-30 03:18:37] [保存] 光谱 CSV：measurement_output\save\07.30\20260730_031821\cycle_0001_031834_644_spectrum.csv；wavelength列已写入中心波长；已写入本轮角度 angle_deg=-80.35871160917782
+[2026-07-30 03:18:37] [保存] Summary CSV 已更新：measurement_output\save\07.30\measurement_summary.csv
+[2026-07-30 03:18:37] [保存] Excel汇总已追加第 1 轮：measurement_output\save\07.30\measurement_summary_20260730_031433.xlsx
+[2026-07-30 03:18:37] [绘图] 已追加数据点：cycle=1, angle=-80.35871160917782, fit_peak=1000.0
+[2026-07-30 03:18:37] ========== 实际主循环第 2/10 次开始 ==========
+[2026-07-30 03:18:37] ========== Step 7：打开激光 ==========
+[2026-07-30 03:18:37] [激光开关] MOVE axis=2, steps=400
+[2026-07-30 03:18:37] [虚拟Newport] move_by(axis=2, steps=400.0)，virtual_pos=0.0；未控制真实硬件
+[2026-07-30 03:18:37] [虚拟Newport] wait_move(axis=2)：立即完成
+[2026-07-30 03:18:37] [激光开关] ON 完成：axis=2, steps=400
+[2026-07-30 03:18:37] [异步保存] 第 1 轮保存完成
+[2026-07-30 03:18:37] ========== Step 8：A推动B，并用当前帧Bmask最长边检测B角度 ==========
+[2026-07-30 03:18:37] [RuleAB][virtual] 完整测量 Step8 使用真实视觉/角度逻辑，但 Stage34 为虚拟动作：不连接、不控制真实 3/4 通道。
+[2026-07-30 03:18:37] ========== RuleAB：Step7实时双线程，Bmask最长边监控角度 ==========
+[2026-07-30 03:18:37] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_start
+[2026-07-30 03:18:37] ========== YOLO-OBB角度检测：step7_realtime_frame_000001 ==========
+[2026-07-30 03:18:38] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:18:38] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；reason=runtime_rule_ab_params/sync_config_from_ui_to_workflow
+[2026-07-30 03:18:38] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_controller_step_1
+[2026-07-30 03:18:38] [Step7实时控制] step=1: 执行一次 C边沿路线运动；route_points=36；pause保留但可被stop_event打断。
+[2026-07-30 03:18:38] [YOLO-OBB角度-step7_realtime_frame_000001] angle=-80.5007188164007, conf=0.918222188949585, class=bn_up, overlay=measurement_output\save\07.30\20260730_031821\ab_angle_realtime_yolo_obb\20260730_031838_169_step7_realtime_frame_000001_YOLO_OBB_overlay.png
+[2026-07-30 03:18:38] [Step7实时角度] 角度变化已达到阈值：final_angle=-80.500719°, baseline=-80.35871160917782, delta=0.142° >= 0.010°；停止/暂停Stage34当前推动，不再使用6°上限/overshoot判定；不在Step7角度线程关闭激光，后续由完整测量主流程正常关激光，并继续完整测量。
+[2026-07-30 03:18:38] [虚拟Thorlabs] stop_all()
+[2026-07-30 03:18:38] [Step7实时] 已发送 stage.stop_all()；reason=angle_delta_ge_target_min_no_laser_off
+[2026-07-30 03:18:39] [Bmask] source=feature, area=953956, center_jump=0.0
+[2026-07-30 03:18:39] [Step7实时] 结束：ok=True, overshoot=False, reason=realtime_bmask_longest_edge_delta_ge_target_min_continue_measurement, final_angle=-80.5007188164007, final_delta=0.14200720722288906, records=2, csv=measurement_output\save\07.30\20260730_031821\ab_angle_realtime_bmask_longest_edge\step7_realtime_angle_records.csv
+[2026-07-30 03:18:39] [激光开关] MOVE axis=2, steps=-500
+[2026-07-30 03:18:39] [虚拟Newport] move_by(axis=2, steps=-500.0)，virtual_pos=-500.0；未控制真实硬件
+[2026-07-30 03:18:39] [虚拟Newport] wait_move(axis=2)：立即完成
+[2026-07-30 03:18:39] [激光开关] OFF 完成：axis=2, steps=-500
+[2026-07-30 03:18:39] [RuleAB] Step8 角度达到阈值=0.01，激光已关闭
+[2026-07-30 03:18:39] ========== Step 9：检测颜色区域中心，必要时移动1/2通道 ==========
+[2026-07-30 03:18:39] ========== Step9：颜色检测区域中心对齐，必要时移动1/2通道 ==========
+[2026-07-30 03:18:39] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:18:40] [Bmask] source=feature, area=954465, center_jump=0.0
+[2026-07-30 03:18:40] [Step9-颜色中心] cycle=1, 已对齐：center=(451.65,380.55), target=(455.29,382.35), dx=3.64, dy=1.80, tol=50.0
+[2026-07-30 03:18:40] ========== Step 10：补焦判断（循环等待） ==========
+[2026-07-30 03:18:41] [聚焦补焦] FocusScore_ratio=0.9902 在允许区间[0.9500, 1.0500] 内，不触发补焦
+[2026-07-30 03:18:41] [补焦判断] FocusScore 已达标，退出等待循环（第 1 次检查）
+[2026-07-30 03:18:41] ========== Step 1：Bmask最长边角度检测 current_angle ==========
+[2026-07-30 03:18:41] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；reason=runtime_rule_ab_params/step1_bmask_longest_edge_angle
+[2026-07-30 03:18:41] ========== YOLO-OBB角度检测：current_angle_yolo_obb ==========
+[2026-07-30 03:18:41] [YOLO-OBB角度-current_angle_yolo_obb] angle=-80.42008465058493, conf=0.9164562225341797, class=bn_up, overlay=measurement_output\save\07.30\20260730_031821\ab_angle_realtime_yolo_obb\20260730_031841_505_current_angle_yolo_obb_YOLO_OBB_overlay.png
+[2026-07-30 03:18:41] [角度检测-current_angle] 已使用当前帧 Bmask 最长边角度作为本轮 baseline：-80.42008465058493°；source=yolo_obb_long_edge
+[2026-07-30 03:18:41] ========== 实际主循环第 2 次生成保存路径 ==========
+[2026-07-30 03:18:41] ========== 生成最终存储路径 ==========
+[2026-07-30 03:18:41] [保存路径] run_session_dir=measurement_output\save\07.30\20260730_031821
+[2026-07-30 03:18:41] [保存路径] spectrum_csv=measurement_output\save\07.30\20260730_031821\cycle_0002_031841_659_spectrum.csv
+[2026-07-30 03:18:41] ========== Step 11：照明光 OFF，等待稳定 ==========
+[2026-07-30 03:18:41] [虚拟照明] OFF：未控制真实硬件
+[2026-07-30 03:18:41] [照明光] OFF
+[2026-07-30 03:18:42] [照明光] OFF 后稳定等待：1.200 s（由“稳定等待/ms”控制）
+[2026-07-30 03:18:44] ========== Step 12：LabVIEW 光谱采集 ==========
+[2026-07-30 03:18:44] ========== LabVIEW 采集光谱 ==========
+[2026-07-30 03:18:44] [光谱][virtual] 固定值光谱结果：num_points=1024, raw_original_peak=1000.0, raw_filtered_peak=1000.0, raw_median_peak=1000.0, fit_peak=1000.0；未调用 LabVIEW/TCP/阈值滤波/中值滤波/拟合处理
+[2026-07-30 03:18:44] ========== Step 13：照明光 ON ==========
+[2026-07-30 03:18:44] [虚拟照明] ON：未控制真实硬件
+[2026-07-30 03:18:44] [照明光] ON
+[2026-07-30 03:18:44] ========== Step 14：保存数据（异步线程，使用 Step1 最终角度） ==========
+[2026-07-30 03:18:44] ========== 保存本轮测量结果 ==========
+[2026-07-30 03:18:44] [异步保存] 第 2 轮保存线程已启动：save-cycle-0002；提交准备耗时=0.001 s
+[2026-07-30 03:18:44] [Step 14] 异步保存任务提交耗时：0.007 s；保存角度=Step1最终角度；append_plot_point=True
+[2026-07-30 03:18:44] ========== 实际主循环第 2/10 次结束 ==========
+[2026-07-30 03:18:44] [保存] 光谱 CSV：measurement_output\save\07.30\20260730_031821\cycle_0002_031841_659_spectrum.csv；wavelength列已写入中心波长；已写入本轮角度 angle_deg=-80.42008465058493
+[2026-07-30 03:18:44] [保存] Summary CSV 已更新：measurement_output\save\07.30\measurement_summary.csv
+[2026-07-30 03:18:44] [保存] Excel汇总已追加第 2 轮：measurement_output\save\07.30\measurement_summary_20260730_031433.xlsx
+[2026-07-30 03:18:44] [绘图] 已追加数据点：cycle=2, angle=-80.42008465058493, fit_peak=1000.0
+[2026-07-30 03:18:44] ========== 实际主循环第 3/10 次开始 ==========
+[2026-07-30 03:18:44] ========== Step 7：打开激光 ==========
+[2026-07-30 03:18:44] [激光开关] MOVE axis=2, steps=400
+[2026-07-30 03:18:44] [虚拟Newport] move_by(axis=2, steps=400.0)，virtual_pos=-100.0；未控制真实硬件
+[2026-07-30 03:18:44] [虚拟Newport] wait_move(axis=2)：立即完成
+[2026-07-30 03:18:44] [异步保存] 第 2 轮保存完成
+[2026-07-30 03:18:44] [激光开关] ON 完成：axis=2, steps=400
+[2026-07-30 03:18:44] ========== Step 8：A推动B，并用当前帧Bmask最长边检测B角度 ==========
+[2026-07-30 03:18:44] [RuleAB][virtual] 完整测量 Step8 使用真实视觉/角度逻辑，但 Stage34 为虚拟动作：不连接、不控制真实 3/4 通道。
+[2026-07-30 03:18:44] ========== RuleAB：Step7实时双线程，Bmask最长边监控角度 ==========
+[2026-07-30 03:18:44] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_start
+[2026-07-30 03:18:44] ========== YOLO-OBB角度检测：step7_realtime_frame_000001 ==========
+[2026-07-30 03:18:44] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:18:44] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；reason=runtime_rule_ab_params/sync_config_from_ui_to_workflow
+[2026-07-30 03:18:44] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_controller_step_1
+[2026-07-30 03:18:44] [Step7实时控制] step=1: 执行一次 C边沿路线运动；route_points=36；pause保留但可被stop_event打断。
+[2026-07-30 03:18:44] [YOLO-OBB角度-step7_realtime_frame_000001] angle=-80.44159940725942, conf=0.9169573187828064, class=bn_up, overlay=measurement_output\save\07.30\20260730_031821\ab_angle_realtime_yolo_obb\20260730_031844_861_step7_realtime_frame_000001_YOLO_OBB_overlay.png
+[2026-07-30 03:18:44] [Step7实时角度] 角度变化已达到阈值：final_angle=-80.441599°, baseline=-80.42008465058493, delta=0.022° >= 0.010°；停止/暂停Stage34当前推动，不再使用6°上限/overshoot判定；不在Step7角度线程关闭激光，后续由完整测量主流程正常关激光，并继续完整测量。
+[2026-07-30 03:18:44] [虚拟Thorlabs] stop_all()
+[2026-07-30 03:18:44] [Step7实时] 已发送 stage.stop_all()；reason=angle_delta_ge_target_min_no_laser_off
+[2026-07-30 03:18:45] [Bmask] source=feature, area=954479, center_jump=0.0
+[2026-07-30 03:18:45] [Step7实时] 结束：ok=True, overshoot=False, reason=realtime_bmask_longest_edge_delta_ge_target_min_continue_measurement, final_angle=-80.44159940725942, final_delta=0.021514756674491764, records=2, csv=measurement_output\save\07.30\20260730_031821\ab_angle_realtime_bmask_longest_edge\step7_realtime_angle_records.csv
+[2026-07-30 03:18:46] [激光开关] MOVE axis=2, steps=-500
+[2026-07-30 03:18:46] [虚拟Newport] move_by(axis=2, steps=-500.0)，virtual_pos=-600.0；未控制真实硬件
+[2026-07-30 03:18:46] [虚拟Newport] wait_move(axis=2)：立即完成
+[2026-07-30 03:18:46] [激光开关] OFF 完成：axis=2, steps=-500
+[2026-07-30 03:18:46] [RuleAB] Step8 角度达到阈值=0.01，激光已关闭
+[2026-07-30 03:18:46] ========== Step 9：检测颜色区域中心，必要时移动1/2通道 ==========
+[2026-07-30 03:18:46] ========== Step9：颜色检测区域中心对齐，必要时移动1/2通道 ==========
+[2026-07-30 03:18:46] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:18:47] [Bmask] source=feature, area=959306, center_jump=0.0
+[2026-07-30 03:18:47] [Step9-颜色中心] cycle=1, 已对齐：center=(450.75,378.28), target=(455.29,382.35), dx=4.54, dy=4.07, tol=50.0
+[2026-07-30 03:18:47] ========== Step 10：补焦判断（循环等待） ==========
+[2026-07-30 03:18:47] [聚焦补焦] FocusScore_ratio=1.2568 超出允许区间[0.9500, 1.0500]，连续低分计数=1/3
+[2026-07-30 03:18:47] [补焦判断] 分数未达标（score=1.256758006587421），继续等待（第 1 次检查）
+[2026-07-30 03:18:48] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:18:48] [聚焦补焦] FocusScore_ratio=1.2568 超出允许区间[0.9500, 1.0500]，连续低分计数=2/3
+[2026-07-30 03:18:48] [补焦判断] 分数未达标（score=1.256758006587421），继续等待（第 2 次检查）
+[2026-07-30 03:18:48] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:18:49] [聚焦补焦] FocusScore_ratio=1.2568 超出允许区间[0.9500, 1.0500]，连续低分计数=3/3
+[2026-07-30 03:18:49] [聚焦补焦] 触发补焦，启动闭环搜索
+[2026-07-30 03:18:49] [聚焦补焦] virtual 模式：使用 FocusSimulator
+[2026-07-30 03:18:49] ========== 闭环补焦 #1 开始: strategy=hill_climb, target=0.95, upper_target=1.05 ==========
+[2026-07-30 03:18:49] [补焦-start] iter=0, z=0, score=None
+[2026-07-30 03:18:49] [补焦-probe_plus] iter=1, z=10, score=None
+[2026-07-30 03:18:49] [补焦-probe_return] iter=2, z=0, score=None
+[2026-07-30 03:18:50] [补焦-probe_minus] iter=3, z=-10, score=None
+[2026-07-30 03:18:50] [补焦-probe_return] iter=4, z=0, score=None
+[2026-07-30 03:18:50] [补焦] 双向试探均无明显提升，停止
+[2026-07-30 03:18:50] ========== 闭环补焦 #1 结束: ok=True, best_score=1.2568, best_z=0 ==========
+[2026-07-30 03:18:50] [聚焦补焦] 闭环结束：ok=True, best_score=1.256758006587421
+[2026-07-30 03:18:50] [聚焦补焦] 搜索未达标（best=1.256758006587421），下次将尝试更大范围搜索
+[2026-07-30 03:18:50] [补焦判断] 补焦搜索正常结束但分数未达标（score=1.256758006587421），继续等待（第 3 次检查）
+[2026-07-30 03:18:50] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:18:50] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:18:50] [补焦判断] 分数未达标（score=None），继续等待（第 4 次检查）
+[2026-07-30 03:18:50] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:18:51] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:18:51] [补焦判断] 分数未达标（score=None），继续等待（第 5 次检查）
+[2026-07-30 03:18:51] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:18:51] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:18:51] [补焦判断] 分数未达标（score=None），继续等待（第 6 次检查）
+[2026-07-30 03:18:51] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:18:51] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:18:51] [补焦判断] 分数未达标（score=None），继续等待（第 7 次检查）
+[2026-07-30 03:18:51] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:18:52] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:18:52] [补焦判断] 分数未达标（score=None），继续等待（第 8 次检查）
+[2026-07-30 03:18:52] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:18:52] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:18:52] [补焦判断] 分数未达标（score=None），继续等待（第 9 次检查）
+[2026-07-30 03:18:52] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:18:52] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:18:52] [补焦判断] 分数未达标（score=None），继续等待（第 10 次检查）
+[2026-07-30 03:18:52] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:18:52] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:18:52] [补焦判断] 分数未达标（score=None），继续等待（第 11 次检查）
+[2026-07-30 03:18:53] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:18:53] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:18:53] [补焦判断] 分数未达标（score=None），继续等待（第 12 次检查）
+[2026-07-30 03:18:53] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:18:53] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:18:53] [补焦判断] 分数未达标（score=None），继续等待（第 13 次检查）
+[2026-07-30 03:18:53] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:18:53] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:18:53] [补焦判断] 分数未达标（score=None），继续等待（第 14 次检查）
+[2026-07-30 03:18:53] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:18:54] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:18:54] [补焦判断] 分数未达标（score=None），继续等待（第 15 次检查）
+[2026-07-30 03:18:54] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:18:54] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:18:54] [补焦判断] 分数未达标（score=None），继续等待（第 16 次检查）
+[2026-07-30 03:18:54] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:18:54] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:18:54] [补焦判断] 分数未达标（score=None），继续等待（第 17 次检查）
+[2026-07-30 03:18:54] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:18:55] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:18:55] [补焦判断] 分数未达标（score=None），继续等待（第 18 次检查）
+[2026-07-30 03:18:55] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:18:55] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:18:55] [补焦判断] 分数未达标（score=None），继续等待（第 19 次检查）
+[2026-07-30 03:18:55] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:18:55] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:18:55] [补焦判断] 分数未达标（score=None），继续等待（第 20 次检查）
+[2026-07-30 03:18:55] [补焦判断] 已达到最大检查次数 20，继续进入下一步
+[2026-07-30 03:18:55] ========== Step 1：Bmask最长边角度检测 current_angle ==========
+[2026-07-30 03:18:55] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；reason=runtime_rule_ab_params/step1_bmask_longest_edge_angle
+[2026-07-30 03:18:55] ========== YOLO-OBB角度检测：current_angle_yolo_obb ==========
+[2026-07-30 03:18:56] [YOLO-OBB角度-current_angle_yolo_obb] angle=-80.12966486232682, conf=0.9185515642166138, class=bn_up, overlay=measurement_output\save\07.30\20260730_031821\ab_angle_realtime_yolo_obb\20260730_031856_097_current_angle_yolo_obb_YOLO_OBB_overlay.png
+[2026-07-30 03:18:56] [角度检测-current_angle] 已使用当前帧 Bmask 最长边角度作为本轮 baseline：-80.12966486232682°；source=yolo_obb_long_edge
+[2026-07-30 03:18:56] ========== 实际主循环第 3 次生成保存路径 ==========
+[2026-07-30 03:18:56] ========== 生成最终存储路径 ==========
+[2026-07-30 03:18:56] [保存路径] run_session_dir=measurement_output\save\07.30\20260730_031821
+[2026-07-30 03:18:56] [保存路径] spectrum_csv=measurement_output\save\07.30\20260730_031821\cycle_0003_031856_241_spectrum.csv
+[2026-07-30 03:18:56] ========== Step 11：照明光 OFF，等待稳定 ==========
+[2026-07-30 03:18:56] [虚拟照明] OFF：未控制真实硬件
+[2026-07-30 03:18:56] [照明光] OFF
+[2026-07-30 03:18:57] [照明光] OFF 后稳定等待：1.200 s（由“稳定等待/ms”控制）
+[2026-07-30 03:18:58] ========== Step 12：LabVIEW 光谱采集 ==========
+[2026-07-30 03:18:58] ========== LabVIEW 采集光谱 ==========
+[2026-07-30 03:18:58] [光谱][virtual] 固定值光谱结果：num_points=1024, raw_original_peak=1000.0, raw_filtered_peak=1000.0, raw_median_peak=1000.0, fit_peak=1000.0；未调用 LabVIEW/TCP/阈值滤波/中值滤波/拟合处理
+[2026-07-30 03:18:58] ========== Step 13：照明光 ON ==========
+[2026-07-30 03:18:59] [虚拟照明] ON：未控制真实硬件
+[2026-07-30 03:18:59] [照明光] ON
+[2026-07-30 03:18:59] ========== Step 14：保存数据（异步线程，使用 Step1 最终角度） ==========
+[2026-07-30 03:18:59] ========== 保存本轮测量结果 ==========
+[2026-07-30 03:18:59] [异步保存] 第 3 轮保存线程已启动：save-cycle-0003；提交准备耗时=0.001 s
+[2026-07-30 03:18:59] [Step 14] 异步保存任务提交耗时：0.004 s；保存角度=Step1最终角度；append_plot_point=True
+[2026-07-30 03:18:59] ========== 实际主循环第 3/10 次结束 ==========
+[2026-07-30 03:18:59] [保存] 光谱 CSV：measurement_output\save\07.30\20260730_031821\cycle_0003_031856_241_spectrum.csv；wavelength列已写入中心波长；已写入本轮角度 angle_deg=-80.12966486232682
+[2026-07-30 03:18:59] [保存] Summary CSV 已更新：measurement_output\save\07.30\measurement_summary.csv
+[2026-07-30 03:18:59] [保存] Excel汇总已追加第 3 轮：measurement_output\save\07.30\measurement_summary_20260730_031433.xlsx
+[2026-07-30 03:18:59] [绘图] 已追加数据点：cycle=3, angle=-80.12966486232682, fit_peak=1000.0
+[2026-07-30 03:18:59] ========== 实际主循环第 4/10 次开始 ==========
+[2026-07-30 03:18:59] ========== Step 7：打开激光 ==========
+[2026-07-30 03:18:59] [激光开关] MOVE axis=2, steps=400
+[2026-07-30 03:18:59] [虚拟Newport] move_by(axis=2, steps=400.0)，virtual_pos=-200.0；未控制真实硬件
+[2026-07-30 03:18:59] [虚拟Newport] wait_move(axis=2)：立即完成
+[2026-07-30 03:18:59] [激光开关] ON 完成：axis=2, steps=400
+[2026-07-30 03:18:59] [异步保存] 第 3 轮保存完成
+[2026-07-30 03:18:59] ========== Step 8：A推动B，并用当前帧Bmask最长边检测B角度 ==========
+[2026-07-30 03:18:59] [RuleAB][virtual] 完整测量 Step8 使用真实视觉/角度逻辑，但 Stage34 为虚拟动作：不连接、不控制真实 3/4 通道。
+[2026-07-30 03:18:59] ========== RuleAB：Step7实时双线程，Bmask最长边监控角度 ==========
+[2026-07-30 03:18:59] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_start
+[2026-07-30 03:18:59] ========== YOLO-OBB角度检测：step7_realtime_frame_000001 ==========
+[2026-07-30 03:18:59] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:18:59] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；reason=runtime_rule_ab_params/sync_config_from_ui_to_workflow
+[2026-07-30 03:18:59] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_controller_step_1
+[2026-07-30 03:18:59] [Step7实时控制] step=1: 执行一次 C边沿路线运动；route_points=36；pause保留但可被stop_event打断。
+[2026-07-30 03:18:59] [YOLO-OBB角度-step7_realtime_frame_000001] angle=-80.3237432439762, conf=0.9183374643325806, class=bn_up, overlay=measurement_output\save\07.30\20260730_031821\ab_angle_realtime_yolo_obb\20260730_031859_624_step7_realtime_frame_000001_YOLO_OBB_overlay.png
+[2026-07-30 03:18:59] [Step7实时角度] 角度变化已达到阈值：final_angle=-80.323743°, baseline=-80.12966486232682, delta=0.194° >= 0.010°；停止/暂停Stage34当前推动，不再使用6°上限/overshoot判定；不在Step7角度线程关闭激光，后续由完整测量主流程正常关激光，并继续完整测量。
+[2026-07-30 03:18:59] [虚拟Thorlabs] stop_all()
+[2026-07-30 03:18:59] [Step7实时] 已发送 stage.stop_all()；reason=angle_delta_ge_target_min_no_laser_off
+[2026-07-30 03:19:00] [Bmask] source=feature, area=954630, center_jump=0.0
+[2026-07-30 03:19:00] [Step7实时] 结束：ok=True, overshoot=False, reason=realtime_bmask_longest_edge_delta_ge_target_min_continue_measurement, final_angle=-80.3237432439762, final_delta=0.1940783816493763, records=2, csv=measurement_output\save\07.30\20260730_031821\ab_angle_realtime_bmask_longest_edge\step7_realtime_angle_records.csv
+[2026-07-30 03:19:00] [激光开关] MOVE axis=2, steps=-500
+[2026-07-30 03:19:00] [虚拟Newport] move_by(axis=2, steps=-500.0)，virtual_pos=-700.0；未控制真实硬件
+[2026-07-30 03:19:00] [虚拟Newport] wait_move(axis=2)：立即完成
+[2026-07-30 03:19:00] [激光开关] OFF 完成：axis=2, steps=-500
+[2026-07-30 03:19:00] [RuleAB] Step8 角度达到阈值=0.01，激光已关闭
+[2026-07-30 03:19:00] ========== Step 9：检测颜色区域中心，必要时移动1/2通道 ==========
+[2026-07-30 03:19:00] ========== Step9：颜色检测区域中心对齐，必要时移动1/2通道 ==========
+[2026-07-30 03:19:01] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:19:01] [Bmask] source=feature, area=954593, center_jump=0.0
+[2026-07-30 03:19:02] [Step9-颜色中心] cycle=1, 已对齐：center=(451.57,380.56), target=(455.29,382.35), dx=3.72, dy=1.79, tol=50.0
+[2026-07-30 03:19:02] ========== Step 10：补焦判断（循环等待） ==========
+[2026-07-30 03:19:02] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:02] [补焦判断] 分数未达标（score=None），继续等待（第 1 次检查）
+[2026-07-30 03:19:02] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:02] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:02] [补焦判断] 分数未达标（score=None），继续等待（第 2 次检查）
+[2026-07-30 03:19:02] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:02] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:02] [补焦判断] 分数未达标（score=None），继续等待（第 3 次检查）
+[2026-07-30 03:19:03] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:03] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:03] [补焦判断] 分数未达标（score=None），继续等待（第 4 次检查）
+[2026-07-30 03:19:03] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:03] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:03] [补焦判断] 分数未达标（score=None），继续等待（第 5 次检查）
+[2026-07-30 03:19:03] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:03] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:03] [补焦判断] 分数未达标（score=None），继续等待（第 6 次检查）
+[2026-07-30 03:19:04] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:04] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:04] [补焦判断] 分数未达标（score=None），继续等待（第 7 次检查）
+[2026-07-30 03:19:04] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:04] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:04] [补焦判断] 分数未达标（score=None），继续等待（第 8 次检查）
+[2026-07-30 03:19:04] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:04] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:04] [补焦判断] 分数未达标（score=None），继续等待（第 9 次检查）
+[2026-07-30 03:19:05] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:05] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:05] [补焦判断] 分数未达标（score=None），继续等待（第 10 次检查）
+[2026-07-30 03:19:05] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:05] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:05] [补焦判断] 分数未达标（score=None），继续等待（第 11 次检查）
+[2026-07-30 03:19:05] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:05] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:05] [补焦判断] 分数未达标（score=None），继续等待（第 12 次检查）
+[2026-07-30 03:19:06] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:06] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:06] [补焦判断] 分数未达标（score=None），继续等待（第 13 次检查）
+[2026-07-30 03:19:06] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:06] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:06] [补焦判断] 分数未达标（score=None），继续等待（第 14 次检查）
+[2026-07-30 03:19:06] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:06] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:06] [补焦判断] 分数未达标（score=None），继续等待（第 15 次检查）
+[2026-07-30 03:19:07] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:07] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:07] [补焦判断] 分数未达标（score=None），继续等待（第 16 次检查）
+[2026-07-30 03:19:07] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:07] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:07] [补焦判断] 分数未达标（score=None），继续等待（第 17 次检查）
+[2026-07-30 03:19:07] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:07] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:07] [补焦判断] 分数未达标（score=None），继续等待（第 18 次检查）
+[2026-07-30 03:19:08] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:08] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:08] [补焦判断] 分数未达标（score=None），继续等待（第 19 次检查）
+[2026-07-30 03:19:08] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:08] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:08] [补焦判断] 分数未达标（score=None），继续等待（第 20 次检查）
+[2026-07-30 03:19:08] [补焦判断] 已达到最大检查次数 20，继续进入下一步
+[2026-07-30 03:19:08] ========== Step 1：Bmask最长边角度检测 current_angle ==========
+[2026-07-30 03:19:08] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；reason=runtime_rule_ab_params/step1_bmask_longest_edge_angle
+[2026-07-30 03:19:08] ========== YOLO-OBB角度检测：current_angle_yolo_obb ==========
+[2026-07-30 03:19:08] [YOLO-OBB角度-current_angle_yolo_obb] angle=61.57338405647431, conf=0.9236754775047302, class=bn_up, overlay=measurement_output\save\07.30\20260730_031821\ab_angle_realtime_yolo_obb\20260730_031908_897_current_angle_yolo_obb_YOLO_OBB_overlay.png
+[2026-07-30 03:19:08] [角度检测-current_angle] 已使用当前帧 Bmask 最长边角度作为本轮 baseline：61.57338405647431°；source=yolo_obb_long_edge
+[2026-07-30 03:19:08] ========== 实际主循环第 4 次生成保存路径 ==========
+[2026-07-30 03:19:09] ========== 生成最终存储路径 ==========
+[2026-07-30 03:19:09] [保存路径] run_session_dir=measurement_output\save\07.30\20260730_031821
+[2026-07-30 03:19:09] [保存路径] spectrum_csv=measurement_output\save\07.30\20260730_031821\cycle_0004_031909_070_spectrum.csv
+[2026-07-30 03:19:09] ========== Step 11：照明光 OFF，等待稳定 ==========
+[2026-07-30 03:19:09] [虚拟照明] OFF：未控制真实硬件
+[2026-07-30 03:19:09] [照明光] OFF
+[2026-07-30 03:19:10] [照明光] OFF 后稳定等待：1.200 s（由“稳定等待/ms”控制）
+[2026-07-30 03:19:11] ========== Step 12：LabVIEW 光谱采集 ==========
+[2026-07-30 03:19:11] ========== LabVIEW 采集光谱 ==========
+[2026-07-30 03:19:11] [光谱][virtual] 固定值光谱结果：num_points=1024, raw_original_peak=1000.0, raw_filtered_peak=1000.0, raw_median_peak=1000.0, fit_peak=1000.0；未调用 LabVIEW/TCP/阈值滤波/中值滤波/拟合处理
+[2026-07-30 03:19:11] ========== Step 13：照明光 ON ==========
+[2026-07-30 03:19:11] [虚拟照明] ON：未控制真实硬件
+[2026-07-30 03:19:11] [照明光] ON
+[2026-07-30 03:19:11] ========== Step 14：保存数据（异步线程，使用 Step1 最终角度） ==========
+[2026-07-30 03:19:11] ========== 保存本轮测量结果 ==========
+[2026-07-30 03:19:11] [异步保存] 第 4 轮保存线程已启动：save-cycle-0004；提交准备耗时=0.001 s
+[2026-07-30 03:19:11] [Step 14] 异步保存任务提交耗时：0.004 s；保存角度=Step1最终角度；append_plot_point=True
+[2026-07-30 03:19:11] ========== 实际主循环第 4/10 次结束 ==========
+[2026-07-30 03:19:11] [保存] 光谱 CSV：measurement_output\save\07.30\20260730_031821\cycle_0004_031909_070_spectrum.csv；wavelength列已写入中心波长；已写入本轮角度 angle_deg=61.57338405647431
+[2026-07-30 03:19:11] [保存] Summary CSV 已更新：measurement_output\save\07.30\measurement_summary.csv
+[2026-07-30 03:19:11] [保存] Excel汇总已追加第 4 轮：measurement_output\save\07.30\measurement_summary_20260730_031433.xlsx
+[2026-07-30 03:19:12] [绘图] 已追加数据点：cycle=4, angle=61.57338405647431, fit_peak=1000.0
+[2026-07-30 03:19:12] ========== 实际主循环第 5/10 次开始 ==========
+[2026-07-30 03:19:12] ========== Step 7：打开激光 ==========
+[2026-07-30 03:19:12] [激光开关] MOVE axis=2, steps=400
+[2026-07-30 03:19:12] [虚拟Newport] move_by(axis=2, steps=400.0)，virtual_pos=-300.0；未控制真实硬件
+[2026-07-30 03:19:12] [虚拟Newport] wait_move(axis=2)：立即完成
+[2026-07-30 03:19:12] [激光开关] ON 完成：axis=2, steps=400
+[2026-07-30 03:19:12] [异步保存] 第 4 轮保存完成
+[2026-07-30 03:19:12] ========== Step 8：A推动B，并用当前帧Bmask最长边检测B角度 ==========
+[2026-07-30 03:19:12] [RuleAB][virtual] 完整测量 Step8 使用真实视觉/角度逻辑，但 Stage34 为虚拟动作：不连接、不控制真实 3/4 通道。
+[2026-07-30 03:19:12] ========== RuleAB：Step7实时双线程，Bmask最长边监控角度 ==========
+[2026-07-30 03:19:12] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_start
+[2026-07-30 03:19:12] ========== YOLO-OBB角度检测：step7_realtime_frame_000001 ==========
+[2026-07-30 03:19:12] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:19:12] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；reason=runtime_rule_ab_params/sync_config_from_ui_to_workflow
+[2026-07-30 03:19:12] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_controller_step_1
+[2026-07-30 03:19:12] [Step7实时控制] step=1: 执行一次 C边沿路线运动；route_points=36；pause保留但可被stop_event打断。
+[2026-07-30 03:19:12] [YOLO-OBB角度-step7_realtime_frame_000001] angle=61.42807646749873, conf=0.9239275455474854, class=bn_up, overlay=measurement_output\save\07.30\20260730_031821\ab_angle_realtime_yolo_obb\20260730_031912_404_step7_realtime_frame_000001_YOLO_OBB_overlay.png
+[2026-07-30 03:19:12] [Step7实时角度] 角度变化已达到阈值：final_angle=61.428076°, baseline=61.57338405647431, delta=0.145° >= 0.010°；停止/暂停Stage34当前推动，不再使用6°上限/overshoot判定；不在Step7角度线程关闭激光，后续由完整测量主流程正常关激光，并继续完整测量。
+[2026-07-30 03:19:12] [虚拟Thorlabs] stop_all()
+[2026-07-30 03:19:12] [Step7实时] 已发送 stage.stop_all()；reason=angle_delta_ge_target_min_no_laser_off
+[2026-07-30 03:19:13] [Bmask] source=feature, area=958449, center_jump=0.0
+[2026-07-30 03:19:13] [Step7实时] 结束：ok=True, overshoot=False, reason=realtime_bmask_longest_edge_delta_ge_target_min_continue_measurement, final_angle=61.42807646749873, final_delta=0.1453075889755837, records=2, csv=measurement_output\save\07.30\20260730_031821\ab_angle_realtime_bmask_longest_edge\step7_realtime_angle_records.csv
+[2026-07-30 03:19:13] [激光开关] MOVE axis=2, steps=-500
+[2026-07-30 03:19:13] [虚拟Newport] move_by(axis=2, steps=-500.0)，virtual_pos=-800.0；未控制真实硬件
+[2026-07-30 03:19:13] [虚拟Newport] wait_move(axis=2)：立即完成
+[2026-07-30 03:19:13] [激光开关] OFF 完成：axis=2, steps=-500
+[2026-07-30 03:19:13] [RuleAB] Step8 角度达到阈值=0.01，激光已关闭
+[2026-07-30 03:19:13] ========== Step 9：检测颜色区域中心，必要时移动1/2通道 ==========
+[2026-07-30 03:19:13] ========== Step9：颜色检测区域中心对齐，必要时移动1/2通道 ==========
+[2026-07-30 03:19:13] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:19:14] [Bmask] source=feature, area=958859, center_jump=0.0
+[2026-07-30 03:19:14] [Step9-颜色中心] cycle=1, 已对齐：center=(451.91,375.76), target=(455.29,382.35), dx=3.38, dy=6.59, tol=50.0
+[2026-07-30 03:19:15] ========== Step 10：补焦判断（循环等待） ==========
+[2026-07-30 03:19:15] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:15] [补焦判断] 分数未达标（score=None），继续等待（第 1 次检查）
+[2026-07-30 03:19:15] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:15] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:15] [补焦判断] 分数未达标（score=None），继续等待（第 2 次检查）
+[2026-07-30 03:19:15] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:15] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:15] [补焦判断] 分数未达标（score=None），继续等待（第 3 次检查）
+[2026-07-30 03:19:16] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:16] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:16] [补焦判断] 分数未达标（score=None），继续等待（第 4 次检查）
+[2026-07-30 03:19:16] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:16] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:16] [补焦判断] 分数未达标（score=None），继续等待（第 5 次检查）
+[2026-07-30 03:19:16] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:16] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:16] [补焦判断] 分数未达标（score=None），继续等待（第 6 次检查）
+[2026-07-30 03:19:16] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:17] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:17] [补焦判断] 分数未达标（score=None），继续等待（第 7 次检查）
+[2026-07-30 03:19:17] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:17] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:17] [补焦判断] 分数未达标（score=None），继续等待（第 8 次检查）
+[2026-07-30 03:19:17] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:17] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:17] [补焦判断] 分数未达标（score=None），继续等待（第 9 次检查）
+[2026-07-30 03:19:17] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:18] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:18] [补焦判断] 分数未达标（score=None），继续等待（第 10 次检查）
+[2026-07-30 03:19:18] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:18] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:18] [补焦判断] 分数未达标（score=None），继续等待（第 11 次检查）
+[2026-07-30 03:19:18] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:18] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:18] [补焦判断] 分数未达标（score=None），继续等待（第 12 次检查）
+[2026-07-30 03:19:18] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:19] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:19] [补焦判断] 分数未达标（score=None），继续等待（第 13 次检查）
+[2026-07-30 03:19:19] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:19] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:19] [补焦判断] 分数未达标（score=None），继续等待（第 14 次检查）
+[2026-07-30 03:19:19] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:19] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:19] [补焦判断] 分数未达标（score=None），继续等待（第 15 次检查）
+[2026-07-30 03:19:19] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:20] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:20] [补焦判断] 分数未达标（score=None），继续等待（第 16 次检查）
+[2026-07-30 03:19:20] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:20] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:20] [补焦判断] 分数未达标（score=None），继续等待（第 17 次检查）
+[2026-07-30 03:19:20] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:20] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:20] [补焦判断] 分数未达标（score=None），继续等待（第 18 次检查）
+[2026-07-30 03:19:20] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:21] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:21] [补焦判断] 分数未达标（score=None），继续等待（第 19 次检查）
+[2026-07-30 03:19:21] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:21] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:21] [补焦判断] 分数未达标（score=None），继续等待（第 20 次检查）
+[2026-07-30 03:19:21] [补焦判断] 已达到最大检查次数 20，继续进入下一步
+[2026-07-30 03:19:21] ========== Step 1：Bmask最长边角度检测 current_angle ==========
+[2026-07-30 03:19:21] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；reason=runtime_rule_ab_params/step1_bmask_longest_edge_angle
+[2026-07-30 03:19:21] ========== YOLO-OBB角度检测：current_angle_yolo_obb ==========
+[2026-07-30 03:19:21] [YOLO-OBB角度-current_angle_yolo_obb] angle=60.18694028070314, conf=0.9184590578079224, class=bn_up, overlay=measurement_output\save\07.30\20260730_031821\ab_angle_realtime_yolo_obb\20260730_031921_840_current_angle_yolo_obb_YOLO_OBB_overlay.png
+[2026-07-30 03:19:21] [角度检测-current_angle] 已使用当前帧 Bmask 最长边角度作为本轮 baseline：60.18694028070314°；source=yolo_obb_long_edge
+[2026-07-30 03:19:21] ========== 实际主循环第 5 次生成保存路径 ==========
+[2026-07-30 03:19:21] ========== 生成最终存储路径 ==========
+[2026-07-30 03:19:22] [保存路径] run_session_dir=measurement_output\save\07.30\20260730_031821
+[2026-07-30 03:19:22] [保存路径] spectrum_csv=measurement_output\save\07.30\20260730_031821\cycle_0005_031922_003_spectrum.csv
+[2026-07-30 03:19:22] ========== Step 11：照明光 OFF，等待稳定 ==========
+[2026-07-30 03:19:22] [虚拟照明] OFF：未控制真实硬件
+[2026-07-30 03:19:22] [照明光] OFF
+[2026-07-30 03:19:23] [照明光] OFF 后稳定等待：1.200 s（由“稳定等待/ms”控制）
+[2026-07-30 03:19:24] ========== Step 12：LabVIEW 光谱采集 ==========
+[2026-07-30 03:19:24] ========== LabVIEW 采集光谱 ==========
+[2026-07-30 03:19:24] [光谱][virtual] 固定值光谱结果：num_points=1024, raw_original_peak=1000.0, raw_filtered_peak=1000.0, raw_median_peak=1000.0, fit_peak=1000.0；未调用 LabVIEW/TCP/阈值滤波/中值滤波/拟合处理
+[2026-07-30 03:19:24] ========== Step 13：照明光 ON ==========
+[2026-07-30 03:19:24] [虚拟照明] ON：未控制真实硬件
+[2026-07-30 03:19:24] [照明光] ON
+[2026-07-30 03:19:24] ========== Step 14：保存数据（异步线程，使用 Step1 最终角度） ==========
+[2026-07-30 03:19:24] ========== 保存本轮测量结果 ==========
+[2026-07-30 03:19:24] [异步保存] 第 5 轮保存线程已启动：save-cycle-0005；提交准备耗时=0.001 s
+[2026-07-30 03:19:24] [Step 14] 异步保存任务提交耗时：0.005 s；保存角度=Step1最终角度；append_plot_point=True
+[2026-07-30 03:19:24] ========== 实际主循环第 5/10 次结束 ==========
+[2026-07-30 03:19:24] [保存] 光谱 CSV：measurement_output\save\07.30\20260730_031821\cycle_0005_031922_003_spectrum.csv；wavelength列已写入中心波长；已写入本轮角度 angle_deg=60.18694028070314
+[2026-07-30 03:19:24] [保存] Summary CSV 已更新：measurement_output\save\07.30\measurement_summary.csv
+[2026-07-30 03:19:24] [保存] Excel汇总已追加第 5 轮：measurement_output\save\07.30\measurement_summary_20260730_031433.xlsx
+[2026-07-30 03:19:24] [绘图] 已追加数据点：cycle=5, angle=60.18694028070314, fit_peak=1000.0
+[2026-07-30 03:19:24] ========== 实际主循环第 6/10 次开始 ==========
+[2026-07-30 03:19:25] ========== Step 7：打开激光 ==========
+[2026-07-30 03:19:25] [激光开关] MOVE axis=2, steps=400
+[2026-07-30 03:19:25] [虚拟Newport] move_by(axis=2, steps=400.0)，virtual_pos=-400.0；未控制真实硬件
+[2026-07-30 03:19:25] [虚拟Newport] wait_move(axis=2)：立即完成
+[2026-07-30 03:19:25] [激光开关] ON 完成：axis=2, steps=400
+[2026-07-30 03:19:25] [异步保存] 第 5 轮保存完成
+[2026-07-30 03:19:25] ========== Step 8：A推动B，并用当前帧Bmask最长边检测B角度 ==========
+[2026-07-30 03:19:25] [RuleAB][virtual] 完整测量 Step8 使用真实视觉/角度逻辑，但 Stage34 为虚拟动作：不连接、不控制真实 3/4 通道。
+[2026-07-30 03:19:25] ========== RuleAB：Step7实时双线程，Bmask最长边监控角度 ==========
+[2026-07-30 03:19:25] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_start
+[2026-07-30 03:19:25] ========== YOLO-OBB角度检测：step7_realtime_frame_000001 ==========
+[2026-07-30 03:19:25] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:19:25] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；reason=runtime_rule_ab_params/sync_config_from_ui_to_workflow
+[2026-07-30 03:19:25] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_controller_step_1
+[2026-07-30 03:19:25] [Step7实时控制] step=1: 执行一次 C边沿路线运动；route_points=36；pause保留但可被stop_event打断。
+[2026-07-30 03:19:25] [YOLO-OBB角度-step7_realtime_frame_000001] angle=58.17927399202327, conf=0.9131370186805725, class=bn_up, overlay=measurement_output\save\07.30\20260730_031821\ab_angle_realtime_yolo_obb\20260730_031925_281_step7_realtime_frame_000001_YOLO_OBB_overlay.png
+[2026-07-30 03:19:25] [Step7实时角度] 角度变化已达到阈值：final_angle=58.179274°, baseline=60.18694028070314, delta=2.008° >= 0.010°；停止/暂停Stage34当前推动，不再使用6°上限/overshoot判定；不在Step7角度线程关闭激光，后续由完整测量主流程正常关激光，并继续完整测量。
+[2026-07-30 03:19:25] [虚拟Thorlabs] stop_all()
+[2026-07-30 03:19:25] [Step7实时] 已发送 stage.stop_all()；reason=angle_delta_ge_target_min_no_laser_off
+[2026-07-30 03:19:26] [Bmask] source=feature, area=958367, center_jump=0.0
+[2026-07-30 03:19:26] [Step7实时] 结束：ok=True, overshoot=False, reason=realtime_bmask_longest_edge_delta_ge_target_min_continue_measurement, final_angle=58.17927399202327, final_delta=2.0076662886798715, records=2, csv=measurement_output\save\07.30\20260730_031821\ab_angle_realtime_bmask_longest_edge\step7_realtime_angle_records.csv
+[2026-07-30 03:19:26] [激光开关] MOVE axis=2, steps=-500
+[2026-07-30 03:19:26] [虚拟Newport] move_by(axis=2, steps=-500.0)，virtual_pos=-900.0；未控制真实硬件
+[2026-07-30 03:19:26] [虚拟Newport] wait_move(axis=2)：立即完成
+[2026-07-30 03:19:26] [激光开关] OFF 完成：axis=2, steps=-500
+[2026-07-30 03:19:26] [RuleAB] Step8 角度达到阈值=0.01，激光已关闭
+[2026-07-30 03:19:26] ========== Step 9：检测颜色区域中心，必要时移动1/2通道 ==========
+[2026-07-30 03:19:26] ========== Step9：颜色检测区域中心对齐，必要时移动1/2通道 ==========
+[2026-07-30 03:19:26] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:19:27] [Bmask] source=feature, area=168, center_jump=0.0
+[2026-07-30 03:19:27] [Step9-颜色中心] cycle=1, 检测失败：{'cycle': 1, 'time': '2026-07-30 03:19:27', 'ok': False, 'aligned': False, 'reason': 'empty_color_region_mask', 'center_x': '', 'center_y': '', 'target_x': 455.294, 'target_y': 382.353, 'dx': '', 'dy': '', 'tolerance_px': 50.0, 'color_area_px': 0, 'a_mask_area_px': None, 'b_mask_area_px': None, 'action_code': 0, 'action_name': '', 'move_info': {'moved': False, 'reason': 'empty_color_region_mask'}, 'overlay_path': 'measurement_output\\step9_color_center_align\\run_20260730_031808_003\\overlays\\step9_cycle_0001_20260730_031927_326_action_0_overlay.png', 'frame_path': 'measurement_output\\step9_color_center_align\\run_20260730_031808_003\\frames\\step9_cycle_0001_20260730_031927_326_action_0_frame.png', 'color_mask_path': 'measurement_output\\step9_color_center_align\\run_20260730_031808_003\\masks\\step9_cycle_0001_20260730_031927_326_action_0_color_region_mask.png', 'a_mask_path': 'measurement_output\\step9_color_center_align\\run_20260730_031808_003\\ab_masks\\step9_cycle_0001_20260730_031927_326_action_0_a_mask.png', 'b_mask_path': 'measurement_output\\step9_color_center_align\\run_20260730_031808_003\\ab_masks\\step9_cycle_0001_20260730_031927_326_action_0_b_mask.png', 'c_mask_path': None, 'c_raw_mask_path': None}
+[2026-07-30 03:19:27] ========== Step 10：补焦判断（循环等待） ==========
+[2026-07-30 03:19:27] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:27] [补焦判断] 分数未达标（score=None），继续等待（第 1 次检查）
+[2026-07-30 03:19:27] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:28] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:28] [补焦判断] 分数未达标（score=None），继续等待（第 2 次检查）
+[2026-07-30 03:19:28] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:28] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:28] [补焦判断] 分数未达标（score=None），继续等待（第 3 次检查）
+[2026-07-30 03:19:28] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:28] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:28] [补焦判断] 分数未达标（score=None），继续等待（第 4 次检查）
+[2026-07-30 03:19:28] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:29] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:29] [补焦判断] 分数未达标（score=None），继续等待（第 5 次检查）
+[2026-07-30 03:19:29] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:29] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:29] [补焦判断] 分数未达标（score=None），继续等待（第 6 次检查）
+[2026-07-30 03:19:29] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:29] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:29] [补焦判断] 分数未达标（score=None），继续等待（第 7 次检查）
+[2026-07-30 03:19:29] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:30] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:30] [补焦判断] 分数未达标（score=None），继续等待（第 8 次检查）
+[2026-07-30 03:19:30] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:30] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:30] [补焦判断] 分数未达标（score=None），继续等待（第 9 次检查）
+[2026-07-30 03:19:30] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:30] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:30] [补焦判断] 分数未达标（score=None），继续等待（第 10 次检查）
+[2026-07-30 03:19:30] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:31] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:31] [补焦判断] 分数未达标（score=None），继续等待（第 11 次检查）
+[2026-07-30 03:19:31] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:31] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:31] [补焦判断] 分数未达标（score=None），继续等待（第 12 次检查）
+[2026-07-30 03:19:31] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:31] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:31] [补焦判断] 分数未达标（score=None），继续等待（第 13 次检查）
+[2026-07-30 03:19:31] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:32] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:32] [补焦判断] 分数未达标（score=None），继续等待（第 14 次检查）
+[2026-07-30 03:19:32] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:32] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:32] [补焦判断] 分数未达标（score=None），继续等待（第 15 次检查）
+[2026-07-30 03:19:32] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:32] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:32] [补焦判断] 分数未达标（score=None），继续等待（第 16 次检查）
+[2026-07-30 03:19:32] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:33] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:33] [补焦判断] 分数未达标（score=None），继续等待（第 17 次检查）
+[2026-07-30 03:19:33] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:33] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:33] [补焦判断] 分数未达标（score=None），继续等待（第 18 次检查）
+[2026-07-30 03:19:33] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:33] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:33] [补焦判断] 分数未达标（score=None），继续等待（第 19 次检查）
+[2026-07-30 03:19:33] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 03:19:33] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 03:19:33] [补焦判断] 分数未达标（score=None），继续等待（第 20 次检查）
+[2026-07-30 03:19:34] [补焦判断] 已达到最大检查次数 20，继续进入下一步
+[2026-07-30 03:19:34] ========== Step 1：Bmask最长边角度检测 current_angle ==========
+[2026-07-30 03:19:34] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；reason=runtime_rule_ab_params/step1_bmask_longest_edge_angle
+[2026-07-30 03:19:34] ========== YOLO-OBB角度检测：current_angle_yolo_obb ==========
+[2026-07-30 03:19:34] [YOLO-OBB角度-current_angle_yolo_obb] 检测失败：reason=yolo_obb_no_detection
+[2026-07-30 03:19:34] [角度检测-current_angle] Bmask 最长边 baseline 计算失败，不再回退 A 最近边作为主角度来源；reason=yolo_obb_no_detection
+[2026-07-30 03:19:34] [角度检测-current_angle] 本轮 Bmask 最长边角度无效；不再把它当作整次测量失败，本轮不进入 Step7，直接跳过并继续下一轮。 reason=yolo_obb_no_detection
+[2026-07-30 03:19:34] [完整测量-跳过本轮] 第 6 轮在 Step1_Bmask_longest_edge_baseline 发生 Bmask/角度检测失败；不结束完整循环、不关闭全部设备，进入下一轮。reason=yolo_obb_no_detection
+[2026-07-30 03:19:34] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 03:19:34] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_031821\full_calibration_static_c；reason=run_workflow_cycle_2_before_run_one_cycle
+[2026-07-30 03:19:34] ========== 结束测量 ==========
+[2026-07-30 03:19:34] [流程] 测量结束，照明光保持当前状态，不额外发送 ON/OFF
+[2026-07-30 03:19:34] [保存] Excel汇总文件已保存：measurement_output\save\07.30\measurement_summary_20260730_031433.xlsx
+[2026-07-30 03:19:34] [流程] 正在测量 = False
+[2026-07-30 03:32:11] [流程] 收到停止请求
+[2026-07-30 03:32:11] [流程] 停止测量时刷新未保存 CSV 失败：'MeasurementWorkflow' object has no attribute '_flush_unsaved_cycle_to_csv'
+[2026-07-30 03:32:11] [保存] Excel汇总文件已保存：measurement_output\save\07.30\measurement_summary_20260730_031433.xlsx
+[2026-07-30 03:32:11] ========== 关闭全部设备：关闭硬件安全相关对象，保留 LabVIEW TCP ==========
+[2026-07-30 03:32:11] [保存] Excel汇总文件已保存：measurement_output\save\07.30\measurement_summary_20260730_031433.xlsx
+[2026-07-30 03:32:11] [虚拟照明] OFF：未控制真实硬件
+[2026-07-30 03:32:11] [照明光] OFF
+[2026-07-30 03:32:12] [虚拟照明] close：未释放真实硬件
+[2026-07-30 03:32:12] [照明光] 关闭全部设备时已关闭/释放照明光对象
+[2026-07-30 03:32:12] [虚拟Newport] close()：未释放真实硬件
+[2026-07-30 03:32:12] [激光开关] GUI关闭时已关闭 Newport 控制器连接
+[2026-07-30 03:32:12] [TCP] 关闭全部设备：保留 LabVIEW TCP Server，不关闭、不置 None、不修改 READY 状态
+[2026-07-30 03:32:12] [虚拟Thorlabs] stop_all()
+[2026-07-30 03:32:12] [虚拟Thorlabs] close(serial=97101208)
+[2026-07-30 03:32:12] [RuleAB] 已关闭
+[2026-07-30 03:32:12] [聚焦] 已释放所有 Focus 组件
+[2026-07-30 03:32:12] [运行态重置] 已清理上一轮停止/失败后的运行缓存；可以重新标定并重新运行完整测量。

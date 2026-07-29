@@ -13534,12 +13534,16 @@ class MeasurementWorkflow:
                         f" reason={reason}"
                     )
                     self.context["last_angle_result"] = angle_result
-                    return self._skip_current_cycle_without_stopping_measurement(
+                    _skip_ok = self._skip_current_cycle_without_stopping_measurement(
                         cycle_index=cycle_index,
                         phase="Step1_Bmask_longest_edge_baseline",
                         reason=reason,
                         close_laser_if_on=False,
                     )
+                    if not _skip_ok:
+                        return False
+                    # 跳过本轮剩余步骤（Step11-14 光谱采集），继续子循环的下一轮
+                    continue
 
                 # 兼容旧显示/保存字段：angle_before 作为本轮 Step1 baseline，angle_after 不再使用。
                 self.context["angle_before"] = current_angle
@@ -13634,12 +13638,16 @@ class MeasurementWorkflow:
                             f"reason={reason}, records={len(rule_ab_result.get('records', []))}"
                         )
                         self.context["last_rule_ab_result"] = rule_ab_result
-                        return self._skip_current_cycle_without_stopping_measurement(
+                        _skip_ok = self._skip_current_cycle_without_stopping_measurement(
                             cycle_index=cycle_index,
                             phase="Step8_Bmask_angle_or_delta_not_ready",
                             reason=reason,
                             close_laser_if_on=True,
                         )
+                        if not _skip_ok:
+                            return False
+                        # 跳过本轮剩余步骤（Step9-14），继续子循环的下一轮
+                        continue
 
                     self.log(
                         "[RuleAB] Step8 发生非 Bmask/角度类失败，仍停止完整循环测量："
@@ -13789,12 +13797,16 @@ class MeasurementWorkflow:
                         f" reason={reason}"
                     )
                     self.context["last_angle_result"] = angle_result
-                    return self._skip_current_cycle_without_stopping_measurement(
+                    _skip_ok = self._skip_current_cycle_without_stopping_measurement(
                         cycle_index=cycle_index,
                         phase="Step1_Bmask_longest_edge_baseline",
                         reason=reason,
                         close_laser_if_on=False,
                     )
+                    if not _skip_ok:
+                        return False
+                    # 跳过本轮剩余步骤（Step11-14 光谱采集），继续子循环的下一轮
+                    continue
 
                 # 兼容旧显示/保存字段：angle_before 作为本轮 Step1 baseline，angle_after 不再使用。
                 self.context["angle_before"] = current_angle

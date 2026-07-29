@@ -66,6 +66,27 @@ class BaseFocusSearch:
             self.log_fn(f"[补焦] {msg}")
             raise FocusSearchStopped(msg)
 
+    @staticmethod
+    def _in_tolerance(
+        score: Optional[float],
+        target: float,
+        upper_target: Optional[float],
+    ) -> bool:
+        """判断分数是否在允许区间 [target, upper_target] 内。
+
+        - score < target  → False（偏低，需搜索更好位置）
+        - score > upper_target → False（偏高，需搜索峰值后由上层更新参考）
+        - target <= score <= upper_target → True（在容差内，无需移动）
+        upper_target 为 None 时退化为单边下限 score >= target。
+        """
+        if score is None:
+            return False
+        if score < target:
+            return False
+        if upper_target is not None and score > upper_target:
+            return False
+        return True
+
     def _move(self, delta: int) -> None:
         self._check_stop("move")
         delta = int(round(delta))
@@ -137,6 +158,7 @@ class BaseFocusSearch:
         max_iter: int,
         patience: int,
         min_improve: float,
+        upper_target: Optional[float] = None,
     ) -> Dict[str, Any]:
         raise NotImplementedError
 
@@ -158,6 +180,7 @@ class HillClimbSearch(BaseFocusSearch):
         max_iter: int,
         patience: int,
         min_improve: float,
+        upper_target: Optional[float] = None,
     ) -> Dict[str, Any]:
         probe_steps = max(1, int(self.cfg.z_probe_steps))
         search_steps = max(1, int(self.cfg.z_search_steps))
@@ -175,13 +198,13 @@ class HillClimbSearch(BaseFocusSearch):
         best_score = float(initial_score)
         best_pos = 0
 
-        if best_score >= target:
+        if self._in_tolerance(best_score, target, upper_target):
             self.log_fn(
-                f"[补焦] 初始 FocusScore={best_score:.4f} >= {target}，无需移动"
+                f"[补焦] 初始 FocusScore={best_score:.4f} 在容差区间内，无需移动"
             )
             return {
                 "ok": True,
-                "reason": "already_above_target",
+                "reason": "already_in_tolerance",
                 "initial_score": initial_score,
                 "best_score": best_score,
                 "best_relative_z_steps": 0,
@@ -224,9 +247,9 @@ class HillClimbSearch(BaseFocusSearch):
         iteration = 4
         while iteration <= max_iter:
             self._check_stop("hill_climb")
-            if best_score >= target:
+            if self._in_tolerance(best_score, target, upper_target):
                 self.log_fn(
-                    f"[补焦] best_score={best_score:.4f} >= target={target}，停止"
+                    f"[补焦] best_score={best_score:.4f} 进入容差区间，停止"
                 )
                 break
             if abs(self.pos) >= max_total_steps:
@@ -287,6 +310,7 @@ class FullSweepSearch(BaseFocusSearch):
         max_iter: int,
         patience: int,
         min_improve: float,
+        upper_target: Optional[float] = None,
     ) -> Dict[str, Any]:
         half_range = min(max_total_steps, max(1, int(self.cfg.z_sweep_range_steps)))
         step = max(1, int(self.cfg.z_search_steps))
@@ -329,9 +353,9 @@ class FullSweepSearch(BaseFocusSearch):
             if score is not None and score > best_score:
                 best_score = float(score)
                 best_pos = pos
-            if score is not None and score >= target:
+            if score is not None and self._in_tolerance(score, target, upper_target):
                 self.log_fn(
-                    f"[全扫] 已达目标 score={score:.4f} >= {target}"
+                    f"[全扫] 已进入容差区间 score={score:.4f}"
                 )
                 break
             if iteration > max_iter:
@@ -372,6 +396,7 @@ class CurveFitSearch(BaseFocusSearch):
         max_iter: int,
         patience: int,
         min_improve: float,
+        upper_target: Optional[float] = None,
     ) -> Dict[str, Any]:
         half_range = min(max_total_steps, max(1, int(self.cfg.z_sweep_range_steps)))
         n_points = max(5, int(self.cfg.z_curve_fit_points))
@@ -417,7 +442,7 @@ class CurveFitSearch(BaseFocusSearch):
         best_pos = max(valid, key=lambda x: x[1])[0]
         best_score = max(s for _, s in valid)
 
-        if best_score >= target:
+        if self._in_tolerance(best_score, target, upper_target):
             self._goto(best_pos, "return_to_best", iteration, use_cache=True)
             return {
                 "ok": True,
@@ -476,7 +501,7 @@ class CurveFitSearch(BaseFocusSearch):
                 best_score = local_best
                 best_pos = local_best_pos
                 no_improve = 0
-                if best_score >= target:
+                if self._in_tolerance(best_score, target, upper_target):
                     break
             else:
                 no_improve += 1
@@ -514,6 +539,7 @@ class GoldenSectionSearch(BaseFocusSearch):
         max_iter: int,
         patience: int,
         min_improve: float,
+        upper_target: Optional[float] = None,
     ) -> Dict[str, Any]:
         half_range = min(max_total_steps, max(1, int(self.cfg.z_sweep_range_steps)))
         tol = max(1, int(self.cfg.z_golden_section_tol))
@@ -567,7 +593,7 @@ class GoldenSectionSearch(BaseFocusSearch):
         best_pos = sorted_positions[best_idx]
         best_score = samples[best_pos]
 
-        if best_score >= target:
+        if self._in_tolerance(best_score, target, upper_target):
             self._goto(best_pos, "return_to_best", iteration, use_cache=True)
             return {
                 "ok": True,
