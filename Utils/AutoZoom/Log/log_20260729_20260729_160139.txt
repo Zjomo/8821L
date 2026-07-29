@@ -1,0 +1,23 @@
+[2026-07-29 16:01:39] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmprpt4o0s0\save\07.29\measurement_summary_20260729_160139.xlsx
+[2026-07-29 16:01:39] [流程] 收到停止请求
+[2026-07-29 16:01:39] [流程] 停止测量：激光已 OFF
+[2026-07-29 16:01:39] [流程] 停止测量时刷新未保存 CSV 失败：'MeasurementWorkflow' object has no attribute '_flush_unsaved_cycle_to_csv'
+[2026-07-29 16:01:39] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmpwegci851\save\07.29\measurement_summary_20260729_160139.xlsx
+[2026-07-29 16:01:39] [流程] 收到停止请求
+[2026-07-29 16:01:39] [流程] 停止测量时刷新未保存 CSV 失败：'MeasurementWorkflow' object has no attribute '_flush_unsaved_cycle_to_csv'
+[2026-07-29 16:01:39] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmpjy0_1rj0\save\07.29\measurement_summary_20260729_160139.xlsx
+[2026-07-29 16:01:39] [流程] 收到停止请求
+[2026-07-29 16:01:39] [流程] 停止测量时关闭激光失败：激光关闭失败
+[2026-07-29 16:01:39] [流程] 停止测量时刷新未保存 CSV 失败：'MeasurementWorkflow' object has no attribute '_flush_unsaved_cycle_to_csv'
+[2026-07-29 16:01:39] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmpdbyaw5np\save\07.29\measurement_summary_20260729_160139.xlsx
+[2026-07-29 16:01:39] ========== 结束测量 ==========
+[2026-07-29 16:01:39] [流程] 测量结束，激光已 OFF
+[2026-07-29 16:01:39] [流程] 正在测量 = False
+[2026-07-29 16:01:39] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmpb5hhd04o\save\07.29\measurement_summary_20260729_160139.xlsx
+[2026-07-29 16:01:39] ========== 关闭全部设备：关闭硬件安全相关对象，保留 LabVIEW TCP ==========
+[2026-07-29 16:01:39] [聚焦] 已释放所有 Focus 组件
+[2026-07-29 16:01:39] [运行态重置] 已清理上一轮停止/失败后的运行缓存；可以重新标定并重新运行完整测量。
+[2026-07-29 16:01:39] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmp7u53u_74\save\07.29\measurement_summary_20260729_160139.xlsx
+[2026-07-29 16:01:39] ========== 关闭全部设备：关闭硬件安全相关对象，保留 LabVIEW TCP ==========
+[2026-07-29 16:01:39] [聚焦] 已释放所有 Focus 组件
+[2026-07-29 16:01:39] [运行态重置] 已清理上一轮停止/失败后的运行缓存；可以重新标定并重新运行完整测量。
