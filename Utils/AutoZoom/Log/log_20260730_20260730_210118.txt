@@ -1,0 +1,2 @@
+[2026-07-30 21:01:18] [保存] Excel汇总文件已创建：measurement_output\save\07.30\measurement_summary_20260730_210118.xlsx
+[2026-07-30 21:01:18] [完整测量标定] 已保存标定文件：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\current_calibration.json

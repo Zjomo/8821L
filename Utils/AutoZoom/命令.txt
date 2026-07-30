@@ -1,3 +1,4 @@
+cd E:\CWB\8821L\Utils\AutoZoom
 cd sam2-main
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 .\sam2_env\Scripts\Activate.ps1
@@ -13,6 +14,7 @@ python 0_measurement_workflow_real_virtual_same_detection_7_25.py
 4.点击 3标定全局C 按钮 标记大片子的位置
 5.点击 标定Step9 目标/颜色 按钮 标记皮秒激光器的位置  以及重合区域的位置
 6.保存/检查完整标定 
+
 7.加载完整标定
 TCP连接（在这也行）
 8.初始化全部设备
@@ -32,3 +34,12 @@ measurement_workflow_cleaned_no_rigol_delta_screenangle_v2.py 是 删除了Rigol
 
 E:/Dzj/2026/2026-06/06-04/06.03/runs/unet/best.pt
 E:/Dzj/2026/2026-06/06-04/06.03/runs/obb/best.pt
+
+
+rule_ab_a_exclude_b_dilate_px
+exclude_radius
+
+
+环境参数：
+曝光：40ms
+倒数第4个点 -- 照明光控制器

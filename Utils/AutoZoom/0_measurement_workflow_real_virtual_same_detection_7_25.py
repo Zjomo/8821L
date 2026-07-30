@@ -10427,7 +10427,9 @@ class MeasurementWorkflow:
         except Exception as e:
             self.log(f"[Step9-颜色中心] 当前帧 A/B 分割失败，本轮仍继续颜色中心检测：{e}")
             try:
-                image_rgb = self._capture_current_frame_rgb()
+                # 使用Step9输出目录作为临时目录
+                step9_output_dir = self._get_step9_output_dir()
+                image_rgb = self._capture_current_rule_ab_frame(output_dir=step9_output_dir)
             except Exception as ee:
                 return {
                     "ok": False,

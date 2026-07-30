@@ -1,0 +1,870 @@
+[2026-07-30 15:50:32] [保存] Excel汇总文件已创建：measurement_output\save\07.30\measurement_summary_20260730_155032.xlsx
+[2026-07-30 15:50:32] [照明光][virtual] 创建虚拟照明对象：port=COM17；不连接真实硬件
+[2026-07-30 15:50:32] [虚拟照明] open(port=COM17)：未连接真实照明继电器
+[2026-07-30 15:50:32] [照明光][virtual] 连接成功
+[2026-07-30 15:50:32] [虚拟照明] ON：未控制真实硬件
+[2026-07-30 15:50:32] [照明光] ON
+[2026-07-30 15:50:32] [横坐标xlsx] 已读取：516中心波长.xlsx，sheet=Sheet1，点数=1024
+[2026-07-30 15:50:59] [完整测量标定] 已保存标定文件：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\current_calibration.json
+[2026-07-30 15:51:12] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=10/14, B点=0/0, C点=7/12, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(449.4,360.0), HSV=(0,255,255)
+[2026-07-30 15:51:12] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=10/14, B点=0/0, C点=7/12, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(449.4,360.0), HSV=(0,255,255)
+[2026-07-30 15:51:12] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=10/14, B点=0/0, C点=7/12, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(449.4,360.0), HSV=(0,255,255)
+[2026-07-30 15:51:12] [完整测量标定] 已保存标定文件：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\current_calibration.json
+[2026-07-30 15:51:20] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=10/14, B点=0/0, C点=8/20, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(449.4,360.0), HSV=(0,255,255)
+[2026-07-30 15:51:20] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=10/14, B点=0/0, C点=8/20, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(449.4,360.0), HSV=(0,255,255)
+[2026-07-30 15:51:20] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=10/14, B点=0/0, C点=8/20, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(449.4,360.0), HSV=(0,255,255)
+[2026-07-30 15:51:22] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=10/14, B点=0/0, C点=8/20, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(449.4,360.0), HSV=(0,255,255)
+[2026-07-30 15:51:22] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=10/14, B点=0/0, C点=8/20, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(449.4,360.0), HSV=(0,255,255)
+[2026-07-30 15:51:22] [完整测量标定] 已保存标定文件：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\current_calibration.json
+[2026-07-30 15:51:22] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=10/14, B点=0/0, C点=8/20, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(529.4,409.4), HSV=(0,255,255)
+[2026-07-30 15:51:22] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=10/14, B点=0/0, C点=8/20, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(529.4,409.4), HSV=(0,255,255)
+[2026-07-30 15:51:22] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=10/14, B点=0/0, C点=8/20, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(529.4,409.4), HSV=(0,255,255)
+[2026-07-30 15:51:22] [完整测量标定] 已保存标定文件：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\current_calibration.json
+[2026-07-30 15:51:23] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=10/14, B点=0/0, C点=8/20, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(529.4,409.4), HSV=(0,255,255)
+[2026-07-30 15:51:23] [Step9-颜色中心] 新建本次 Step9 保存文件夹：measurement_output\step9_color_center_align\run_20260730_155123_492
+[2026-07-30 15:51:39] [Step9-颜色中心] 颜色检测已准备：mode=include, HSV=(12, 146, 105), area=473 px, center=(515.3784355179704, 404.68498942917546)
+[2026-07-30 15:51:39] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=10/14, B点=0/0, C点=8/20, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(529.4,409.4), HSV=(0,255,255)
+[2026-07-30 15:51:39] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=10/14, B点=0/0, C点=8/20, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(529.4,409.4), HSV=(0,255,255)
+[2026-07-30 15:51:39] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=10/14, B点=0/0, C点=8/20, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(529.4,409.4), HSV=(0,255,255)
+[2026-07-30 15:51:39] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=10/14, B点=0/0, C点=8/20, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(529.4,409.4), HSV=(0,255,255)
+[2026-07-30 15:51:39] [完整测量标定] 已保存标定文件：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\current_calibration.json
+[2026-07-30 15:51:40] [完整测量标定] 已保存标定文件：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\current_calibration.json
+[2026-07-30 15:51:47] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=10/14, B点=0/0, C点=8/20, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(529.4,409.4), HSV=(12,146,105)
+[2026-07-30 15:51:47] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=10/14, B点=0/0, C点=8/20, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(529.4,409.4), HSV=(12,146,105)
+[2026-07-30 15:51:47] [完整测量标定] 已按 quad 重建 Step7 A 路线：points=26, path=E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c\static_c_edge_route.json
+[2026-07-30 15:51:47] [完整测量标定] 已创建并锁定本次完整测量专用 C 目录：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；来源=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map\static_c_mask.png；area=7906 px；外部 RuleAB 应显示 source=full_calibration_static_c
+[2026-07-30 15:51:47] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=10/14, B点=0/0, C点=8/20, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c, Step9 target=(529.4,409.4), HSV=(12,146,105)
+[2026-07-30 15:51:47] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:51:47] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:51:47] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:51:47] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:51:47] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:51:47] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:51:47] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:51:47] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:51:47] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:51:47] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:51:47] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:51:47] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:51:47] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:51:47] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:51:47] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:51:47] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:51:47] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:51:47] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:51:48] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:52:03] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:52:03] ========== 初始化实验设备 ==========
+[2026-07-30 15:52:03] [照明光] 已连接
+[2026-07-30 15:52:03] [激光开关][virtual] 创建虚拟 Newport/Picomotor8742；不连接真实硬件
+[2026-07-30 15:52:03] [激光开关] SET axis=2, cmd=VA5000
+[2026-07-30 15:52:03] [虚拟Newport] query(axis=2, cmd=VA5000)：未连接真实控制器
+[2026-07-30 15:52:03] [激光开关] SET axis=2, cmd=AC5000
+[2026-07-30 15:52:03] [虚拟Newport] query(axis=2, cmd=AC5000)：未连接真实控制器
+[2026-07-30 15:52:03] [激光开关] OK axis=2, speed=5000, accel=5000
+[2026-07-30 15:52:03] [激光开关][virtual] 虚拟激光控制器连接成功
+[2026-07-30 15:52:03] [YOLO-OBB角度] 正在初始化 YOLO-OBB 模型
+[2026-07-30 15:52:03] [YOLO-OBB角度] model_path=E:\CWB\8821L\Utils\AutoZoom\best.pt
+[2026-07-30 15:52:03] [YOLO-OBB角度] capture_area=(116, 98, 1112, 886)
+[2026-07-30 15:52:03] [YOLO-OBB角度] conf=0.5, iou=0.7, imgsz=640, device=''
+[2026-07-30 15:52:03] [YOLO-OBB角度] 初始化完成；Step1/Step7 将使用 OBB 四角长边角度
+[2026-07-30 15:52:03] ========== 实验设备初始化完成：照明光 + 激光控制器 + 角度检测 ==========
+[2026-07-30 15:52:14] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=10/14, B点=0/0, C点=8/20, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\full_calibration_static_c, Step9 target=(529.4,409.4), HSV=(12,146,105)
+[2026-07-30 15:52:14] [聚焦参考] 新运行会话开始，已重置补焦 ROI 与参考图状态，将在 Step 1.5 重新选择补焦基准图 ROI
+[2026-07-30 15:52:14] [运行批次] 新建本次测量文件夹：measurement_output\save\07.30\20260730_155214
+[2026-07-30 15:52:15] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=10/14, B点=0/0, C点=8/20, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(529.4,409.4), HSV=(12,146,105)
+[2026-07-30 15:52:15] [完整测量标定] 已加载标定文件：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\current_calibration.json
+[2026-07-30 15:52:15] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=10/14, B点=0/0, C点=8/20, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(529.4,409.4), HSV=(12,146,105)
+[2026-07-30 15:52:15] [完整测量标定] 启动前检查通过：angle_source=Bmask最长边, A点=10/14, C点=8/20, Step9 target=(529.4, 409.4), HSV=(12, 146, 105)
+[2026-07-30 15:52:15] [完整测量标定] 已创建并锁定本次完整测量专用 C 目录：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；来源=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map\static_c_mask.png；area=7906 px；外部 RuleAB 应显示 source=full_calibration_static_c
+[2026-07-30 15:52:15] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=10/14, B点=0/0, C点=8/20, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c, Step9 target=(529.4,409.4), HSV=(12,146,105)
+[2026-07-30 15:52:15] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=run_workflow_after_prepare_runtime
+[2026-07-30 15:52:15] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:52:15] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:52:15] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:52:15] ========== 启动虚拟 LabVIEW TCP Server ==========
+[2026-07-30 15:52:15] [虚拟TCP] start_server_async(host=127.0.0.1, port=65432)：未打开真实端口
+[2026-07-30 15:52:15] [TCP] 已调用 LabVIEWTCPServer.start_server_async() 启动 Server
+[2026-07-30 15:52:15] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:52:15] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=run_workflow_cycle_1_before_run_one_cycle
+[2026-07-30 15:52:15] 
+[2026-07-30 15:52:15] ############################################################
+[2026-07-30 15:52:15] 开始第 1 轮循环测量
+[2026-07-30 15:52:15] ############################################################
+[2026-07-30 15:52:15] ========== Step 1：Bmask最长边角度检测 current_angle ==========
+[2026-07-30 15:52:15] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=ensure_rule_ab_follower
+[2026-07-30 15:52:15] [RuleAB] 初始化 A推动B 模块：enable_stage=False, max_steps=10000000, full_calibration_loaded=True, confirm_first_frame_segmentation=False, static_c_map_dir=E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c
+[2026-07-30 15:52:16] [RuleAB][virtual] 已把 follower.stage 替换为虚拟 Stage34；后续硬件动作只写日志。
+[2026-07-30 15:52:16] [完整测量标定] 已通过 initialize_abc_with_calibration() 初始化 RuleAB A/B/C，未弹窗。
+[2026-07-30 15:52:16] [ABC特征跟踪] 已安装：SAM2 仅用于首帧模板建立；后续帧仅使用 feature tracker；Bmask 失败不 fallback、不 hold_last；角度修复已禁用，直接使用 YOLO-OBB 原始角度。
+[2026-07-30 15:52:16] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=runtime_rule_ab_params/step1_bmask_longest_edge_angle
+[2026-07-30 15:52:16] [虚拟Thorlabs] setup_channel(CH3, V=50, v=10, a=10)
+[2026-07-30 15:52:16] [虚拟Thorlabs] setup_channel(CH4, V=50, v=2, a=2)
+[2026-07-30 15:52:16] [RuleAB][运行中参数更新] 已下发 Stage34 参数：CH3(v=10,a=10,V=50), CH4(v=2,a=2,V=50); reason=step1_bmask_longest_edge_angle
+[2026-07-30 15:52:16] ========== YOLO-OBB角度检测：current_angle_yolo_obb ==========
+[2026-07-30 15:52:16] [YOLO-OBB角度-current_angle_yolo_obb] angle=10.436474804940175, conf=0.8899914026260376, class=bn_up, overlay=measurement_output\save\07.30\20260730_155214\ab_angle_realtime_yolo_obb\20260730_155216_914_current_angle_yolo_obb_YOLO_OBB_overlay.png
+[2026-07-30 15:52:16] [角度检测-current_angle] 已使用当前帧 Bmask 最长边角度作为本轮 baseline：10.436474804940175°；source=yolo_obb_long_edge
+[2026-07-30 15:52:16] ========== Step 1.5：建立聚焦参考图 ==========
+[2026-07-30 15:52:17] [聚焦参考] 尚未选择补焦基准图 ROI，即将弹出 ROI 选择窗口
+[2026-07-30 15:52:17] [聚焦ROI] 即将弹出全屏 ROI 选择窗口；请拖拽矩形框选补焦区域后按 Enter/N 确认
+[2026-07-30 15:53:08] [聚焦ROI] 全屏 ROI 已选择：(608, 437, 118, 143)，saf_capture_area 已同步为全屏 (0, 0, 1920, 1080)；capture_area / focus_roi 保持不变
+[2026-07-30 15:53:08] [聚焦参考] 参考图已建立并保存，不再弹出实时预览窗口
+[2026-07-30 15:53:08] [聚焦参考] 从单张图像建立参考
+[2026-07-30 15:53:08] [聚焦参考] 参考指标已保存：measurement_output\focus_reference\focus_reference\20260730_155308\focus_reference_metrics.csv
+[2026-07-30 15:53:08] [聚焦参考] 单图参考建立完成：highfreq_ref=0.01739531280730192, tenengrad_ref=654.0176603057959, brenner_ref=23.160466087274163, red_blue_ref=0.5535494151800692
+[2026-07-30 15:53:08] [聚焦参考] 第 1 轮已建立，ROI=(608, 437, 118, 143)
+[2026-07-30 15:53:08] ========== Step 2：生成保存路径 ==========
+[2026-07-30 15:53:08] ========== 生成最终存储路径 ==========
+[2026-07-30 15:53:08] [保存路径] run_session_dir=measurement_output\save\07.30\20260730_155214
+[2026-07-30 15:53:08] [保存路径] spectrum_csv=measurement_output\save\07.30\20260730_155214\cycle_0000_155308_994_spectrum.csv
+[2026-07-30 15:53:09] ========== Step 3：照明光 OFF，等待稳定 ==========
+[2026-07-30 15:53:09] [虚拟照明] OFF：未控制真实硬件
+[2026-07-30 15:53:09] [照明光] OFF
+[2026-07-30 15:53:10] [照明光] OFF 后稳定等待：1.200 s（由“稳定等待/ms”控制）
+[2026-07-30 15:53:11] ========== Step 4：LabVIEW 光谱采集 ==========
+[2026-07-30 15:53:11] ========== LabVIEW 采集光谱 ==========
+[2026-07-30 15:53:11] [光谱][virtual] 固定值光谱结果：num_points=1024, raw_original_peak=1000.0, raw_filtered_peak=1000.0, raw_median_peak=1000.0, fit_peak=1000.0；未调用 LabVIEW/TCP/阈值滤波/中值滤波/拟合处理
+[2026-07-30 15:53:11] ========== Step 5：照明光 ON ==========
+[2026-07-30 15:53:11] [虚拟照明] ON：未控制真实硬件
+[2026-07-30 15:53:11] [照明光] ON
+[2026-07-30 15:53:11] ========== Step 6：保存数据（异步线程，使用 Step1 最终角度） ==========
+[2026-07-30 15:53:11] ========== 保存本轮测量结果 ==========
+[2026-07-30 15:53:11] [异步保存] 第 0 轮保存线程已启动：save-cycle-0000；提交准备耗时=0.001 s
+[2026-07-30 15:53:11] [Step 6] 异步保存任务提交耗时：0.002 s；保存角度=Step1最终角度；append_plot_point=True
+[2026-07-30 15:53:11] [保存] 光谱 CSV：measurement_output\save\07.30\20260730_155214\cycle_0000_155308_994_spectrum.csv；wavelength列已写入中心波长；已写入本轮角度 angle_deg=10.436474804940175
+[2026-07-30 15:53:11] [流程] 本周期实际主循环次数：3（序号1-3）
+[2026-07-30 15:53:11] [保存] Summary CSV 已更新：measurement_output\save\07.30\measurement_summary.csv
+[2026-07-30 15:53:11] [保存] Excel汇总已追加第 0 轮：measurement_output\save\07.30\measurement_summary_20260730_155032.xlsx
+[2026-07-30 15:53:11] [绘图] 已追加数据点：cycle=0, angle=10.436474804940175, fit_peak=1000.0
+[2026-07-30 15:53:11] ========== 实际主循环第 1/3 次开始 ==========
+[2026-07-30 15:53:11] ========== Step 7：打开激光 ==========
+[2026-07-30 15:53:11] [激光开关] MOVE axis=2, steps=400
+[2026-07-30 15:53:11] [虚拟Newport] move_by(axis=2, steps=400.0)，virtual_pos=400.0；未控制真实硬件
+[2026-07-30 15:53:11] [异步保存] 第 0 轮保存完成
+[2026-07-30 15:53:11] [虚拟Newport] wait_move(axis=2)：立即完成
+[2026-07-30 15:53:11] [激光开关] ON 完成：axis=2, steps=400
+[2026-07-30 15:53:12] ========== Step 8：A推动B，并用当前帧Bmask最长边检测B角度 ==========
+[2026-07-30 15:53:12] [RuleAB][virtual] 完整测量 Step8 使用真实视觉/角度逻辑，但 Stage34 为虚拟动作：不连接、不控制真实 3/4 通道。
+[2026-07-30 15:53:12] ========== RuleAB：Step7实时双线程，Bmask最长边监控角度 ==========
+[2026-07-30 15:53:12] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_start
+[2026-07-30 15:53:12] ========== YOLO-OBB角度检测：step7_realtime_frame_000001 ==========
+[2026-07-30 15:53:12] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:53:12] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=runtime_rule_ab_params/sync_config_from_ui_to_workflow
+[2026-07-30 15:53:12] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_controller_step_1
+[2026-07-30 15:53:12] [Step7实时控制] step=1: 执行一次 C边沿路线运动；route_points=31；pause保留但可被stop_event打断。
+[2026-07-30 15:53:12] [YOLO-OBB角度-step7_realtime_frame_000001] angle=10.52382970463799, conf=0.8896881341934204, class=bn_up, overlay=measurement_output\save\07.30\20260730_155214\ab_angle_realtime_yolo_obb\20260730_155312_164_step7_realtime_frame_000001_YOLO_OBB_overlay.png
+[2026-07-30 15:53:12] [Step7实时角度] 角度变化已达到阈值：final_angle=10.523830°, baseline=10.436474804940175, delta=0.087° >= 0.010°；停止/暂停Stage34当前推动，不再使用6°上限/overshoot判定；不在Step7角度线程关闭激光，后续由完整测量主流程正常关激光，并继续完整测量。
+[2026-07-30 15:53:12] [虚拟Thorlabs] stop_all()
+[2026-07-30 15:53:12] [Step7实时] 已发送 stage.stop_all()；reason=angle_delta_ge_target_min_no_laser_off
+[2026-07-30 15:53:12] [RuleAB-A/B重试] Step7固定索引路线运动/step=1: A/B 分割失败 attempt=1/3: 首帧 SAM2 没有得到 B mask，不能建立特征模板。；不停止完整测量，准备重新取下一帧。
+[2026-07-30 15:53:12] [RuleAB-A/B重试] 已清理坏 scene 缓存；reason=Step7固定索引路线运动/step=1/attempt=1: 首帧 SAM2 没有得到 B mask，不能建立特征模板。
+[2026-07-30 15:53:12] [RuleAB-A/B重试] Step7固定索引路线运动/step=1: A/B 分割失败 attempt=2/3: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[824.7058823529412, 570.5882352941177], [803.5294117647059, 589.4117647058823], [807.0588235294118, 617.6470588235294], [831.7647058823529, 625.8823529411765], [838.8235294117648, 618.8235294117648], [842.3529411764706, 594.1176470588235], [801.1764705882354, 609.4117647058823], [812.9411764705883, 624.7058823529412], [820.0, 636.4705882352941], [849.4117647058823, 618.8235294117648]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 11309, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}；不停止完整测量，准备重新取下一帧。
+[2026-07-30 15:53:12] [RuleAB-A/B重试] 已清理坏 scene 缓存；reason=Step7固定索引路线运动/step=1/attempt=2: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[824.7058823529412, 570.5882352941177], [803.5294117647059, 589.4117647058823], [807.0588235294118, 617.6470588235294], [831.7647058823529, 625.8823529411765], [838.8235294117648, 618.8235294117648], [842.3529411764706, 594.1176470588235], [801.1764705882354, 609.4117647058823], [812.9411764705883, 624.7058823529412], [820.0, 636.4705882352941], [849.4117647058823, 618.8235294117648]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 11309, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}
+[2026-07-30 15:53:13] [RuleAB-A/B重试] Step7固定索引路线运动/step=1: A/B 分割失败 attempt=3/3: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[824.7058823529412, 570.5882352941177], [803.5294117647059, 589.4117647058823], [807.0588235294118, 617.6470588235294], [831.7647058823529, 625.8823529411765], [838.8235294117648, 618.8235294117648], [842.3529411764706, 594.1176470588235], [801.1764705882354, 609.4117647058823], [812.9411764705883, 624.7058823529412], [820.0, 636.4705882352941], [849.4117647058823, 618.8235294117648]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 11206, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}；不停止完整测量，准备重新取下一帧。
+[2026-07-30 15:53:13] [RuleAB-A/B重试] 已清理坏 scene 缓存；reason=Step7固定索引路线运动/step=1/attempt=3: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[824.7058823529412, 570.5882352941177], [803.5294117647059, 589.4117647058823], [807.0588235294118, 617.6470588235294], [831.7647058823529, 625.8823529411765], [838.8235294117648, 618.8235294117648], [842.3529411764706, 594.1176470588235], [801.1764705882354, 609.4117647058823], [812.9411764705883, 624.7058823529412], [820.0, 636.4705882352941], [849.4117647058823, 618.8235294117648]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 11206, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}
+[2026-07-30 15:53:13] [Step7实时] 结束：ok=True, overshoot=False, reason=realtime_bmask_longest_edge_delta_ge_target_min_continue_measurement, final_angle=10.52382970463799, final_delta=0.0873548996978144, records=2, csv=measurement_output\save\07.30\20260730_155214\ab_angle_realtime_bmask_longest_edge\step7_realtime_angle_records.csv
+[2026-07-30 15:53:13] [激光开关] MOVE axis=2, steps=-500
+[2026-07-30 15:53:13] [虚拟Newport] move_by(axis=2, steps=-500.0)，virtual_pos=-100.0；未控制真实硬件
+[2026-07-30 15:53:13] [虚拟Newport] wait_move(axis=2)：立即完成
+[2026-07-30 15:53:13] [激光开关] OFF 完成：axis=2, steps=-500
+[2026-07-30 15:53:13] [RuleAB] Step8 角度达到阈值=0.01，激光已关闭
+[2026-07-30 15:53:13] ========== Step 9：检测颜色区域中心，必要时移动1/2通道 ==========
+[2026-07-30 15:53:13] ========== Step9：颜色检测区域中心对齐，必要时移动1/2通道 ==========
+[2026-07-30 15:53:13] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:53:13] [RuleAB-A/B重试] Step9颜色中心保存A/B: A/B 分割失败 attempt=1/3: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[824.7058823529412, 570.5882352941177], [803.5294117647059, 589.4117647058823], [807.0588235294118, 617.6470588235294], [831.7647058823529, 625.8823529411765], [838.8235294117648, 618.8235294117648], [842.3529411764706, 594.1176470588235], [801.1764705882354, 609.4117647058823], [812.9411764705883, 624.7058823529412], [820.0, 636.4705882352941], [849.4117647058823, 618.8235294117648]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 11063, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}；不停止完整测量，准备重新取下一帧。
+[2026-07-30 15:53:13] [RuleAB-A/B重试] 已清理坏 scene 缓存；reason=Step9颜色中心保存A/B/attempt=1: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[824.7058823529412, 570.5882352941177], [803.5294117647059, 589.4117647058823], [807.0588235294118, 617.6470588235294], [831.7647058823529, 625.8823529411765], [838.8235294117648, 618.8235294117648], [842.3529411764706, 594.1176470588235], [801.1764705882354, 609.4117647058823], [812.9411764705883, 624.7058823529412], [820.0, 636.4705882352941], [849.4117647058823, 618.8235294117648]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 11063, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}
+[2026-07-30 15:53:14] [RuleAB-A/B重试] Step9颜色中心保存A/B: A/B 分割失败 attempt=2/3: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[824.7058823529412, 570.5882352941177], [803.5294117647059, 589.4117647058823], [807.0588235294118, 617.6470588235294], [831.7647058823529, 625.8823529411765], [838.8235294117648, 618.8235294117648], [842.3529411764706, 594.1176470588235], [801.1764705882354, 609.4117647058823], [812.9411764705883, 624.7058823529412], [820.0, 636.4705882352941], [849.4117647058823, 618.8235294117648]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 11193, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}；不停止完整测量，准备重新取下一帧。
+[2026-07-30 15:53:14] [RuleAB-A/B重试] 已清理坏 scene 缓存；reason=Step9颜色中心保存A/B/attempt=2: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[824.7058823529412, 570.5882352941177], [803.5294117647059, 589.4117647058823], [807.0588235294118, 617.6470588235294], [831.7647058823529, 625.8823529411765], [838.8235294117648, 618.8235294117648], [842.3529411764706, 594.1176470588235], [801.1764705882354, 609.4117647058823], [812.9411764705883, 624.7058823529412], [820.0, 636.4705882352941], [849.4117647058823, 618.8235294117648]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 11193, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}
+[2026-07-30 15:53:14] [RuleAB-A/B重试] Step9颜色中心保存A/B: A/B 分割失败 attempt=3/3: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[824.7058823529412, 570.5882352941177], [803.5294117647059, 589.4117647058823], [807.0588235294118, 617.6470588235294], [831.7647058823529, 625.8823529411765], [838.8235294117648, 618.8235294117648], [842.3529411764706, 594.1176470588235], [801.1764705882354, 609.4117647058823], [812.9411764705883, 624.7058823529412], [820.0, 636.4705882352941], [849.4117647058823, 618.8235294117648]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 11116, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}；不停止完整测量，准备重新取下一帧。
+[2026-07-30 15:53:14] [RuleAB-A/B重试] 已清理坏 scene 缓存；reason=Step9颜色中心保存A/B/attempt=3: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[824.7058823529412, 570.5882352941177], [803.5294117647059, 589.4117647058823], [807.0588235294118, 617.6470588235294], [831.7647058823529, 625.8823529411765], [838.8235294117648, 618.8235294117648], [842.3529411764706, 594.1176470588235], [801.1764705882354, 609.4117647058823], [812.9411764705883, 624.7058823529412], [820.0, 636.4705882352941], [849.4117647058823, 618.8235294117648]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 11116, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}
+[2026-07-30 15:53:14] [Step9-颜色中心] 当前帧 A/B 分割失败，本轮仍继续颜色中心检测：Step9颜色中心保存A/B: A/B 分割连续失败 3 次，最后错误：[ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[824.7058823529412, 570.5882352941177], [803.5294117647059, 589.4117647058823], [807.0588235294118, 617.6470588235294], [831.7647058823529, 625.8823529411765], [838.8235294117648, 618.8235294117648], [842.3529411764706, 594.1176470588235], [801.1764705882354, 609.4117647058823], [812.9411764705883, 624.7058823529412], [820.0, 636.4705882352941], [849.4117647058823, 618.8235294117648]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 11116, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}
+[2026-07-30 15:53:14] [Step9-颜色中心] cycle=1, 检测失败：{'cycle': 1, 'time': '2026-07-30 15:53:14', 'ok': False, 'aligned': False, 'reason': "capture_failed:'MeasurementWorkflow' object has no attribute '_capture_current_frame_rgb'", 'center_x': '', 'center_y': '', 'target_x': 529.412, 'target_y': 409.412, 'dx': '', 'dy': '', 'tolerance_px': 50.0, 'color_area_px': 0, 'a_mask_area_px': None, 'b_mask_area_px': None, 'action_code': 0, 'action_name': '', 'move_info': {'moved': False, 'reason': "capture_failed:'MeasurementWorkflow' object has no attribute '_capture_current_frame_rgb'"}, 'overlay_path': None, 'frame_path': None, 'color_mask_path': None, 'a_mask_path': None, 'b_mask_path': None, 'c_mask_path': None, 'c_raw_mask_path': None}
+[2026-07-30 15:53:14] ========== Step 10：补焦判断（循环等待） ==========
+[2026-07-30 15:53:15] [聚焦补焦] FocusScore_ratio=1.0089 在允许区间[0.9500, 1.0500] 内，不触发补焦
+[2026-07-30 15:53:15] [补焦判断] FocusScore 已达标，退出等待循环（第 1 次检查）
+[2026-07-30 15:53:15] ========== Step 1：Bmask最长边角度检测 current_angle ==========
+[2026-07-30 15:53:15] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=runtime_rule_ab_params/step1_bmask_longest_edge_angle
+[2026-07-30 15:53:15] ========== YOLO-OBB角度检测：current_angle_yolo_obb ==========
+[2026-07-30 15:53:15] [YOLO-OBB角度-current_angle_yolo_obb] angle=10.623121650023663, conf=0.890322208404541, class=bn_up, overlay=measurement_output\save\07.30\20260730_155214\ab_angle_realtime_yolo_obb\20260730_155315_375_current_angle_yolo_obb_YOLO_OBB_overlay.png
+[2026-07-30 15:53:15] [角度检测-current_angle] 已使用当前帧 Bmask 最长边角度作为本轮 baseline：10.623121650023663°；source=yolo_obb_long_edge
+[2026-07-30 15:53:15] ========== 实际主循环第 1 次生成保存路径 ==========
+[2026-07-30 15:53:15] ========== 生成最终存储路径 ==========
+[2026-07-30 15:53:15] [保存路径] run_session_dir=measurement_output\save\07.30\20260730_155214
+[2026-07-30 15:53:15] [保存路径] spectrum_csv=measurement_output\save\07.30\20260730_155214\cycle_0001_155315_523_spectrum.csv
+[2026-07-30 15:53:15] ========== Step 11：照明光 OFF，等待稳定 ==========
+[2026-07-30 15:53:15] [虚拟照明] OFF：未控制真实硬件
+[2026-07-30 15:53:15] [照明光] OFF
+[2026-07-30 15:53:16] [照明光] OFF 后稳定等待：1.200 s（由“稳定等待/ms”控制）
+[2026-07-30 15:53:18] ========== Step 12：LabVIEW 光谱采集 ==========
+[2026-07-30 15:53:18] ========== LabVIEW 采集光谱 ==========
+[2026-07-30 15:53:18] [光谱][virtual] 固定值光谱结果：num_points=1024, raw_original_peak=1000.0, raw_filtered_peak=1000.0, raw_median_peak=1000.0, fit_peak=1000.0；未调用 LabVIEW/TCP/阈值滤波/中值滤波/拟合处理
+[2026-07-30 15:53:18] ========== Step 13：照明光 ON ==========
+[2026-07-30 15:53:18] [虚拟照明] ON：未控制真实硬件
+[2026-07-30 15:53:18] [照明光] ON
+[2026-07-30 15:53:18] ========== Step 14：保存数据（异步线程，使用 Step1 最终角度） ==========
+[2026-07-30 15:53:18] ========== 保存本轮测量结果 ==========
+[2026-07-30 15:53:18] [异步保存] 第 1 轮保存线程已启动：save-cycle-0001；提交准备耗时=0.002 s
+[2026-07-30 15:53:18] [Step 14] 异步保存任务提交耗时：0.004 s；保存角度=Step1最终角度；append_plot_point=True
+[2026-07-30 15:53:18] [保存] 光谱 CSV：measurement_output\save\07.30\20260730_155214\cycle_0001_155315_523_spectrum.csv；wavelength列已写入中心波长；已写入本轮角度 angle_deg=10.623121650023663
+[2026-07-30 15:53:18] ========== 实际主循环第 1/3 次结束 ==========
+[2026-07-30 15:53:18] [保存] Summary CSV 已更新：measurement_output\save\07.30\measurement_summary.csv
+[2026-07-30 15:53:18] [保存] Excel汇总已追加第 1 轮：measurement_output\save\07.30\measurement_summary_20260730_155032.xlsx
+[2026-07-30 15:53:18] [绘图] 已追加数据点：cycle=1, angle=10.623121650023663, fit_peak=1000.0
+[2026-07-30 15:53:18] ========== 实际主循环第 2/3 次开始 ==========
+[2026-07-30 15:53:18] ========== Step 7：打开激光 ==========
+[2026-07-30 15:53:18] [激光开关] MOVE axis=2, steps=400
+[2026-07-30 15:53:18] [虚拟Newport] move_by(axis=2, steps=400.0)，virtual_pos=300.0；未控制真实硬件
+[2026-07-30 15:53:18] [虚拟Newport] wait_move(axis=2)：立即完成
+[2026-07-30 15:53:18] [激光开关] ON 完成：axis=2, steps=400
+[2026-07-30 15:53:18] [异步保存] 第 1 轮保存完成
+[2026-07-30 15:53:18] ========== Step 8：A推动B，并用当前帧Bmask最长边检测B角度 ==========
+[2026-07-30 15:53:18] [RuleAB][virtual] 完整测量 Step8 使用真实视觉/角度逻辑，但 Stage34 为虚拟动作：不连接、不控制真实 3/4 通道。
+[2026-07-30 15:53:18] ========== RuleAB：Step7实时双线程，Bmask最长边监控角度 ==========
+[2026-07-30 15:53:18] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_start
+[2026-07-30 15:53:18] ========== YOLO-OBB角度检测：step7_realtime_frame_000001 ==========
+[2026-07-30 15:53:18] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:53:18] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=runtime_rule_ab_params/sync_config_from_ui_to_workflow
+[2026-07-30 15:53:18] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_controller_step_1
+[2026-07-30 15:53:18] [Step7实时控制] step=1: 执行一次 C边沿路线运动；route_points=31；pause保留但可被stop_event打断。
+[2026-07-30 15:53:18] [YOLO-OBB角度-step7_realtime_frame_000001] angle=10.72339602204903, conf=0.890241801738739, class=bn_up, overlay=measurement_output\save\07.30\20260730_155214\ab_angle_realtime_yolo_obb\20260730_155318_644_step7_realtime_frame_000001_YOLO_OBB_overlay.png
+[2026-07-30 15:53:18] [Step7实时角度] 角度变化已达到阈值：final_angle=10.723396°, baseline=10.623121650023663, delta=0.100° >= 0.010°；停止/暂停Stage34当前推动，不再使用6°上限/overshoot判定；不在Step7角度线程关闭激光，后续由完整测量主流程正常关激光，并继续完整测量。
+[2026-07-30 15:53:18] [虚拟Thorlabs] stop_all()
+[2026-07-30 15:53:18] [Step7实时] 已发送 stage.stop_all()；reason=angle_delta_ge_target_min_no_laser_off
+[2026-07-30 15:53:19] [RuleAB-A/B重试] Step7固定索引路线运动/step=1: A/B 分割失败 attempt=1/3: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[824.7058823529412, 570.5882352941177], [803.5294117647059, 589.4117647058823], [807.0588235294118, 617.6470588235294], [831.7647058823529, 625.8823529411765], [838.8235294117648, 618.8235294117648], [842.3529411764706, 594.1176470588235], [801.1764705882354, 609.4117647058823], [812.9411764705883, 624.7058823529412], [820.0, 636.4705882352941], [849.4117647058823, 618.8235294117648]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 11496, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}；不停止完整测量，准备重新取下一帧。
+[2026-07-30 15:53:19] [RuleAB-A/B重试] 已清理坏 scene 缓存；reason=Step7固定索引路线运动/step=1/attempt=1: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[824.7058823529412, 570.5882352941177], [803.5294117647059, 589.4117647058823], [807.0588235294118, 617.6470588235294], [831.7647058823529, 625.8823529411765], [838.8235294117648, 618.8235294117648], [842.3529411764706, 594.1176470588235], [801.1764705882354, 609.4117647058823], [812.9411764705883, 624.7058823529412], [820.0, 636.4705882352941], [849.4117647058823, 618.8235294117648]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 11496, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}
+[2026-07-30 15:53:19] [RuleAB-A/B重试] Step7固定索引路线运动/step=1: A/B 分割失败 attempt=2/3: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[824.7058823529412, 570.5882352941177], [803.5294117647059, 589.4117647058823], [807.0588235294118, 617.6470588235294], [831.7647058823529, 625.8823529411765], [838.8235294117648, 618.8235294117648], [842.3529411764706, 594.1176470588235], [801.1764705882354, 609.4117647058823], [812.9411764705883, 624.7058823529412], [820.0, 636.4705882352941], [849.4117647058823, 618.8235294117648]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 11339, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}；不停止完整测量，准备重新取下一帧。
+[2026-07-30 15:53:19] [RuleAB-A/B重试] 已清理坏 scene 缓存；reason=Step7固定索引路线运动/step=1/attempt=2: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[824.7058823529412, 570.5882352941177], [803.5294117647059, 589.4117647058823], [807.0588235294118, 617.6470588235294], [831.7647058823529, 625.8823529411765], [838.8235294117648, 618.8235294117648], [842.3529411764706, 594.1176470588235], [801.1764705882354, 609.4117647058823], [812.9411764705883, 624.7058823529412], [820.0, 636.4705882352941], [849.4117647058823, 618.8235294117648]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 11339, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}
+[2026-07-30 15:53:19] [RuleAB-A/B重试] Step7固定索引路线运动/step=1: A/B 分割失败 attempt=3/3: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[824.7058823529412, 570.5882352941177], [803.5294117647059, 589.4117647058823], [807.0588235294118, 617.6470588235294], [831.7647058823529, 625.8823529411765], [838.8235294117648, 618.8235294117648], [842.3529411764706, 594.1176470588235], [801.1764705882354, 609.4117647058823], [812.9411764705883, 624.7058823529412], [820.0, 636.4705882352941], [849.4117647058823, 618.8235294117648]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 11409, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}；不停止完整测量，准备重新取下一帧。
+[2026-07-30 15:53:19] [RuleAB-A/B重试] 已清理坏 scene 缓存；reason=Step7固定索引路线运动/step=1/attempt=3: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[824.7058823529412, 570.5882352941177], [803.5294117647059, 589.4117647058823], [807.0588235294118, 617.6470588235294], [831.7647058823529, 625.8823529411765], [838.8235294117648, 618.8235294117648], [842.3529411764706, 594.1176470588235], [801.1764705882354, 609.4117647058823], [812.9411764705883, 624.7058823529412], [820.0, 636.4705882352941], [849.4117647058823, 618.8235294117648]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 11409, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}
+[2026-07-30 15:53:19] [Step7实时] 结束：ok=True, overshoot=False, reason=realtime_bmask_longest_edge_delta_ge_target_min_continue_measurement, final_angle=10.72339602204903, final_delta=0.1002743720253676, records=2, csv=measurement_output\save\07.30\20260730_155214\ab_angle_realtime_bmask_longest_edge\step7_realtime_angle_records.csv
+[2026-07-30 15:53:20] [激光开关] MOVE axis=2, steps=-500
+[2026-07-30 15:53:20] [虚拟Newport] move_by(axis=2, steps=-500.0)，virtual_pos=-200.0；未控制真实硬件
+[2026-07-30 15:53:20] [虚拟Newport] wait_move(axis=2)：立即完成
+[2026-07-30 15:53:20] [激光开关] OFF 完成：axis=2, steps=-500
+[2026-07-30 15:53:20] [RuleAB] Step8 角度达到阈值=0.01，激光已关闭
+[2026-07-30 15:53:20] ========== Step 9：检测颜色区域中心，必要时移动1/2通道 ==========
+[2026-07-30 15:53:20] ========== Step9：颜色检测区域中心对齐，必要时移动1/2通道 ==========
+[2026-07-30 15:53:20] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:53:20] [RuleAB-A/B重试] Step9颜色中心保存A/B: A/B 分割失败 attempt=1/3: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[824.7058823529412, 570.5882352941177], [803.5294117647059, 589.4117647058823], [807.0588235294118, 617.6470588235294], [831.7647058823529, 625.8823529411765], [838.8235294117648, 618.8235294117648], [842.3529411764706, 594.1176470588235], [801.1764705882354, 609.4117647058823], [812.9411764705883, 624.7058823529412], [820.0, 636.4705882352941], [849.4117647058823, 618.8235294117648]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 11391, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}；不停止完整测量，准备重新取下一帧。
+[2026-07-30 15:53:20] [RuleAB-A/B重试] 已清理坏 scene 缓存；reason=Step9颜色中心保存A/B/attempt=1: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[824.7058823529412, 570.5882352941177], [803.5294117647059, 589.4117647058823], [807.0588235294118, 617.6470588235294], [831.7647058823529, 625.8823529411765], [838.8235294117648, 618.8235294117648], [842.3529411764706, 594.1176470588235], [801.1764705882354, 609.4117647058823], [812.9411764705883, 624.7058823529412], [820.0, 636.4705882352941], [849.4117647058823, 618.8235294117648]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 11391, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}
+[2026-07-30 15:53:20] [RuleAB-A/B重试] Step9颜色中心保存A/B: A/B 分割失败 attempt=2/3: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 1, 'positive_points': [[824.7058823529412, 570.5882352941177], [803.5294117647059, 589.4117647058823], [807.0588235294118, 617.6470588235294], [831.7647058823529, 625.8823529411765], [838.8235294117648, 618.8235294117648], [842.3529411764706, 594.1176470588235], [801.1764705882354, 609.4117647058823], [812.9411764705883, 624.7058823529412], [820.0, 636.4705882352941], [849.4117647058823, 618.8235294117648]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 1, 'reason': 'all_components_below_min_area', 'components': [], 'raw_area_before_exclude_px': 9229, 'area_after_exclude_bc_px': 1, 'exclude_bc_dilate_px': 5}；不停止完整测量，准备重新取下一帧。
+[2026-07-30 15:53:20] [RuleAB-A/B重试] 已清理坏 scene 缓存；reason=Step9颜色中心保存A/B/attempt=2: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 1, 'positive_points': [[824.7058823529412, 570.5882352941177], [803.5294117647059, 589.4117647058823], [807.0588235294118, 617.6470588235294], [831.7647058823529, 625.8823529411765], [838.8235294117648, 618.8235294117648], [842.3529411764706, 594.1176470588235], [801.1764705882354, 609.4117647058823], [812.9411764705883, 624.7058823529412], [820.0, 636.4705882352941], [849.4117647058823, 618.8235294117648]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 1, 'reason': 'all_components_below_min_area', 'components': [], 'raw_area_before_exclude_px': 9229, 'area_after_exclude_bc_px': 1, 'exclude_bc_dilate_px': 5}
+[2026-07-30 15:53:21] [RuleAB-A/B重试] Step9颜色中心保存A/B: A/B 分割失败 attempt=3/3: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[824.7058823529412, 570.5882352941177], [803.5294117647059, 589.4117647058823], [807.0588235294118, 617.6470588235294], [831.7647058823529, 625.8823529411765], [838.8235294117648, 618.8235294117648], [842.3529411764706, 594.1176470588235], [801.1764705882354, 609.4117647058823], [812.9411764705883, 624.7058823529412], [820.0, 636.4705882352941], [849.4117647058823, 618.8235294117648]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 8894, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}；不停止完整测量，准备重新取下一帧。
+[2026-07-30 15:53:21] [RuleAB-A/B重试] 已清理坏 scene 缓存；reason=Step9颜色中心保存A/B/attempt=3: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[824.7058823529412, 570.5882352941177], [803.5294117647059, 589.4117647058823], [807.0588235294118, 617.6470588235294], [831.7647058823529, 625.8823529411765], [838.8235294117648, 618.8235294117648], [842.3529411764706, 594.1176470588235], [801.1764705882354, 609.4117647058823], [812.9411764705883, 624.7058823529412], [820.0, 636.4705882352941], [849.4117647058823, 618.8235294117648]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 8894, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}
+[2026-07-30 15:53:21] [Step9-颜色中心] 当前帧 A/B 分割失败，本轮仍继续颜色中心检测：Step9颜色中心保存A/B: A/B 分割连续失败 3 次，最后错误：[ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[824.7058823529412, 570.5882352941177], [803.5294117647059, 589.4117647058823], [807.0588235294118, 617.6470588235294], [831.7647058823529, 625.8823529411765], [838.8235294117648, 618.8235294117648], [842.3529411764706, 594.1176470588235], [801.1764705882354, 609.4117647058823], [812.9411764705883, 624.7058823529412], [820.0, 636.4705882352941], [849.4117647058823, 618.8235294117648]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 8894, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}
+[2026-07-30 15:53:21] [Step9-颜色中心] cycle=1, 检测失败：{'cycle': 1, 'time': '2026-07-30 15:53:21', 'ok': False, 'aligned': False, 'reason': "capture_failed:'MeasurementWorkflow' object has no attribute '_capture_current_frame_rgb'", 'center_x': '', 'center_y': '', 'target_x': 529.412, 'target_y': 409.412, 'dx': '', 'dy': '', 'tolerance_px': 50.0, 'color_area_px': 0, 'a_mask_area_px': None, 'b_mask_area_px': None, 'action_code': 0, 'action_name': '', 'move_info': {'moved': False, 'reason': "capture_failed:'MeasurementWorkflow' object has no attribute '_capture_current_frame_rgb'"}, 'overlay_path': None, 'frame_path': None, 'color_mask_path': None, 'a_mask_path': None, 'b_mask_path': None, 'c_mask_path': None, 'c_raw_mask_path': None}
+[2026-07-30 15:53:21] ========== Step 10：补焦判断（循环等待） ==========
+[2026-07-30 15:53:21] [聚焦补焦] FocusScore_ratio=1.4284 超出允许区间[0.9500, 1.0500]，连续低分计数=1/3
+[2026-07-30 15:53:21] [补焦判断] 分数未达标（score=1.4284386888787617），继续等待（第 1 次检查）
+[2026-07-30 15:53:21] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 15:53:22] [聚焦补焦] FocusScore_ratio=1.3921 超出允许区间[0.9500, 1.0500]，连续低分计数=2/3
+[2026-07-30 15:53:22] [补焦判断] 分数未达标（score=1.392107336558114），继续等待（第 2 次检查）
+[2026-07-30 15:53:22] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 15:53:22] [聚焦补焦] FocusScore_ratio=1.3808 超出允许区间[0.9500, 1.0500]，连续低分计数=3/3
+[2026-07-30 15:53:22] [聚焦补焦] 触发补焦，启动闭环搜索
+[2026-07-30 15:53:22] [聚焦补焦] virtual 模式：使用 FocusSimulator
+[2026-07-30 15:53:22] ========== 闭环补焦 #1 开始: strategy=hill_climb, target=0.95, upper_target=1.05 ==========
+[2026-07-30 15:53:23] [补焦-start] iter=0, z=0, score=None
+[2026-07-30 15:53:23] [补焦-probe_plus] iter=1, z=10, score=None
+[2026-07-30 15:53:23] [补焦-probe_return] iter=2, z=0, score=None
+[2026-07-30 15:53:23] [补焦-probe_minus] iter=3, z=-10, score=None
+[2026-07-30 15:53:23] [补焦-probe_return] iter=4, z=0, score=None
+[2026-07-30 15:53:23] [补焦] 双向试探均无明显提升，停止
+[2026-07-30 15:53:23] ========== 闭环补焦 #1 结束: ok=True, best_score=1.3808, best_z=0 ==========
+[2026-07-30 15:53:23] [聚焦补焦] 闭环结束：ok=True, best_score=1.3808312504753901
+[2026-07-30 15:53:23] [聚焦补焦] 搜索未达标（best=1.3808312504753901），下次将尝试更大范围搜索
+[2026-07-30 15:53:23] [补焦判断] 补焦搜索正常结束但分数未达标（score=1.3808312504753901），继续等待（第 3 次检查）
+[2026-07-30 15:53:24] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 15:53:24] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 15:53:24] [补焦判断] 分数未达标（score=None），继续等待（第 4 次检查）
+[2026-07-30 15:53:24] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 15:53:24] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 15:53:24] [补焦判断] 分数未达标（score=None），继续等待（第 5 次检查）
+[2026-07-30 15:53:24] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 15:53:24] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 15:53:24] [补焦判断] 分数未达标（score=None），继续等待（第 6 次检查）
+[2026-07-30 15:53:24] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 15:53:25] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 15:53:25] [补焦判断] 分数未达标（score=None），继续等待（第 7 次检查）
+[2026-07-30 15:53:25] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 15:53:25] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 15:53:25] [补焦判断] 分数未达标（score=None），继续等待（第 8 次检查）
+[2026-07-30 15:53:25] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 15:53:25] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 15:53:25] [补焦判断] 分数未达标（score=None），继续等待（第 9 次检查）
+[2026-07-30 15:53:25] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 15:53:26] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 15:53:26] [补焦判断] 分数未达标（score=None），继续等待（第 10 次检查）
+[2026-07-30 15:53:26] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 15:53:26] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 15:53:26] [补焦判断] 分数未达标（score=None），继续等待（第 11 次检查）
+[2026-07-30 15:53:26] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 15:53:26] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 15:53:26] [补焦判断] 分数未达标（score=None），继续等待（第 12 次检查）
+[2026-07-30 15:53:26] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 15:53:27] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 15:53:27] [补焦判断] 分数未达标（score=None），继续等待（第 13 次检查）
+[2026-07-30 15:53:27] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 15:53:27] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 15:53:27] [补焦判断] 分数未达标（score=None），继续等待（第 14 次检查）
+[2026-07-30 15:53:27] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 15:53:27] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 15:53:27] [补焦判断] 分数未达标（score=None），继续等待（第 15 次检查）
+[2026-07-30 15:53:27] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 15:53:28] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 15:53:28] [补焦判断] 分数未达标（score=None），继续等待（第 16 次检查）
+[2026-07-30 15:53:28] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 15:53:28] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 15:53:28] [补焦判断] 分数未达标（score=None），继续等待（第 17 次检查）
+[2026-07-30 15:53:28] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 15:53:28] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 15:53:28] [补焦判断] 分数未达标（score=None），继续等待（第 18 次检查）
+[2026-07-30 15:53:28] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 15:53:29] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 15:53:29] [补焦判断] 分数未达标（score=None），继续等待（第 19 次检查）
+[2026-07-30 15:53:29] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 15:53:29] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 15:53:29] [补焦判断] 分数未达标（score=None），继续等待（第 20 次检查）
+[2026-07-30 15:53:29] [补焦判断] 已达到最大检查次数 20，继续进入下一步
+[2026-07-30 15:53:29] ========== Step 1：Bmask最长边角度检测 current_angle ==========
+[2026-07-30 15:53:29] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=runtime_rule_ab_params/step1_bmask_longest_edge_angle
+[2026-07-30 15:53:29] ========== YOLO-OBB角度检测：current_angle_yolo_obb ==========
+[2026-07-30 15:53:29] [YOLO-OBB角度-current_angle_yolo_obb] angle=10.119750102337804, conf=0.8863958120346069, class=bn_up, overlay=measurement_output\save\07.30\20260730_155214\ab_angle_realtime_yolo_obb\20260730_155329_488_current_angle_yolo_obb_YOLO_OBB_overlay.png
+[2026-07-30 15:53:29] [角度检测-current_angle] 已使用当前帧 Bmask 最长边角度作为本轮 baseline：10.119750102337804°；source=yolo_obb_long_edge
+[2026-07-30 15:53:29] ========== 实际主循环第 2 次生成保存路径 ==========
+[2026-07-30 15:53:29] ========== 生成最终存储路径 ==========
+[2026-07-30 15:53:29] [保存路径] run_session_dir=measurement_output\save\07.30\20260730_155214
+[2026-07-30 15:53:29] [保存路径] spectrum_csv=measurement_output\save\07.30\20260730_155214\cycle_0002_155329_604_spectrum.csv
+[2026-07-30 15:53:29] ========== Step 11：照明光 OFF，等待稳定 ==========
+[2026-07-30 15:53:29] [虚拟照明] OFF：未控制真实硬件
+[2026-07-30 15:53:29] [照明光] OFF
+[2026-07-30 15:53:30] [照明光] OFF 后稳定等待：1.200 s（由“稳定等待/ms”控制）
+[2026-07-30 15:53:32] ========== Step 12：LabVIEW 光谱采集 ==========
+[2026-07-30 15:53:32] ========== LabVIEW 采集光谱 ==========
+[2026-07-30 15:53:32] [光谱][virtual] 固定值光谱结果：num_points=1024, raw_original_peak=1000.0, raw_filtered_peak=1000.0, raw_median_peak=1000.0, fit_peak=1000.0；未调用 LabVIEW/TCP/阈值滤波/中值滤波/拟合处理
+[2026-07-30 15:53:32] ========== Step 13：照明光 ON ==========
+[2026-07-30 15:53:32] [虚拟照明] ON：未控制真实硬件
+[2026-07-30 15:53:32] [照明光] ON
+[2026-07-30 15:53:32] ========== Step 14：保存数据（异步线程，使用 Step1 最终角度） ==========
+[2026-07-30 15:53:32] ========== 保存本轮测量结果 ==========
+[2026-07-30 15:53:32] [异步保存] 第 2 轮保存线程已启动：save-cycle-0002；提交准备耗时=0.000 s
+[2026-07-30 15:53:32] [Step 14] 异步保存任务提交耗时：0.004 s；保存角度=Step1最终角度；append_plot_point=True
+[2026-07-30 15:53:32] [保存] 光谱 CSV：measurement_output\save\07.30\20260730_155214\cycle_0002_155329_604_spectrum.csv；wavelength列已写入中心波长；已写入本轮角度 angle_deg=10.119750102337804
+[2026-07-30 15:53:32] ========== 实际主循环第 2/3 次结束 ==========
+[2026-07-30 15:53:32] [保存] Summary CSV 已更新：measurement_output\save\07.30\measurement_summary.csv
+[2026-07-30 15:53:32] [保存] Excel汇总已追加第 2 轮：measurement_output\save\07.30\measurement_summary_20260730_155032.xlsx
+[2026-07-30 15:53:32] [绘图] 已追加数据点：cycle=2, angle=10.119750102337804, fit_peak=1000.0
+[2026-07-30 15:53:32] ========== 实际主循环第 3/3 次开始 ==========
+[2026-07-30 15:53:32] ========== Step 7：打开激光 ==========
+[2026-07-30 15:53:32] [激光开关] MOVE axis=2, steps=400
+[2026-07-30 15:53:32] [虚拟Newport] move_by(axis=2, steps=400.0)，virtual_pos=200.0；未控制真实硬件
+[2026-07-30 15:53:32] [虚拟Newport] wait_move(axis=2)：立即完成
+[2026-07-30 15:53:32] [激光开关] ON 完成：axis=2, steps=400
+[2026-07-30 15:53:32] [异步保存] 第 2 轮保存完成
+[2026-07-30 15:53:32] ========== Step 8：A推动B，并用当前帧Bmask最长边检测B角度 ==========
+[2026-07-30 15:53:32] [RuleAB][virtual] 完整测量 Step8 使用真实视觉/角度逻辑，但 Stage34 为虚拟动作：不连接、不控制真实 3/4 通道。
+[2026-07-30 15:53:32] ========== RuleAB：Step7实时双线程，Bmask最长边监控角度 ==========
+[2026-07-30 15:53:32] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_start
+[2026-07-30 15:53:32] ========== YOLO-OBB角度检测：step7_realtime_frame_000001 ==========
+[2026-07-30 15:53:32] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:53:32] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=runtime_rule_ab_params/sync_config_from_ui_to_workflow
+[2026-07-30 15:53:32] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_controller_step_1
+[2026-07-30 15:53:32] [Step7实时控制] step=1: 执行一次 C边沿路线运动；route_points=31；pause保留但可被stop_event打断。
+[2026-07-30 15:53:32] [YOLO-OBB角度-step7_realtime_frame_000001] angle=10.07150119499812, conf=0.8866969347000122, class=bn_up, overlay=measurement_output\save\07.30\20260730_155214\ab_angle_realtime_yolo_obb\20260730_155332_926_step7_realtime_frame_000001_YOLO_OBB_overlay.png
+[2026-07-30 15:53:32] [Step7实时角度] 角度变化已达到阈值：final_angle=10.071501°, baseline=10.119750102337804, delta=0.048° >= 0.010°；停止/暂停Stage34当前推动，不再使用6°上限/overshoot判定；不在Step7角度线程关闭激光，后续由完整测量主流程正常关激光，并继续完整测量。
+[2026-07-30 15:53:32] [虚拟Thorlabs] stop_all()
+[2026-07-30 15:53:33] [Step7实时] 已发送 stage.stop_all()；reason=angle_delta_ge_target_min_no_laser_off
+[2026-07-30 15:53:33] [RuleAB-A/B重试] Step7固定索引路线运动/step=1: A/B 分割失败 attempt=1/3: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[824.7058823529412, 570.5882352941177], [803.5294117647059, 589.4117647058823], [807.0588235294118, 617.6470588235294], [831.7647058823529, 625.8823529411765], [838.8235294117648, 618.8235294117648], [842.3529411764706, 594.1176470588235], [801.1764705882354, 609.4117647058823], [812.9411764705883, 624.7058823529412], [820.0, 636.4705882352941], [849.4117647058823, 618.8235294117648]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 8872, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}；不停止完整测量，准备重新取下一帧。
+[2026-07-30 15:53:33] [RuleAB-A/B重试] 已清理坏 scene 缓存；reason=Step7固定索引路线运动/step=1/attempt=1: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[824.7058823529412, 570.5882352941177], [803.5294117647059, 589.4117647058823], [807.0588235294118, 617.6470588235294], [831.7647058823529, 625.8823529411765], [838.8235294117648, 618.8235294117648], [842.3529411764706, 594.1176470588235], [801.1764705882354, 609.4117647058823], [812.9411764705883, 624.7058823529412], [820.0, 636.4705882352941], [849.4117647058823, 618.8235294117648]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 8872, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}
+[2026-07-30 15:53:33] [RuleAB-A/B重试] Step7固定索引路线运动/step=1: A/B 分割失败 attempt=2/3: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[824.7058823529412, 570.5882352941177], [803.5294117647059, 589.4117647058823], [807.0588235294118, 617.6470588235294], [831.7647058823529, 625.8823529411765], [838.8235294117648, 618.8235294117648], [842.3529411764706, 594.1176470588235], [801.1764705882354, 609.4117647058823], [812.9411764705883, 624.7058823529412], [820.0, 636.4705882352941], [849.4117647058823, 618.8235294117648]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 8877, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}；不停止完整测量，准备重新取下一帧。
+[2026-07-30 15:53:33] [RuleAB-A/B重试] 已清理坏 scene 缓存；reason=Step7固定索引路线运动/step=1/attempt=2: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[824.7058823529412, 570.5882352941177], [803.5294117647059, 589.4117647058823], [807.0588235294118, 617.6470588235294], [831.7647058823529, 625.8823529411765], [838.8235294117648, 618.8235294117648], [842.3529411764706, 594.1176470588235], [801.1764705882354, 609.4117647058823], [812.9411764705883, 624.7058823529412], [820.0, 636.4705882352941], [849.4117647058823, 618.8235294117648]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 8877, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}
+[2026-07-30 15:53:34] [RuleAB-A/B重试] Step7固定索引路线运动/step=1: A/B 分割失败 attempt=3/3: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[824.7058823529412, 570.5882352941177], [803.5294117647059, 589.4117647058823], [807.0588235294118, 617.6470588235294], [831.7647058823529, 625.8823529411765], [838.8235294117648, 618.8235294117648], [842.3529411764706, 594.1176470588235], [801.1764705882354, 609.4117647058823], [812.9411764705883, 624.7058823529412], [820.0, 636.4705882352941], [849.4117647058823, 618.8235294117648]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 8872, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}；不停止完整测量，准备重新取下一帧。
+[2026-07-30 15:53:34] [RuleAB-A/B重试] 已清理坏 scene 缓存；reason=Step7固定索引路线运动/step=1/attempt=3: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[824.7058823529412, 570.5882352941177], [803.5294117647059, 589.4117647058823], [807.0588235294118, 617.6470588235294], [831.7647058823529, 625.8823529411765], [838.8235294117648, 618.8235294117648], [842.3529411764706, 594.1176470588235], [801.1764705882354, 609.4117647058823], [812.9411764705883, 624.7058823529412], [820.0, 636.4705882352941], [849.4117647058823, 618.8235294117648]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 8872, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}
+[2026-07-30 15:53:34] [Step7实时] 结束：ok=True, overshoot=False, reason=realtime_bmask_longest_edge_delta_ge_target_min_continue_measurement, final_angle=10.07150119499812, final_delta=0.048248907339683456, records=2, csv=measurement_output\save\07.30\20260730_155214\ab_angle_realtime_bmask_longest_edge\step7_realtime_angle_records.csv
+[2026-07-30 15:53:34] [激光开关] MOVE axis=2, steps=-500
+[2026-07-30 15:53:34] [虚拟Newport] move_by(axis=2, steps=-500.0)，virtual_pos=-300.0；未控制真实硬件
+[2026-07-30 15:53:34] [虚拟Newport] wait_move(axis=2)：立即完成
+[2026-07-30 15:53:34] [激光开关] OFF 完成：axis=2, steps=-500
+[2026-07-30 15:53:34] [RuleAB] Step8 角度达到阈值=0.01，激光已关闭
+[2026-07-30 15:53:34] ========== Step 9：检测颜色区域中心，必要时移动1/2通道 ==========
+[2026-07-30 15:53:34] ========== Step9：颜色检测区域中心对齐，必要时移动1/2通道 ==========
+[2026-07-30 15:53:34] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:53:34] [RuleAB-A/B重试] Step9颜色中心保存A/B: A/B 分割失败 attempt=1/3: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[824.7058823529412, 570.5882352941177], [803.5294117647059, 589.4117647058823], [807.0588235294118, 617.6470588235294], [831.7647058823529, 625.8823529411765], [838.8235294117648, 618.8235294117648], [842.3529411764706, 594.1176470588235], [801.1764705882354, 609.4117647058823], [812.9411764705883, 624.7058823529412], [820.0, 636.4705882352941], [849.4117647058823, 618.8235294117648]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 8878, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}；不停止完整测量，准备重新取下一帧。
+[2026-07-30 15:53:34] [RuleAB-A/B重试] 已清理坏 scene 缓存；reason=Step9颜色中心保存A/B/attempt=1: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[824.7058823529412, 570.5882352941177], [803.5294117647059, 589.4117647058823], [807.0588235294118, 617.6470588235294], [831.7647058823529, 625.8823529411765], [838.8235294117648, 618.8235294117648], [842.3529411764706, 594.1176470588235], [801.1764705882354, 609.4117647058823], [812.9411764705883, 624.7058823529412], [820.0, 636.4705882352941], [849.4117647058823, 618.8235294117648]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 8878, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}
+[2026-07-30 15:53:34] [RuleAB-A/B重试] Step9颜色中心保存A/B: A/B 分割失败 attempt=2/3: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[824.7058823529412, 570.5882352941177], [803.5294117647059, 589.4117647058823], [807.0588235294118, 617.6470588235294], [831.7647058823529, 625.8823529411765], [838.8235294117648, 618.8235294117648], [842.3529411764706, 594.1176470588235], [801.1764705882354, 609.4117647058823], [812.9411764705883, 624.7058823529412], [820.0, 636.4705882352941], [849.4117647058823, 618.8235294117648]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 8962, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}；不停止完整测量，准备重新取下一帧。
+[2026-07-30 15:53:34] [RuleAB-A/B重试] 已清理坏 scene 缓存；reason=Step9颜色中心保存A/B/attempt=2: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[824.7058823529412, 570.5882352941177], [803.5294117647059, 589.4117647058823], [807.0588235294118, 617.6470588235294], [831.7647058823529, 625.8823529411765], [838.8235294117648, 618.8235294117648], [842.3529411764706, 594.1176470588235], [801.1764705882354, 609.4117647058823], [812.9411764705883, 624.7058823529412], [820.0, 636.4705882352941], [849.4117647058823, 618.8235294117648]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 8962, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}
+[2026-07-30 15:53:35] [RuleAB-A/B重试] Step9颜色中心保存A/B: A/B 分割失败 attempt=3/3: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[824.7058823529412, 570.5882352941177], [803.5294117647059, 589.4117647058823], [807.0588235294118, 617.6470588235294], [831.7647058823529, 625.8823529411765], [838.8235294117648, 618.8235294117648], [842.3529411764706, 594.1176470588235], [801.1764705882354, 609.4117647058823], [812.9411764705883, 624.7058823529412], [820.0, 636.4705882352941], [849.4117647058823, 618.8235294117648]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 8858, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}；不停止完整测量，准备重新取下一帧。
+[2026-07-30 15:53:35] [RuleAB-A/B重试] 已清理坏 scene 缓存；reason=Step9颜色中心保存A/B/attempt=3: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[824.7058823529412, 570.5882352941177], [803.5294117647059, 589.4117647058823], [807.0588235294118, 617.6470588235294], [831.7647058823529, 625.8823529411765], [838.8235294117648, 618.8235294117648], [842.3529411764706, 594.1176470588235], [801.1764705882354, 609.4117647058823], [812.9411764705883, 624.7058823529412], [820.0, 636.4705882352941], [849.4117647058823, 618.8235294117648]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 8858, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}
+[2026-07-30 15:53:35] [Step9-颜色中心] 当前帧 A/B 分割失败，本轮仍继续颜色中心检测：Step9颜色中心保存A/B: A/B 分割连续失败 3 次，最后错误：[ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[824.7058823529412, 570.5882352941177], [803.5294117647059, 589.4117647058823], [807.0588235294118, 617.6470588235294], [831.7647058823529, 625.8823529411765], [838.8235294117648, 618.8235294117648], [842.3529411764706, 594.1176470588235], [801.1764705882354, 609.4117647058823], [812.9411764705883, 624.7058823529412], [820.0, 636.4705882352941], [849.4117647058823, 618.8235294117648]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 8858, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}
+[2026-07-30 15:53:35] [Step9-颜色中心] cycle=1, 检测失败：{'cycle': 1, 'time': '2026-07-30 15:53:35', 'ok': False, 'aligned': False, 'reason': "capture_failed:'MeasurementWorkflow' object has no attribute '_capture_current_frame_rgb'", 'center_x': '', 'center_y': '', 'target_x': 529.412, 'target_y': 409.412, 'dx': '', 'dy': '', 'tolerance_px': 50.0, 'color_area_px': 0, 'a_mask_area_px': None, 'b_mask_area_px': None, 'action_code': 0, 'action_name': '', 'move_info': {'moved': False, 'reason': "capture_failed:'MeasurementWorkflow' object has no attribute '_capture_current_frame_rgb'"}, 'overlay_path': None, 'frame_path': None, 'color_mask_path': None, 'a_mask_path': None, 'b_mask_path': None, 'c_mask_path': None, 'c_raw_mask_path': None}
+[2026-07-30 15:53:35] ========== Step 10：补焦判断（循环等待） ==========
+[2026-07-30 15:53:35] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 15:53:35] [补焦判断] 分数未达标（score=None），继续等待（第 1 次检查）
+[2026-07-30 15:53:35] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 15:53:36] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 15:53:36] [补焦判断] 分数未达标（score=None），继续等待（第 2 次检查）
+[2026-07-30 15:53:36] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 15:53:36] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 15:53:36] [补焦判断] 分数未达标（score=None），继续等待（第 3 次检查）
+[2026-07-30 15:53:36] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 15:53:36] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 15:53:36] [补焦判断] 分数未达标（score=None），继续等待（第 4 次检查）
+[2026-07-30 15:53:36] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 15:53:36] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 15:53:36] [补焦判断] 分数未达标（score=None），继续等待（第 5 次检查）
+[2026-07-30 15:53:37] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 15:53:37] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 15:53:37] [补焦判断] 分数未达标（score=None），继续等待（第 6 次检查）
+[2026-07-30 15:53:37] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 15:53:37] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 15:53:37] [补焦判断] 分数未达标（score=None），继续等待（第 7 次检查）
+[2026-07-30 15:53:37] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 15:53:37] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 15:53:37] [补焦判断] 分数未达标（score=None），继续等待（第 8 次检查）
+[2026-07-30 15:53:37] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 15:53:38] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 15:53:38] [补焦判断] 分数未达标（score=None），继续等待（第 9 次检查）
+[2026-07-30 15:53:38] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 15:53:38] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 15:53:38] [补焦判断] 分数未达标（score=None），继续等待（第 10 次检查）
+[2026-07-30 15:53:38] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 15:53:38] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 15:53:38] [补焦判断] 分数未达标（score=None），继续等待（第 11 次检查）
+[2026-07-30 15:53:38] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 15:53:39] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 15:53:39] [补焦判断] 分数未达标（score=None），继续等待（第 12 次检查）
+[2026-07-30 15:53:39] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 15:53:39] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 15:53:39] [补焦判断] 分数未达标（score=None），继续等待（第 13 次检查）
+[2026-07-30 15:53:39] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 15:53:39] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 15:53:39] [补焦判断] 分数未达标（score=None），继续等待（第 14 次检查）
+[2026-07-30 15:53:39] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 15:53:40] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 15:53:40] [补焦判断] 分数未达标（score=None），继续等待（第 15 次检查）
+[2026-07-30 15:53:40] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 15:53:40] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 15:53:40] [补焦判断] 分数未达标（score=None），继续等待（第 16 次检查）
+[2026-07-30 15:53:40] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 15:53:40] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 15:53:40] [补焦判断] 分数未达标（score=None），继续等待（第 17 次检查）
+[2026-07-30 15:53:40] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 15:53:40] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 15:53:41] [补焦判断] 分数未达标（score=None），继续等待（第 18 次检查）
+[2026-07-30 15:53:41] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 15:53:41] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 15:53:41] [补焦判断] 分数未达标（score=None），继续等待（第 19 次检查）
+[2026-07-30 15:53:41] [补焦判断] 等待 0.2s 后再次检查...
+[2026-07-30 15:53:41] [聚焦补焦] 当前 FocusScore 为空，跳过
+[2026-07-30 15:53:41] [补焦判断] 分数未达标（score=None），继续等待（第 20 次检查）
+[2026-07-30 15:53:41] [补焦判断] 已达到最大检查次数 20，继续进入下一步
+[2026-07-30 15:53:41] ========== Step 1：Bmask最长边角度检测 current_angle ==========
+[2026-07-30 15:53:41] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=runtime_rule_ab_params/step1_bmask_longest_edge_angle
+[2026-07-30 15:53:41] ========== YOLO-OBB角度检测：current_angle_yolo_obb ==========
+[2026-07-30 15:53:41] [YOLO-OBB角度-current_angle_yolo_obb] angle=10.063973865026242, conf=0.8855605721473694, class=bn_up, overlay=measurement_output\save\07.30\20260730_155214\ab_angle_realtime_yolo_obb\20260730_155341_801_current_angle_yolo_obb_YOLO_OBB_overlay.png
+[2026-07-30 15:53:41] [角度检测-current_angle] 已使用当前帧 Bmask 最长边角度作为本轮 baseline：10.063973865026242°；source=yolo_obb_long_edge
+[2026-07-30 15:53:41] ========== 实际主循环第 3 次生成保存路径 ==========
+[2026-07-30 15:53:41] ========== 生成最终存储路径 ==========
+[2026-07-30 15:53:41] [保存路径] run_session_dir=measurement_output\save\07.30\20260730_155214
+[2026-07-30 15:53:41] [保存路径] spectrum_csv=measurement_output\save\07.30\20260730_155214\cycle_0003_155341_922_spectrum.csv
+[2026-07-30 15:53:41] ========== Step 11：照明光 OFF，等待稳定 ==========
+[2026-07-30 15:53:42] [虚拟照明] OFF：未控制真实硬件
+[2026-07-30 15:53:42] [照明光] OFF
+[2026-07-30 15:53:43] [照明光] OFF 后稳定等待：1.200 s（由“稳定等待/ms”控制）
+[2026-07-30 15:53:44] ========== Step 12：LabVIEW 光谱采集 ==========
+[2026-07-30 15:53:44] ========== LabVIEW 采集光谱 ==========
+[2026-07-30 15:53:44] [光谱][virtual] 固定值光谱结果：num_points=1024, raw_original_peak=1000.0, raw_filtered_peak=1000.0, raw_median_peak=1000.0, fit_peak=1000.0；未调用 LabVIEW/TCP/阈值滤波/中值滤波/拟合处理
+[2026-07-30 15:53:44] ========== Step 13：照明光 ON ==========
+[2026-07-30 15:53:44] [虚拟照明] ON：未控制真实硬件
+[2026-07-30 15:53:44] [照明光] ON
+[2026-07-30 15:53:44] ========== Step 14：保存数据（异步线程，使用 Step1 最终角度） ==========
+[2026-07-30 15:53:44] ========== 保存本轮测量结果 ==========
+[2026-07-30 15:53:44] [异步保存] 第 3 轮保存线程已启动：save-cycle-0003；提交准备耗时=0.001 s
+[2026-07-30 15:53:44] [Step 14] 异步保存任务提交耗时：0.004 s；保存角度=Step1最终角度；append_plot_point=True
+[2026-07-30 15:53:44] [保存] 光谱 CSV：measurement_output\save\07.30\20260730_155214\cycle_0003_155341_922_spectrum.csv；wavelength列已写入中心波长；已写入本轮角度 angle_deg=10.063973865026242
+[2026-07-30 15:53:44] ========== 实际主循环第 3/3 次结束 ==========
+[2026-07-30 15:53:44] [保存] Summary CSV 已更新：measurement_output\save\07.30\measurement_summary.csv
+[2026-07-30 15:53:44] [保存] Excel汇总已追加第 3 轮：measurement_output\save\07.30\measurement_summary_20260730_155032.xlsx
+[2026-07-30 15:53:44] [绘图] 已追加数据点：cycle=3, angle=10.063973865026242, fit_peak=1000.0
+[2026-07-30 15:53:44] ========== 实际主循环结束：关闭激光 ==========
+[2026-07-30 15:53:44] [激光开关] 实际主循环结束，但 laser_on=False，主流程跳过重复关激光
+[2026-07-30 15:53:44] [异步保存] 第 3 轮保存完成
+[2026-07-30 15:53:45] [流程] 第 1 轮数据已提交保存；保存角度=Step1最终角度 10.063973865026242；Step8最终角度=10.07150119499812 仅用于关闭激光/排查，不覆盖保存角度。
+[2026-07-30 15:53:45] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:53:45] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=run_workflow_cycle_2_before_run_one_cycle
+[2026-07-30 15:53:45] ========== 结束测量 ==========
+[2026-07-30 15:53:45] [流程] 测量结束，照明光保持当前状态，不额外发送 ON/OFF
+[2026-07-30 15:53:45] [保存] Excel汇总文件已保存：measurement_output\save\07.30\measurement_summary_20260730_155032.xlsx
+[2026-07-30 15:53:45] [流程] 正在测量 = False
+[2026-07-30 15:57:49] [虚拟Thorlabs] stop_all()
+[2026-07-30 15:57:49] [虚拟Thorlabs] close(serial=97101208)
+[2026-07-30 15:57:49] [运行态重置] 已清理上一轮停止/失败后的运行缓存；可以重新标定并重新运行完整测量。
+[2026-07-30 15:57:56] [完整测量标定] 已保存标定文件：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\current_calibration.json
+[2026-07-30 15:58:02] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=6/10, B点=0/0, C点=8/20, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(529.4,409.4), HSV=(12,146,105)
+[2026-07-30 15:58:02] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=6/10, B点=0/0, C点=8/20, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(529.4,409.4), HSV=(12,146,105)
+[2026-07-30 15:58:02] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=6/10, B点=0/0, C点=8/20, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(529.4,409.4), HSV=(12,146,105)
+[2026-07-30 15:58:02] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=6/10, B点=0/0, C点=8/20, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(529.4,409.4), HSV=(12,146,105)
+[2026-07-30 15:58:02] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=6/10, B点=0/0, C点=8/20, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(529.4,409.4), HSV=(12,146,105)
+[2026-07-30 15:58:02] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=6/10, B点=0/0, C点=8/20, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(529.4,409.4), HSV=(12,146,105)
+[2026-07-30 15:58:02] [完整测量标定] 已保存标定文件：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\current_calibration.json
+[2026-07-30 15:58:06] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=6/10, B点=0/0, C点=6/11, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(-1.0,-1.0), HSV=(12,146,105)
+[2026-07-30 15:58:06] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=6/10, B点=0/0, C点=6/11, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(-1.0,-1.0), HSV=(12,146,105)
+[2026-07-30 15:58:06] [完整测量标定] 已保存标定文件：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\current_calibration.json
+[2026-07-30 15:58:06] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=6/10, B点=0/0, C点=6/11, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(540.0,407.1), HSV=(12,146,105)
+[2026-07-30 15:58:06] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=6/10, B点=0/0, C点=6/11, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(540.0,407.1), HSV=(12,146,105)
+[2026-07-30 15:58:06] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=6/10, B点=0/0, C点=6/11, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(540.0,407.1), HSV=(12,146,105)
+[2026-07-30 15:58:06] [完整测量标定] 已保存标定文件：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\current_calibration.json
+[2026-07-30 15:58:06] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=6/10, B点=0/0, C点=6/11, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(540.0,407.1), HSV=(12,146,105)
+[2026-07-30 15:58:06] [Step9-颜色中心] 新建本次 Step9 保存文件夹：measurement_output\step9_color_center_align\run_20260730_155806_995
+[2026-07-30 15:58:09] [Step9-颜色中心] 颜色检测已准备：mode=include, HSV=(47, 150, 95), area=650 px, center=(532.3292307692308, 404.76)
+[2026-07-30 15:58:09] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=6/10, B点=0/0, C点=6/11, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(540.0,407.1), HSV=(12,146,105)
+[2026-07-30 15:58:09] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=6/10, B点=0/0, C点=6/11, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(540.0,407.1), HSV=(12,146,105)
+[2026-07-30 15:58:09] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=6/10, B点=0/0, C点=6/11, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(540.0,407.1), HSV=(12,146,105)
+[2026-07-30 15:58:09] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=6/10, B点=0/0, C点=6/11, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(540.0,407.1), HSV=(12,146,105)
+[2026-07-30 15:58:09] [完整测量标定] 已保存标定文件：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\current_calibration.json
+[2026-07-30 15:58:14] [完整测量标定] 已保存标定文件：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\current_calibration.json
+[2026-07-30 15:58:17] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=6/10, B点=0/0, C点=6/11, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(540.0,407.1), HSV=(47,150,95)
+[2026-07-30 15:58:17] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=6/10, B点=0/0, C点=6/11, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(540.0,407.1), HSV=(47,150,95)
+[2026-07-30 15:58:17] [完整测量标定] 已按 quad 重建 Step7 A 路线：points=31, path=E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c\static_c_edge_route.json
+[2026-07-30 15:58:17] [完整测量标定] 已创建并锁定本次完整测量专用 C 目录：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；来源=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map\static_c_mask.png；area=7854 px；外部 RuleAB 应显示 source=full_calibration_static_c
+[2026-07-30 15:58:17] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=6/10, B点=0/0, C点=6/11, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c, Step9 target=(540.0,407.1), HSV=(47,150,95)
+[2026-07-30 15:58:17] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:58:17] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:58:17] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:58:17] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:58:17] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:58:17] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:58:17] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:58:17] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:58:17] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:58:17] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:58:17] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:58:17] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:58:17] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:58:17] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:58:17] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:58:17] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:58:17] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:58:17] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:58:17] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:58:21] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:58:21] ========== 初始化实验设备 ==========
+[2026-07-30 15:58:21] [照明光] 已连接
+[2026-07-30 15:58:21] [激光开关] Newport 8743-CL 已连接
+[2026-07-30 15:58:21] [YOLO-OBB角度] 已初始化
+[2026-07-30 15:58:21] ========== 实验设备初始化完成：照明光 + 激光控制器 + 角度检测 ==========
+[2026-07-30 15:58:22] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=6/10, B点=0/0, C点=6/11, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155214\full_calibration_static_c, Step9 target=(540.0,407.1), HSV=(47,150,95)
+[2026-07-30 15:58:22] [聚焦参考] 新运行会话开始，已重置补焦 ROI 与参考图状态，将在 Step 1.5 重新选择补焦基准图 ROI
+[2026-07-30 15:58:22] [运行批次] 新建本次测量文件夹：measurement_output\save\07.30\20260730_155822
+[2026-07-30 15:58:22] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=6/10, B点=0/0, C点=6/11, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(540.0,407.1), HSV=(47,150,95)
+[2026-07-30 15:58:22] [完整测量标定] 已加载标定文件：E:\CWB\8821L\Utils\AutoZoom\measurement_output\calibration\current_calibration.json
+[2026-07-30 15:58:22] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=6/10, B点=0/0, C点=6/11, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map, Step9 target=(540.0,407.1), HSV=(47,150,95)
+[2026-07-30 15:58:22] [完整测量标定] 启动前检查通过：angle_source=Bmask最长边, A点=6/10, C点=6/11, Step9 target=(540.0, 407.1), HSV=(47, 150, 95)
+[2026-07-30 15:58:22] [完整测量标定] 已创建并锁定本次完整测量专用 C 目录：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155822\full_calibration_static_c；来源=E:\CWB\8821L\Utils\AutoZoom\measurement_output\rule_ab_follow_c_only\_static_c_map_library\default_static_c_map\static_c_mask.png；area=7854 px；外部 RuleAB 应显示 source=full_calibration_static_c
+[2026-07-30 15:58:22] [完整测量标定] 已同步到运行配置：angle_num=0, cw=0, A点=6/10, B点=0/0, C点=6/11, static_C=E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155822\full_calibration_static_c, Step9 target=(540.0,407.1), HSV=(47,150,95)
+[2026-07-30 15:58:22] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155822\full_calibration_static_c；reason=run_workflow_after_prepare_runtime
+[2026-07-30 15:58:22] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155822\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:58:22] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155822\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:58:22] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155822\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:58:23] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155822\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:58:23] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155822\full_calibration_static_c；reason=run_workflow_cycle_1_before_run_one_cycle
+[2026-07-30 15:58:23] 
+[2026-07-30 15:58:23] ############################################################
+[2026-07-30 15:58:23] 开始第 1 轮循环测量
+[2026-07-30 15:58:23] ############################################################
+[2026-07-30 15:58:23] ========== Step 1：Bmask最长边角度检测 current_angle ==========
+[2026-07-30 15:58:23] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155822\full_calibration_static_c；reason=ensure_rule_ab_follower
+[2026-07-30 15:58:23] [RuleAB] 初始化 A推动B 模块：enable_stage=False, max_steps=10000000, full_calibration_loaded=True, confirm_first_frame_segmentation=False, static_c_map_dir=E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155822\full_calibration_static_c
+[2026-07-30 15:58:23] [RuleAB][virtual] 已把 follower.stage 替换为虚拟 Stage34；后续硬件动作只写日志。
+[2026-07-30 15:58:24] [完整测量标定] 已通过 initialize_abc_with_calibration() 初始化 RuleAB A/B/C，未弹窗。
+[2026-07-30 15:58:24] [ABC特征跟踪] 已安装：SAM2 仅用于首帧模板建立；后续帧仅使用 feature tracker；Bmask 失败不 fallback、不 hold_last；角度修复已禁用，直接使用 YOLO-OBB 原始角度。
+[2026-07-30 15:58:24] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155822\full_calibration_static_c；reason=runtime_rule_ab_params/step1_bmask_longest_edge_angle
+[2026-07-30 15:58:24] [虚拟Thorlabs] setup_channel(CH3, V=50, v=10, a=10)
+[2026-07-30 15:58:24] [虚拟Thorlabs] setup_channel(CH4, V=50, v=2, a=2)
+[2026-07-30 15:58:24] [RuleAB][运行中参数更新] 已下发 Stage34 参数：CH3(v=10,a=10,V=50), CH4(v=2,a=2,V=50); reason=step1_bmask_longest_edge_angle
+[2026-07-30 15:58:24] ========== YOLO-OBB角度检测：current_angle_yolo_obb ==========
+[2026-07-30 15:58:24] [YOLO-OBB角度-current_angle_yolo_obb] angle=9.949796476612079, conf=0.8878689408302307, class=bn_up, overlay=measurement_output\save\07.30\20260730_155822\ab_angle_realtime_yolo_obb\20260730_155824_320_current_angle_yolo_obb_YOLO_OBB_overlay.png
+[2026-07-30 15:58:24] [角度检测-current_angle] 已使用当前帧 Bmask 最长边角度作为本轮 baseline：9.949796476612079°；source=yolo_obb_long_edge
+[2026-07-30 15:58:24] ========== Step 1.5：建立聚焦参考图 ==========
+[2026-07-30 15:58:24] [聚焦参考] 尚未选择补焦基准图 ROI，即将弹出 ROI 选择窗口
+[2026-07-30 15:58:24] [聚焦ROI] 即将弹出全屏 ROI 选择窗口；请拖拽矩形框选补焦区域后按 Enter/N 确认
+[2026-07-30 15:58:30] [聚焦ROI] 全屏 ROI 已选择：(592, 434, 141, 155)，saf_capture_area 已同步为全屏 (0, 0, 1920, 1080)；capture_area / focus_roi 保持不变
+[2026-07-30 15:58:30] [聚焦参考] 参考图已建立并保存，不再弹出实时预览窗口
+[2026-07-30 15:58:30] [聚焦参考] 从单张图像建立参考
+[2026-07-30 15:58:30] [聚焦参考] 参考指标已保存：measurement_output\focus_reference\focus_reference\20260730_155830\focus_reference_metrics.csv
+[2026-07-30 15:58:30] [聚焦参考] 单图参考建立完成：highfreq_ref=0.02004127789398287, tenengrad_ref=848.6799359414322, brenner_ref=29.50793493456947, red_blue_ref=0.5922352906556974
+[2026-07-30 15:58:30] [聚焦参考] 第 1 轮已建立，ROI=(592, 434, 141, 155)
+[2026-07-30 15:58:30] ========== Step 2：生成保存路径 ==========
+[2026-07-30 15:58:30] ========== 生成最终存储路径 ==========
+[2026-07-30 15:58:30] [保存路径] run_session_dir=measurement_output\save\07.30\20260730_155822
+[2026-07-30 15:58:30] [保存路径] spectrum_csv=measurement_output\save\07.30\20260730_155822\cycle_0000_155830_799_spectrum.csv
+[2026-07-30 15:58:30] ========== Step 3：照明光 OFF，等待稳定 ==========
+[2026-07-30 15:58:30] [虚拟照明] OFF：未控制真实硬件
+[2026-07-30 15:58:30] [照明光] OFF
+[2026-07-30 15:58:32] [照明光] OFF 后稳定等待：1.200 s（由“稳定等待/ms”控制）
+[2026-07-30 15:58:33] ========== Step 4：LabVIEW 光谱采集 ==========
+[2026-07-30 15:58:33] ========== LabVIEW 采集光谱 ==========
+[2026-07-30 15:58:33] [光谱][virtual] 固定值光谱结果：num_points=1024, raw_original_peak=1000.0, raw_filtered_peak=1000.0, raw_median_peak=1000.0, fit_peak=1000.0；未调用 LabVIEW/TCP/阈值滤波/中值滤波/拟合处理
+[2026-07-30 15:58:33] ========== Step 5：照明光 ON ==========
+[2026-07-30 15:58:33] [虚拟照明] ON：未控制真实硬件
+[2026-07-30 15:58:33] [照明光] ON
+[2026-07-30 15:58:33] ========== Step 6：保存数据（异步线程，使用 Step1 最终角度） ==========
+[2026-07-30 15:58:33] ========== 保存本轮测量结果 ==========
+[2026-07-30 15:58:33] [异步保存] 第 0 轮保存线程已启动：save-cycle-0000；提交准备耗时=0.000 s
+[2026-07-30 15:58:33] [Step 6] 异步保存任务提交耗时：0.003 s；保存角度=Step1最终角度；append_plot_point=True
+[2026-07-30 15:58:33] [保存] 光谱 CSV：measurement_output\save\07.30\20260730_155822\cycle_0000_155830_799_spectrum.csv；wavelength列已写入中心波长；已写入本轮角度 angle_deg=9.949796476612079
+[2026-07-30 15:58:33] [流程] 本周期实际主循环次数：3（序号1-3）
+[2026-07-30 15:58:33] [保存] Summary CSV 已更新：measurement_output\save\07.30\measurement_summary.csv
+[2026-07-30 15:58:33] [保存] Excel汇总已追加第 0 轮：measurement_output\save\07.30\measurement_summary_20260730_155032.xlsx
+[2026-07-30 15:58:33] [绘图] 已追加数据点：cycle=0, angle=9.949796476612079, fit_peak=1000.0
+[2026-07-30 15:58:33] ========== 实际主循环第 1/3 次开始 ==========
+[2026-07-30 15:58:33] ========== Step 7：打开激光 ==========
+[2026-07-30 15:58:33] [激光开关] MOVE axis=2, steps=400
+[2026-07-30 15:58:33] [虚拟Newport] move_by(axis=2, steps=400.0)，virtual_pos=100.0；未控制真实硬件
+[2026-07-30 15:58:33] [虚拟Newport] wait_move(axis=2)：立即完成
+[2026-07-30 15:58:33] [异步保存] 第 0 轮保存完成
+[2026-07-30 15:58:33] [激光开关] ON 完成：axis=2, steps=400
+[2026-07-30 15:58:33] ========== Step 8：A推动B，并用当前帧Bmask最长边检测B角度 ==========
+[2026-07-30 15:58:33] [RuleAB][virtual] 完整测量 Step8 使用真实视觉/角度逻辑，但 Stage34 为虚拟动作：不连接、不控制真实 3/4 通道。
+[2026-07-30 15:58:33] ========== RuleAB：Step7实时双线程，Bmask最长边监控角度 ==========
+[2026-07-30 15:58:33] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155822\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_start
+[2026-07-30 15:58:33] ========== YOLO-OBB角度检测：step7_realtime_frame_000001 ==========
+[2026-07-30 15:58:33] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155822\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:58:33] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155822\full_calibration_static_c；reason=runtime_rule_ab_params/sync_config_from_ui_to_workflow
+[2026-07-30 15:58:33] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155822\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_controller_step_1
+[2026-07-30 15:58:33] [Step7实时控制] step=1: 执行一次 C边沿路线运动；route_points=32；pause保留但可被stop_event打断。
+[2026-07-30 15:58:33] [YOLO-OBB角度-step7_realtime_frame_000001] angle=9.880791527708283, conf=0.886286735534668, class=bn_up, overlay=measurement_output\save\07.30\20260730_155822\ab_angle_realtime_yolo_obb\20260730_155833_927_step7_realtime_frame_000001_YOLO_OBB_overlay.png
+[2026-07-30 15:58:33] [Step7实时角度] 角度变化已达到阈值：final_angle=9.880792°, baseline=9.949796476612079, delta=0.069° >= 0.010°；停止/暂停Stage34当前推动，不再使用6°上限/overshoot判定；不在Step7角度线程关闭激光，后续由完整测量主流程正常关激光，并继续完整测量。
+[2026-07-30 15:58:34] [虚拟Thorlabs] stop_all()
+[2026-07-30 15:58:34] [Step7实时] 已发送 stage.stop_all()；reason=angle_delta_ge_target_min_no_laser_off
+[2026-07-30 15:58:34] [RuleAB-A/B重试] Step7固定索引路线运动/step=1: A/B 分割失败 attempt=1/3: 首帧 SAM2 没有得到 B mask，不能建立特征模板。；不停止完整测量，准备重新取下一帧。
+[2026-07-30 15:58:34] [RuleAB-A/B重试] 已清理坏 scene 缓存；reason=Step7固定索引路线运动/step=1/attempt=1: 首帧 SAM2 没有得到 B mask，不能建立特征模板。
+[2026-07-30 15:58:34] [RuleAB-A/B重试] Step7固定索引路线运动/step=1: A/B 分割失败 attempt=2/3: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[816.4705882352941, 570.5882352941177], [798.8235294117648, 600.0], [804.7058823529412, 612.9411764705883], [816.4705882352941, 620.0], [847.0588235294118, 615.2941176470588], [858.8235294117648, 603.5294117647059]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 8891, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}；不停止完整测量，准备重新取下一帧。
+[2026-07-30 15:58:34] [RuleAB-A/B重试] 已清理坏 scene 缓存；reason=Step7固定索引路线运动/step=1/attempt=2: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[816.4705882352941, 570.5882352941177], [798.8235294117648, 600.0], [804.7058823529412, 612.9411764705883], [816.4705882352941, 620.0], [847.0588235294118, 615.2941176470588], [858.8235294117648, 603.5294117647059]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 8891, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}
+[2026-07-30 15:58:35] [RuleAB-A/B重试] Step7固定索引路线运动/step=1: A/B 分割失败 attempt=3/3: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[816.4705882352941, 570.5882352941177], [798.8235294117648, 600.0], [804.7058823529412, 612.9411764705883], [816.4705882352941, 620.0], [847.0588235294118, 615.2941176470588], [858.8235294117648, 603.5294117647059]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 8878, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}；不停止完整测量，准备重新取下一帧。
+[2026-07-30 15:58:35] [RuleAB-A/B重试] 已清理坏 scene 缓存；reason=Step7固定索引路线运动/step=1/attempt=3: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[816.4705882352941, 570.5882352941177], [798.8235294117648, 600.0], [804.7058823529412, 612.9411764705883], [816.4705882352941, 620.0], [847.0588235294118, 615.2941176470588], [858.8235294117648, 603.5294117647059]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 8878, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}
+[2026-07-30 15:58:35] [Step7实时] 结束：ok=True, overshoot=False, reason=realtime_bmask_longest_edge_delta_ge_target_min_continue_measurement, final_angle=9.880791527708283, final_delta=0.06900494890379605, records=2, csv=measurement_output\save\07.30\20260730_155822\ab_angle_realtime_bmask_longest_edge\step7_realtime_angle_records.csv
+[2026-07-30 15:58:35] [激光开关] MOVE axis=2, steps=-500
+[2026-07-30 15:58:35] [虚拟Newport] move_by(axis=2, steps=-500.0)，virtual_pos=-400.0；未控制真实硬件
+[2026-07-30 15:58:35] [虚拟Newport] wait_move(axis=2)：立即完成
+[2026-07-30 15:58:35] [激光开关] OFF 完成：axis=2, steps=-500
+[2026-07-30 15:58:35] [RuleAB] Step8 角度达到阈值=0.01，激光已关闭
+[2026-07-30 15:58:35] ========== Step 9：检测颜色区域中心，必要时移动1/2通道 ==========
+[2026-07-30 15:58:35] ========== Step9：颜色检测区域中心对齐，必要时移动1/2通道 ==========
+[2026-07-30 15:58:35] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155822\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:58:35] [RuleAB-A/B重试] Step9颜色中心保存A/B: A/B 分割失败 attempt=1/3: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[816.4705882352941, 570.5882352941177], [798.8235294117648, 600.0], [804.7058823529412, 612.9411764705883], [816.4705882352941, 620.0], [847.0588235294118, 615.2941176470588], [858.8235294117648, 603.5294117647059]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 8894, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}；不停止完整测量，准备重新取下一帧。
+[2026-07-30 15:58:35] [RuleAB-A/B重试] 已清理坏 scene 缓存；reason=Step9颜色中心保存A/B/attempt=1: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[816.4705882352941, 570.5882352941177], [798.8235294117648, 600.0], [804.7058823529412, 612.9411764705883], [816.4705882352941, 620.0], [847.0588235294118, 615.2941176470588], [858.8235294117648, 603.5294117647059]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 8894, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}
+[2026-07-30 15:58:35] [RuleAB-A/B重试] Step9颜色中心保存A/B: A/B 分割失败 attempt=2/3: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 1, 'positive_points': [[816.4705882352941, 570.5882352941177], [798.8235294117648, 600.0], [804.7058823529412, 612.9411764705883], [816.4705882352941, 620.0], [847.0588235294118, 615.2941176470588], [858.8235294117648, 603.5294117647059]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 1, 'reason': 'all_components_below_min_area', 'components': [], 'raw_area_before_exclude_px': 8863, 'area_after_exclude_bc_px': 1, 'exclude_bc_dilate_px': 5}；不停止完整测量，准备重新取下一帧。
+[2026-07-30 15:58:35] [RuleAB-A/B重试] 已清理坏 scene 缓存；reason=Step9颜色中心保存A/B/attempt=2: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 1, 'positive_points': [[816.4705882352941, 570.5882352941177], [798.8235294117648, 600.0], [804.7058823529412, 612.9411764705883], [816.4705882352941, 620.0], [847.0588235294118, 615.2941176470588], [858.8235294117648, 603.5294117647059]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 1, 'reason': 'all_components_below_min_area', 'components': [], 'raw_area_before_exclude_px': 8863, 'area_after_exclude_bc_px': 1, 'exclude_bc_dilate_px': 5}
+[2026-07-30 15:58:36] [RuleAB-A/B重试] Step9颜色中心保存A/B: A/B 分割失败 attempt=3/3: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[816.4705882352941, 570.5882352941177], [798.8235294117648, 600.0], [804.7058823529412, 612.9411764705883], [816.4705882352941, 620.0], [847.0588235294118, 615.2941176470588], [858.8235294117648, 603.5294117647059]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 8829, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}；不停止完整测量，准备重新取下一帧。
+[2026-07-30 15:58:36] [RuleAB-A/B重试] 已清理坏 scene 缓存；reason=Step9颜色中心保存A/B/attempt=3: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[816.4705882352941, 570.5882352941177], [798.8235294117648, 600.0], [804.7058823529412, 612.9411764705883], [816.4705882352941, 620.0], [847.0588235294118, 615.2941176470588], [858.8235294117648, 603.5294117647059]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 8829, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}
+[2026-07-30 15:58:36] [Step9-颜色中心] 当前帧 A/B 分割失败，本轮仍继续颜色中心检测：Step9颜色中心保存A/B: A/B 分割连续失败 3 次，最后错误：[ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[816.4705882352941, 570.5882352941177], [798.8235294117648, 600.0], [804.7058823529412, 612.9411764705883], [816.4705882352941, 620.0], [847.0588235294118, 615.2941176470588], [858.8235294117648, 603.5294117647059]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 8829, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}
+[2026-07-30 15:58:36] [Step9-颜色中心] cycle=1, 检测失败：{'cycle': 1, 'time': '2026-07-30 15:58:36', 'ok': False, 'aligned': False, 'reason': "capture_failed:'MeasurementWorkflow' object has no attribute '_capture_current_frame_rgb'", 'center_x': '', 'center_y': '', 'target_x': 540.0, 'target_y': 407.059, 'dx': '', 'dy': '', 'tolerance_px': 50.0, 'color_area_px': 0, 'a_mask_area_px': None, 'b_mask_area_px': None, 'action_code': 0, 'action_name': '', 'move_info': {'moved': False, 'reason': "capture_failed:'MeasurementWorkflow' object has no attribute '_capture_current_frame_rgb'"}, 'overlay_path': None, 'frame_path': None, 'color_mask_path': None, 'a_mask_path': None, 'b_mask_path': None, 'c_mask_path': None, 'c_raw_mask_path': None}
+[2026-07-30 15:58:36] ========== Step 10：补焦判断（循环等待） ==========
+[2026-07-30 15:58:37] [聚焦补焦] FocusScore_ratio=0.9836 在允许区间[0.9500, 1.0500] 内，不触发补焦
+[2026-07-30 15:58:37] [补焦判断] FocusScore 已达标，退出等待循环（第 1 次检查）
+[2026-07-30 15:58:37] ========== Step 1：Bmask最长边角度检测 current_angle ==========
+[2026-07-30 15:58:37] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155822\full_calibration_static_c；reason=runtime_rule_ab_params/step1_bmask_longest_edge_angle
+[2026-07-30 15:58:37] ========== YOLO-OBB角度检测：current_angle_yolo_obb ==========
+[2026-07-30 15:58:37] [YOLO-OBB角度-current_angle_yolo_obb] angle=10.142300666427758, conf=0.8880771398544312, class=bn_up, overlay=measurement_output\save\07.30\20260730_155822\ab_angle_realtime_yolo_obb\20260730_155837_196_current_angle_yolo_obb_YOLO_OBB_overlay.png
+[2026-07-30 15:58:37] [角度检测-current_angle] 已使用当前帧 Bmask 最长边角度作为本轮 baseline：10.142300666427758°；source=yolo_obb_long_edge
+[2026-07-30 15:58:37] ========== 实际主循环第 1 次生成保存路径 ==========
+[2026-07-30 15:58:37] ========== 生成最终存储路径 ==========
+[2026-07-30 15:58:37] [保存路径] run_session_dir=measurement_output\save\07.30\20260730_155822
+[2026-07-30 15:58:37] [保存路径] spectrum_csv=measurement_output\save\07.30\20260730_155822\cycle_0001_155837_340_spectrum.csv
+[2026-07-30 15:58:37] ========== Step 11：照明光 OFF，等待稳定 ==========
+[2026-07-30 15:58:37] [虚拟照明] OFF：未控制真实硬件
+[2026-07-30 15:58:37] [照明光] OFF
+[2026-07-30 15:58:38] [照明光] OFF 后稳定等待：1.200 s（由“稳定等待/ms”控制）
+[2026-07-30 15:58:39] ========== Step 12：LabVIEW 光谱采集 ==========
+[2026-07-30 15:58:39] ========== LabVIEW 采集光谱 ==========
+[2026-07-30 15:58:39] [光谱][virtual] 固定值光谱结果：num_points=1024, raw_original_peak=1000.0, raw_filtered_peak=1000.0, raw_median_peak=1000.0, fit_peak=1000.0；未调用 LabVIEW/TCP/阈值滤波/中值滤波/拟合处理
+[2026-07-30 15:58:39] ========== Step 13：照明光 ON ==========
+[2026-07-30 15:58:40] [虚拟照明] ON：未控制真实硬件
+[2026-07-30 15:58:40] [照明光] ON
+[2026-07-30 15:58:40] ========== Step 14：保存数据（异步线程，使用 Step1 最终角度） ==========
+[2026-07-30 15:58:40] ========== 保存本轮测量结果 ==========
+[2026-07-30 15:58:40] [异步保存] 第 1 轮保存线程已启动：save-cycle-0001；提交准备耗时=0.001 s
+[2026-07-30 15:58:40] [Step 14] 异步保存任务提交耗时：0.003 s；保存角度=Step1最终角度；append_plot_point=True
+[2026-07-30 15:58:40] [保存] 光谱 CSV：measurement_output\save\07.30\20260730_155822\cycle_0001_155837_340_spectrum.csv；wavelength列已写入中心波长；已写入本轮角度 angle_deg=10.142300666427758
+[2026-07-30 15:58:40] ========== 实际主循环第 1/3 次结束 ==========
+[2026-07-30 15:58:40] [保存] Summary CSV 已更新：measurement_output\save\07.30\measurement_summary.csv
+[2026-07-30 15:58:40] [保存] Excel汇总已追加第 1 轮：measurement_output\save\07.30\measurement_summary_20260730_155032.xlsx
+[2026-07-30 15:58:40] [绘图] 已追加数据点：cycle=1, angle=10.142300666427758, fit_peak=1000.0
+[2026-07-30 15:58:40] ========== 实际主循环第 2/3 次开始 ==========
+[2026-07-30 15:58:40] ========== Step 7：打开激光 ==========
+[2026-07-30 15:58:40] [激光开关] MOVE axis=2, steps=400
+[2026-07-30 15:58:40] [虚拟Newport] move_by(axis=2, steps=400.0)，virtual_pos=0.0；未控制真实硬件
+[2026-07-30 15:58:40] [虚拟Newport] wait_move(axis=2)：立即完成
+[2026-07-30 15:58:40] [激光开关] ON 完成：axis=2, steps=400
+[2026-07-30 15:58:40] [异步保存] 第 1 轮保存完成
+[2026-07-30 15:58:40] ========== Step 8：A推动B，并用当前帧Bmask最长边检测B角度 ==========
+[2026-07-30 15:58:40] [RuleAB][virtual] 完整测量 Step8 使用真实视觉/角度逻辑，但 Stage34 为虚拟动作：不连接、不控制真实 3/4 通道。
+[2026-07-30 15:58:40] ========== RuleAB：Step7实时双线程，Bmask最长边监控角度 ==========
+[2026-07-30 15:58:40] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155822\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_start
+[2026-07-30 15:58:40] ========== YOLO-OBB角度检测：step7_realtime_frame_000001 ==========
+[2026-07-30 15:58:40] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155822\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:58:40] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155822\full_calibration_static_c；reason=runtime_rule_ab_params/sync_config_from_ui_to_workflow
+[2026-07-30 15:58:40] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155822\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_controller_step_1
+[2026-07-30 15:58:40] [Step7实时控制] step=1: 执行一次 C边沿路线运动；route_points=32；pause保留但可被stop_event打断。
+[2026-07-30 15:58:40] [YOLO-OBB角度-step7_realtime_frame_000001] angle=10.24564634194195, conf=0.8857248425483704, class=bn_up, overlay=measurement_output\save\07.30\20260730_155822\ab_angle_realtime_yolo_obb\20260730_155840_536_step7_realtime_frame_000001_YOLO_OBB_overlay.png
+[2026-07-30 15:58:40] [Step7实时角度] 角度变化已达到阈值：final_angle=10.245646°, baseline=10.142300666427758, delta=0.103° >= 0.010°；停止/暂停Stage34当前推动，不再使用6°上限/overshoot判定；不在Step7角度线程关闭激光，后续由完整测量主流程正常关激光，并继续完整测量。
+[2026-07-30 15:58:40] [虚拟Thorlabs] stop_all()
+[2026-07-30 15:58:40] [Step7实时] 已发送 stage.stop_all()；reason=angle_delta_ge_target_min_no_laser_off
+[2026-07-30 15:58:40] [RuleAB-A/B重试] Step7固定索引路线运动/step=1: A/B 分割失败 attempt=1/3: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[816.4705882352941, 570.5882352941177], [798.8235294117648, 600.0], [804.7058823529412, 612.9411764705883], [816.4705882352941, 620.0], [847.0588235294118, 615.2941176470588], [858.8235294117648, 603.5294117647059]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 8842, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}；不停止完整测量，准备重新取下一帧。
+[2026-07-30 15:58:40] [RuleAB-A/B重试] 已清理坏 scene 缓存；reason=Step7固定索引路线运动/step=1/attempt=1: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[816.4705882352941, 570.5882352941177], [798.8235294117648, 600.0], [804.7058823529412, 612.9411764705883], [816.4705882352941, 620.0], [847.0588235294118, 615.2941176470588], [858.8235294117648, 603.5294117647059]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 8842, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}
+[2026-07-30 15:58:41] [RuleAB-A/B重试] Step7固定索引路线运动/step=1: A/B 分割失败 attempt=2/3: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 12, 'positive_points': [[816.4705882352941, 570.5882352941177], [798.8235294117648, 600.0], [804.7058823529412, 612.9411764705883], [816.4705882352941, 620.0], [847.0588235294118, 615.2941176470588], [858.8235294117648, 603.5294117647059]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 2, 'reason': 'all_components_below_min_area', 'components': [], 'raw_area_before_exclude_px': 8841, 'area_after_exclude_bc_px': 12, 'exclude_bc_dilate_px': 5}；不停止完整测量，准备重新取下一帧。
+[2026-07-30 15:58:41] [RuleAB-A/B重试] 已清理坏 scene 缓存；reason=Step7固定索引路线运动/step=1/attempt=2: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 12, 'positive_points': [[816.4705882352941, 570.5882352941177], [798.8235294117648, 600.0], [804.7058823529412, 612.9411764705883], [816.4705882352941, 620.0], [847.0588235294118, 615.2941176470588], [858.8235294117648, 603.5294117647059]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 2, 'reason': 'all_components_below_min_area', 'components': [], 'raw_area_before_exclude_px': 8841, 'area_after_exclude_bc_px': 12, 'exclude_bc_dilate_px': 5}
+[2026-07-30 15:58:41] [RuleAB-A/B重试] Step7固定索引路线运动/step=1: A/B 分割失败 attempt=3/3: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[816.4705882352941, 570.5882352941177], [798.8235294117648, 600.0], [804.7058823529412, 612.9411764705883], [816.4705882352941, 620.0], [847.0588235294118, 615.2941176470588], [858.8235294117648, 603.5294117647059]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 8845, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}；不停止完整测量，准备重新取下一帧。
+[2026-07-30 15:58:41] [RuleAB-A/B重试] 已清理坏 scene 缓存；reason=Step7固定索引路线运动/step=1/attempt=3: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[816.4705882352941, 570.5882352941177], [798.8235294117648, 600.0], [804.7058823529412, 612.9411764705883], [816.4705882352941, 620.0], [847.0588235294118, 615.2941176470588], [858.8235294117648, 603.5294117647059]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 8845, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}
+[2026-07-30 15:58:41] [Step7实时] 结束：ok=True, overshoot=False, reason=realtime_bmask_longest_edge_delta_ge_target_min_continue_measurement, final_angle=10.24564634194195, final_delta=0.10334567551419127, records=2, csv=measurement_output\save\07.30\20260730_155822\ab_angle_realtime_bmask_longest_edge\step7_realtime_angle_records.csv
+[2026-07-30 15:58:41] [激光开关] MOVE axis=2, steps=-500
+[2026-07-30 15:58:41] [虚拟Newport] move_by(axis=2, steps=-500.0)，virtual_pos=-500.0；未控制真实硬件
+[2026-07-30 15:58:41] [虚拟Newport] wait_move(axis=2)：立即完成
+[2026-07-30 15:58:41] [激光开关] OFF 完成：axis=2, steps=-500
+[2026-07-30 15:58:41] [RuleAB] Step8 角度达到阈值=0.01，激光已关闭
+[2026-07-30 15:58:42] ========== Step 9：检测颜色区域中心，必要时移动1/2通道 ==========
+[2026-07-30 15:58:42] ========== Step9：颜色检测区域中心对齐，必要时移动1/2通道 ==========
+[2026-07-30 15:58:42] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155822\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:58:42] [RuleAB-A/B重试] Step9颜色中心保存A/B: A/B 分割失败 attempt=1/3: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 1, 'positive_points': [[816.4705882352941, 570.5882352941177], [798.8235294117648, 600.0], [804.7058823529412, 612.9411764705883], [816.4705882352941, 620.0], [847.0588235294118, 615.2941176470588], [858.8235294117648, 603.5294117647059]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 1, 'reason': 'all_components_below_min_area', 'components': [], 'raw_area_before_exclude_px': 8845, 'area_after_exclude_bc_px': 1, 'exclude_bc_dilate_px': 5}；不停止完整测量，准备重新取下一帧。
+[2026-07-30 15:58:42] [RuleAB-A/B重试] 已清理坏 scene 缓存；reason=Step9颜色中心保存A/B/attempt=1: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 1, 'positive_points': [[816.4705882352941, 570.5882352941177], [798.8235294117648, 600.0], [804.7058823529412, 612.9411764705883], [816.4705882352941, 620.0], [847.0588235294118, 615.2941176470588], [858.8235294117648, 603.5294117647059]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 1, 'reason': 'all_components_below_min_area', 'components': [], 'raw_area_before_exclude_px': 8845, 'area_after_exclude_bc_px': 1, 'exclude_bc_dilate_px': 5}
+[2026-07-30 15:58:42] [RuleAB-A/B重试] Step9颜色中心保存A/B: A/B 分割失败 attempt=2/3: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[816.4705882352941, 570.5882352941177], [798.8235294117648, 600.0], [804.7058823529412, 612.9411764705883], [816.4705882352941, 620.0], [847.0588235294118, 615.2941176470588], [858.8235294117648, 603.5294117647059]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 8912, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}；不停止完整测量，准备重新取下一帧。
+[2026-07-30 15:58:42] [RuleAB-A/B重试] 已清理坏 scene 缓存；reason=Step9颜色中心保存A/B/attempt=2: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[816.4705882352941, 570.5882352941177], [798.8235294117648, 600.0], [804.7058823529412, 612.9411764705883], [816.4705882352941, 620.0], [847.0588235294118, 615.2941176470588], [858.8235294117648, 603.5294117647059]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 8912, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}
+[2026-07-30 15:58:42] [RuleAB-A/B重试] Step9颜色中心保存A/B: A/B 分割失败 attempt=3/3: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 1, 'positive_points': [[816.4705882352941, 570.5882352941177], [798.8235294117648, 600.0], [804.7058823529412, 612.9411764705883], [816.4705882352941, 620.0], [847.0588235294118, 615.2941176470588], [858.8235294117648, 603.5294117647059]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 1, 'reason': 'all_components_below_min_area', 'components': [], 'raw_area_before_exclude_px': 8903, 'area_after_exclude_bc_px': 1, 'exclude_bc_dilate_px': 5}；不停止完整测量，准备重新取下一帧。
+[2026-07-30 15:58:42] [RuleAB-A/B重试] 已清理坏 scene 缓存；reason=Step9颜色中心保存A/B/attempt=3: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 1, 'positive_points': [[816.4705882352941, 570.5882352941177], [798.8235294117648, 600.0], [804.7058823529412, 612.9411764705883], [816.4705882352941, 620.0], [847.0588235294118, 615.2941176470588], [858.8235294117648, 603.5294117647059]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 1, 'reason': 'all_components_below_min_area', 'components': [], 'raw_area_before_exclude_px': 8903, 'area_after_exclude_bc_px': 1, 'exclude_bc_dilate_px': 5}
+[2026-07-30 15:58:42] [Step9-颜色中心] 当前帧 A/B 分割失败，本轮仍继续颜色中心检测：Step9颜色中心保存A/B: A/B 分割连续失败 3 次，最后错误：[ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 1, 'positive_points': [[816.4705882352941, 570.5882352941177], [798.8235294117648, 600.0], [804.7058823529412, 612.9411764705883], [816.4705882352941, 620.0], [847.0588235294118, 615.2941176470588], [858.8235294117648, 603.5294117647059]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 1, 'reason': 'all_components_below_min_area', 'components': [], 'raw_area_before_exclude_px': 8903, 'area_after_exclude_bc_px': 1, 'exclude_bc_dilate_px': 5}
+[2026-07-30 15:58:43] [Step9-颜色中心] cycle=1, 检测失败：{'cycle': 1, 'time': '2026-07-30 15:58:43', 'ok': False, 'aligned': False, 'reason': "capture_failed:'MeasurementWorkflow' object has no attribute '_capture_current_frame_rgb'", 'center_x': '', 'center_y': '', 'target_x': 540.0, 'target_y': 407.059, 'dx': '', 'dy': '', 'tolerance_px': 50.0, 'color_area_px': 0, 'a_mask_area_px': None, 'b_mask_area_px': None, 'action_code': 0, 'action_name': '', 'move_info': {'moved': False, 'reason': "capture_failed:'MeasurementWorkflow' object has no attribute '_capture_current_frame_rgb'"}, 'overlay_path': None, 'frame_path': None, 'color_mask_path': None, 'a_mask_path': None, 'b_mask_path': None, 'c_mask_path': None, 'c_raw_mask_path': None}
+[2026-07-30 15:58:43] ========== Step 10：补焦判断（循环等待） ==========
+[2026-07-30 15:58:43] [聚焦补焦] FocusScore_ratio=0.9739 在允许区间[0.9500, 1.0500] 内，不触发补焦
+[2026-07-30 15:58:43] [补焦判断] FocusScore 已达标，退出等待循环（第 1 次检查）
+[2026-07-30 15:58:43] ========== Step 1：Bmask最长边角度检测 current_angle ==========
+[2026-07-30 15:58:43] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155822\full_calibration_static_c；reason=runtime_rule_ab_params/step1_bmask_longest_edge_angle
+[2026-07-30 15:58:43] ========== YOLO-OBB角度检测：current_angle_yolo_obb ==========
+[2026-07-30 15:58:43] [YOLO-OBB角度-current_angle_yolo_obb] angle=10.139822079156488, conf=0.8862882256507874, class=bn_up, overlay=measurement_output\save\07.30\20260730_155822\ab_angle_realtime_yolo_obb\20260730_155843_645_current_angle_yolo_obb_YOLO_OBB_overlay.png
+[2026-07-30 15:58:43] [角度检测-current_angle] 已使用当前帧 Bmask 最长边角度作为本轮 baseline：10.139822079156488°；source=yolo_obb_long_edge
+[2026-07-30 15:58:43] ========== 实际主循环第 2 次生成保存路径 ==========
+[2026-07-30 15:58:43] ========== 生成最终存储路径 ==========
+[2026-07-30 15:58:43] [保存路径] run_session_dir=measurement_output\save\07.30\20260730_155822
+[2026-07-30 15:58:43] [保存路径] spectrum_csv=measurement_output\save\07.30\20260730_155822\cycle_0002_155843_783_spectrum.csv
+[2026-07-30 15:58:43] ========== Step 11：照明光 OFF，等待稳定 ==========
+[2026-07-30 15:58:43] [虚拟照明] OFF：未控制真实硬件
+[2026-07-30 15:58:43] [照明光] OFF
+[2026-07-30 15:58:45] [照明光] OFF 后稳定等待：1.200 s（由“稳定等待/ms”控制）
+[2026-07-30 15:58:46] ========== Step 12：LabVIEW 光谱采集 ==========
+[2026-07-30 15:58:46] ========== LabVIEW 采集光谱 ==========
+[2026-07-30 15:58:46] [光谱][virtual] 固定值光谱结果：num_points=1024, raw_original_peak=1000.0, raw_filtered_peak=1000.0, raw_median_peak=1000.0, fit_peak=1000.0；未调用 LabVIEW/TCP/阈值滤波/中值滤波/拟合处理
+[2026-07-30 15:58:46] ========== Step 13：照明光 ON ==========
+[2026-07-30 15:58:46] [虚拟照明] ON：未控制真实硬件
+[2026-07-30 15:58:46] [照明光] ON
+[2026-07-30 15:58:46] ========== Step 14：保存数据（异步线程，使用 Step1 最终角度） ==========
+[2026-07-30 15:58:46] ========== 保存本轮测量结果 ==========
+[2026-07-30 15:58:46] [异步保存] 第 2 轮保存线程已启动：save-cycle-0002；提交准备耗时=0.001 s
+[2026-07-30 15:58:46] [Step 14] 异步保存任务提交耗时：0.002 s；保存角度=Step1最终角度；append_plot_point=True
+[2026-07-30 15:58:46] [保存] 光谱 CSV：measurement_output\save\07.30\20260730_155822\cycle_0002_155843_783_spectrum.csv；wavelength列已写入中心波长；已写入本轮角度 angle_deg=10.139822079156488
+[2026-07-30 15:58:46] ========== 实际主循环第 2/3 次结束 ==========
+[2026-07-30 15:58:46] [保存] Summary CSV 已更新：measurement_output\save\07.30\measurement_summary.csv
+[2026-07-30 15:58:46] [保存] Excel汇总已追加第 2 轮：measurement_output\save\07.30\measurement_summary_20260730_155032.xlsx
+[2026-07-30 15:58:46] [绘图] 已追加数据点：cycle=2, angle=10.139822079156488, fit_peak=1000.0
+[2026-07-30 15:58:46] ========== 实际主循环第 3/3 次开始 ==========
+[2026-07-30 15:58:46] ========== Step 7：打开激光 ==========
+[2026-07-30 15:58:46] [激光开关] MOVE axis=2, steps=400
+[2026-07-30 15:58:46] [虚拟Newport] move_by(axis=2, steps=400.0)，virtual_pos=-100.0；未控制真实硬件
+[2026-07-30 15:58:46] [异步保存] 第 2 轮保存完成
+[2026-07-30 15:58:46] [虚拟Newport] wait_move(axis=2)：立即完成
+[2026-07-30 15:58:46] [激光开关] ON 完成：axis=2, steps=400
+[2026-07-30 15:58:46] ========== Step 8：A推动B，并用当前帧Bmask最长边检测B角度 ==========
+[2026-07-30 15:58:46] [RuleAB][virtual] 完整测量 Step8 使用真实视觉/角度逻辑，但 Stage34 为虚拟动作：不连接、不控制真实 3/4 通道。
+[2026-07-30 15:58:46] ========== RuleAB：Step7实时双线程，Bmask最长边监控角度 ==========
+[2026-07-30 15:58:46] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155822\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_start
+[2026-07-30 15:58:46] ========== YOLO-OBB角度检测：step7_realtime_frame_000001 ==========
+[2026-07-30 15:58:46] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155822\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:58:46] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155822\full_calibration_static_c；reason=runtime_rule_ab_params/sync_config_from_ui_to_workflow
+[2026-07-30 15:58:46] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155822\full_calibration_static_c；reason=runtime_rule_ab_params/step7_realtime_controller_step_1
+[2026-07-30 15:58:47] [Step7实时控制] step=1: 执行一次 C边沿路线运动；route_points=32；pause保留但可被stop_event打断。
+[2026-07-30 15:58:47] [YOLO-OBB角度-step7_realtime_frame_000001] angle=10.02120867760064, conf=0.8881372213363647, class=bn_up, overlay=measurement_output\save\07.30\20260730_155822\ab_angle_realtime_yolo_obb\20260730_155847_060_step7_realtime_frame_000001_YOLO_OBB_overlay.png
+[2026-07-30 15:58:47] [Step7实时角度] 角度变化已达到阈值：final_angle=10.021209°, baseline=10.139822079156488, delta=0.119° >= 0.010°；停止/暂停Stage34当前推动，不再使用6°上限/overshoot判定；不在Step7角度线程关闭激光，后续由完整测量主流程正常关激光，并继续完整测量。
+[2026-07-30 15:58:47] [虚拟Thorlabs] stop_all()
+[2026-07-30 15:58:47] [Step7实时] 已发送 stage.stop_all()；reason=angle_delta_ge_target_min_no_laser_off
+[2026-07-30 15:58:47] [RuleAB-A/B重试] Step7固定索引路线运动/step=1: A/B 分割失败 attempt=1/3: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[816.4705882352941, 570.5882352941177], [798.8235294117648, 600.0], [804.7058823529412, 612.9411764705883], [816.4705882352941, 620.0], [847.0588235294118, 615.2941176470588], [858.8235294117648, 603.5294117647059]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 8946, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}；不停止完整测量，准备重新取下一帧。
+[2026-07-30 15:58:47] [RuleAB-A/B重试] 已清理坏 scene 缓存；reason=Step7固定索引路线运动/step=1/attempt=1: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[816.4705882352941, 570.5882352941177], [798.8235294117648, 600.0], [804.7058823529412, 612.9411764705883], [816.4705882352941, 620.0], [847.0588235294118, 615.2941176470588], [858.8235294117648, 603.5294117647059]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 8946, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}
+[2026-07-30 15:58:48] [RuleAB-A/B重试] Step7固定索引路线运动/step=1: A/B 分割失败 attempt=2/3: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[816.4705882352941, 570.5882352941177], [798.8235294117648, 600.0], [804.7058823529412, 612.9411764705883], [816.4705882352941, 620.0], [847.0588235294118, 615.2941176470588], [858.8235294117648, 603.5294117647059]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 8909, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}；不停止完整测量，准备重新取下一帧。
+[2026-07-30 15:58:48] [RuleAB-A/B重试] 已清理坏 scene 缓存；reason=Step7固定索引路线运动/step=1/attempt=2: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[816.4705882352941, 570.5882352941177], [798.8235294117648, 600.0], [804.7058823529412, 612.9411764705883], [816.4705882352941, 620.0], [847.0588235294118, 615.2941176470588], [858.8235294117648, 603.5294117647059]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 8909, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}
+[2026-07-30 15:58:48] [RuleAB-A/B重试] Step7固定索引路线运动/step=1: A/B 分割失败 attempt=3/3: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 1, 'positive_points': [[816.4705882352941, 570.5882352941177], [798.8235294117648, 600.0], [804.7058823529412, 612.9411764705883], [816.4705882352941, 620.0], [847.0588235294118, 615.2941176470588], [858.8235294117648, 603.5294117647059]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 1, 'reason': 'all_components_below_min_area', 'components': [], 'raw_area_before_exclude_px': 8854, 'area_after_exclude_bc_px': 1, 'exclude_bc_dilate_px': 5}；不停止完整测量，准备重新取下一帧。
+[2026-07-30 15:58:48] [RuleAB-A/B重试] 已清理坏 scene 缓存；reason=Step7固定索引路线运动/step=1/attempt=3: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 1, 'positive_points': [[816.4705882352941, 570.5882352941177], [798.8235294117648, 600.0], [804.7058823529412, 612.9411764705883], [816.4705882352941, 620.0], [847.0588235294118, 615.2941176470588], [858.8235294117648, 603.5294117647059]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 1, 'reason': 'all_components_below_min_area', 'components': [], 'raw_area_before_exclude_px': 8854, 'area_after_exclude_bc_px': 1, 'exclude_bc_dilate_px': 5}
+[2026-07-30 15:58:48] [Step7实时] 结束：ok=True, overshoot=False, reason=realtime_bmask_longest_edge_delta_ge_target_min_continue_measurement, final_angle=10.02120867760064, final_delta=0.11861340155584799, records=2, csv=measurement_output\save\07.30\20260730_155822\ab_angle_realtime_bmask_longest_edge\step7_realtime_angle_records.csv
+[2026-07-30 15:58:48] [激光开关] MOVE axis=2, steps=-500
+[2026-07-30 15:58:48] [虚拟Newport] move_by(axis=2, steps=-500.0)，virtual_pos=-600.0；未控制真实硬件
+[2026-07-30 15:58:48] [虚拟Newport] wait_move(axis=2)：立即完成
+[2026-07-30 15:58:48] [激光开关] OFF 完成：axis=2, steps=-500
+[2026-07-30 15:58:48] [RuleAB] Step8 角度达到阈值=0.01，激光已关闭
+[2026-07-30 15:58:48] ========== Step 9：检测颜色区域中心，必要时移动1/2通道 ==========
+[2026-07-30 15:58:48] ========== Step9：颜色检测区域中心对齐，必要时移动1/2通道 ==========
+[2026-07-30 15:58:48] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155822\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:58:49] [RuleAB-A/B重试] Step9颜色中心保存A/B: A/B 分割失败 attempt=1/3: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[816.4705882352941, 570.5882352941177], [798.8235294117648, 600.0], [804.7058823529412, 612.9411764705883], [816.4705882352941, 620.0], [847.0588235294118, 615.2941176470588], [858.8235294117648, 603.5294117647059]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 8972, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}；不停止完整测量，准备重新取下一帧。
+[2026-07-30 15:58:49] [RuleAB-A/B重试] 已清理坏 scene 缓存；reason=Step9颜色中心保存A/B/attempt=1: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[816.4705882352941, 570.5882352941177], [798.8235294117648, 600.0], [804.7058823529412, 612.9411764705883], [816.4705882352941, 620.0], [847.0588235294118, 615.2941176470588], [858.8235294117648, 603.5294117647059]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 8972, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}
+[2026-07-30 15:58:49] [RuleAB-A/B重试] Step9颜色中心保存A/B: A/B 分割失败 attempt=2/3: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[816.4705882352941, 570.5882352941177], [798.8235294117648, 600.0], [804.7058823529412, 612.9411764705883], [816.4705882352941, 620.0], [847.0588235294118, 615.2941176470588], [858.8235294117648, 603.5294117647059]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 8923, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}；不停止完整测量，准备重新取下一帧。
+[2026-07-30 15:58:49] [RuleAB-A/B重试] 已清理坏 scene 缓存；reason=Step9颜色中心保存A/B/attempt=2: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[816.4705882352941, 570.5882352941177], [798.8235294117648, 600.0], [804.7058823529412, 612.9411764705883], [816.4705882352941, 620.0], [847.0588235294118, 615.2941176470588], [858.8235294117648, 603.5294117647059]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 8923, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}
+[2026-07-30 15:58:49] [RuleAB-A/B重试] Step9颜色中心保存A/B: A/B 分割失败 attempt=3/3: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[816.4705882352941, 570.5882352941177], [798.8235294117648, 600.0], [804.7058823529412, 612.9411764705883], [816.4705882352941, 620.0], [847.0588235294118, 615.2941176470588], [858.8235294117648, 603.5294117647059]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 8977, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}；不停止完整测量，准备重新取下一帧。
+[2026-07-30 15:58:49] [RuleAB-A/B重试] 已清理坏 scene 缓存；reason=Step9颜色中心保存A/B/attempt=3: [ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[816.4705882352941, 570.5882352941177], [798.8235294117648, 600.0], [804.7058823529412, 612.9411764705883], [816.4705882352941, 620.0], [847.0588235294118, 615.2941176470588], [858.8235294117648, 603.5294117647059]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 8977, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}
+[2026-07-30 15:58:49] [Step9-颜色中心] 当前帧 A/B 分割失败，本轮仍继续颜色中心检测：Step9颜色中心保存A/B: A/B 分割连续失败 3 次，最后错误：[ABC特征跟踪] 首帧 A cleaned mask 为空。A 初始 SAM2 mask 可能没有覆盖 A 正点，或被 B/C 排除后无有效区域；debug={'label': 'a', 'raw_area_px': 0, 'positive_points': [[816.4705882352941, 570.5882352941177], [798.8235294117648, 600.0], [804.7058823529412, 612.9411764705883], [816.4705882352941, 620.0], [847.0588235294118, 615.2941176470588], [858.8235294117648, 603.5294117647059]], 'selected_component': -1, 'selected_area_px': 0, 'selected_pos_hits': 0, 'component_count': 0, 'reason': 'empty_raw_mask', 'raw_area_before_exclude_px': 8977, 'area_after_exclude_bc_px': 0, 'exclude_bc_dilate_px': 5}
+[2026-07-30 15:58:50] [Step9-颜色中心] cycle=1, 检测失败：{'cycle': 1, 'time': '2026-07-30 15:58:50', 'ok': False, 'aligned': False, 'reason': "capture_failed:'MeasurementWorkflow' object has no attribute '_capture_current_frame_rgb'", 'center_x': '', 'center_y': '', 'target_x': 540.0, 'target_y': 407.059, 'dx': '', 'dy': '', 'tolerance_px': 50.0, 'color_area_px': 0, 'a_mask_area_px': None, 'b_mask_area_px': None, 'action_code': 0, 'action_name': '', 'move_info': {'moved': False, 'reason': "capture_failed:'MeasurementWorkflow' object has no attribute '_capture_current_frame_rgb'"}, 'overlay_path': None, 'frame_path': None, 'color_mask_path': None, 'a_mask_path': None, 'b_mask_path': None, 'c_mask_path': None, 'c_raw_mask_path': None}
+[2026-07-30 15:58:50] ========== Step 10：补焦判断（循环等待） ==========
+[2026-07-30 15:58:50] [聚焦补焦] FocusScore_ratio=1.0399 在允许区间[0.9500, 1.0500] 内，不触发补焦
+[2026-07-30 15:58:50] [补焦判断] FocusScore 已达标，退出等待循环（第 1 次检查）
+[2026-07-30 15:58:51] ========== Step 1：Bmask最长边角度检测 current_angle ==========
+[2026-07-30 15:58:51] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155822\full_calibration_static_c；reason=runtime_rule_ab_params/step1_bmask_longest_edge_angle
+[2026-07-30 15:58:51] ========== YOLO-OBB角度检测：current_angle_yolo_obb ==========
+[2026-07-30 15:58:51] [YOLO-OBB角度-current_angle_yolo_obb] angle=9.828776472503677, conf=0.8877314925193787, class=bn_up, overlay=measurement_output\save\07.30\20260730_155822\ab_angle_realtime_yolo_obb\20260730_155851_068_current_angle_yolo_obb_YOLO_OBB_overlay.png
+[2026-07-30 15:58:51] [角度检测-current_angle] 已使用当前帧 Bmask 最长边角度作为本轮 baseline：9.828776472503677°；source=yolo_obb_long_edge
+[2026-07-30 15:58:51] ========== 实际主循环第 3 次生成保存路径 ==========
+[2026-07-30 15:58:51] ========== 生成最终存储路径 ==========
+[2026-07-30 15:58:51] [保存路径] run_session_dir=measurement_output\save\07.30\20260730_155822
+[2026-07-30 15:58:51] [保存路径] spectrum_csv=measurement_output\save\07.30\20260730_155822\cycle_0003_155851_248_spectrum.csv
+[2026-07-30 15:58:51] ========== Step 11：照明光 OFF，等待稳定 ==========
+[2026-07-30 15:58:51] [虚拟照明] OFF：未控制真实硬件
+[2026-07-30 15:58:51] [照明光] OFF
+[2026-07-30 15:58:52] [照明光] OFF 后稳定等待：1.200 s（由“稳定等待/ms”控制）
+[2026-07-30 15:58:53] ========== Step 12：LabVIEW 光谱采集 ==========
+[2026-07-30 15:58:53] ========== LabVIEW 采集光谱 ==========
+[2026-07-30 15:58:53] [光谱][virtual] 固定值光谱结果：num_points=1024, raw_original_peak=1000.0, raw_filtered_peak=1000.0, raw_median_peak=1000.0, fit_peak=1000.0；未调用 LabVIEW/TCP/阈值滤波/中值滤波/拟合处理
+[2026-07-30 15:58:53] ========== Step 13：照明光 ON ==========
+[2026-07-30 15:58:54] [虚拟照明] ON：未控制真实硬件
+[2026-07-30 15:58:54] [照明光] ON
+[2026-07-30 15:58:54] ========== Step 14：保存数据（异步线程，使用 Step1 最终角度） ==========
+[2026-07-30 15:58:54] ========== 保存本轮测量结果 ==========
+[2026-07-30 15:58:54] [异步保存] 第 3 轮保存线程已启动：save-cycle-0003；提交准备耗时=0.014 s
+[2026-07-30 15:58:54] [Step 14] 异步保存任务提交耗时：0.060 s；保存角度=Step1最终角度；append_plot_point=True
+[2026-07-30 15:58:54] [保存] 光谱 CSV：measurement_output\save\07.30\20260730_155822\cycle_0003_155851_248_spectrum.csv；wavelength列已写入中心波长；已写入本轮角度 angle_deg=9.828776472503677
+[2026-07-30 15:58:54] ========== 实际主循环第 3/3 次结束 ==========
+[2026-07-30 15:58:54] [保存] Summary CSV 已更新：measurement_output\save\07.30\measurement_summary.csv
+[2026-07-30 15:58:54] [保存] Excel汇总已追加第 3 轮：measurement_output\save\07.30\measurement_summary_20260730_155032.xlsx
+[2026-07-30 15:58:54] [绘图] 已追加数据点：cycle=3, angle=9.828776472503677, fit_peak=1000.0
+[2026-07-30 15:58:54] ========== 实际主循环结束：关闭激光 ==========
+[2026-07-30 15:58:54] [激光开关] 实际主循环结束，但 laser_on=False，主流程跳过重复关激光
+[2026-07-30 15:58:54] [异步保存] 第 3 轮保存完成
+[2026-07-30 15:58:54] [流程] 第 1 轮数据已提交保存；保存角度=Step1最终角度 9.828776472503677；Step8最终角度=10.02120867760064 仅用于关闭激光/排查，不覆盖保存角度。
+[2026-07-30 15:58:54] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155822\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:58:54] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155822\full_calibration_static_c；reason=run_workflow_cycle_2_before_run_one_cycle
+[2026-07-30 15:58:54] ========== 结束测量 ==========
+[2026-07-30 15:58:54] [流程] 测量结束，照明光保持当前状态，不额外发送 ON/OFF
+[2026-07-30 15:58:54] [保存] Excel汇总文件已保存：measurement_output\save\07.30\measurement_summary_20260730_155032.xlsx
+[2026-07-30 15:58:54] [流程] 正在测量 = False
+[2026-07-30 15:58:54] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155822\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 15:58:55] [完整测量标定] 已锁定完整测量专用 C：E:\CWB\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_155822\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[2026-07-30 16:06:19] [流程] 收到停止请求
+[2026-07-30 16:06:19] [流程] 停止测量时刷新未保存 CSV 失败：'MeasurementWorkflow' object has no attribute '_flush_unsaved_cycle_to_csv'
+[2026-07-30 16:06:19] [保存] Excel汇总文件已保存：measurement_output\save\07.30\measurement_summary_20260730_155032.xlsx
+[2026-07-30 16:06:19] ========== 关闭全部设备：关闭硬件安全相关对象，保留 LabVIEW TCP ==========
+[2026-07-30 16:06:19] [保存] Excel汇总文件已保存：measurement_output\save\07.30\measurement_summary_20260730_155032.xlsx
+[2026-07-30 16:06:19] [虚拟照明] OFF：未控制真实硬件
+[2026-07-30 16:06:19] [照明光] OFF
+[2026-07-30 16:06:20] [虚拟照明] close：未释放真实硬件
+[2026-07-30 16:06:20] [照明光] 关闭全部设备时已关闭/释放照明光对象
+[2026-07-30 16:06:20] [虚拟Newport] close()：未释放真实硬件
+[2026-07-30 16:06:20] [激光开关] GUI关闭时已关闭 Newport 控制器连接
+[2026-07-30 16:06:20] [TCP] 关闭全部设备：保留 LabVIEW TCP Server，不关闭、不置 None、不修改 READY 状态
+[2026-07-30 16:06:20] [虚拟Thorlabs] stop_all()
+[2026-07-30 16:06:20] [虚拟Thorlabs] close(serial=97101208)
+[2026-07-30 16:06:20] [RuleAB] 已关闭
+[2026-07-30 16:06:20] [聚焦] 已释放所有 Focus 组件
+[2026-07-30 16:06:20] [运行态重置] 已清理上一轮停止/失败后的运行缓存；可以重新标定并重新运行完整测量。
