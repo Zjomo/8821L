@@ -1,0 +1,5 @@
+[2026-07-29 22:03:40] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmp8zf8c9dg\save\07.29\measurement_summary_20260729_220340.xlsx
+[2026-07-29 22:03:40] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmpdv2f5l1l\save\07.29\measurement_summary_20260729_220340.xlsx
+[2026-07-29 22:03:40] [ABC特征跟踪-A清理] A正点=[(55.0, 55.0)], raw_area=900, after_exclude_bc_area=0, selected_area=0, selected_component=-1, selected_pos_hits=0, reason=empty_raw_mask
+[2026-07-29 22:03:40] [ABC特征跟踪-A清理] A 排除 B/C 后为空，尝试回退到 raw mask 按正点重新选择，允许 A 与 B/C 轻微接触。
+[2026-07-29 22:03:40] [ABC特征跟踪-A清理] A 与 B/C 重叠比例 1.0000 超过阈值 0.0300，尝试从 raw mask 重新选择非接触连通域。

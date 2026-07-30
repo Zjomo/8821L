@@ -1,0 +1,144 @@
+[2026-07-30 02:17:06] 
+[2026-07-30 02:17:06] ############################################################
+[2026-07-30 02:17:06] 开始第 1 轮循环测量
+[2026-07-30 02:17:06] ############################################################
+[2026-07-30 02:17:06] ========== Step 1：Bmask最长边角度检测 current_angle ==========
+[2026-07-30 02:17:06] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_021706\full_calibration_static_c；reason=ensure_rule_ab_follower
+[2026-07-30 02:17:06] [RuleAB] 初始化 A推动B 模块：enable_stage=False, max_steps=10000000, full_calibration_loaded=True, confirm_first_frame_segmentation=False, static_c_map_dir=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_021706\full_calibration_static_c
+[2026-07-30 02:17:07,220] [INFO] Loaded checkpoint sucessfully
+[2026-07-30 02:17:07,550] [INFO] Loaded checkpoint sucessfully
+[2026-07-30 02:17:07,595] [INFO] SAM2 video predictor 初始化成功，将优先用于 A/B 连续帧跟踪。
+[2026-07-30 02:17:07,595] [WARNING] enable_stage=False：当前只计算动作，不实际移动。
+[2026-07-30 02:17:07] [RuleAB][virtual] 已把 follower.stage 替换为虚拟 Stage34；后续硬件动作只写日志。
+[2026-07-30 02:17:07,656] [INFO] 已从磁盘加载固定 C map: F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_021706\full_calibration_static_c
+[2026-07-30 02:17:07] [完整测量标定] initialize_abc_with_calibration() 初始化失败，尝试其他方式：完整标定注入失败：缺少 B 
+正点，不能非交互初始化 RuleAB。
+[2026-07-30 02:17:07,666] [INFO] 开始初始化：如果已有确认 C map，则只点击 A/B；否则点击 A/B/C 并确认保存 C map。
+[2026-07-30 02:17:07,667] [INFO] 已从当前 GUI 进程内存复用固定 C map: F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_021706\full_calibration_static_c::default_static_c_map
+[2026-07-30 02:17:07] [完整测量标定] 外部 RuleAB 模块没有发现专用非交互初始化接口，将尝试用预注入 A/B/C 点调用 initialize_abc_with_first_frame()；如果仍弹窗，需要修改 logic/actual_nano_boundary_following...py 读取 preloaded 点。
+[2026-07-30 02:17:07,695] [INFO] 已从当前 GUI 进程内存复用固定 C map: F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_021706\full_calibration_static_c::default_static_c_map
+[2026-07-30 02:17:07,695] [INFO] 准备关闭实际闭环程序。
+[2026-07-30 02:17:07,695] [INFO] CSV 已保存: measurement_output\rule_ab_from_measurement\run_20260730_021706\actual_nano_boundary_log.csv
+[2026-07-30 02:17:07] [RuleAB启动重试] step1_bmask_longest_edge_angle: 初始化/首帧读取失败 attempt=1/5: RuleAB 初始化失败。
+当前外部 ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。；transient_frame_read_error=False
+[2026-07-30 02:17:07] [虚拟Thorlabs] stop_all()
+[2026-07-30 02:17:07,714] [INFO] Stage34 已关闭。
+[2026-07-30 02:17:07] [虚拟Thorlabs] close(serial=97101208)
+[2026-07-30 02:17:07] [RuleAB启动重试] 已释放本次 RuleAB follower，准备下一帧重试；reason=step1_bmask_longest_edge_angle/attempt=1: RuleAB 初始化失败。当前外部 ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。
+[2026-07-30 02:17:08] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_021706\full_calibration_static_c；reason=ensure_rule_ab_follower
+[2026-07-30 02:17:08] [RuleAB] 初始化 A推动B 模块：enable_stage=False, max_steps=10000000, full_calibration_loaded=True, confirm_first_frame_segmentation=False, static_c_map_dir=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_021706\full_calibration_static_c
+[2026-07-30 02:17:08,775] [INFO] Loaded checkpoint sucessfully
+[2026-07-30 02:17:09,065] [INFO] Loaded checkpoint sucessfully
+[2026-07-30 02:17:09,107] [INFO] SAM2 video predictor 初始化成功，将优先用于 A/B 连续帧跟踪。
+[2026-07-30 02:17:09,107] [WARNING] enable_stage=False：当前只计算动作，不实际移动。
+[2026-07-30 02:17:09] [RuleAB][virtual] 已把 follower.stage 替换为虚拟 Stage34；后续硬件动作只写日志。
+[2026-07-30 02:17:09,134] [INFO] 已从当前 GUI 进程内存复用固定 C map: F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_021706\full_calibration_static_c::default_static_c_map
+[2026-07-30 02:17:09] [完整测量标定] initialize_abc_with_calibration() 初始化失败，尝试其他方式：完整标定注入失败：缺少 B  
+正点，不能非交互初始化 RuleAB。
+[2026-07-30 02:17:09,143] [INFO] 开始初始化：如果已有确认 C map，则只点击 A/B；否则点击 A/B/C 并确认保存 C map。
+[2026-07-30 02:17:09,144] [INFO] 已从当前 GUI 进程内存复用固定 C map: F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_021706\full_calibration_static_c::default_static_c_map
+[2026-07-30 02:17:09] [完整测量标定] 外部 RuleAB 模块没有发现专用非交互初始化接口，将尝试用预注入 A/B/C 点调用 initialize_abc_with_first_frame()；如果仍弹窗，需要修改 logic/actual_nano_boundary_following...py 读取 preloaded 点。
+[2026-07-30 02:17:09,169] [INFO] 已从当前 GUI 进程内存复用固定 C map: F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_021706\full_calibration_static_c::default_static_c_map
+[2026-07-30 02:17:09,171] [INFO] 准备关闭实际闭环程序。
+[2026-07-30 02:17:09,171] [INFO] CSV 已保存: measurement_output\rule_ab_from_measurement\run_20260730_021708\actual_nano_boundary_log.csv
+[2026-07-30 02:17:09] [RuleAB启动重试] step1_bmask_longest_edge_angle: 初始化/首帧读取失败 attempt=2/5: RuleAB 初始化失败。
+当前外部 ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。；transient_frame_read_error=False
+[2026-07-30 02:17:09] [虚拟Thorlabs] stop_all()
+[2026-07-30 02:17:09,189] [INFO] Stage34 已关闭。
+[2026-07-30 02:17:09] [虚拟Thorlabs] close(serial=97101208)
+[2026-07-30 02:17:09] [RuleAB启动重试] 已释放本次 RuleAB follower，准备下一帧重试；reason=step1_bmask_longest_edge_angle/attempt=2: RuleAB 初始化失败。当前外部 ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。
+[2026-07-30 02:17:09] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_021706\full_calibration_static_c；reason=ensure_rule_ab_follower
+[2026-07-30 02:17:10] [RuleAB] 初始化 A推动B 模块：enable_stage=False, max_steps=10000000, full_calibration_loaded=True, confirm_first_frame_segmentation=False, static_c_map_dir=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_021706\full_calibration_static_c
+[2026-07-30 02:17:10,324] [INFO] Loaded checkpoint sucessfully
+[2026-07-30 02:17:10,832] [INFO] Loaded checkpoint sucessfully
+[2026-07-30 02:17:10,946] [INFO] SAM2 video predictor 初始化成功，将优先用于 A/B 连续帧跟踪。
+[2026-07-30 02:17:10,946] [WARNING] enable_stage=False：当前只计算动作，不实际移动。
+[2026-07-30 02:17:10] [RuleAB][virtual] 已把 follower.stage 替换为虚拟 Stage34；后续硬件动作只写日志。
+[2026-07-30 02:17:10,974] [INFO] 已从当前 GUI 进程内存复用固定 C map: F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_021706\full_calibration_static_c::default_static_c_map
+[2026-07-30 02:17:10] [完整测量标定] initialize_abc_with_calibration() 初始化失败，尝试其他方式：完整标定注入失败：缺少 B  
+正点，不能非交互初始化 RuleAB。
+[2026-07-30 02:17:10,984] [INFO] 开始初始化：如果已有确认 C map，则只点击 A/B；否则点击 A/B/C 并确认保存 C map。
+[2026-07-30 02:17:10,985] [INFO] 已从当前 GUI 进程内存复用固定 C map: F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_021706\full_calibration_static_c::default_static_c_map
+[2026-07-30 02:17:10] [完整测量标定] 外部 RuleAB 模块没有发现专用非交互初始化接口，将尝试用预注入 A/B/C 点调用 initialize_abc_with_first_frame()；如果仍弹窗，需要修改 logic/actual_nano_boundary_following...py 读取 preloaded 点。
+[2026-07-30 02:17:11,013] [INFO] 已从当前 GUI 进程内存复用固定 C map: F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_021706\full_calibration_static_c::default_static_c_map
+[2026-07-30 02:17:11,015] [INFO] 准备关闭实际闭环程序。
+[2026-07-30 02:17:11,016] [INFO] CSV 已保存: measurement_output\rule_ab_from_measurement\run_20260730_021710\actual_nano_boundary_log.csv
+[2026-07-30 02:17:11] [RuleAB启动重试] step1_bmask_longest_edge_angle: 初始化/首帧读取失败 attempt=3/5: RuleAB 初始化失败。
+当前外部 ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。；transient_frame_read_error=False
+[2026-07-30 02:17:11] [虚拟Thorlabs] stop_all()
+[2026-07-30 02:17:11,037] [INFO] Stage34 已关闭。
+[2026-07-30 02:17:11] [虚拟Thorlabs] close(serial=97101208)
+[2026-07-30 02:17:11] [RuleAB启动重试] 已释放本次 RuleAB follower，准备下一帧重试；reason=step1_bmask_longest_edge_angle/attempt=3: RuleAB 初始化失败。当前外部 ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。
+[2026-07-30 02:17:11] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_021706\full_calibration_static_c；reason=ensure_rule_ab_follower
+[2026-07-30 02:17:11] [RuleAB] 初始化 A推动B 模块：enable_stage=False, max_steps=10000000, full_calibration_loaded=True, confirm_first_frame_segmentation=False, static_c_map_dir=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_021706\full_calibration_static_c
+[2026-07-30 02:17:12,220] [INFO] Loaded checkpoint sucessfully
+[2026-07-30 02:17:12,873] [INFO] Loaded checkpoint sucessfully
+[2026-07-30 02:17:12,991] [INFO] SAM2 video predictor 初始化成功，将优先用于 A/B 连续帧跟踪。
+[2026-07-30 02:17:12,991] [WARNING] enable_stage=False：当前只计算动作，不实际移动。
+[2026-07-30 02:17:12] [RuleAB][virtual] 已把 follower.stage 替换为虚拟 Stage34；后续硬件动作只写日志。
+[2026-07-30 02:17:13,021] [INFO] 已从当前 GUI 进程内存复用固定 C map: F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_021706\full_calibration_static_c::default_static_c_map
+[2026-07-30 02:17:13] [完整测量标定] initialize_abc_with_calibration() 初始化失败，尝试其他方式：完整标定注入失败：缺少 B  
+正点，不能非交互初始化 RuleAB。
+[2026-07-30 02:17:13,032] [INFO] 开始初始化：如果已有确认 C map，则只点击 A/B；否则点击 A/B/C 并确认保存 C map。
+[2026-07-30 02:17:13,033] [INFO] 已从当前 GUI 进程内存复用固定 C map: F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_021706\full_calibration_static_c::default_static_c_map
+[2026-07-30 02:17:13] [完整测量标定] 外部 RuleAB 模块没有发现专用非交互初始化接口，将尝试用预注入 A/B/C 点调用 initialize_abc_with_first_frame()；如果仍弹窗，需要修改 logic/actual_nano_boundary_following...py 读取 preloaded 点。
+[2026-07-30 02:17:13,062] [INFO] 已从当前 GUI 进程内存复用固定 C map: F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_021706\full_calibration_static_c::default_static_c_map
+[2026-07-30 02:17:13,064] [INFO] 准备关闭实际闭环程序。
+[2026-07-30 02:17:13,065] [INFO] CSV 已保存: measurement_output\rule_ab_from_measurement\run_20260730_021711\actual_nano_boundary_log.csv
+[2026-07-30 02:17:13] [RuleAB启动重试] step1_bmask_longest_edge_angle: 初始化/首帧读取失败 attempt=4/5: RuleAB 初始化失败。
+当前外部 ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。；transient_frame_read_error=False
+[2026-07-30 02:17:13] [虚拟Thorlabs] stop_all()
+[2026-07-30 02:17:13,085] [INFO] Stage34 已关闭。
+[2026-07-30 02:17:13] [虚拟Thorlabs] close(serial=97101208)
+[2026-07-30 02:17:13] [RuleAB启动重试] 已释放本次 RuleAB follower，准备下一帧重试；reason=step1_bmask_longest_edge_angle/attempt=4: RuleAB 初始化失败。当前外部 ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。
+[2026-07-30 02:17:13] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_021706\full_calibration_static_c；reason=ensure_rule_ab_follower
+[2026-07-30 02:17:13] [RuleAB] 初始化 A推动B 模块：enable_stage=False, max_steps=10000000, full_calibration_loaded=True, confirm_first_frame_segmentation=False, static_c_map_dir=F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_021706\full_calibration_static_c
+[2026-07-30 02:17:14,231] [INFO] Loaded checkpoint sucessfully
+[2026-07-30 02:17:14,864] [INFO] Loaded checkpoint sucessfully
+[2026-07-30 02:17:14,914] [INFO] SAM2 video predictor 初始化成功，将优先用于 A/B 连续帧跟踪。
+[2026-07-30 02:17:14,914] [WARNING] enable_stage=False：当前只计算动作，不实际移动。
+[2026-07-30 02:17:14] [RuleAB][virtual] 已把 follower.stage 替换为虚拟 Stage34；后续硬件动作只写日志。
+[2026-07-30 02:17:14,944] [INFO] 已从当前 GUI 进程内存复用固定 C map: F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_021706\full_calibration_static_c::default_static_c_map
+[2026-07-30 02:17:14] [完整测量标定] initialize_abc_with_calibration() 初始化失败，尝试其他方式：完整标定注入失败：缺少 B  
+正点，不能非交互初始化 RuleAB。
+[2026-07-30 02:17:14,953] [INFO] 开始初始化：如果已有确认 C map，则只点击 A/B；否则点击 A/B/C 并确认保存 C map。
+[2026-07-30 02:17:14,955] [INFO] 已从当前 GUI 进程内存复用固定 C map: F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_021706\full_calibration_static_c::default_static_c_map
+[2026-07-30 02:17:14] [完整测量标定] 外部 RuleAB 模块没有发现专用非交互初始化接口，将尝试用预注入 A/B/C 点调用 initialize_abc_with_first_frame()；如果仍弹窗，需要修改 logic/actual_nano_boundary_following...py 读取 preloaded 点。
+[2026-07-30 02:17:14,976] [INFO] 已从当前 GUI 进程内存复用固定 C map: F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_021706\full_calibration_static_c::default_static_c_map
+[2026-07-30 02:17:14,979] [INFO] 准备关闭实际闭环程序。
+[2026-07-30 02:17:14,979] [INFO] CSV 已保存: measurement_output\rule_ab_from_measurement\run_20260730_021713\actual_nano_boundary_log.csv
+[2026-07-30 02:17:14] [RuleAB启动重试] step1_bmask_longest_edge_angle: 初始化/首帧读取失败 attempt=5/5: RuleAB 初始化失败。
+当前外部 ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。；transient_frame_read_error=False
+[2026-07-30 02:17:14] [虚拟Thorlabs] stop_all()
+[2026-07-30 02:17:15,002] [INFO] Stage34 已关闭。
+[2026-07-30 02:17:14] [虚拟Thorlabs] close(serial=97101208)
+[2026-07-30 02:17:15] [RuleAB启动重试] 已释放本次 RuleAB follower，准备下一帧重试；reason=step1_bmask_longest_edge_angle/attempt=5: RuleAB 初始化失败。当前外部 ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。
+[2026-07-30 02:17:15] [角度检测-current_angle] Bmask 最长边 baseline 计算异常：step1_bmask_longest_edge_angle: RuleAB 初始
+化/首帧读取连续失败 5 次，最后错误：RuleAB 初始化失败。当前外部 ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要
+在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。
+[2026-07-30 02:17:15] [角度检测-current_angle] 本轮 Bmask 最长边角度无效；不再把它当作整次测量失败，本轮不进入 Step7，直接
+跳过并继续下一轮。 reason=step1_bmask_longest_edge_angle: RuleAB 初始化/首帧读取连续失败 5 次，最后错误：RuleAB 初始化失败 
+。当前外部 ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。
+[2026-07-30 02:17:15] [完整测量-跳过本轮] 第 1 轮在 Step1_Bmask_longest_edge_baseline 发生 Bmask/角度检测失败；不结束完整循
+环、不关闭全部设备，进入下一轮。reason=step1_bmask_longest_edge_angle: RuleAB 初始化/首帧读取连续失败 5 次，最后错误：RuleAB 初始化失败。当前外部 ActualNanoBoundaryFollower 版本可能仍只支持交互式点选，需要在该模块中读取 follower/cfg 的 preloaded_a/b/c_positive_points 或 calibration_state。
+[2026-07-30 02:17:15] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_021706\full_calibration_static_c；reason=sync_config_from_ui_to_workflow
+[配置同步] RuleAB 参数变化，下一次运行将重新初始化 A推动B 模块
+[配置同步] 已同步当前参数：max_cycles=1, signal_on_time_ms=50.0（来源：自动计算下一轮）, stable_wait_ms=1200, factor=1.5, angle_range=[1.0, 4.0], angle_num=0, angle_cw=0, raw_remove_above=3000.0, median_filter_window=5, x_axis_xlsx_path=516中心波
+长.xlsx, save_root=measurement_output, rule_ab_ac_clearance=[120.0, 150.0, 180.0], rule_ab_ac_correction_mode=nearest_normal, rule_ab_overlap_threshold=1.0, rule_ab_target=[0.01, 6.0], rule_ac_threshold_px=100.0
+[2026-07-30 02:17:15] [完整测量标定] 已锁定完整测量专用 C：F:\0_My_jupyter\2_Optics\8821L\Utils\AutoZoom\measurement_output\save\07.30\20260730_021706\full_calibration_static_c；reason=run_workflow_cycle_2_before_run_one_cycle
+[流程] 当前 cycle_index=2 已超过 GUI 当前循环次数 max_cycles=1，结束循环
+[2026-07-30 02:17:15] ========== 结束测量 ==========
+[2026-07-30 02:17:15] [流程] 测量结束，照明光保持当前状态，不额外发送 ON/OFF
+[2026-07-30 02:17:15] [保存] Excel汇总文件已保存：measurement_output\save\07.30\measurement_summary_20260730_021152.xlsx   
+[2026-07-30 02:17:15] [流程] 正在测量 = False[2026-07-30 02:40:16] [流程] 收到停止请求
+[2026-07-30 02:40:16] [流程] 停止测量时刷新未保存 CSV 失败：'MeasurementWorkflow' object has no attribute '_flush_unsaved_cycle_to_csv'
+[2026-07-30 02:40:16] [保存] Excel汇总文件已保存：measurement_output\save\07.30\measurement_summary_20260730_021152.xlsx
+[2026-07-30 02:40:16] ========== 关闭全部设备：关闭硬件安全相关对象，保留 LabVIEW TCP ==========
+[2026-07-30 02:40:16] [保存] Excel汇总文件已保存：measurement_output\save\07.30\measurement_summary_20260730_021152.xlsx
+[2026-07-30 02:40:16] [虚拟照明] close：未释放真实硬件
+[2026-07-30 02:40:16] [照明光] 关闭全部设备时已关闭/释放照明光对象
+[2026-07-30 02:40:16] [虚拟Newport] close()：未释放真实硬件
+[2026-07-30 02:40:16] [激光开关] GUI关闭时已关闭 Newport 控制器连接
+[2026-07-30 02:40:16] [TCP] 关闭全部设备：保留 LabVIEW TCP Server，不关闭、不置 None、不修改 READY 状态
+[2026-07-30 02:40:16] [聚焦] 已释放所有 Focus 组件
+[2026-07-30 02:40:16] [运行态重置] 已清理上一轮停止/失败后的运行缓存；可以重新标定并重新运行完整测量。

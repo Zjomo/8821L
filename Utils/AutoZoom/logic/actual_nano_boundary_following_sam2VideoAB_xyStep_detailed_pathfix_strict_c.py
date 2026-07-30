@@ -7,7 +7,7 @@ import math
 import sys
 import time
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional, Any
 import cv2
@@ -23,6 +23,15 @@ if SAM2_REPO_ROOT.exists() and str(SAM2_REPO_ROOT) not in sys.path:
 
 from vision.screen_capture import FixedRegionScreenCapture
 from control.stage34_wait_done_then_pause import Stage34
+
+# ROI 排除工具（手动排除干扰图案）
+from .roi_exclusion import (
+    apply_roi_exclusion,
+    polygons_to_mask,
+    draw_roi_overlay,
+    normalize_roi_polygons,
+    select_roi_polygons_interactively,
+)
 
 
 # ============================================================
@@ -140,6 +149,10 @@ class RuntimeConfig:
 
     # 固定 C map 保存目录。为空时默认使用 output_dir/_static_c_map_library/static_c_map_name。
     static_c_map_dir: str = ""
+
+    # 手动排除 ROI：多个多边形，每个 ROI 是闭合顶点序列。
+    # 在 SAM2 分割 A/B/C 后会被应用：mask &= ~roi_mask。
+    exclude_roi_polygons: List[List[List[float]]] = field(default_factory=list)
 
     # --------------------------------------------------------
     # B 目标边选择方式
@@ -609,10 +622,16 @@ class PointPromptSet:
 # ============================================================
 
 def mask_to_bbox_xyxy(mask_bool: np.ndarray) -> Tuple[float, float, float, float]:
+    mask_bool = np.asarray(mask_bool, dtype=bool)
+    if mask_bool.ndim > 2:
+        # 如果 mask 是多通道图像，取前两个通道
+        mask_bool = mask_bool.any(axis=-1)
     ys, xs = np.where(mask_bool)
 
     if len(xs) == 0 or len(ys) == 0:
-        raise RuntimeError("mask 为空，无法计算 bbox。")
+        # mask 为空（YOLO-OBB 版本 B mask 可能全空），返回全图像范围兜底
+        h, w = mask_bool.shape[:2]
+        return 0.0, 0.0, float(w) - 1.0, float(h) - 1.0
 
     return float(xs.min()), float(ys.min()), float(xs.max()), float(ys.max())
 
@@ -1513,6 +1532,41 @@ class SAM2ABCSegmenter:
         self.static_c_center: Optional[Vec2] = None
         self.static_c_pixel_yx: Optional[np.ndarray] = None
 
+        # 手动排除 ROI mask：True 表示需要排除的像素。
+        self.exclude_roi_mask: Optional[np.ndarray] = None
+
+    def set_exclude_roi_mask(
+        self,
+        mask: Optional[np.ndarray] = None,
+        polygons: Optional[Any] = None,
+        image_shape_hw: Optional[Tuple[int, int]] = None,
+    ) -> None:
+        """
+        设置 ROI 排除 mask。
+
+        参数
+        ----------
+        mask : np.ndarray or None
+            直接传入排除 mask。为 None 时尝试从 polygons 生成。
+        polygons : Any
+            ROI 多边形列表。
+        image_shape_hw : tuple(int, int) or None
+            目标图像尺寸 (H, W)。当 mask 为 None 且 polygons 不为空时需要。
+        """
+        if mask is not None:
+            self.exclude_roi_mask = mask.astype(bool, copy=False)
+            return
+
+        if polygons is None or image_shape_hw is None:
+            self.exclude_roi_mask = None
+            return
+
+        self.exclude_roi_mask = polygons_to_mask(image_shape_hw, polygons)
+
+    def _apply_exclude_roi(self, mask: np.ndarray, inplace: bool = False) -> np.ndarray:
+        """对 mask 应用 ROI 排除。"""
+        return apply_roi_exclusion(mask, self.exclude_roi_mask, inplace=inplace)
+
     def _crop_template_by_bbox(
         self,
         image_rgb: np.ndarray,
@@ -1537,10 +1591,14 @@ class SAM2ABCSegmenter:
         后续帧默认使用 init_a_template/init_b_template 定位当前位置，
         而不是使用上一帧图像块作为模板，防止错误分割结果污染后续跟踪。
         """
-        if self.last_a_mask is None or self.last_b_mask is None:
-            raise RuntimeError("保存初始化模板失败：last_a_mask 或 last_b_mask 为空。")
-        if self.last_a_bbox is None or self.last_b_bbox is None:
-            raise RuntimeError("保存初始化模板失败：last_a_bbox 或 last_b_bbox 为空。")
+        if self.last_a_mask is None:
+            raise RuntimeError("保存初始化模板失败：last_a_mask 为空。")
+        if self.last_b_mask is None:
+            raise RuntimeError("保存初始化模板失败：last_b_mask 为空。")
+        if self.last_a_bbox is None:
+            raise RuntimeError("保存初始化模板失败：last_a_bbox 为空。")
+        if self.last_b_bbox is None:
+            raise RuntimeError("保存初始化模板失败：last_b_bbox 为空。")
 
         self.init_image_rgb = image_rgb.copy()
         self.init_a_mask = self.last_a_mask.astype(bool).copy()
@@ -1591,9 +1649,8 @@ class SAM2ABCSegmenter:
             a_positive_points = [a_point]
 
         if b_positive_points is None:
-            if b_point is None:
-                raise ValueError("B 至少需要 1 个正点。")
-            b_positive_points = [b_point]
+            if b_point is not None:
+                b_positive_points = [b_point]
 
         if c_positive_points is None:
             if c_point is None:
@@ -1609,13 +1666,17 @@ class SAM2ABCSegmenter:
 
         if len(a_positive_points) <= 0:
             raise ValueError("A 至少需要 1 个正点。")
-        if len(b_positive_points) <= 0:
-            raise ValueError("B 至少需要 1 个正点。")
         if len(c_positive_points) <= 0:
             raise ValueError("C 至少需要 1 个正点。")
 
+        b_points_missing = len(b_positive_points) <= 0
+        if b_points_missing:
+            logger.warning(
+                "[SAM2 初始化] B 正点为空，将以空 B mask 初始化（YOLO-OBB 版本不需要 Bmask）。"
+            )
+
         self.a_init_point = a_positive_points[0]
-        self.b_init_point = b_positive_points[0]
+        self.b_init_point = None if b_points_missing else b_positive_points[0]
         self.c_init_point = c_positive_points[0]
 
         self.a_init_positive_points = list(a_positive_points)
@@ -1632,17 +1693,21 @@ class SAM2ABCSegmenter:
             positive_points=a_positive_points,
             negative_points=a_negative_points,
         )
-        b_mask = self._predict_mask_by_points(
-            positive_points=b_positive_points,
-            negative_points=b_negative_points,
-        )
+        if not b_points_missing:
+            b_mask = self._predict_mask_by_points(
+                positive_points=b_positive_points,
+                negative_points=b_negative_points,
+            )
+        else:
+            b_mask = np.zeros(a_mask.shape, dtype=bool)
         c_mask = self._predict_mask_by_points(
             positive_points=c_positive_points,
             negative_points=c_negative_points,
         )
 
         self._basic_mask_check("A", a_mask)
-        self._basic_mask_check("B", b_mask)
+        if not b_points_missing:
+            self._basic_mask_check("B", b_mask)
         self._basic_mask_check("C", c_mask)
 
         self.last_a_mask = a_mask
@@ -1651,10 +1716,10 @@ class SAM2ABCSegmenter:
         self.template_b_mask = b_mask.copy()
 
         self.last_a_bbox = mask_to_bbox_xyxy(a_mask)
-        self.last_b_bbox = mask_to_bbox_xyxy(b_mask)
+        self.last_b_bbox = mask_to_bbox_xyxy(b_mask) if not b_points_missing else (0.0, 0.0, 0.0, 0.0)
 
         self.last_a_center = mask_center(a_mask)
-        self.last_b_center = mask_center(b_mask)
+        self.last_b_center = mask_center(b_mask) if not b_points_missing else (0.0, 0.0)
         self._save_initial_ab_templates(image_rgb)
 
         # C 固定：记录第一次 C 分割得到的所有像素位置。
@@ -1676,7 +1741,7 @@ class SAM2ABCSegmenter:
             "A=%d positive + %d negative, "
             "B=%d positive + %d negative, "
             "C=%d positive + %d negative fixed; "
-            "A_center=(%.1f, %.1f), B_center=(%.1f, %.1f), "
+            "A_center=(%.1f, %.1f), "
             "C_static_center=(%.1f, %.1f), C_static_pixels=%d",
             len(a_positive_points),
             len(a_negative_points),
@@ -1686,8 +1751,6 @@ class SAM2ABCSegmenter:
             len(c_negative_points),
             self.last_a_center[0],
             self.last_a_center[1],
-            self.last_b_center[0],
-            self.last_b_center[1],
             self.static_c_center[0],
             self.static_c_center[1],
             int(self.static_c_mask.sum()),
@@ -1719,14 +1782,20 @@ class SAM2ABCSegmenter:
 
         if len(a_positive_points) <= 0:
             raise ValueError("A 至少需要 1 个正点。")
-        if len(b_positive_points) <= 0:
-            raise ValueError("B 至少需要 1 个正点。")
+
+        b_points_missing = len(b_positive_points) <= 0
+        if b_points_missing:
+            logger.warning(
+                "[SAM2 初始化] B 正点为空，将以空 B mask 初始化（YOLO-OBB 版本不需要 Bmask）。"
+            )
 
         c_mask = static_c_mask.astype(bool).copy()
+        # 对 static C map 也应用 ROI 排除（ROI 属于标定内容）。
+        c_mask = self._apply_exclude_roi(c_mask, inplace=False)
         self._basic_mask_check("C_static", c_mask)
 
         self.a_init_point = a_positive_points[0]
-        self.b_init_point = b_positive_points[0]
+        self.b_init_point = None if b_points_missing else b_positive_points[0]
         self.c_init_point = mask_center(c_mask)
 
         self.a_init_positive_points = list(a_positive_points)
@@ -1740,13 +1809,17 @@ class SAM2ABCSegmenter:
             positive_points=a_positive_points,
             negative_points=a_negative_points,
         )
-        b_mask = self._predict_mask_by_points(
-            positive_points=b_positive_points,
-            negative_points=b_negative_points,
-        )
+        if not b_points_missing:
+            b_mask = self._predict_mask_by_points(
+                positive_points=b_positive_points,
+                negative_points=b_negative_points,
+            )
+        else:
+            b_mask = np.zeros_like(c_mask, dtype=bool)
 
         self._basic_mask_check("A", a_mask)
-        self._basic_mask_check("B", b_mask)
+        if not b_points_missing:
+            self._basic_mask_check("B", b_mask)
 
         self.last_a_mask = a_mask
         self.last_b_mask = b_mask
@@ -2272,7 +2345,10 @@ class SAM2ABCSegmenter:
         debug["ok"] = True
         debug["reason"] = "sam2_video_tracking_success"
         self.last_video_tracking_debug = debug
-        return a_mask.astype(bool), b_mask.astype(bool), debug
+        # 对 video tracking 输出也应用 ROI 排除。
+        a_mask = self._apply_exclude_roi(a_mask.astype(bool), inplace=False)
+        b_mask = self._apply_exclude_roi(b_mask.astype(bool), inplace=False)
+        return a_mask, b_mask, debug
 
     def infer_abc(self, image_rgb: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
@@ -2296,6 +2372,73 @@ class SAM2ABCSegmenter:
 
         if self.static_c_mask is None:
             raise RuntimeError("static_c_mask 为空：第一次 C 分割像素没有被记录。")
+
+        # YOLO-OBB 版本：如果 B 是空 mask（初始化时就没有 B 正点），
+        # 跳过每帧 B 的重新分割，直接返回上一帧的空 B mask，
+        # 只更新 A mask，避免 B 相关的 SAM2 推理报错。
+        b_was_empty = bool(
+            self.last_b_mask is not None
+            and int(np.asarray(self.last_b_mask, dtype=bool).sum()) == 0
+        )
+        if b_was_empty:
+            empty_b_mask = np.zeros_like(self.static_c_mask, dtype=bool)
+            # 仍然正常更新 A mask（走完整的 video tracking 流程）
+            # 这里用简化：直接复用上一帧的全部状态（A/B/C），
+            # 由 A 的跟踪保证 A mask 质量；如果 A 跟踪失败，外层会回退。
+            # 若要精确：复制完整 video tracking 但只处理 A。
+            # 简单起见：只做 A 的 ImagePredictor 回退路径（不含 B）
+            self.predictor.set_image(image_rgb)
+            a_pred_bbox, a_pred_center, a_track_debug = self._estimate_bbox_by_template_match(
+                name="A",
+                image_rgb=image_rgb,
+                last_bbox=self.last_a_bbox,
+                last_center=self.last_a_center,
+            )
+            if self.temporal_stop_on_track_fail and a_track_debug.get("enabled", False) and not bool(a_track_debug.get("track_ok", True)):
+                raise RuntimeError(f"A 位置模板匹配失败: {a_track_debug}")
+            a_pos = [a_pred_center]
+            a_neg: List[Vec2] = []
+            a_prompt_box = expand_bbox_xyxy(
+                a_pred_bbox,
+                margin_px=self.temporal_search_margin_px,
+                image_shape_hw=image_rgb.shape[:2],
+            )
+            if self.a_use_temporal_mask_selection:
+                a_mask, a_debug = self._predict_a_mask_by_box_and_points_temporal(
+                    box_xyxy=a_prompt_box,
+                    positive_points=a_pos,
+                    negative_points=a_neg,
+                    reference_mask=self.last_a_mask,
+                    reference_center=self.last_a_center,
+                    static_c_mask=None,
+                )
+                a_debug["position_match"] = a_track_debug
+                self.last_a_temporal_debug = a_debug
+            else:
+                a_mask = self._predict_mask_by_box_and_points(
+                    box_xyxy=a_prompt_box,
+                    positive_points=a_pos,
+                    negative_points=a_neg,
+                )
+                self.last_a_temporal_debug = {"enabled": False, "position_match": a_track_debug}
+            self._validate_mask_update(
+                name="A",
+                new_mask=a_mask,
+                old_mask=self.last_a_mask,
+                old_center=self.last_a_center,
+            )
+            c_mask = self.static_c_mask.copy()
+            self.last_a_mask = a_mask
+            self.last_b_mask = empty_b_mask
+            self.last_a_bbox = mask_to_bbox_xyxy(a_mask)
+            self.last_b_bbox = (0.0, 0.0, float(self.static_c_mask.shape[1]) - 1.0, float(self.static_c_mask.shape[0]) - 1.0)
+            self.last_a_center = mask_center(a_mask)
+            self.last_b_center = self.last_b_center if self.last_b_center is not None else (0.0, 0.0)
+            self.last_image_rgb = image_rgb.copy()
+            self.last_c_mask = c_mask
+            self.last_c_bbox = self.static_c_bbox
+            self.last_c_center = self.static_c_center
+            return a_mask, empty_b_mask, c_mask
 
         # --------------------------------------------------------
         # 优先使用 SAM2 video predictor 跟踪 A/B。
@@ -2534,7 +2677,8 @@ class SAM2ABCSegmenter:
             raise RuntimeError("SAM2 point prompt 没有返回 mask。")
 
         best_idx = int(np.argmax(np.asarray(scores).reshape(-1)))
-        return masks[best_idx].astype(bool)
+        best_mask = masks[best_idx].astype(bool)
+        return self._apply_exclude_roi(best_mask, inplace=False)
 
     def _sample_positive_points_from_mask(
         self,
@@ -2821,7 +2965,8 @@ class SAM2ABCSegmenter:
         scores_arr = np.asarray(scores).reshape(-1)
         candidates: List[Dict[str, Any]] = []
         for i, m in enumerate(masks):
-            cand_mask = m.astype(bool)
+            # 先应用 ROI 排除，再参与时序评分，避免选中 ROI 挖空前的错误候选。
+            cand_mask = self._apply_exclude_roi(m.astype(bool), inplace=False)
             sam2_score = float(scores_arr[i]) if i < len(scores_arr) else 0.0
             info = self._score_a_candidate_mask(
                 candidate_mask=cand_mask,
@@ -2949,7 +3094,8 @@ class SAM2ABCSegmenter:
         scores_arr = np.asarray(scores).reshape(-1)
         candidates: List[Dict[str, Any]] = []
         for i, m in enumerate(masks):
-            cand_mask = m.astype(bool)
+            # 先应用 ROI 排除，再参与时序评分，避免选中 ROI 挖空前的错误候选。
+            cand_mask = self._apply_exclude_roi(m.astype(bool), inplace=False)
             sam2_score = float(scores_arr[i]) if i < len(scores_arr) else 0.0
             info = self._score_b_candidate_mask(
                 candidate_mask=cand_mask,
@@ -3047,7 +3193,8 @@ class SAM2ABCSegmenter:
             raise RuntimeError("SAM2 box+multi-point prompt 没有返回 mask。")
 
         best_idx = int(np.argmax(np.asarray(scores).reshape(-1)))
-        return masks[best_idx].astype(bool)
+        best_mask = masks[best_idx].astype(bool)
+        return self._apply_exclude_roi(best_mask, inplace=False)
 
     def _basic_mask_check(self, name: str, mask: np.ndarray) -> None:
         area = float(mask.sum())
@@ -3096,7 +3243,8 @@ def select_a_b_c_points_interactively(
     image_rgb: np.ndarray,
     window_name: str = "SAM2 init: A/B/C multi positive + negative",
     scale: float = 0.85,
-) -> Tuple[PointPromptSet, PointPromptSet, PointPromptSet]:
+    existing_roi_polygons: Any = None,
+) -> Tuple[PointPromptSet, PointPromptSet, PointPromptSet, List[List[List[float]]]]:
     """
     第一帧初始化点选择。
 
@@ -3114,6 +3262,7 @@ def select_a_b_c_points_interactively(
         Z：撤销当前目标最后一个点，优先撤销负点，没有负点时撤销正点。
         Backspace：回到上一个目标。
         ESC：取消。
+        点选全部完成后按 E 进入 ROI 模式，绘制需要排除的干扰区域。
 
     点提示原则：
         - 正点：点在“确定属于当前目标”的内部区域，尽量不要点边界。
@@ -3293,14 +3442,23 @@ def select_a_b_c_points_interactively(
         len(c_prompt.negative_points),
     )
 
-    return a_prompt, b_prompt, c_prompt
+    # 点选完成后，进入 ROI 绘制模式（用户可按 E 进入/退出，或直接 Enter 跳过）。
+    roi_polygons = select_roi_polygons_interactively(
+        image_bgr=image_bgr,
+        existing_polygons=existing_roi_polygons,
+        window_name="Draw ROI for A/B/C segmentation (E=toggle, ESC=cancel)",
+        scale=scale,
+    )
+
+    return a_prompt, b_prompt, c_prompt, roi_polygons
 
 
 def select_a_b_points_interactively(
     image_rgb: np.ndarray,
     window_name: str = "SAM2 init: A/B only, reuse static C map",
     scale: float = 0.85,
-) -> Tuple[PointPromptSet, PointPromptSet]:
+    existing_roi_polygons: Any = None,
+) -> Tuple[PointPromptSet, PointPromptSet, List[List[List[float]]]]:
     """
     复用固定 C map 时，只需要重新选择 A、B 的正点和负点。
 
@@ -3313,6 +3471,7 @@ def select_a_b_points_interactively(
         Z：撤销当前目标最后一个点，优先撤销负点。
         Backspace：回到上一个目标。
         ESC：取消。
+        点选全部完成后按 E 进入 ROI 模式，绘制需要排除的干扰区域。
     """
     if scale <= 0:
         scale = 1.0
@@ -3422,7 +3581,16 @@ def select_a_b_points_interactively(
         len(a_prompt.positive_points), len(a_prompt.negative_points),
         len(b_prompt.positive_points), len(b_prompt.negative_points),
     )
-    return a_prompt, b_prompt
+
+    # 点选完成后，进入 ROI 绘制模式（用户可按 E 进入/退出，或直接 Enter 跳过）。
+    roi_polygons = select_roi_polygons_interactively(
+        image_bgr=image_bgr,
+        existing_polygons=existing_roi_polygons,
+        window_name="Draw ROI for A/B segmentation (E=toggle, ESC=cancel)",
+        scale=scale,
+    )
+
+    return a_prompt, b_prompt, roi_polygons
 
 def confirm_first_frame_segmentation_interactively(
     image_rgb: np.ndarray,
@@ -3446,9 +3614,19 @@ def confirm_first_frame_segmentation_interactively(
     overlay = img.copy()
 
     # OpenCV 使用 BGR 颜色。
-    overlay[scene.a.mask.astype(bool)] = (0, 255, 255)      # A：黄色
-    overlay[scene.b.mask.astype(bool)] = (0, 128, 255)      # B：橙色
-    overlay[scene.c.mask.astype(bool)] = (255, 255, 0)      # C：青色
+    # 强制 2D bool，防止 mask 是 (H,W,1) 之类 3D 数组时触发维度不匹配
+    a_mask_2d = np.asarray(scene.a.mask, dtype=bool)
+    if a_mask_2d.ndim > 2:
+        a_mask_2d = a_mask_2d.any(axis=-1)
+    b_mask_2d = np.asarray(scene.b.mask, dtype=bool)
+    if b_mask_2d.ndim > 2:
+        b_mask_2d = b_mask_2d.any(axis=-1)
+    c_mask_2d = np.asarray(scene.c.mask, dtype=bool)
+    if c_mask_2d.ndim > 2:
+        c_mask_2d = c_mask_2d.any(axis=-1)
+    overlay[a_mask_2d] = (0, 255, 255)      # A：黄色
+    overlay[b_mask_2d] = (0, 128, 255)      # B：橙色
+    overlay[c_mask_2d] = (255, 255, 0)      # C：青色
     img = cv2.addWeighted(overlay, 0.32, img, 0.68, 0)
 
     def draw_poly(points: List[Vec2], color: Tuple[int, int, int], thickness: int = 2) -> None:
@@ -3573,24 +3751,35 @@ def build_scene_from_abc_sam2(
     )
 
     # --------------------------------------------------------
-    # B：来自 SAM2
+    # B：来自 SAM2（YOLO-OBB 版本可能 B mask 为空）
     # --------------------------------------------------------
-    b_contour, b_area, b_center = mask_to_largest_contour_polygon(
-        b_mask,
-        min_area=cfg.min_mask_area_px,
-        epsilon_ratio=cfg.contour_approx_epsilon_ratio,
-    )
+    b_mask_bool = np.asarray(b_mask, dtype=bool)
+    b_has_pixels = bool(b_mask_bool.sum() > 0)
+
+    if b_has_pixels:
+        b_contour, b_area, b_center = mask_to_largest_contour_polygon(
+            b_mask,
+            min_area=cfg.min_mask_area_px,
+            epsilon_ratio=cfg.contour_approx_epsilon_ratio,
+        )
+        b_bbox = mask_to_bbox_xyxy(b_mask)
+    else:
+        h, w = b_mask_bool.shape[:2]
+        b_contour = []
+        b_area = 0.0
+        b_center = (float(w) / 2.0, float(h) / 2.0)
+        b_bbox = (0.0, 0.0, float(w) - 1.0, float(h) - 1.0)
 
     flake_b = FlakeGeometry(
         name="B",
         class_name="B",
-        confidence=1.0,
-        bbox_xyxy=mask_to_bbox_xyxy(b_mask),
-        mask=b_mask,
+        confidence=0.0 if not b_has_pixels else 1.0,
+        bbox_xyxy=b_bbox,
+        mask=b_mask_bool,
         contour=b_contour,
         center=b_center,
         area=b_area,
-        source="sam2",
+        source="sam2_empty_placeholder" if not b_has_pixels else "sam2",
     )
 
     # --------------------------------------------------------
@@ -3627,11 +3816,17 @@ def build_scene_from_abc_sam2(
         source=c_source,
     )
 
-    b_edge = choose_b_target_edge(
-        flake_b.contour,
-        mode=cfg.b_target_edge_mode,
-        reference_point=flake_a.center,
-    )
+    if flake_b.contour and len(flake_b.contour) >= 2:
+        b_edge = choose_b_target_edge(
+            flake_b.contour,
+            mode=cfg.b_target_edge_mode,
+            reference_point=flake_a.center,
+        )
+    else:
+        # B mask 为空时（YOLO-OBB 版本），用图像左右两个角点作为占位边，
+        # 不参与实际运动控制（rule_policy 只依赖 A-C）。
+        h, w = image_rgb.shape[:2]
+        b_edge = ((0.0, float(h) - 1.0), (float(w) - 1.0, 0.0))
 
     return SceneGeometry(
         a=flake_a,
@@ -3742,6 +3937,25 @@ class ActualNanoBoundaryFollower:
             temporal_position_match_min_score=cfg.temporal_position_match_min_score,
             temporal_position_match_use_last_image_template=cfg.temporal_position_match_use_last_image_template,
         )
+
+        # 将手动 ROI 排除区域设置到分割器；后续帧 A/B/C 分割时都会应用。
+        try:
+            image_shape_hw = (
+                int(cfg.capture_area[3]),
+                int(cfg.capture_area[2]),
+            )
+            self.abc_segmenter.set_exclude_roi_mask(
+                polygons=getattr(cfg, "exclude_roi_polygons", []),
+                image_shape_hw=image_shape_hw,
+            )
+            if self.abc_segmenter.exclude_roi_mask is not None:
+                logger.info(
+                    "已应用手动 ROI 排除区域：polygons=%d, excluded_pixels=%d",
+                    len(getattr(cfg, "exclude_roi_polygons", [])),
+                    int(self.abc_segmenter.exclude_roi_mask.sum()),
+                )
+        except Exception as e:
+            logger.warning("初始化 ROI 排除 mask 失败：%s", e)
 
         self.stage: Optional[Stage34] = None
 
@@ -3939,7 +4153,8 @@ class ActualNanoBoundaryFollower:
                 contour = [(float(x), float(y)) for x, y in meta["contour"]]
                 center = (float(meta["center"][0]), float(meta["center"][1]))
                 area = float(meta.get("area", float(mask.sum())))
-                bbox = tuple(meta.get("bbox", mask_to_bbox_xyxy(mask)))
+                # bbox = tuple(meta.get("bbox", mask_to_bbox_xyxy(mask))) 
+                bbox = tuple(meta["bbox"]) if "bbox" in meta else tuple(mask_to_bbox_xyxy(mask))
                 source = str(meta.get("source", "static_c_map_loaded"))
             else:
                 # 旧版 static_c_reference 只有 mask/npy/csv：从 mask 重新计算 C 主体边缘轮廓。
@@ -3992,7 +4207,9 @@ class ActualNanoBoundaryFollower:
             logger.info("已从磁盘加载固定 C map: %s", static_dir)
             return record
         except Exception as e:
-            logger.warning("加载固定 C map 失败，将重新标注 C: %s", e)
+            # logger.warning("加载固定 C map 失败，将重新标注 C: %s", e)     
+            import traceback
+            logger.warning("加载固定 C map 失败: %s\n%s", e, traceback.format_exc())  
             return None
 
     def get_reusable_static_c_map(self) -> Optional[Dict[str, Any]]:
@@ -4003,7 +4220,9 @@ class ActualNanoBoundaryFollower:
 
     def save_confirmed_static_c_map(self, scene: SceneGeometry, c_mask: np.ndarray, image_rgb: Optional[np.ndarray] = None) -> None:
         """保存用户确认后的 C map 到内存和磁盘，供后续只点击 A/B 使用。"""
-        c_bool = c_mask.astype(bool).copy()
+        c_bool = np.asarray(c_mask, dtype=bool).copy()
+        if c_bool.ndim > 2:
+            c_bool = c_bool.any(axis=-1)
         pixels_yx = np.column_stack(np.where(c_bool)).astype(np.int32)
         record = {
             "mask": c_bool,
@@ -4191,6 +4410,7 @@ class ActualNanoBoundaryFollower:
             - 全程不调用 select_a_b_points_interactively / select_a_b_c_points_interactively；
             - 默认也不弹确认窗口。
         """
+        exclude_roi_polygons: List[List[List[float]]] = []
         if calibration_state is not None:
             try:
                 data = calibration_state.to_dict() if hasattr(calibration_state, "to_dict") else calibration_state
@@ -4202,6 +4422,7 @@ class ActualNanoBoundaryFollower:
                     c_positive_points = c_positive_points or data.get("global_c_positive_points")
                     c_negative_points = c_negative_points or data.get("global_c_negative_points")
                     static_c_map_dir = static_c_map_dir or str(data.get("static_c_map_dir", "") or "")
+                    exclude_roi_polygons = data.get("exclude_roi_polygons", []) or []
             except Exception:
                 pass
 
@@ -4231,20 +4452,45 @@ class ActualNanoBoundaryFollower:
             except Exception:
                 pass
 
+        # 同步 ROI 到 cfg 与 segmenter，确保非交互初始化也能排除干扰区域。
+        try:
+            self.cfg.exclude_roi_polygons = normalize_roi_polygons(exclude_roi_polygons)
+            image_shape_hw = (
+                int(self.cfg.capture_area[3]),
+                int(self.cfg.capture_area[2]),
+            )
+            self.abc_segmenter.set_exclude_roi_mask(
+                polygons=self.cfg.exclude_roi_polygons,
+                image_shape_hw=image_shape_hw,
+            )
+            if self.abc_segmenter.exclude_roi_mask is not None:
+                logger.info(
+                    "[完整标定] 已应用手动 ROI 排除区域：polygons=%d, excluded_pixels=%d",
+                    len(self.cfg.exclude_roi_polygons),
+                    int(self.abc_segmenter.exclude_roi_mask.sum()),
+                )
+        except Exception as e:
+            logger.warning("[完整标定] 同步 ROI 排除 mask 失败：%s", e)
+
         image_rgb = self.capturer.capture()
         reusable_c = self.get_reusable_static_c_map()
         a_prompt, b_prompt, c_prompt = self._get_preloaded_prompt_sets()
 
         if not a_prompt.positive_points:
             raise RuntimeError("完整标定注入失败：缺少 A 正点，不能非交互初始化 RuleAB。")
-        if not b_prompt.positive_points:
-            raise RuntimeError("完整标定注入失败：缺少 B 正点，不能非交互初始化 RuleAB。")
 
-        # 情况 1：已有 static C map。用 A/B 点 + 固定 C 初始化，不弹 A/B 点选窗口。
+        # YOLO-OBB 版本已废弃 B 点标定；B 点缺失时不再阻塞，用空 mask 初始化 B。
+        b_missing = not bool(b_prompt.positive_points)
+        if b_missing:
+            logger.warning(
+                "[完整标定] 缺少 B 正点，将以空 B mask 初始化（YOLO-OBB 版本不再依赖 Bmask）。"
+            )
+
+        # 情况 1：已有 static C map。用 A 点（+ 可选 B 点）+ 固定 C 初始化，不弹 A/B 点选窗口。
         if reusable_c is not None:
             self._record_static_c_map(reusable_c)
             logger.info(
-                "[完整标定] 使用预加载 A/B 点 + static C map 初始化：A+=%d, B+=%d, C_pixels=%d。",
+                "[完整标定] 使用预加载 A 点 + static C map 初始化：A+=%d, B+=%d, C_pixels=%d。",
                 len(a_prompt.positive_points),
                 len(b_prompt.positive_points),
                 int(reusable_c["mask"].sum()),
@@ -4340,6 +4586,27 @@ class ActualNanoBoundaryFollower:
             )
         logger.info("[完整标定] RuleAB 已完成非交互 A/B/C 初始化。")
 
+    def _apply_roi_from_first_frame_interactive(
+        self,
+        roi_polygons: List[List[List[float]]],
+        image_shape_hw: Tuple[int, int],
+    ) -> None:
+        """把交互式首帧绘制的 ROI 同步到 cfg 与 segmenter。"""
+        try:
+            self.cfg.exclude_roi_polygons = normalize_roi_polygons(roi_polygons)
+            self.abc_segmenter.set_exclude_roi_mask(
+                polygons=self.cfg.exclude_roi_polygons,
+                image_shape_hw=image_shape_hw,
+            )
+            if self.abc_segmenter.exclude_roi_mask is not None:
+                logger.info(
+                    "[首帧交互] 已应用手动 ROI 排除区域：polygons=%d, excluded_pixels=%d",
+                    len(self.cfg.exclude_roi_polygons),
+                    int(self.abc_segmenter.exclude_roi_mask.sum()),
+                )
+        except Exception as e:
+            logger.warning("[首帧交互] 同步 ROI 排除 mask 失败：%s", e)
+
     def initialize_abc_with_first_frame(self) -> None:
         logger.info(
             "开始初始化：如果已有确认 C map，则只点击 A/B；否则点击 A/B/C 并确认保存 C map。"
@@ -4353,7 +4620,11 @@ class ActualNanoBoundaryFollower:
         try:
             a_prompt0, b_prompt0, c_prompt0 = self._get_preloaded_prompt_sets()
             reusable_probe = self.get_reusable_static_c_map()
-            has_preloaded_enough = bool(a_prompt0.positive_points and b_prompt0.positive_points and (reusable_probe is not None or c_prompt0.positive_points))
+            # YOLO-OBB 版本：B 点可选，只要有 A 点 + 有 static C 或 C 点就够。
+            has_preloaded_enough = bool(
+                a_prompt0.positive_points
+                and (reusable_probe is not None or c_prompt0.positive_points)
+            )
             if has_preloaded_enough or self._should_skip_interactive_from_preload():
                 self.initialize_abc_with_calibration()
                 return
@@ -4379,11 +4650,13 @@ class ActualNanoBoundaryFollower:
             )
 
             while True:
-                a_prompt, b_prompt = select_a_b_points_interactively(
+                a_prompt, b_prompt, roi_polygons = select_a_b_points_interactively(
                     image_rgb=image_rgb,
                     window_name="SAM2 init: click A/B only, reuse confirmed C map",
                     scale=self.cfg.init_window_scale,
+                    existing_roi_polygons=getattr(self.cfg, "exclude_roi_polygons", []),
                 )
+                self._apply_roi_from_first_frame_interactive(roi_polygons, image_rgb.shape[:2])
 
                 a_mask, b_mask, c_mask = self.abc_segmenter.initialize_ab_with_static_c_map(
                     image_rgb=image_rgb,
@@ -4454,11 +4727,13 @@ class ActualNanoBoundaryFollower:
         )
 
         while True:
-            a_prompt, b_prompt, c_prompt = select_a_b_c_points_interactively(
+            a_prompt, b_prompt, c_prompt, roi_polygons = select_a_b_c_points_interactively(
                 image_rgb=image_rgb,
                 window_name="SAM2 init: A/B/C multi pos+neg fixed",
                 scale=self.cfg.init_window_scale,
+                existing_roi_polygons=getattr(self.cfg, "exclude_roi_polygons", []),
             )
+            self._apply_roi_from_first_frame_interactive(roi_polygons, image_rgb.shape[:2])
 
             a_mask, b_mask, c_mask = self.abc_segmenter.initialize_with_points(
                 image_rgb=image_rgb,
@@ -4573,9 +4848,20 @@ class ActualNanoBoundaryFollower:
         img = cv2.cvtColor(image_rgb, cv2.COLOR_RGB2BGR)
 
         overlay = img.copy()
-        overlay[a_mask] = (0, 255, 255)
-        overlay[b_mask] = (0, 128, 255)
-        overlay[c_mask] = (255, 255, 0)
+        # 强制 2D bool，防止 mask 是 (H,W,1) 之类 3D 数组时触发
+        # "boolean index did not match indexed array along dimension 2"
+        a_mask_2d = np.asarray(a_mask, dtype=bool)
+        if a_mask_2d.ndim > 2:
+            a_mask_2d = a_mask_2d.any(axis=-1)
+        b_mask_2d = np.asarray(b_mask, dtype=bool)
+        if b_mask_2d.ndim > 2:
+            b_mask_2d = b_mask_2d.any(axis=-1)
+        c_mask_2d = np.asarray(c_mask, dtype=bool)
+        if c_mask_2d.ndim > 2:
+            c_mask_2d = c_mask_2d.any(axis=-1)
+        overlay[a_mask_2d] = (0, 255, 255)
+        overlay[b_mask_2d] = (0, 128, 255)
+        overlay[c_mask_2d] = (255, 255, 0)
         img = cv2.addWeighted(overlay, 0.35, img, 0.65, 0)
 
         def draw_prompt_set(prompt: PointPromptSet, name: str, color: Tuple[int, int, int]) -> None:
@@ -5199,9 +5485,20 @@ class ActualNanoBoundaryFollower:
         # mask overlay
         overlay = img.copy()
 
-        overlay[scene.a.mask] = (0, 255, 255)
-        overlay[scene.b.mask] = (0, 128, 255)
-        overlay[scene.c.mask] = (255, 255, 0)
+        # 强制 2D bool，防止 mask 是 (H,W,1) 之类 3D 数组时触发维度不匹配
+        a_mask_2d = np.asarray(scene.a.mask, dtype=bool)
+        if a_mask_2d.ndim > 2:
+            a_mask_2d = a_mask_2d.any(axis=-1)
+        b_mask_2d = np.asarray(scene.b.mask, dtype=bool)
+        if b_mask_2d.ndim > 2:
+            b_mask_2d = b_mask_2d.any(axis=-1)
+        c_mask_2d = np.asarray(scene.c.mask, dtype=bool)
+        if c_mask_2d.ndim > 2:
+            c_mask_2d = c_mask_2d.any(axis=-1)
+
+        overlay[a_mask_2d] = (0, 255, 255)
+        overlay[b_mask_2d] = (0, 128, 255)
+        overlay[c_mask_2d] = (255, 255, 0)
 
         img = cv2.addWeighted(overlay, 0.22, img, 0.78, 0)
 
