@@ -25,7 +25,7 @@ DEFAULT_CONFIG = {
     # 激光开关步数只填写幅值：
     # 主程序会自动执行 ON=+abs(laser_on_steps)，OFF=-abs(laser_off_steps)。
     'laser_on_steps': 400,
-    'laser_off_steps': 500,         # 关激光 电机步数
+    'laser_off_steps': 400,         # 关激光 电机步数
     'laser_speed': 5000,
     'laser_accel': 5000,
     'angle_delta_min_deg': 1.0,
@@ -47,7 +47,7 @@ DEFAULT_CONFIG = {
     'ch2_freq_hz': 6000.0,
     'ch2_duty_percent': 3.0,
     'ch2_delay_s': 0.0,
-    'angle_model_path': r'E:\jupyter file\2_Optics\8821L\Utils\AutoZoom\best.pt',
+    'angle_model_path': r'E:\CWB\8821L\Utils\AutoZoom\best.pt',
     'capture_area': (116, 98, 1112, 886),
     'angle_output_dir': 'outputs/captured_frames',
     'angle_num': 0,

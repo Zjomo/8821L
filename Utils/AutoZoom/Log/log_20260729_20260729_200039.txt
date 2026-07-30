@@ -1,0 +1,84 @@
+[2026-07-29 20:00:39] [保存] Excel汇总文件已创建：measurement_output\save\07.29\measurement_summary_20260729_200039.xlsx
+[2026-07-29 20:00:39] [照明光] 正在连接：COM17
+[2026-07-29 20:00:39] [照明光] 连接成功
+[2026-07-29 20:00:39] [照明光] ON
+[2026-07-29 20:00:39] [横坐标xlsx] 已读取：516中心波长.xlsx，sheet=Sheet1，点数=1024
+[2026-07-29 20:00:42] ========== 启动 LabVIEW TCP Server ==========
+[2026-07-29 20:00:42] [TCP] host=127.0.0.1, port=65432, output_dir=labview_csv_output
+[2026-07-29 20:00:42] [TCP] 已调用 LabVIEWTCPServer.start_server_async() 启动 Server
+[2026-07-29 20:01:22] ========== 等待 LabVIEW READY ==========
+[2026-07-29 20:01:22] [TCP] LabVIEW READY：由 wait_for_ready() 返回
+[2026-07-29 20:03:05] [照明光] OFF
+[2026-07-29 20:06:06] [照明光] ON
+[2026-07-29 20:12:10] ========== 等待 LabVIEW READY ==========
+[2026-07-29 20:12:14] [照明光] OFF
+[2026-07-29 20:12:17] ========== LabVIEW 采集光谱 ==========
+[2026-07-29 20:12:37] [光谱] 已从CSV读取：labview_csv_output\measure_000_20260729_201237.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-29 20:12:37] [TCP] 已通过 LabVIEWTCPServer.request_measure() 直接获取真实光谱结果
+[2026-07-29 20:12:37] [横坐标xlsx] 已读取：516中心波长.xlsx，sheet=Sheet1，点数=1024
+[2026-07-29 20:12:37] [LabVIEW] 采集完成：index=0, method=request_measure, num_points=1024, csv_path=labview_csv_output\measure_000_20260729_201237.csv
+[2026-07-29 20:12:37] [光谱] 真实采集完成：num_points=1024, x_points=1024, plot_x_points=1024, raw_original_peak=4130.0, raw_filtered_peak=1149.0, raw_median_peak=1123.0, fit_peak=1123.0
+[2026-07-29 20:12:37] [光谱] 阈值去除后点数=1022，阈值=1800.0；5点中值滤波后点数=1022
+[2026-07-29 20:12:42] ========== LabVIEW 采集光谱 ==========
+[2026-07-29 20:13:30] ========== LabVIEW 采集光谱 ==========
+[2026-07-29 20:13:58] [保存光谱数据] 已保存：measurement_output\save\07.29\measurement_summary_background_light_20260729_201358.xlsx
+[2026-07-29 20:14:52] [TCP] LabVIEWTCPServer.request_measure() 返回状态包/非光谱数据，继续读取 last_result/latest_result/last_data/data 或最新 CSV。
+[2026-07-29 20:14:52] [TCP] LabVIEWTCPServer.request_measure() 返回状态包/非光谱数据，继续读取 last_result/latest_result/last_data/data 或最新 CSV。
+[2026-07-29 20:14:52] [光谱] 已从CSV读取：E:\CWB\8821L\Utils\AutoZoom\labview_csv_output\measure_000_20260717_221143.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-29 20:14:52] [光谱] 已从CSV读取：E:\CWB\8821L\Utils\AutoZoom\labview_csv_output\measure_000_20260717_221143.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-29 20:14:52] [光谱] 已从CSV读取：E:\CWB\8821L\Utils\AutoZoom\labview_csv_output\measure_000_20260717_221148.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-29 20:14:52] [光谱] 已从CSV读取：E:\CWB\8821L\Utils\AutoZoom\labview_csv_output\measure_000_20260717_221148.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-29 20:14:52] [光谱] 已从CSV读取：E:\CWB\8821L\Utils\AutoZoom\labview_csv_output\measure_000_20260718_220751.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-29 20:14:52] [光谱] 已从CSV读取：E:\CWB\8821L\Utils\AutoZoom\labview_csv_output\measure_000_20260718_220751.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-29 20:14:52] [光谱] 已从CSV读取：E:\CWB\8821L\Utils\AutoZoom\labview_csv_output\measure_000_20260722_164335.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-29 20:14:52] [光谱] 已从CSV读取：E:\CWB\8821L\Utils\AutoZoom\labview_csv_output\measure_000_20260722_164335.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-29 20:14:52] [光谱] 已从CSV读取：E:\CWB\8821L\Utils\AutoZoom\labview_csv_output\measure_000_20260722_165316.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-29 20:14:52] [光谱] 已从CSV读取：E:\CWB\8821L\Utils\AutoZoom\labview_csv_output\measure_000_20260722_165316.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-29 20:14:52] [光谱] 已从CSV读取：E:\CWB\8821L\Utils\AutoZoom\labview_csv_output\measure_000_20260722_165345.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-29 20:14:52] [光谱] 已从CSV读取：E:\CWB\8821L\Utils\AutoZoom\labview_csv_output\measure_000_20260722_165345.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-29 20:14:52] [光谱] 已从CSV读取：E:\CWB\8821L\Utils\AutoZoom\labview_csv_output\measure_000_20260722_165352.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-29 20:14:52] [光谱] 已从CSV读取：E:\CWB\8821L\Utils\AutoZoom\labview_csv_output\measure_000_20260722_165352.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-29 20:14:52] [光谱] 已从CSV读取：E:\CWB\8821L\Utils\AutoZoom\labview_csv_output\measure_000_20260729_143223.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-29 20:14:52] [光谱] 已从CSV读取：E:\CWB\8821L\Utils\AutoZoom\labview_csv_output\measure_000_20260729_143223.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-29 20:14:52] [光谱] 已从CSV读取：E:\CWB\8821L\Utils\AutoZoom\labview_csv_output\measure_000_20260729_144606.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-29 20:14:52] [光谱] 已从CSV读取：E:\CWB\8821L\Utils\AutoZoom\labview_csv_output\measure_000_20260729_144606.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-29 20:14:52] [光谱] 已从CSV读取：E:\CWB\8821L\Utils\AutoZoom\labview_csv_output\measure_000_20260729_145747.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-29 20:14:52] [光谱] 已从CSV读取：E:\CWB\8821L\Utils\AutoZoom\labview_csv_output\measure_000_20260729_145747.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-29 20:14:52] [光谱] 已从CSV读取：E:\CWB\8821L\Utils\AutoZoom\labview_csv_output\measure_000_20260729_153300.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-29 20:14:52] [光谱] 已从CSV读取：E:\CWB\8821L\Utils\AutoZoom\labview_csv_output\measure_000_20260729_153300.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-29 20:14:52] [光谱] 已从CSV读取：E:\CWB\8821L\Utils\AutoZoom\labview_csv_output\measure_000_20260729_153328.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-29 20:14:52] [光谱] 已从CSV读取：E:\CWB\8821L\Utils\AutoZoom\labview_csv_output\measure_000_20260729_153328.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-29 20:14:52] [光谱] 已从CSV读取：E:\CWB\8821L\Utils\AutoZoom\labview_csv_output\measure_000_20260729_193256.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-29 20:14:52] [光谱] 已从CSV读取：E:\CWB\8821L\Utils\AutoZoom\labview_csv_output\measure_000_20260729_193256.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-29 20:14:52] [光谱] 已从CSV读取：E:\CWB\8821L\Utils\AutoZoom\labview_csv_output\measure_000_20260729_193415.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-29 20:14:52] [光谱] 已从CSV读取：E:\CWB\8821L\Utils\AutoZoom\labview_csv_output\measure_000_20260729_193415.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-29 20:14:52] [光谱] 已从CSV读取：E:\CWB\8821L\Utils\AutoZoom\labview_csv_output\measure_000_20260729_195514.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-29 20:14:52] [光谱] 已从CSV读取：E:\CWB\8821L\Utils\AutoZoom\labview_csv_output\measure_000_20260729_195514.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-29 20:14:52] [光谱] 已从CSV读取：E:\CWB\8821L\Utils\AutoZoom\labview_csv_output\measure_000_20260729_195715.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-29 20:14:52] [光谱] 已从CSV读取：E:\CWB\8821L\Utils\AutoZoom\labview_csv_output\measure_000_20260729_195715.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-29 20:14:52] [光谱] 已从CSV读取：E:\CWB\8821L\Utils\AutoZoom\labview_csv_output\measure_000_20260729_201237.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-29 20:14:52] [光谱] 已从CSV读取：E:\CWB\8821L\Utils\AutoZoom\labview_csv_output\measure_000_20260729_201237.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-29 20:14:52] [TCP] 已从最新 CSV 获取真实光谱结果：E:\CWB\8821L\Utils\AutoZoom\labview_csv_output\measure_000_20260729_201237.csv
+[2026-07-29 20:14:52] [TCP] 已从最新 CSV 获取真实光谱结果：E:\CWB\8821L\Utils\AutoZoom\labview_csv_output\measure_000_20260729_201237.csv
+[2026-07-29 20:14:52] [光谱] 已从CSV读取：E:\CWB\8821L\Utils\AutoZoom\labview_csv_output\measure_000_20260729_201237.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-29 20:14:52] [光谱] 已从CSV读取：E:\CWB\8821L\Utils\AutoZoom\labview_csv_output\measure_000_20260729_201237.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-29 20:14:52] [TCP] 已通过 final_fallback+latest_csv 获取真实光谱结果
+[2026-07-29 20:14:52] [TCP] 已通过 final_fallback+latest_csv 获取真实光谱结果
+[2026-07-29 20:14:52] [光谱] 已从CSV读取：E:\CWB\8821L\Utils\AutoZoom\labview_csv_output\measure_000_20260729_201237.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-29 20:14:52] [光谱] 已从CSV读取：E:\CWB\8821L\Utils\AutoZoom\labview_csv_output\measure_000_20260729_201237.csv；wavelength点数=1024；intensity点数=1027
+[2026-07-29 20:14:52] [横坐标xlsx] 已读取：516中心波长.xlsx，sheet=Sheet1，点数=1024
+[2026-07-29 20:14:52] [LabVIEW] 采集完成：index=0, method=final_fallback+latest_csv, num_points=1027, csv_path=E:\CWB\8821L\Utils\AutoZoom\labview_csv_output\measure_000_20260729_201237.csv
+[2026-07-29 20:14:52] [横坐标xlsx] 已读取：516中心波长.xlsx，sheet=Sheet1，点数=1024
+[2026-07-29 20:14:52] [光谱] 真实采集完成：num_points=1027, x_points=1024, plot_x_points=1027, raw_original_peak=20260729201237.0, raw_filtered_peak=1149.0, raw_median_peak=1123.0, fit_peak=1123.0
+[2026-07-29 20:14:52] [LabVIEW] 采集完成：index=0, method=final_fallback+latest_csv, num_points=1027, csv_path=E:\CWB\8821L\Utils\AutoZoom\labview_csv_output\measure_000_20260729_201237.csv
+[2026-07-29 20:14:53] [光谱] 阈值去除后点数=1024，阈值=1800.0；5点中值滤波后点数=1024
+[2026-07-29 20:14:53] [光谱] 真实采集完成：num_points=1027, x_points=1024, plot_x_points=1027, raw_original_peak=20260729201237.0, raw_filtered_peak=1149.0, raw_median_peak=1123.0, fit_peak=1123.0
+[2026-07-29 20:14:53] [光谱] 阈值去除后点数=1024，阈值=1800.0；5点中值滤波后点数=1024
+[2026-07-29 20:15:02] [流程] 收到停止请求
+[2026-07-29 20:15:02] [流程] 停止测量时刷新未保存 CSV 失败：'MeasurementWorkflow' object has no attribute '_flush_unsaved_cycle_to_csv'
+[2026-07-29 20:15:02] [保存] Excel汇总文件已保存：measurement_output\save\07.29\measurement_summary_20260729_200039.xlsx
+[2026-07-29 20:15:02] ========== 关闭全部设备：关闭硬件安全相关对象，保留 LabVIEW TCP ==========
+[2026-07-29 20:15:02] [保存] Excel汇总文件已保存：measurement_output\save\07.29\measurement_summary_20260729_200039.xlsx
+[2026-07-29 20:15:02] [照明光] 关闭全部设备时已关闭/释放照明光对象
+[2026-07-29 20:15:02] [聚焦] 已释放所有 Focus 组件
+[2026-07-29 20:15:02] [运行态重置] 已清理上一轮停止/失败后的运行缓存；可以重新标定并重新运行完整测量。

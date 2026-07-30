@@ -191,7 +191,7 @@ class MeasurementConfig:
     # 而是用 Newport 轴运动实现激光打开/关闭。
     laser_axis: int = int(_cfg("laser_axis", 2))
     laser_on_steps: int = int(_cfg("laser_on_steps", 400))
-    laser_off_steps: int = int(_cfg("laser_off_steps", 500))
+    laser_off_steps: int = int(_cfg("laser_off_steps", 400))
     laser_speed: int = int(_cfg("laser_speed", 5000))
     laser_accel: int = int(_cfg("laser_accel", 5000))
 
