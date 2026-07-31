@@ -1,4 +1,0 @@
-[2026-07-28 21:13:13] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmppusrsj8b\save\07.28\measurement_summary_20260728_211313.xlsx
-[2026-07-28 21:13:13] [保存光谱数据] 已保存：C:\Users\Mr\AppData\Local\Temp\tmppusrsj8b\custom_save\measurement_summary_background_light_20260728_211313.xlsx
-[2026-07-28 21:13:13] [保存] Excel汇总文件已创建：C:\Users\Mr\AppData\Local\Temp\tmpdyfww728\save\07.28\measurement_summary_20260728_211313.xlsx
-[2026-07-28 21:13:13] [保存光谱数据] 已保存：C:\Users\Mr\AppData\Local\Temp\tmpdyfww728\save\07.28\measurement_summary_20260728_211313.xlsx

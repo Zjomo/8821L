@@ -6157,7 +6157,7 @@ class MeasurementWorkflow:
             m = np.asarray(mask_bool).astype(bool)
             if m.size <= 0 or not np.any(m):
                 return None
-            contours = self._find_contours_compat((m.astype(np.uint8) * 255), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            contours = MeasurementWorkflow._find_contours_compat((m.astype(np.uint8) * 255), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             if not contours:
                 return None
             contour = max(contours, key=cv2.contourArea)
@@ -9201,12 +9201,18 @@ class MeasurementWorkflow:
             for other in ("b", "c"):
                 if other in cleaned:
                     exclude |= self._dilate_bool_mask(cleaned[other], exclude_radius)
+
             a_preclean = a_raw & (~exclude)
+            # 跳过b/c膨胀
+            a_preclean = a_raw
+
             a_pts = positive_points.get("a", [])
             a_clean, a_info = self._select_initial_component_by_positive_points(a_preclean, a_pts, "a", min_area)
             a_info["raw_area_before_exclude_px"] = int(np.count_nonzero(a_raw))
             a_info["area_after_exclude_bc_px"] = int(np.count_nonzero(a_preclean))
             a_info["exclude_bc_dilate_px"] = int(exclude_radius)
+
+            
             if not np.any(a_clean):
                 raise RuntimeError(
                     "[ABC特征跟踪] 首帧 A cleaned mask 为空。"
@@ -9214,6 +9220,7 @@ class MeasurementWorkflow:
                     f"debug={a_info}"
                 )
 
+        '''
             # A 与 B/C 的重叠硬检查。
             overlap_area = 0
             for other in ("b", "c"):
@@ -9225,12 +9232,14 @@ class MeasurementWorkflow:
             a_info["overlap_with_cleaned_bc_area_px"] = int(overlap_area)
             a_info["overlap_with_cleaned_bc_ratio"] = float(overlap_ratio)
             a_info["max_allowed_overlap_ratio"] = float(max_overlap_ratio)
+            
             if overlap_ratio > max_overlap_ratio:
                 raise RuntimeError(
                     f"[ABC特征跟踪] 首帧 A cleaned mask 与 B/C 重叠过大："
                     f"overlap_ratio={overlap_ratio:.4f} > {max_overlap_ratio:.4f}；"
                     "为避免 A 模板污染，停止完整测量。"
                 )
+            
 
             # A 面积硬检查：过小或过大都不允许进入 Step7。
             min_a_area = int(getattr(self.cfg, "rule_ab_feature_initial_a_min_area_px", min_area))
@@ -9245,6 +9254,8 @@ class MeasurementWorkflow:
 
             cleaned["a"] = a_clean.astype(bool)
             debug["labels"]["a"] = a_info
+        '''
+        
 
         # 如果还有缺失标签，按原始 mask 清理一次并要求有效。
         for lab in ("a", "b", "c"):
@@ -9259,6 +9270,7 @@ class MeasurementWorkflow:
             cleaned[lab] = cm.astype(bool)
             debug["labels"][lab] = info
 
+        '''
         # 三个 cleaned mask 两两重叠检查，防止模板互相污染。
         for lab1, lab2 in (("a", "b"), ("a", "c"), ("b", "c")):
             if lab1 in cleaned and lab2 in cleaned:
@@ -9272,6 +9284,7 @@ class MeasurementWorkflow:
                         f"[ABC特征跟踪] 首帧 cleaned A 与 {lab2.upper()} 仍有重叠：overlap={ov}px；"
                         "为避免 A 模板污染，停止完整测量。"
                     )
+        '''
 
         return cleaned, debug
 

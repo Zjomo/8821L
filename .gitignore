@@ -22,3 +22,6 @@ Utils/AutoZoom/程序/test/
 measurement_output/
 focus_output/
 sam2-main/
+Log/
+Utils/AutoZoom/Log/
+Utils/AutoZoom/measurement_output/

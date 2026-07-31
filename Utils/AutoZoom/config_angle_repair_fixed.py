@@ -49,6 +49,7 @@ DEFAULT_CONFIG = {
     'ch2_delay_s': 0.0,
     'angle_model_path': r'E:\CWB\8821L\Utils\AutoZoom\best.pt',
     'capture_area': (116, 98, 1112, 886),
+    #'capture_area': (130, 110, 1100, 860),
     'angle_output_dir': 'outputs/captured_frames',
     'angle_num': 0,
     'angle_cw': 0,
