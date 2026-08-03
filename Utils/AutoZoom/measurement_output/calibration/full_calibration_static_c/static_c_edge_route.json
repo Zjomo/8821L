@@ -1,5 +1,5 @@
 {
-  "created_at": "2026-08-03 14:04:57",
+  "created_at": "2026-08-03 20:10:03",
   "source": "quad_points_three_line_safety_band",
   "source_mask": "measurement_output\\calibration\\full_calibration_static_c\\static_c_quad_points.json",
   "c_mask_shape_for_route": "quadrilateral",
@@ -7,24 +7,24 @@
   "circle_debug": {
     "is_circle_like": false,
     "reason": "not_circle_like",
-    "area": 12405.5,
-    "perimeter": 451.2030973434448,
-    "circularity": 0.7657376349223247,
+    "area": 12839.5,
+    "perimeter": 465.6883786916733,
+    "circularity": 0.7439901319695137,
     "bbox_xywh": [
-      482,
-      331,
-      129,
-      129
+      473,
+      330,
+      138,
+      130
     ],
-    "bbox_aspect": 1.0,
-    "bbox_aspect_norm": 1.0,
-    "bbox_fill": 0.7454780361757106,
+    "bbox_aspect": 1.0615384615384615,
+    "bbox_aspect_norm": 0.9420289855072463,
+    "bbox_fill": 0.715691192865106,
     "min_enclosing_circle": [
-      544.4002685546875,
-      394.35052490234375,
-      66.62618255615234
+      541.30224609375,
+      391.3739929199219,
+      70.23756408691406
     ],
-    "circle_fill": 0.8895585524997888,
+    "circle_fill": 0.8284367499215735,
     "approx_vertex_count_eps_0p02": 8
   },
   "circle_bbox_debug": {},
