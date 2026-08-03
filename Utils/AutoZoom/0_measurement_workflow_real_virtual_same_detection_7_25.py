@@ -352,7 +352,7 @@ class MeasurementConfig:
     rule_ab_b_area_ratio_max: float = float(_cfg("rule_ab_b_area_ratio_max", 1.35))
     rule_ab_b_center_jump_max_px: float = float(_cfg("rule_ab_b_center_jump_max_px", 40.0))
     rule_ab_b_angle_jump_max_deg: float = float(_cfg("rule_ab_b_angle_jump_max_deg", 12.0))
-    rule_ab_a_exclude_b_dilate_px: int = int(_cfg("rule_ab_a_exclude_b_dilate_px", 5))
+    rule_ab_a_exclude_b_dilate_px: int = int(_cfg("rule_ab_a_exclude_b_dilate_px", 1))
     rule_ab_a_min_area_after_b_exclude_px: int = int(_cfg("rule_ab_a_min_area_after_b_exclude_px", 5))
 
     # RuleAB：第一帧 SAM2 分割确认与 C 四边形拟合
@@ -9204,7 +9204,7 @@ class MeasurementWorkflow:
 
             a_preclean = a_raw & (~exclude)
             # 跳过b/c膨胀
-            a_preclean = a_raw
+            # a_preclean = a_raw
 
             a_pts = positive_points.get("a", [])
             a_clean, a_info = self._select_initial_component_by_positive_points(a_preclean, a_pts, "a", min_area)
