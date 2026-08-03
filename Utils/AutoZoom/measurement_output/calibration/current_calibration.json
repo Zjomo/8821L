@@ -1,7 +1,11 @@
 {
   "calibration_version": 1,
   "created_at": "2026-07-30 16:07:34",
+<<<<<<< HEAD
   "updated_at": "2026-08-03 20:53:20",
+=======
+  "updated_at": "2026-08-03 20:47:32",
+>>>>>>> 9a6d5e99cfcc34ec9b4507e812696225b72d3ebc
   "capture_area": [
     116,
     98,
@@ -17,6 +21,7 @@
   "angle_cw": 0,
   "rule_ab_a_positive_points": [
     [
+<<<<<<< HEAD
       428.2352941176471,
       158.8235294117647
     ],
@@ -63,10 +68,39 @@
     [
       443.5294117647059,
       223.52941176470588
+=======
+      877.6470588235294,
+      221.1764705882353
+    ],
+    [
+      881.1764705882354,
+      244.7058823529412
+    ],
+    [
+      890.5882352941177,
+      262.3529411764706
+    ],
+    [
+      917.6470588235294,
+      238.82352941176472
+    ],
+    [
+      922.3529411764706,
+      209.41176470588235
+    ],
+    [
+      908.2352941176471,
+      211.76470588235296
+    ],
+    [
+      908.2352941176471,
+      265.88235294117646
+>>>>>>> 9a6d5e99cfcc34ec9b4507e812696225b72d3ebc
     ]
   ],
   "rule_ab_a_negative_points": [
     [
+<<<<<<< HEAD
       367.05882352941177,
       282.3529411764706
     ],
@@ -371,11 +405,165 @@
     [
       542.3529411764706,
       208.23529411764707
+=======
+      796.4705882352941,
+      167.05882352941177
+    ],
+    [
+      789.4117647058823,
+      212.94117647058823
+    ],
+    [
+      780.0,
+      269.4117647058824
+    ],
+    [
+      765.8823529411765,
+      291.7647058823529
+    ],
+    [
+      751.7647058823529,
+      322.3529411764706
+    ],
+    [
+      689.4117647058823,
+      370.5882352941177
+    ],
+    [
+      687.0588235294118,
+      385.88235294117646
+    ],
+    [
+      697.6470588235294,
+      414.11764705882354
+    ],
+    [
+      783.5294117647059,
+      438.8235294117647
+    ],
+    [
+      796.4705882352941,
+      516.4705882352941
+    ],
+    [
+      456.47058823529414,
+      415.29411764705884
     ]
   ],
-  "static_c_map_dir": "E:\\CWB\\8821L\\Utils\\AutoZoom\\measurement_output\\rule_ab_follow_c_only\\_static_c_map_library\\default_static_c_map",
-  "static_c_mask_path": "E:\\CWB\\8821L\\Utils\\AutoZoom\\measurement_output\\rule_ab_follow_c_only\\_static_c_map_library\\default_static_c_map\\static_c_mask.png",
-  "static_c_edge_route_path": "E:\\CWB\\8821L\\Utils\\AutoZoom\\measurement_output\\rule_ab_follow_c_only\\_static_c_map_library\\default_static_c_map\\static_c_edge_route.json",
+  "rule_ab_b_positive_points": [],
+  "rule_ab_b_negative_points": [],
+  "global_c_positive_points": [
+    [
+      704.7058823529412,
+      334.11764705882354
+    ],
+    [
+      681.1764705882354,
+      336.47058823529414
+    ],
+    [
+      637.6470588235294,
+      391.7647058823529
+    ],
+    [
+      664.7058823529412,
+      431.7647058823529
+    ],
+    [
+      691.7647058823529,
+      438.8235294117647
+    ],
+    [
+      710.5882352941177,
+      427.05882352941177
+    ],
+    [
+      720.0,
+      363.5294117647059
+    ],
+    [
+      709.4117647058823,
+      363.5294117647059
+    ],
+    [
+      722.3529411764706,
+      418.8235294117647
+    ],
+    [
+      727.0588235294118,
+      438.8235294117647
+    ],
+    [
+      724.7058823529412,
+      445.88235294117646
+    ]
+  ],
+  "global_c_negative_points": [
+    [
+      797.6470588235294,
+      158.8235294117647
+    ],
+    [
+      754.1176470588235,
+      208.23529411764707
+    ],
+    [
+      755.2941176470589,
+      275.29411764705884
+    ],
+    [
+      771.7647058823529,
+      232.94117647058823
+    ],
+    [
+      774.1176470588235,
+      232.94117647058823
+    ],
+    [
+      880.0,
+      200.0
+    ],
+    [
+      877.6470588235294,
+      211.76470588235296
+    ],
+    [
+      876.4705882352941,
+      247.05882352941177
+    ],
+    [
+      916.4705882352941,
+      274.11764705882354
+    ],
+    [
+      945.8823529411765,
+      222.35294117647058
+    ],
+    [
+      929.4117647058824,
+      218.82352941176472
+    ],
+    [
+      908.2352941176471,
+      263.5294117647059
+    ],
+    [
+      835.2941176470589,
+      445.88235294117646
+    ],
+    [
+      778.8235294117648,
+      545.8823529411765
+    ],
+    [
+      547.0588235294118,
+      480.0
+>>>>>>> 9a6d5e99cfcc34ec9b4507e812696225b72d3ebc
+    ]
+  ],
+  "static_c_map_dir": "E:\\jupyter file\\2_Optics\\8821L\\Utils\\AutoZoom\\measurement_output\\rule_ab_follow_c_only\\_static_c_map_library\\default_static_c_map",
+  "static_c_mask_path": "E:\\jupyter file\\2_Optics\\8821L\\Utils\\AutoZoom\\measurement_output\\rule_ab_follow_c_only\\_static_c_map_library\\default_static_c_map\\static_c_mask.png",
+  "static_c_edge_route_path": "E:\\jupyter file\\2_Optics\\8821L\\Utils\\AutoZoom\\measurement_output\\rule_ab_follow_c_only\\_static_c_map_library\\default_static_c_map\\static_c_edge_route.json",
   "feature_profile_dir": "",
   "feature_profile_json": "",
   "b_positive_hsv_seeds": [],
@@ -385,6 +573,7 @@
   "selected_b_edge_length": NaN,
   "selected_b_edge_midpoint": [],
   "selected_b_edge_descriptor": {},
+<<<<<<< HEAD
   "step9_target_x_px": 541.176,
   "step9_target_y_px": 395.294,
   "step9_color_mode": "include",
@@ -397,6 +586,20 @@
   "step9_color_min_area_px": 200,
   "step9_color_morph_kernel": 5,
   "step9_center_tolerance_px": 20.0,
+=======
+  "step9_target_x_px": 750.588,
+  "step9_target_y_px": 391.765,
+  "step9_color_mode": "include",
+  "step9_color_h": 64,
+  "step9_color_s": 121,
+  "step9_color_v": 103,
+  "step9_color_h_tol": 12,
+  "step9_color_s_tol": 70,
+  "step9_color_v_tol": 70,
+  "step9_color_min_area_px": 200,
+  "step9_color_morph_kernel": 5,
+  "step9_center_tolerance_px": 50.0,
+>>>>>>> 9a6d5e99cfcc34ec9b4507e812696225b72d3ebc
   "exclude_roi_polygons": [],
   "notes": ""
 }
