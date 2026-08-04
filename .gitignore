@@ -23,5 +23,9 @@ measurement_output/
 focus_output/
 sam2-main/
 Log/
+logs/
 Utils/AutoZoom/Log/
 Utils/AutoZoom/measurement_output/
+Utils/AutoZoom/Utils/yuan/
+Utils/SLM/.ipynb_checkpoints/
+
