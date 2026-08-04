@@ -19,13 +19,16 @@ Utils/AutoZoom/sam2-main/
 Utils/程序/Save/
 Utils/AutoZoom/程序/Save/
 Utils/AutoZoom/程序/test/
+Utils/AutoZoom/measurement_output/rule_ab_follow_c_only/_static_c_map_library/default_static_c_map/
+Utils/AutoZoom/measurement_output/calibration/full_calibration_static_c/
+Utils/SLM/
+Utils/AutoZoom/Log/
+Utils/AutoZoom/measurement_output/calibration/
+Utils/AutoZoom/Utils/yuan/
 measurement_output/
 focus_output/
 sam2-main/
 Log/
 logs/
-Utils/AutoZoom/Log/
-Utils/AutoZoom/measurement_output/
-Utils/AutoZoom/Utils/yuan/
-Utils/SLM/.ipynb_checkpoints/
+.ipynb_checkpoints/
 
