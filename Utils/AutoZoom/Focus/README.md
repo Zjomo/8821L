@@ -98,6 +98,8 @@ python Focus/main.py --demo-sim --strategy curve_fit --cycles 10
 | `autofocus_passive_max_attempts` | `10` | 被动模式下单轮最大连续补焦尝试次数 |
 | `autofocus_passive_consecutive_good` | `3` | 被动模式下 FocusScore 连续达标轮数，达到后停止 |
 | `z_probe_steps` | `10` | 试探步数 |
+| `z_direction_probe_steps` | `(10, 20, 30)` | 方向判断的双向采样步长序列 |
+| `z_direction_probe_samples` | `3` | 每个采样点的重复采样次数 |
 | `z_search_steps` | `10` | 搜索步数 |
 | `z_settle_time_s` | `0.20` | 移动后稳定等待时间 (s) |
 | `z_max_iter` | `40` | 最大搜索迭代 |
@@ -186,7 +188,7 @@ z.move_relative(-50)      # 反向 50 步
 
 | 策略 | 说明 |
 |------|------|
-| `hill_climb` | 试探方向 → 沿提升方向递进 → 回退最佳位置；支持自适应步长衰减 |
+| `hill_climb` | 先按步长序列做双向采样并取重复采样中位数，再沿提升方向递进，最后回退并局部细搜 |
 | `full_sweep` | 在 `[-z_sweep_range_steps, +z_sweep_range_steps]` 等间距全扫描 |
 | `curve_fit` | 等间距采样后用抛物线拟合预测峰值，再局部微调 |
 | `golden_section` | 粗扫确定峰值区间，再用黄金分割法细化 |

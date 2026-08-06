@@ -628,6 +628,12 @@ class MeasurementConfig:
     focus_check_interval_s: float = float(_cfg("focus_check_interval_s", 0.2))
     focus_z_search_steps: int = int(_cfg("focus_z_search_steps", 10))
     focus_z_patience: int = int(_cfg("focus_z_patience", 3))
+    focus_z_direction_probe_steps: Tuple[int, ...] = tuple(_cfg("focus_z_direction_probe_steps", (10, 20, 30)))  # type: ignore
+    focus_z_direction_probe_samples: int = int(_cfg("focus_z_direction_probe_samples", 3))
+    focus_z_local_refine_enabled: bool = bool(_cfg("focus_z_local_refine_enabled", True))
+    focus_z_local_refine_decay: float = float(_cfg("focus_z_local_refine_decay", 0.5))
+    focus_z_local_refine_min_step: int = int(_cfg("focus_z_local_refine_min_step", 1))
+    focus_z_local_refine_max_rounds: int = int(_cfg("focus_z_local_refine_max_rounds", 4))
 
     def __post_init__(self):
         """
@@ -13432,6 +13438,14 @@ class MeasurementWorkflow:
             z_search_strategy=str(self.cfg.focus_search_strategy),
             z_search_steps=int(getattr(self.cfg, "focus_z_search_steps", 10)),
             z_patience=int(getattr(self.cfg, "focus_z_patience", 3)),
+            z_direction_probe_steps=tuple(
+                int(v) for v in getattr(self.cfg, "focus_z_direction_probe_steps", (10, 20, 30))
+            ),
+            z_direction_probe_samples=int(getattr(self.cfg, "focus_z_direction_probe_samples", 3)),
+            z_local_refine_enabled=bool(getattr(self.cfg, "focus_z_local_refine_enabled", True)),
+            z_local_refine_decay=float(getattr(self.cfg, "focus_z_local_refine_decay", 0.5)),
+            z_local_refine_min_step=int(getattr(self.cfg, "focus_z_local_refine_min_step", 1)),
+            z_local_refine_max_rounds=int(getattr(self.cfg, "focus_z_local_refine_max_rounds", 4)),
         )
 
     def _ensure_focus_components(self) -> None:
@@ -13773,10 +13787,19 @@ class MeasurementWorkflow:
         """
         计算当前 FocusScore_ratio，若连续超出阈值则执行补焦。
         返回 {"score": float|None, "triggered": bool, "autofocus_ok": bool}。
+        若实际执行了闭环补焦，score 会更新为补焦后的最终分数，
+        原始触发前分数保存在 pre_score。
         """
-        result = {"score": None, "triggered": False, "autofocus_ok": False}
+        result = {
+            "score": None,
+            "pre_score": None,
+            "final_score": None,
+            "triggered": False,
+            "autofocus_ok": False,
+        }
         score = self.compute_current_focus_score()
         result["score"] = score
+        result["pre_score"] = score
 
         if score is None:
             self.log("[聚焦补焦] 当前 FocusScore 为空，跳过")
@@ -13834,6 +13857,9 @@ class MeasurementWorkflow:
 
             result["autofocus_ok"] = bool(autofocus_result.get("ok", False))
             final_score = autofocus_result.get("best_score")
+            result["final_score"] = final_score
+            if final_score is not None:
+                result["score"] = final_score
             self.log(
                 f"[聚焦补焦] 闭环结束：ok={result['autofocus_ok']}, "
                 f"best_score={final_score}"
@@ -15530,6 +15556,12 @@ class MeasurementWorkflowGUI:
         self.saf_wait_between_spectrum_var = tk.DoubleVar(value=120.0)
         self.saf_z_search_steps_var = tk.IntVar(value=10)
         self.saf_z_patience_var = tk.IntVar(value=3)
+        self.saf_z_direction_probe_steps_var = tk.StringVar(value="10,20,30")
+        self.saf_z_direction_probe_samples_var = tk.IntVar(value=3)
+        self.saf_z_local_refine_enabled_var = tk.BooleanVar(value=True)
+        self.saf_z_local_refine_decay_var = tk.DoubleVar(value=0.5)
+        self.saf_z_local_refine_min_step_var = tk.IntVar(value=1)
+        self.saf_z_local_refine_max_rounds_var = tk.IntVar(value=4)
 
         for col_idx in range(4):
             saf_frame.columnconfigure(col_idx, weight=1)
@@ -15678,9 +15710,46 @@ class MeasurementWorkflowGUI:
             row=9, column=3, padx=4, pady=4, sticky="w"
         )
 
-        # Row 10: 按钮
+        # Row 10: 动态双向采样参数
+        ttk.Label(saf_frame, text="方向判定步长").grid(
+            row=10, column=0, padx=4, pady=4, sticky="w"
+        )
+        ttk.Entry(saf_frame, textvariable=self.saf_z_direction_probe_steps_var).grid(
+            row=10, column=1, padx=4, pady=4, sticky="ew"
+        )
+        ttk.Label(saf_frame, text="重复采样").grid(
+            row=10, column=2, padx=4, pady=4, sticky="w"
+        )
+        ttk.Entry(saf_frame, textvariable=self.saf_z_direction_probe_samples_var, width=8).grid(
+            row=10, column=3, padx=4, pady=4, sticky="w"
+        )
+
+        # Row 11: 局部细搜参数
+        ttk.Checkbutton(
+            saf_frame, text="启用局部细搜", variable=self.saf_z_local_refine_enabled_var
+        ).grid(row=11, column=0, padx=4, pady=4, sticky="w")
+        ttk.Label(saf_frame, text="细搜衰减").grid(
+            row=11, column=1, padx=4, pady=4, sticky="w"
+        )
+        ttk.Entry(saf_frame, textvariable=self.saf_z_local_refine_decay_var, width=8).grid(
+            row=11, column=1, padx=(70, 4), pady=4, sticky="w"
+        )
+        ttk.Label(saf_frame, text="最小步数").grid(
+            row=11, column=2, padx=4, pady=4, sticky="w"
+        )
+        ttk.Entry(saf_frame, textvariable=self.saf_z_local_refine_min_step_var, width=8).grid(
+            row=11, column=2, padx=(70, 4), pady=4, sticky="w"
+        )
+        ttk.Label(saf_frame, text="最大轮数").grid(
+            row=11, column=3, padx=4, pady=4, sticky="w"
+        )
+        ttk.Entry(saf_frame, textvariable=self.saf_z_local_refine_max_rounds_var, width=8).grid(
+            row=11, column=3, padx=(70, 4), pady=4, sticky="w"
+        )
+
+        # Row 12: 按钮
         saf_buttons = ttk.Frame(saf_frame)
-        saf_buttons.grid(row=10, column=0, columnspan=4, padx=2, pady=4, sticky="ew")
+        saf_buttons.grid(row=12, column=0, columnspan=4, padx=2, pady=4, sticky="ew")
         saf_buttons.columnconfigure(0, weight=1)
         saf_buttons.columnconfigure(1, weight=1)
         ttk.Button(
@@ -15696,9 +15765,9 @@ class MeasurementWorkflowGUI:
             style="Danger.TButton",
         ).grid(row=0, column=1, padx=4, pady=3, sticky="ew")
 
-        # Row 11: 状态
+        # Row 13: 状态
         ttk.Label(saf_frame, textvariable=self.saf_status_var, wraplength=450).grid(
-            row=11, column=0, columnspan=4, padx=4, pady=(4, 0), sticky="w"
+            row=13, column=0, columnspan=4, padx=4, pady=(4, 0), sticky="w"
         )
 
         # =====================================================
@@ -15955,6 +16024,19 @@ class MeasurementWorkflowGUI:
             self.saf_passive_attempts_var,
             self.saf_passive_good_var,
             self.saf_disable_auto_stop_var,
+            self.saf_z_enabled_var,
+            self.saf_z_axis_var,
+            self.saf_z_speed_var,
+            self.saf_z_accel_var,
+            self.saf_search_strategy_var,
+            self.saf_z_search_steps_var,
+            self.saf_z_patience_var,
+            self.saf_z_direction_probe_steps_var,
+            self.saf_z_direction_probe_samples_var,
+            self.saf_z_local_refine_enabled_var,
+            self.saf_z_local_refine_decay_var,
+            self.saf_z_local_refine_min_step_var,
+            self.saf_z_local_refine_max_rounds_var,
         ]
         for var in param_vars:
             try:
@@ -17149,6 +17231,12 @@ class MeasurementWorkflowGUI:
             focus_search_strategy=str(self.saf_search_strategy_var.get()),
             focus_z_search_steps=int(self.saf_z_search_steps_var.get()),
             focus_z_patience=int(self.saf_z_patience_var.get()),
+            focus_z_direction_probe_steps=self._parse_int_sequence(self.saf_z_direction_probe_steps_var.get()),
+            focus_z_direction_probe_samples=int(self.saf_z_direction_probe_samples_var.get()),
+            focus_z_local_refine_enabled=bool(self.saf_z_local_refine_enabled_var.get()),
+            focus_z_local_refine_decay=float(self.saf_z_local_refine_decay_var.get()),
+            focus_z_local_refine_min_step=int(self.saf_z_local_refine_min_step_var.get()),
+            focus_z_local_refine_max_rounds=int(self.saf_z_local_refine_max_rounds_var.get()),
         )
     
     def sync_config_from_ui_to_workflow(self) -> MeasurementWorkflow:
@@ -19928,6 +20016,17 @@ class MeasurementWorkflowGUI:
             self.log(f"[光谱补焦] ROI 解析失败({text})：{e}，使用默认值")
             return (0, 0, 300, 300)
 
+    def _parse_int_sequence(self, text: str) -> Tuple[int, ...]:
+        """解析形如 '10,20,30' 的整数序列。"""
+        try:
+            values = [int(p.strip()) for p in str(text).split(",") if str(p).strip()]
+            values = [v for v in values if v > 0]
+            if values:
+                return tuple(values)
+        except Exception as e:
+            self.log(f"[光谱补焦] 序列解析失败({text})：{e}，使用默认值")
+        return (10, 20, 30)
+
     def _make_saf_config(self) -> AutofocusConfig:
         """根据 GUI 当前值构造光谱补焦循环用的 AutofocusConfig。
 
@@ -19958,6 +20057,12 @@ class MeasurementWorkflowGUI:
             z_search_strategy=str(self.saf_search_strategy_var.get()),
             z_search_steps=int(self.saf_z_search_steps_var.get()),
             z_patience=int(self.saf_z_patience_var.get()),
+            z_direction_probe_steps=self._parse_int_sequence(self.saf_z_direction_probe_steps_var.get()),
+            z_direction_probe_samples=int(self.saf_z_direction_probe_samples_var.get()),
+            z_local_refine_enabled=bool(self.saf_z_local_refine_enabled_var.get()),
+            z_local_refine_decay=float(self.saf_z_local_refine_decay_var.get()),
+            z_local_refine_min_step=int(self.saf_z_local_refine_min_step_var.get()),
+            z_local_refine_max_rounds=int(self.saf_z_local_refine_max_rounds_var.get()),
         )
 
     def select_saf_roi_thread(self):

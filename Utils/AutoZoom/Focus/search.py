@@ -169,8 +169,214 @@ class HillClimbSearch(BaseFocusSearch):
 
     在原算法基础上增加：
       - 自适应步长：连续无进步时按 z_adaptive_step_decay 缩小 search_steps；
-      - 方向确定时直接使用动态步长。
+      - 方向确定时先按步长序列做双向采样，再选更优方向；
+      - 粗搜后回到 best_pos，用逐步缩小的左右探测做局部细搜。
     """
+
+    def _measure_median_at_current_position(
+        self,
+        phase: str,
+        iteration: int,
+        sample_count: int,
+    ) -> Optional[float]:
+        """在当前 Z 位置重复采样，返回中位数分数。"""
+        scores: List[float] = []
+        for sample_idx in range(max(1, int(sample_count))):
+            self._check_stop(phase)
+            score, _ = self._measure(f"{phase}_sample{sample_idx + 1}", iteration, use_cache=False)
+            if score is not None:
+                scores.append(float(score))
+        if not scores:
+            return None
+        return float(np.median(scores))
+
+    def _measure_median_at_position(
+        self,
+        target_pos: int,
+        phase: str,
+        iteration: int,
+        sample_count: int,
+    ) -> Optional[float]:
+        """移动到指定位置后重复采样，返回中位数分数。"""
+        self._move(target_pos - self.pos)
+        self._settle()
+        return self._measure_median_at_current_position(phase, iteration, sample_count)
+
+    def _determine_direction_with_dynamic_sampling(
+        self,
+        probe_steps: List[int],
+        min_improve: float,
+        sample_count: int,
+    ) -> Tuple[Optional[int], Optional[int], Optional[float], Optional[int]]:
+        """按步长序列做双向采样，选择更优方向。"""
+        if not probe_steps:
+            probe_steps = [max(1, int(self.cfg.z_probe_steps))]
+
+        best_direction: Optional[int] = None
+        best_probe_step: Optional[int] = None
+        best_score: Optional[float] = None
+        best_ratio: float = float("-inf")
+        best_pos: Optional[int] = None
+        center_score_final: Optional[float] = None
+
+        for stage_idx, probe_step in enumerate(probe_steps, start=1):
+            probe_step = max(1, int(probe_step))
+            stage_center_pos = self.pos
+            self.log_fn(
+                f"[补焦] 方向判断阶段 {stage_idx}/{len(probe_steps)}: probe_step={probe_step}"
+            )
+            center_score = self._measure_median_at_current_position(
+                phase=f"direction_center_s{probe_step}",
+                iteration=stage_idx * 10 - 2,
+                sample_count=sample_count,
+            )
+            center_score_final = center_score
+            if center_score is None:
+                self.log_fn(
+                    f"[补焦] 中心点采样失败，跳过 probe_step={probe_step}"
+                )
+                continue
+
+            plus_score = self._measure_median_at_position(
+                target_pos=stage_center_pos + probe_step,
+                phase=f"direction_plus_s{probe_step}",
+                iteration=stage_idx * 10 - 1,
+                sample_count=sample_count,
+            )
+            self._move(stage_center_pos - self.pos)
+            self._settle()
+
+            minus_score = self._measure_median_at_position(
+                target_pos=stage_center_pos - probe_step,
+                phase=f"direction_minus_s{probe_step}",
+                iteration=stage_idx * 10,
+                sample_count=sample_count,
+            )
+            self._move(stage_center_pos - self.pos)
+            self._settle()
+
+            threshold = center_score * (1.0 + min_improve)
+            stage_candidates: List[Tuple[int, float, float]] = []
+            ratio_base = max(abs(center_score), 1e-12)
+            if plus_score is not None and plus_score > threshold:
+                stage_candidates.append((+1, float(plus_score), float(plus_score / ratio_base)))
+            if minus_score is not None and minus_score > threshold:
+                stage_candidates.append((-1, float(minus_score), float(minus_score / ratio_base)))
+
+            self.log_fn(
+                f"[补焦] 方向判断阶段 {stage_idx} 结果: "
+                f"center={center_score:.4f}, plus={plus_score}, minus={minus_score}, "
+                f"threshold={threshold:.4f}"
+            )
+
+            if not stage_candidates:
+                continue
+
+            stage_direction, stage_score, stage_ratio = max(
+                stage_candidates, key=lambda item: item[1]
+            )
+            if best_score is None or stage_score > best_score:
+                best_direction = stage_direction
+                best_probe_step = probe_step
+                best_score = stage_score
+                best_ratio = stage_ratio
+                best_pos = stage_center_pos + (stage_direction * probe_step)
+
+        if best_direction is not None:
+            self.log_fn(
+                f"[补焦] 动态双向采样确定方向: direction={best_direction}, "
+                f"probe_step={best_probe_step}, score={best_score:.4f}, ratio={best_ratio:.4f}"
+            )
+            return best_direction, best_probe_step, best_score, best_pos
+
+        if center_score_final is not None:
+            self.log_fn(
+                f"[补焦] 动态双向采样未找到明显提升，center={center_score_final:.4f}"
+            )
+        else:
+            self.log_fn("[补焦] 动态双向采样全部失败，无法确定方向")
+        return None, None, center_score_final, None
+
+    def _refine_around_best(
+        self,
+        best_score: float,
+        best_pos: int,
+        initial_step: int,
+        min_improve: float,
+        max_total_steps: int,
+        iteration: int,
+    ) -> Tuple[float, int, int]:
+        """回到 best_pos 左右做局部细搜，返回更新后的 best_score/best_pos/iteration。"""
+        if not bool(getattr(self.cfg, "z_local_refine_enabled", True)):
+            return best_score, best_pos, iteration
+
+        refine_step = max(1, int(initial_step))
+        refine_step = max(1, refine_step // 2)
+        min_step = max(1, int(getattr(self.cfg, "z_local_refine_min_step", 1)))
+        max_rounds = max(0, int(getattr(self.cfg, "z_local_refine_max_rounds", 4)))
+        decay = float(getattr(self.cfg, "z_local_refine_decay", 0.5))
+        decay = max(0.1, min(0.9, decay))
+
+        if max_rounds <= 0:
+            return best_score, best_pos, iteration
+
+        self.log_fn(
+            f"[补焦] 开始局部细搜: best_pos={best_pos}, step={refine_step}, "
+            f"min_step={min_step}, rounds={max_rounds}"
+        )
+
+        round_index = 0
+        while refine_step >= min_step and round_index < max_rounds:
+            self._check_stop("local_refine")
+            round_index += 1
+
+            if self.pos != best_pos:
+                iteration += 1
+                self._goto(best_pos, "local_refine_center", iteration, use_cache=True)
+
+            round_improved = False
+            candidates = [best_pos - refine_step, best_pos + refine_step]
+            for candidate_pos in candidates:
+                self._check_stop("local_refine")
+                if abs(candidate_pos) > max_total_steps:
+                    self.log_fn(
+                        f"[补焦] 局部细搜跳过越界位置: z={candidate_pos}, "
+                        f"limit={max_total_steps}"
+                    )
+                    continue
+                iteration += 1
+                score, _ = self._goto(
+                    candidate_pos, "local_refine", iteration, use_cache=True
+                )
+                improved = (
+                    score is not None
+                    and score > best_score * (1.0 + min_improve)
+                )
+                if improved:
+                    best_score = float(score)
+                    best_pos = self.pos
+                    round_improved = True
+                    self.log_fn(
+                        f"[补焦] 局部细搜更新最佳: best_pos={best_pos}, "
+                        f"best_score={best_score:.4f}"
+                    )
+
+            if self.pos != best_pos:
+                iteration += 1
+                self._goto(best_pos, "local_refine_return", iteration, use_cache=True)
+
+            next_step = max(min_step, int(refine_step * decay))
+            if next_step >= refine_step:
+                next_step = refine_step - 1
+            refine_step = next_step
+            if refine_step < min_step:
+                break
+            if not round_improved:
+                self.log_fn(
+                    f"[补焦] 局部细搜本轮无提升，继续缩小步长为 {refine_step}"
+                )
+
+        return best_score, best_pos, iteration
 
     def search(
         self,
@@ -185,6 +391,18 @@ class HillClimbSearch(BaseFocusSearch):
         probe_steps = max(1, int(self.cfg.z_probe_steps))
         search_steps = max(1, int(self.cfg.z_search_steps))
         decay = max(0.0, min(1.0, float(self.cfg.z_adaptive_step_decay)))
+        probe_schedule_raw = getattr(self.cfg, "z_direction_probe_steps", (probe_steps,))
+        if isinstance(probe_schedule_raw, str):
+            probe_schedule = [
+                int(v.strip())
+                for v in probe_schedule_raw.split(",")
+                if v.strip()
+            ]
+        elif isinstance(probe_schedule_raw, (tuple, list)):
+            probe_schedule = [int(v) for v in probe_schedule_raw if int(v) > 0]
+        else:
+            probe_schedule = [int(probe_steps)]
+        sample_count = max(1, int(getattr(self.cfg, "z_direction_probe_samples", 3)))
 
         if initial_score is None:
             score, _ = self._measure("start", 0)
@@ -211,36 +429,32 @@ class HillClimbSearch(BaseFocusSearch):
                 "history": self.history,
             }
 
-        # ---- 试探 + 方向 ----
-        direction = None
-        score_plus, _ = self._goto(+probe_steps, "probe_plus", 1)
+        # ---- 动态双向采样 + 方向 ----
+        direction, chosen_probe_step, chosen_score, chosen_pos = self._determine_direction_with_dynamic_sampling(
+            probe_steps=probe_schedule,
+            min_improve=min_improve,
+            sample_count=sample_count,
+        )
+        if direction is None or chosen_probe_step is None or chosen_score is None or chosen_pos is None:
+            if self.pos != 0:
+                self._goto(0, "probe_return", 4)
+            return {
+                "ok": True,
+                "reason": "both_directions_no_improve",
+                "initial_score": initial_score,
+                "best_score": best_score,
+                "best_relative_z_steps": 0,
+                "history": self.history,
+            }
 
-        if score_plus is not None and score_plus > best_score * (1.0 + min_improve):
-            direction = +1
-            best_score = float(score_plus)
-            best_pos = self.pos
-        else:
-            # 回到原点再试反方向
-            self._goto(0, "probe_return", 2)
-            score_minus, _ = self._goto(-probe_steps, "probe_minus", 3)
-
-            if score_minus is not None and score_minus > best_score * (1.0 + min_improve):
-                direction = -1
-                best_score = float(score_minus)
-                best_pos = self.pos
-            else:
-                # 回到原点
-                if self.pos != 0:
-                    self._goto(0, "probe_return", 4)
-                self.log_fn("[补焦] 双向试探均无明显提升，停止")
-                return {
-                    "ok": True,
-                    "reason": "both_directions_no_improve",
-                    "initial_score": initial_score,
-                    "best_score": best_score,
-                    "best_relative_z_steps": 0,
-                    "history": self.history,
-                }
+        best_score = float(chosen_score)
+        best_pos = int(chosen_pos)
+        if self.pos != best_pos:
+            self.log_fn(
+                f"[补焦] 移动到方向探测最佳点: best_pos={best_pos}, current_pos={self.pos}"
+            )
+            self._move(best_pos - self.pos)
+            self._settle()
 
         # ---- 沿方向递进搜索 ----
         no_improve_count = 0
@@ -279,10 +493,26 @@ class HillClimbSearch(BaseFocusSearch):
                 break
             iteration += 1
 
-        # ---- 回退到最佳位置 ----
+        # ---- 回退到最佳位置，并在 best_pos 左右做局部细搜 ----
         if best_pos != self.pos:
             self.log_fn(
                 f"[补焦] 回退到最佳位置: best_pos={best_pos}, current_pos={self.pos}"
+            )
+            self._goto(best_pos, "return_to_best", iteration + 1)
+            iteration += 1
+
+        best_score, best_pos, iteration = self._refine_around_best(
+            best_score=best_score,
+            best_pos=best_pos,
+            initial_step=search_steps,
+            min_improve=min_improve,
+            max_total_steps=max_total_steps,
+            iteration=iteration,
+        )
+
+        if best_pos != self.pos:
+            self.log_fn(
+                f"[补焦] 细搜后回退到最佳位置: best_pos={best_pos}, current_pos={self.pos}"
             )
             self._goto(best_pos, "return_to_best", iteration + 1)
 
