@@ -1,76 +1,41 @@
 {
-<<<<<<< HEAD
-  "created_at": "2026-08-03 20:10:03",
-  "created_time": 1785759003.3232846,
-=======
-  "created_at": "2026-08-03 20:47:34",
-  "created_time": 1785761254.731223,
->>>>>>> 9a6d5e99cfcc34ec9b4507e812696225b72d3ebc
+  "created_at": "2026-08-07 15:16:53",
+  "created_time": 1786087013.3488472,
   "source": "full_calibration_static_c",
-  "source_static_c_mask": "E:\\jupyter file\\2_Optics\\8821L\\Utils\\AutoZoom\\measurement_output\\rule_ab_follow_c_only\\_static_c_map_library\\default_static_c_map\\static_c_mask.png",
-  "runtime_static_c_dir": "E:\\jupyter file\\2_Optics\\8821L\\Utils\\AutoZoom\\measurement_output\\calibration\\full_calibration_static_c",
+  "source_static_c_mask": "E:\\CWB\\8821L\\Utils\\AutoZoom\\measurement_output\\rule_ab_follow_c_only\\_static_c_map_library\\default_static_c_map\\static_c_mask.png",
+  "runtime_static_c_dir": "E:\\CWB\\8821L\\Utils\\AutoZoom\\measurement_output\\calibration\\full_calibration_static_c",
   "static_c_map_name": "full_calibration_static_c",
-  "mask_path": "E:\\jupyter file\\2_Optics\\8821L\\Utils\\AutoZoom\\measurement_output\\calibration\\full_calibration_static_c\\static_c_mask.png",
-  "edge_route_path": "E:\\jupyter file\\2_Optics\\8821L\\Utils\\AutoZoom\\measurement_output\\calibration\\full_calibration_static_c\\static_c_edge_route.json",
-  "pixels_path": "E:\\jupyter file\\2_Optics\\8821L\\Utils\\AutoZoom\\measurement_output\\calibration\\full_calibration_static_c\\static_c_pixels_yx.npy",
+  "mask_path": "E:\\CWB\\8821L\\Utils\\AutoZoom\\measurement_output\\calibration\\full_calibration_static_c\\static_c_mask.png",
+  "edge_route_path": "E:\\CWB\\8821L\\Utils\\AutoZoom\\measurement_output\\calibration\\full_calibration_static_c\\static_c_edge_route.json",
+  "pixels_path": "E:\\CWB\\8821L\\Utils\\AutoZoom\\measurement_output\\calibration\\full_calibration_static_c\\static_c_pixels_yx.npy",
   "bbox": [
-<<<<<<< HEAD
-    473.0,
-    330.0,
-    610.0,
-    459.0
+    460.0,
+    323.0,
+    575.0,
+    435.0
   ],
   "center": [
-    544.4773060029282,
-    389.6789052821264
+    515.1229794387689,
+    376.49928876244667
   ],
-  "area": 8730.5,
-  "mask_area_px": 8879,
+  "area": 7569.5,
+  "mask_area_px": 7733,
   "contour": [
     [
-      539.0,
-      330.0
+      479.0,
+      323.0
     ],
     [
-      473.0,
-      375.0
+      460.0,
+      393.0
     ],
     [
-      558.0,
-      459.0
+      540.0,
+      435.0
     ],
     [
-      610.0,
-      386.0
-=======
-    647.0,
-    308.0,
-    793.0,
-    462.0
-  ],
-  "center": [
-    721.2080695534735,
-    385.2735713682789
-  ],
-  "area": 11666.5,
-  "mask_area_px": 11847,
-  "contour": [
-    [
-      711.0,
-      308.0
-    ],
-    [
-      647.0,
-      402.0
-    ],
-    [
-      736.0,
-      462.0
-    ],
-    [
-      793.0,
-      368.0
->>>>>>> 9a6d5e99cfcc34ec9b4507e812696225b72d3ebc
+      575.0,
+      356.0
     ]
   ],
   "purpose": "strict_full_calibration_c_for_measurement_run",
