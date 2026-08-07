@@ -141,6 +141,12 @@ class AutofocusConfig:
     z_probe_steps: int = 10
     """试探步数"""
 
+    z_direction_probe_steps: tuple[int, ...] = (10, 20, 30)
+    """方向判断的双向采样步长序列。"""
+
+    z_direction_probe_samples: int = 3
+    """每个采样点的重复采样次数。"""
+
     z_search_steps: int = 10
     """搜索步数"""
 
@@ -174,6 +180,18 @@ class AutofocusConfig:
 
     z_adaptive_step_decay: float = 1.0
     """爬坡策略中步长衰减系数（1.0 表示不衰减；<1.0 时每次无进步会缩小步长）"""
+
+    z_local_refine_enabled: bool = True
+    """爬坡粗搜结束后，是否回到 best_pos 左右做局部细搜。"""
+
+    z_local_refine_decay: float = 0.5
+    """局部细搜步长衰减系数，例如 0.5 表示 10 -> 5 -> 2 -> 1。"""
+
+    z_local_refine_min_step: int = 1
+    """局部细搜最小步长。"""
+
+    z_local_refine_max_rounds: int = 4
+    """局部细搜最大轮数。每轮会在 best_pos 左右各测一次。"""
 
     # -------------------- 参考建立 --------------------
     focus_reference_capture_count: int = 5
