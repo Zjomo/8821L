@@ -65,6 +65,13 @@ class SafZStepsPatienceConfigTests(unittest.TestCase):
         self.assertEqual(cfg.focus_z_local_refine_min_step, 1)
         self.assertEqual(cfg.focus_z_local_refine_max_rounds, 4)
 
+    def test_config_has_excitation_light_params(self):
+        cfg = MeasurementConfig()
+        self.assertTrue(hasattr(cfg, "excitation_light_axis"))
+        self.assertTrue(hasattr(cfg, "excitation_light_steps"))
+        self.assertEqual(cfg.excitation_light_axis, 2)
+        self.assertEqual(cfg.excitation_light_steps, 500)
+
 
 class SafZStepsPatienceGUITests(unittest.TestCase):
     """测试 GUI 变量和 _make_saf_config 传递。"""
@@ -179,6 +186,27 @@ class SafZStepsPatienceGUITests(unittest.TestCase):
         self.assertIn("spectrum_autofocus_loop", src_compute)
         self.assertIn("compute_current_focus_score", src_compute)
 
+    def test_step11_step13_have_excitation_light_switch_actions(self):
+        """验证完整循环光谱采集块在 Step11/Step13 插入激发光开关。"""
+        import inspect
+        src = inspect.getsource(_module.MeasurementWorkflow._acquire_and_save_spectrum)
+        self.assertIn('off_label).strip().lower() == "step 11"', src)
+        self.assertIn("self.excitation_light_on()", src)
+        self.assertIn('on_label).strip().lower() == "step 13"', src)
+        self.assertIn("self.excitation_light_off()", src)
+
+    def test_excitation_light_methods_move_axis2_500_by_default(self):
+        """验证激发光开关方法使用配置的 axis/steps。"""
+        import inspect
+        src_on = inspect.getsource(_module.MeasurementWorkflow.excitation_light_on)
+        src_off = inspect.getsource(_module.MeasurementWorkflow.excitation_light_off)
+        self.assertIn("excitation_light_axis", src_on)
+        self.assertIn("excitation_light_steps", src_on)
+        self.assertIn("steps = abs", src_on)
+        self.assertIn("steps = -abs", src_off)
+        self.assertIn("打开激发光", src_on)
+        self.assertIn("关闭激发光", src_off)
+
     def test_make_saf_config_runtime_passes_direction_probe_params(self):
         """运行时验证 _make_saf_config 的动态双向采样参数传递。"""
         class DummyVar:
@@ -271,8 +299,8 @@ class HillClimbLocalRefineTests(unittest.TestCase):
 
     def _run_search(self, local_refine_enabled: bool):
         cfg = AutofocusConfig(
-            autofocus_focus_trigger_ratio=1.1,
-            autofocus_stop_ratio=1.1,
+            autofocus_focus_trigger_ratio=0.95,
+            autofocus_stop_ratio=0.95,
             z_probe_steps=10,
             z_search_steps=10,
             z_min_improve_ratio=0.0,
@@ -300,7 +328,7 @@ class HillClimbLocalRefineTests(unittest.TestCase):
         search = HillClimbSearch(cfg, move, measure, logs.append)
         result = search.search(
             initial_score=score_at(0),
-            target=1.1,
+            target=0.95,
             max_total_steps=100,
             max_iter=8,
             patience=2,
@@ -319,6 +347,60 @@ class HillClimbLocalRefineTests(unittest.TestCase):
         result, _ = self._run_search(local_refine_enabled=False)
         self.assertEqual(result["best_relative_z_steps"], 10)
         self.assertLess(result["best_score"], 1.0)
+
+    def test_local_refine_does_not_replace_in_range_best_with_above_upper_score(self):
+        cfg = AutofocusConfig(
+            autofocus_focus_trigger_ratio=0.95,
+            autofocus_stop_ratio=0.95,
+            autofocus_trigger_absolute=True,
+            z_probe_steps=10,
+            z_search_steps=10,
+            z_direction_probe_stage_count=1,
+            z_direction_probe_step_interval=10,
+            z_direction_probe_samples=1,
+            z_direction_probe_points_per_step=1,
+            z_min_improve_ratio=0.0,
+            z_patience=2,
+            z_max_iter=8,
+            z_max_total_steps=100,
+            z_settle_time_s=0.0,
+            z_local_refine_enabled=True,
+            z_local_refine_decay=0.5,
+            z_local_refine_min_step=1,
+            z_local_refine_max_rounds=1,
+        )
+        state = {"pos": 0}
+        logs = []
+
+        score_map = {
+            0: 0.90,
+            10: 0.96,
+            5: 0.97,
+            15: 1.08,
+        }
+
+        def move(delta: int) -> None:
+            state["pos"] += int(delta)
+
+        def measure(phase: str, iteration: int):
+            return score_map.get(state["pos"], 0.90), None
+
+        search = HillClimbSearch(cfg, move, measure, logs.append)
+        result = search.search(
+            initial_score=0.90,
+            target=0.95,
+            max_total_steps=100,
+            max_iter=8,
+            patience=2,
+            min_improve=0.0,
+            upper_target=1.05,
+        )
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["best_relative_z_steps"], 5)
+        self.assertAlmostEqual(result["best_score"], 0.97)
+        self.assertTrue(result["direction_marked"])
+        self.assertEqual(sum("方向判断阶段" in line for line in logs), 2)
+        self.assertFalse(any("best_pos=15" in line for line in logs))
 
 
 class DynamicDirectionSamplingTests(unittest.TestCase):

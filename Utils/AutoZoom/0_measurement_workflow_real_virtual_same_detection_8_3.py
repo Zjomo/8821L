@@ -194,6 +194,8 @@ class MeasurementConfig:
     laser_off_steps: int = int(_cfg("laser_off_steps", 400))
     laser_speed: int = int(_cfg("laser_speed", 5000))
     laser_accel: int = int(_cfg("laser_accel", 5000))
+    excitation_light_axis: int = int(_cfg("excitation_light_axis", 2))
+    excitation_light_steps: int = int(_cfg("excitation_light_steps", 500))
 
     # angle_after - angle_before 的目标范围
     angle_delta_min_deg: float = float(_cfg("angle_delta_min_deg", 1.0))
@@ -2498,6 +2500,12 @@ class MeasurementWorkflow:
                 speed=int(self.cfg.laser_speed),
                 accel=int(self.cfg.laser_accel),
             )
+            if int(self.cfg.excitation_light_axis) != int(self.cfg.laser_axis):
+                self.set_laser_velocity_accel(
+                    axis=int(self.cfg.excitation_light_axis),
+                    speed=int(self.cfg.laser_speed),
+                    accel=int(self.cfg.laser_accel),
+                )
             self.context["laser_on"] = False
             self.log("[激光开关][virtual] 虚拟激光控制器连接成功")
             return
@@ -2523,6 +2531,12 @@ class MeasurementWorkflow:
             speed=int(self.cfg.laser_speed),
             accel=int(self.cfg.laser_accel),
         )
+        if int(self.cfg.excitation_light_axis) != int(self.cfg.laser_axis):
+            self.set_laser_velocity_accel(
+                axis=int(self.cfg.excitation_light_axis),
+                speed=int(self.cfg.laser_speed),
+                accel=int(self.cfg.laser_accel),
+            )
         self.context["laser_on"] = False
         self.log("[激光开关] Newport 8743-CL 连接成功")
 
@@ -2626,6 +2640,30 @@ class MeasurementWorkflow:
             f"[激光开关] OFF 完成：axis={self.cfg.laser_axis}, "
             f"steps={steps}"
         )
+        self.notify_update()
+
+    def excitation_light_on(self):
+        """打开激发光：8743-CL axis2 正方向移动指定步数。"""
+        if self.laser_stage is None:
+            self.connect_laser_controller()
+        axis = int(self.cfg.excitation_light_axis)
+        steps = abs(int(self.cfg.excitation_light_steps))
+        self.log(f"[激发光] 打开激发光：8743-CL-axis{axis} 正方向移动 {steps} step")
+        self.laser_move_and_wait(axis=axis, steps=steps, wait=True)
+        self.context["excitation_light_on"] = True
+        self.context["excitation_light_last_on_steps"] = int(steps)
+        self.notify_update()
+
+    def excitation_light_off(self):
+        """关闭激发光：8743-CL axis2 负方向移动指定步数。"""
+        if self.laser_stage is None:
+            self.connect_laser_controller()
+        axis = int(self.cfg.excitation_light_axis)
+        steps = -abs(int(self.cfg.excitation_light_steps))
+        self.log(f"[激发光] 关闭激发光：8743-CL-axis{axis} 负方向移动 {abs(steps)} step")
+        self.laser_move_and_wait(axis=axis, steps=steps, wait=True)
+        self.context["excitation_light_on"] = False
+        self.context["excitation_light_last_off_steps"] = int(steps)
         self.notify_update()
 
     def connect_signal_generator(self):
@@ -13934,6 +13972,8 @@ class MeasurementWorkflow:
         # 照明光 OFF，等待稳定
         self.log(f"========== {off_label}：照明光 OFF，等待稳定 ==========")
         self.light_off()
+        if str(off_label).strip().lower() == "step 11":
+            self.excitation_light_on()
 
         wait_after_off = float(self.cfg.stable_wait_ms) / 1000.0
         if wait_after_off > 0:
@@ -13961,6 +14001,8 @@ class MeasurementWorkflow:
         # 照明光 ON
         self.log(f"========== {on_label}：照明光 ON ==========")
         self.light_on()
+        if str(on_label).strip().lower() == "step 13":
+            self.excitation_light_off()
 
         if self.stop_requested:
             return False

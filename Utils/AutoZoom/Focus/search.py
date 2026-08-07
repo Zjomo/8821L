@@ -173,6 +173,30 @@ class HillClimbSearch(BaseFocusSearch):
       - 粗搜后回到 best_pos，用逐步缩小的左右探测做局部细搜。
     """
 
+    def _score_is_better_for_target(
+        self,
+        score: Optional[float],
+        best_score: float,
+        target: float,
+        upper_target: Optional[float],
+        min_improve: float,
+    ) -> bool:
+        """按目标范围选择候选点；有上限时优先保持在容差区间内。"""
+        if score is None:
+            return False
+        score_f = float(score)
+        if upper_target is None:
+            return score_f > best_score * (1.0 + min_improve)
+        score_in = self._in_tolerance(score_f, target, upper_target)
+        best_in = self._in_tolerance(best_score, target, upper_target)
+        if score_in:
+            if not best_in:
+                return True
+            return abs(score_f - 1.0) < abs(best_score - 1.0)
+        if best_in:
+            return False
+        return score_f > best_score * (1.0 + min_improve)
+
     def _measure_median_at_current_position(
         self,
         phase: str,
@@ -297,6 +321,8 @@ class HillClimbSearch(BaseFocusSearch):
         best_score: float,
         best_pos: int,
         initial_step: int,
+        target: float,
+        upper_target: Optional[float],
         min_improve: float,
         max_total_steps: int,
         iteration: int,
@@ -343,9 +369,8 @@ class HillClimbSearch(BaseFocusSearch):
                 score, _ = self._goto(
                     candidate_pos, "local_refine", iteration, use_cache=True
                 )
-                improved = (
-                    score is not None
-                    and score > best_score * (1.0 + min_improve)
+                improved = self._score_is_better_for_target(
+                    score, best_score, target, upper_target, min_improve
                 )
                 if improved:
                     best_score = float(score)
@@ -430,7 +455,7 @@ class HillClimbSearch(BaseFocusSearch):
                 "history": self.history,
             }
 
-        # ---- 动态双向采样 + 方向 ----
+        # ---- 动态多点采样 + 方向；本轮只判断一次，后续续搜复用该方向 ----
         direction, chosen_probe_step, chosen_score, chosen_pos = self._determine_direction_with_dynamic_sampling(
             probe_steps=probe_schedule,
             min_improve=min_improve,
@@ -446,9 +471,13 @@ class HillClimbSearch(BaseFocusSearch):
                 "initial_score": initial_score,
                 "best_score": best_score,
                 "best_relative_z_steps": 0,
+                "direction": None,
+                "direction_probe_step": None,
+                "direction_marked": False,
                 "history": self.history,
             }
 
+        direction_marked = True
         best_score = float(chosen_score)
         best_pos = int(chosen_pos)
         if self.pos != best_pos:
@@ -458,7 +487,7 @@ class HillClimbSearch(BaseFocusSearch):
             self._move(best_pos - self.pos)
             self._settle()
 
-        # ---- 沿方向递进搜索 ----
+        # ---- 沿已标记方向递进搜索 ----
         no_improve_count = 0
         iteration = 4
         while iteration <= max_iter:
@@ -477,7 +506,9 @@ class HillClimbSearch(BaseFocusSearch):
             self._goto(self.pos + int(direction * search_steps), "search", iteration)
             score = self.history[-1]["score"]
 
-            improved = score is not None and score > best_score * (1.0 + min_improve)
+            improved = self._score_is_better_for_target(
+                score, best_score, target, upper_target, min_improve
+            )
             if improved:
                 best_score = float(score)
                 best_pos = self.pos
@@ -495,7 +526,7 @@ class HillClimbSearch(BaseFocusSearch):
                 break
             iteration += 1
 
-        # ---- 回退到最佳位置，并在 best_pos 左右做局部细搜 ----
+        # ---- 回退到最佳位置；只有进入目标范围后才允许停止或局部细搜 ----
         if best_pos != self.pos:
             self.log_fn(
                 f"[补焦] 回退到最佳位置: best_pos={best_pos}, current_pos={self.pos}"
@@ -503,22 +534,76 @@ class HillClimbSearch(BaseFocusSearch):
             self._goto(best_pos, "return_to_best", iteration + 1)
             iteration += 1
 
-        best_score, best_pos, iteration = self._refine_around_best(
-            best_score=best_score,
-            best_pos=best_pos,
-            initial_step=search_steps,
-            min_improve=min_improve,
-            max_total_steps=max_total_steps,
-            iteration=iteration,
-        )
-
-        if best_pos != self.pos:
-            self.log_fn(
-                f"[补焦] 细搜后回退到最佳位置: best_pos={best_pos}, current_pos={self.pos}"
+        while (
+            self._in_tolerance(best_score, target, upper_target)
+            and bool(getattr(self.cfg, "z_local_refine_enabled", True))
+        ):
+            before_refine_iteration = iteration
+            best_score, best_pos, iteration = self._refine_around_best(
+                best_score=best_score,
+                best_pos=best_pos,
+                initial_step=search_steps,
+                target=target,
+                upper_target=upper_target,
+                min_improve=min_improve,
+                max_total_steps=max_total_steps,
+                iteration=iteration,
             )
-            self._goto(best_pos, "return_to_best", iteration + 1)
 
-        ok = best_score >= min(target, float(self.cfg.autofocus_focus_trigger_ratio))
+            if best_pos != self.pos:
+                self.log_fn(
+                    f"[补焦] 细搜后回退到最佳位置: best_pos={best_pos}, current_pos={self.pos}"
+                )
+                self._goto(best_pos, "return_to_best", iteration + 1)
+                iteration += 1
+
+            if self._in_tolerance(best_score, target, upper_target):
+                break
+            if iteration <= before_refine_iteration:
+                iteration += 1
+            self.log_fn(
+                "[补焦] 局部细搜后仍未进入目标范围，继续沿已标记方向补焦，不重新方向判断"
+            )
+            no_improve_count = 0
+            while iteration <= max_iter:
+                self._check_stop("hill_climb_continue")
+                if self._in_tolerance(best_score, target, upper_target):
+                    break
+                if abs(self.pos) >= max_total_steps:
+                    self.log_fn(
+                        f"[补焦] 达最大步数 |{self.pos}| >= {max_total_steps}，停止"
+                    )
+                    break
+                self._goto(self.pos + int(direction * search_steps), "search_continue", iteration)
+                score = self.history[-1]["score"]
+                improved = self._score_is_better_for_target(
+                    score, best_score, target, upper_target, min_improve
+                )
+                if improved:
+                    best_score = float(score)
+                    best_pos = self.pos
+                    no_improve_count = 0
+                else:
+                    no_improve_count += 1
+                if no_improve_count >= patience:
+                    self.log_fn(f"[补焦] 继续补焦连续 {no_improve_count} 次无提升，停止")
+                    break
+                iteration += 1
+
+            if best_pos != self.pos:
+                self.log_fn(
+                    f"[补焦] 继续补焦后回退到最佳位置: best_pos={best_pos}, current_pos={self.pos}"
+                )
+                self._goto(best_pos, "return_to_best", iteration + 1)
+                iteration += 1
+
+        if not self._in_tolerance(best_score, target, upper_target):
+            self.log_fn(
+                f"[补焦] best_score={best_score:.4f} 尚未进入目标范围，"
+                "本轮已复用标记方向且不再重新方向判断"
+            )
+
+        ok = self._in_tolerance(best_score, target, upper_target)
         return {
             "ok": bool(ok),
             "reason": "done",
@@ -527,6 +612,9 @@ class HillClimbSearch(BaseFocusSearch):
             "best_relative_z_steps": int(best_pos),
             "final_relative_z_steps": int(self.pos),
             "target": target,
+            "direction": int(direction),
+            "direction_probe_step": int(chosen_probe_step),
+            "direction_marked": bool(direction_marked),
             "history": self.history,
         }
 
