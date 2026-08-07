@@ -194,7 +194,7 @@ class MeasurementConfig:
     laser_off_steps: int = int(_cfg("laser_off_steps", 400))
     laser_speed: int = int(_cfg("laser_speed", 5000))
     laser_accel: int = int(_cfg("laser_accel", 5000))
-    excitation_light_axis: int = int(_cfg("excitation_light_axis", 2))
+    excitation_light_axis: int = int(_cfg("excitation_light_axis", 1))
     excitation_light_steps: int = int(_cfg("excitation_light_steps", 500))
 
     # angle_after - angle_before 的目标范围
