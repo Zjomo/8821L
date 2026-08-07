@@ -142,10 +142,19 @@ class AutofocusConfig:
     """试探步数"""
 
     z_direction_probe_steps: tuple[int, ...] = (10, 20, 30)
-    """方向判断的双向采样步长序列。"""
+    """方向判断的基础采样步长序列；保留兼容，优先使用 stage_count/step_interval 生成。"""
+
+    z_direction_probe_stage_count: int = 3
+    """方向判断阶段数，例如 3 表示依次尝试 3 档基础步长。"""
+
+    z_direction_probe_step_interval: int = 10
+    """方向判断基础步长间隔，例如 stage_count=3 且 interval=10 表示 10/20/30。"""
 
     z_direction_probe_samples: int = 3
     """每个采样点的重复采样次数。"""
+
+    z_direction_probe_points_per_step: int = 5
+    """方向判断时，每个基础步长向前连续采样的点数，例如 5 表示 step*1 到 step*5。"""
 
     z_search_steps: int = 10
     """搜索步数"""

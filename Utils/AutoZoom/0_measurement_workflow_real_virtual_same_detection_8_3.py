@@ -629,7 +629,10 @@ class MeasurementConfig:
     focus_z_search_steps: int = int(_cfg("focus_z_search_steps", 10))
     focus_z_patience: int = int(_cfg("focus_z_patience", 3))
     focus_z_direction_probe_steps: Tuple[int, ...] = tuple(_cfg("focus_z_direction_probe_steps", (10, 20, 30)))  # type: ignore
+    focus_z_direction_probe_stage_count: int = int(_cfg("focus_z_direction_probe_stage_count", 3))
+    focus_z_direction_probe_step_interval: int = int(_cfg("focus_z_direction_probe_step_interval", 10))
     focus_z_direction_probe_samples: int = int(_cfg("focus_z_direction_probe_samples", 3))
+    focus_z_direction_probe_points_per_step: int = int(_cfg("focus_z_direction_probe_points_per_step", 5))
     focus_z_local_refine_enabled: bool = bool(_cfg("focus_z_local_refine_enabled", True))
     focus_z_local_refine_decay: float = float(_cfg("focus_z_local_refine_decay", 0.5))
     focus_z_local_refine_min_step: int = int(_cfg("focus_z_local_refine_min_step", 1))
@@ -13441,7 +13444,16 @@ class MeasurementWorkflow:
             z_direction_probe_steps=tuple(
                 int(v) for v in getattr(self.cfg, "focus_z_direction_probe_steps", (10, 20, 30))
             ),
+            z_direction_probe_stage_count=int(
+                getattr(self.cfg, "focus_z_direction_probe_stage_count", 3)
+            ),
+            z_direction_probe_step_interval=int(
+                getattr(self.cfg, "focus_z_direction_probe_step_interval", 10)
+            ),
             z_direction_probe_samples=int(getattr(self.cfg, "focus_z_direction_probe_samples", 3)),
+            z_direction_probe_points_per_step=int(
+                getattr(self.cfg, "focus_z_direction_probe_points_per_step", 5)
+            ),
             z_local_refine_enabled=bool(getattr(self.cfg, "focus_z_local_refine_enabled", True)),
             z_local_refine_decay=float(getattr(self.cfg, "focus_z_local_refine_decay", 0.5)),
             z_local_refine_min_step=int(getattr(self.cfg, "focus_z_local_refine_min_step", 1)),
@@ -14926,6 +14938,16 @@ class MeasurementWorkflowGUI:
         self.ax_median = None
         self.plot_canvas: Optional[FigureCanvasTkAgg] = None
         self.plot_status_var = tk.StringVar(value="图像显示：暂无数据")
+        self.focus_preview_window: Optional[tk.Toplevel] = None
+        self.focus_preview_fig: Optional[Figure] = None
+        self.focus_preview_ax = None
+        self.focus_preview_canvas: Optional[FigureCanvasTkAgg] = None
+        self.focus_preview_status_var = tk.StringVar(value="FocusScore预览：未启动")
+        self.focus_preview_history: List[Tuple[float, float]] = []
+        self.focus_preview_started_at: Optional[float] = None
+        self.focus_preview_after_id: Optional[str] = None
+        self.focus_preview_running = False
+        self.focus_preview_sample_inflight = False
 
         # 右侧列表：原“角度-拟合峰值图”的横纵坐标数据
         self.angle_fit_tree = None
@@ -15556,8 +15578,10 @@ class MeasurementWorkflowGUI:
         self.saf_wait_between_spectrum_var = tk.DoubleVar(value=120.0)
         self.saf_z_search_steps_var = tk.IntVar(value=10)
         self.saf_z_patience_var = tk.IntVar(value=3)
-        self.saf_z_direction_probe_steps_var = tk.StringVar(value="10,20,30")
+        self.saf_z_direction_probe_stage_count_var = tk.IntVar(value=3)
+        self.saf_z_direction_probe_step_interval_var = tk.IntVar(value=10)
         self.saf_z_direction_probe_samples_var = tk.IntVar(value=3)
+        self.saf_z_direction_probe_points_var = tk.IntVar(value=5)
         self.saf_z_local_refine_enabled_var = tk.BooleanVar(value=True)
         self.saf_z_local_refine_decay_var = tk.DoubleVar(value=0.5)
         self.saf_z_local_refine_min_step_var = tk.IntVar(value=1)
@@ -15711,17 +15735,27 @@ class MeasurementWorkflowGUI:
         )
 
         # Row 10: 动态双向采样参数
-        ttk.Label(saf_frame, text="方向判定步长").grid(
+        ttk.Label(saf_frame, text="阶段数/步数间隔").grid(
             row=10, column=0, padx=4, pady=4, sticky="w"
         )
-        ttk.Entry(saf_frame, textvariable=self.saf_z_direction_probe_steps_var).grid(
-            row=10, column=1, padx=4, pady=4, sticky="ew"
+        probe_stage_frame = ttk.Frame(saf_frame)
+        probe_stage_frame.grid(row=10, column=1, padx=4, pady=4, sticky="w")
+        ttk.Entry(probe_stage_frame, textvariable=self.saf_z_direction_probe_stage_count_var, width=5).grid(
+            row=0, column=0, padx=(0, 4), pady=0, sticky="w"
         )
-        ttk.Label(saf_frame, text="重复采样").grid(
+        ttk.Entry(probe_stage_frame, textvariable=self.saf_z_direction_probe_step_interval_var, width=5).grid(
+            row=0, column=1, padx=(4, 0), pady=0, sticky="w"
+        )
+        ttk.Label(saf_frame, text="重复采样/每档点数").grid(
             row=10, column=2, padx=4, pady=4, sticky="w"
         )
-        ttk.Entry(saf_frame, textvariable=self.saf_z_direction_probe_samples_var, width=8).grid(
-            row=10, column=3, padx=4, pady=4, sticky="w"
+        probe_sample_frame = ttk.Frame(saf_frame)
+        probe_sample_frame.grid(row=10, column=3, padx=4, pady=4, sticky="w")
+        ttk.Entry(probe_sample_frame, textvariable=self.saf_z_direction_probe_samples_var, width=5).grid(
+            row=0, column=0, padx=(0, 4), pady=0, sticky="w"
+        )
+        ttk.Entry(probe_sample_frame, textvariable=self.saf_z_direction_probe_points_var, width=5).grid(
+            row=0, column=1, padx=(4, 0), pady=0, sticky="w"
         )
 
         # Row 11: 局部细搜参数
@@ -15752,6 +15786,7 @@ class MeasurementWorkflowGUI:
         saf_buttons.grid(row=12, column=0, columnspan=4, padx=2, pady=4, sticky="ew")
         saf_buttons.columnconfigure(0, weight=1)
         saf_buttons.columnconfigure(1, weight=1)
+        saf_buttons.columnconfigure(2, weight=1)
         ttk.Button(
             saf_buttons,
             text="开始光谱补焦循环",
@@ -15764,6 +15799,11 @@ class MeasurementWorkflowGUI:
             command=self.stop_spectrum_autofocus_loop,
             style="Danger.TButton",
         ).grid(row=0, column=1, padx=4, pady=3, sticky="ew")
+        ttk.Button(
+            saf_buttons,
+            text="预览FocusScore曲线",
+            command=self.open_focus_score_preview,
+        ).grid(row=0, column=2, padx=4, pady=3, sticky="ew")
 
         # Row 13: 状态
         ttk.Label(saf_frame, textvariable=self.saf_status_var, wraplength=450).grid(
@@ -16031,8 +16071,10 @@ class MeasurementWorkflowGUI:
             self.saf_search_strategy_var,
             self.saf_z_search_steps_var,
             self.saf_z_patience_var,
-            self.saf_z_direction_probe_steps_var,
+            self.saf_z_direction_probe_stage_count_var,
+            self.saf_z_direction_probe_step_interval_var,
             self.saf_z_direction_probe_samples_var,
+            self.saf_z_direction_probe_points_var,
             self.saf_z_local_refine_enabled_var,
             self.saf_z_local_refine_decay_var,
             self.saf_z_local_refine_min_step_var,
@@ -17231,8 +17273,14 @@ class MeasurementWorkflowGUI:
             focus_search_strategy=str(self.saf_search_strategy_var.get()),
             focus_z_search_steps=int(self.saf_z_search_steps_var.get()),
             focus_z_patience=int(self.saf_z_patience_var.get()),
-            focus_z_direction_probe_steps=self._parse_int_sequence(self.saf_z_direction_probe_steps_var.get()),
+            focus_z_direction_probe_steps=tuple(
+                max(1, int(self.saf_z_direction_probe_step_interval_var.get())) * i
+                for i in range(1, max(1, int(self.saf_z_direction_probe_stage_count_var.get())) + 1)
+            ),
+            focus_z_direction_probe_stage_count=max(1, int(self.saf_z_direction_probe_stage_count_var.get())),
+            focus_z_direction_probe_step_interval=max(1, int(self.saf_z_direction_probe_step_interval_var.get())),
             focus_z_direction_probe_samples=int(self.saf_z_direction_probe_samples_var.get()),
+            focus_z_direction_probe_points_per_step=int(self.saf_z_direction_probe_points_var.get()),
             focus_z_local_refine_enabled=bool(self.saf_z_local_refine_enabled_var.get()),
             focus_z_local_refine_decay=float(self.saf_z_local_refine_decay_var.get()),
             focus_z_local_refine_min_step=int(self.saf_z_local_refine_min_step_var.get()),
@@ -20057,13 +20105,184 @@ class MeasurementWorkflowGUI:
             z_search_strategy=str(self.saf_search_strategy_var.get()),
             z_search_steps=int(self.saf_z_search_steps_var.get()),
             z_patience=int(self.saf_z_patience_var.get()),
-            z_direction_probe_steps=self._parse_int_sequence(self.saf_z_direction_probe_steps_var.get()),
+            z_direction_probe_steps=tuple(
+                max(1, int(self.saf_z_direction_probe_step_interval_var.get())) * i
+                for i in range(1, max(1, int(self.saf_z_direction_probe_stage_count_var.get())) + 1)
+            ),
+            z_direction_probe_stage_count=max(1, int(self.saf_z_direction_probe_stage_count_var.get())),
+            z_direction_probe_step_interval=max(1, int(self.saf_z_direction_probe_step_interval_var.get())),
             z_direction_probe_samples=int(self.saf_z_direction_probe_samples_var.get()),
+            z_direction_probe_points_per_step=int(self.saf_z_direction_probe_points_var.get()),
             z_local_refine_enabled=bool(self.saf_z_local_refine_enabled_var.get()),
             z_local_refine_decay=float(self.saf_z_local_refine_decay_var.get()),
             z_local_refine_min_step=int(self.saf_z_local_refine_min_step_var.get()),
             z_local_refine_max_rounds=int(self.saf_z_local_refine_max_rounds_var.get()),
         )
+
+    def open_focus_score_preview(self):
+        """打开实时 FocusScore 折线图预览窗口。"""
+        try:
+            if (
+                self.focus_preview_window is not None
+                and self.focus_preview_window.winfo_exists()
+            ):
+                self.focus_preview_window.lift()
+                return
+        except Exception:
+            self.focus_preview_window = None
+
+        self.focus_preview_history = []
+        self.focus_preview_started_at = time.time()
+        self.focus_preview_running = True
+        self.focus_preview_sample_inflight = False
+        self.focus_preview_status_var.set("FocusScore预览：等待采样")
+
+        win = tk.Toplevel(self.root)
+        win.title("FocusScore 实时预览")
+        win.geometry("760x480")
+        win.minsize(560, 360)
+        win.protocol("WM_DELETE_WINDOW", self.close_focus_score_preview)
+        self.focus_preview_window = win
+
+        frame = ttk.Frame(win, padding=10)
+        frame.pack(fill=tk.BOTH, expand=True)
+        frame.columnconfigure(0, weight=1)
+        frame.rowconfigure(0, weight=1)
+
+        self.focus_preview_fig = Figure(figsize=(7.2, 3.8), dpi=100)
+        self.focus_preview_ax = self.focus_preview_fig.add_subplot(111)
+        self.focus_preview_canvas = FigureCanvasTkAgg(self.focus_preview_fig, master=frame)
+        self.focus_preview_canvas.get_tk_widget().grid(row=0, column=0, columnspan=2, sticky="nsew")
+
+        ttk.Label(frame, textvariable=self.focus_preview_status_var).grid(
+            row=1, column=0, padx=4, pady=(8, 0), sticky="w"
+        )
+        ttk.Button(frame, text="关闭预览", command=self.close_focus_score_preview).grid(
+            row=1, column=1, padx=4, pady=(8, 0), sticky="e"
+        )
+
+        self._redraw_focus_score_preview()
+        self._schedule_focus_score_preview_sample(delay_ms=10)
+
+    def close_focus_score_preview(self):
+        """关闭 FocusScore 预览窗口并停止后续刷新。"""
+        self.focus_preview_running = False
+        if self.focus_preview_after_id is not None:
+            try:
+                self.root.after_cancel(self.focus_preview_after_id)
+            except Exception:
+                pass
+            self.focus_preview_after_id = None
+        if self.focus_preview_window is not None:
+            try:
+                self.focus_preview_window.destroy()
+            except Exception:
+                pass
+        self.focus_preview_window = None
+        self.focus_preview_canvas = None
+        self.focus_preview_fig = None
+        self.focus_preview_ax = None
+        self.focus_preview_status_var.set("FocusScore预览：已关闭")
+
+    def _schedule_focus_score_preview_sample(self, delay_ms: int = 1000):
+        if not self.focus_preview_running:
+            return
+        self.focus_preview_after_id = self.root.after(
+            max(10, int(delay_ms)), self._start_focus_score_preview_sample
+        )
+
+    def _start_focus_score_preview_sample(self):
+        if not self.focus_preview_running or self.focus_preview_sample_inflight:
+            self._schedule_focus_score_preview_sample()
+            return
+        self.focus_preview_sample_inflight = True
+        self.run_in_thread(self._focus_score_preview_sample_worker)
+
+    def _focus_score_preview_sample_worker(self):
+        score: Optional[float] = None
+        status = ""
+        try:
+            score, status = self._compute_focus_score_preview_value()
+        except Exception as e:
+            status = f"采样失败：{e}"
+        self.root.after(0, lambda s=score, m=status: self._finish_focus_score_preview_sample(s, m))
+
+    def _finish_focus_score_preview_sample(self, score: Optional[float], status: str):
+        self.focus_preview_sample_inflight = False
+        if not self.focus_preview_running:
+            return
+        if score is not None:
+            t0 = self.focus_preview_started_at or time.time()
+            elapsed_s = max(0.0, time.time() - t0)
+            self.focus_preview_history.append((elapsed_s, float(score)))
+            if len(self.focus_preview_history) > 300:
+                self.focus_preview_history = self.focus_preview_history[-300:]
+            self.focus_preview_status_var.set(
+                f"FocusScore预览：score={float(score):.4f}，点数={len(self.focus_preview_history)}，来源={status}"
+            )
+        else:
+            self.focus_preview_status_var.set(f"FocusScore预览：{status or 'score=None'}")
+        self._redraw_focus_score_preview()
+        self._schedule_focus_score_preview_sample(delay_ms=1000)
+
+    def _compute_focus_score_preview_value(self) -> Tuple[Optional[float], str]:
+        """计算当前 FocusScore，优先使用光谱补焦 ROI/参考。"""
+        loop = self.spectrum_autofocus_loop
+        if loop is not None and bool(getattr(loop, "_reference_ready", False)):
+            metrics_calc = loop._get_or_create_metrics_calc()
+            scorer = loop._get_or_create_scorer()
+            live = metrics_calc.capture_live()
+            score, _ = scorer.score_ratio(live.get("roi_metrics"))
+            return score, "光谱补焦ROI"
+
+        wf = self.workflow
+        if (
+            wf is not None
+            and bool(getattr(wf, "_focus_reference_ready", False))
+            and getattr(wf, "_focus_scorer", None) is not None
+        ):
+            return wf.compute_current_focus_score(), "完整流程Focus参考"
+
+        return None, "未建立Focus参考，请先选择ROI/建立参考或启动补焦循环"
+
+    def _redraw_focus_score_preview(self):
+        if self.focus_preview_ax is None or self.focus_preview_canvas is None:
+            return
+        ax = self.focus_preview_ax
+        ax.clear()
+        ax.set_title("FocusScore Ratio")
+        ax.set_xlabel("time (s)")
+        ax.set_ylabel("score")
+        ax.grid(True, alpha=0.3)
+
+        if self.focus_preview_history:
+            xs = [p[0] for p in self.focus_preview_history]
+            ys = [p[1] for p in self.focus_preview_history]
+            ax.plot(xs, ys, marker="o", linewidth=1.6)
+            ymin = min(ys)
+            ymax = max(ys)
+            pad = max(0.01, (ymax - ymin) * 0.2)
+            ax.set_ylim(ymin - pad, ymax + pad)
+        else:
+            ax.text(
+                0.5,
+                0.5,
+                "Waiting for FocusScore...",
+                ha="center",
+                va="center",
+                transform=ax.transAxes,
+            )
+
+        try:
+            trigger = float(self.saf_trigger_ratio_var.get())
+            ax.axhline(trigger, color="tab:orange", linestyle="--", linewidth=1.0, label="trigger")
+            if bool(self.saf_trigger_absolute_var.get()):
+                ax.axhline(2.0 - trigger, color="tab:orange", linestyle=":", linewidth=1.0, label="upper")
+            ax.legend(loc="best")
+        except Exception:
+            pass
+
+        self.focus_preview_canvas.draw_idle()
 
     def select_saf_roi_thread(self):
         self.run_in_thread(self.select_saf_roi)

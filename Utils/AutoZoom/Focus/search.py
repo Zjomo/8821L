@@ -207,23 +207,21 @@ class HillClimbSearch(BaseFocusSearch):
         probe_steps: List[int],
         min_improve: float,
         sample_count: int,
+        points_per_step: int = 5,
     ) -> Tuple[Optional[int], Optional[int], Optional[float], Optional[int]]:
-        """按步长序列做双向采样，选择更优方向。"""
+        """按基础步长序列做多点采样，选择更优方向。"""
         if not probe_steps:
             probe_steps = [max(1, int(self.cfg.z_probe_steps))]
+        points_per_step = max(1, int(points_per_step))
 
-        best_direction: Optional[int] = None
-        best_probe_step: Optional[int] = None
-        best_score: Optional[float] = None
-        best_ratio: float = float("-inf")
-        best_pos: Optional[int] = None
         center_score_final: Optional[float] = None
 
         for stage_idx, probe_step in enumerate(probe_steps, start=1):
             probe_step = max(1, int(probe_step))
             stage_center_pos = self.pos
             self.log_fn(
-                f"[补焦] 方向判断阶段 {stage_idx}/{len(probe_steps)}: probe_step={probe_step}"
+                f"[补焦] 方向判断阶段 {stage_idx}/{len(probe_steps)}: "
+                f"probe_step={probe_step}, points={points_per_step}"
             )
             center_score = self._measure_median_at_current_position(
                 phase=f"direction_center_s{probe_step}",
@@ -237,64 +235,61 @@ class HillClimbSearch(BaseFocusSearch):
                 )
                 continue
 
-            plus_score = self._measure_median_at_position(
-                target_pos=stage_center_pos + probe_step,
-                phase=f"direction_plus_s{probe_step}",
-                iteration=stage_idx * 10 - 1,
-                sample_count=sample_count,
-            )
-            self._move(stage_center_pos - self.pos)
-            self._settle()
-
-            minus_score = self._measure_median_at_position(
-                target_pos=stage_center_pos - probe_step,
-                phase=f"direction_minus_s{probe_step}",
-                iteration=stage_idx * 10,
-                sample_count=sample_count,
-            )
-            self._move(stage_center_pos - self.pos)
-            self._settle()
-
             threshold = center_score * (1.0 + min_improve)
-            stage_candidates: List[Tuple[int, float, float]] = []
+            stage_candidates: List[Tuple[int, int, float, float]] = []
             ratio_base = max(abs(center_score), 1e-12)
-            if plus_score is not None and plus_score > threshold:
-                stage_candidates.append((+1, float(plus_score), float(plus_score / ratio_base)))
-            if minus_score is not None and minus_score > threshold:
-                stage_candidates.append((-1, float(minus_score), float(minus_score / ratio_base)))
+            sample_summary: List[str] = []
+
+            for point_idx in range(1, points_per_step + 1):
+                target_pos = stage_center_pos + probe_step * point_idx
+                probe_score = self._measure_median_at_position(
+                    target_pos=target_pos,
+                    phase=f"direction_probe_s{probe_step}_p{point_idx}",
+                    iteration=stage_idx * 100 + point_idx,
+                    sample_count=sample_count,
+                )
+                sample_summary.append(
+                    f"{target_pos}:{probe_score:.4f}" if probe_score is not None else f"{target_pos}:None"
+                )
+                if probe_score is not None and probe_score > threshold:
+                    stage_candidates.append(
+                        (
+                            +1,
+                            int(target_pos),
+                            float(probe_score),
+                            float(probe_score / ratio_base),
+                        )
+                    )
+
+            if self.pos != stage_center_pos:
+                self._move(stage_center_pos - self.pos)
+                self._settle()
 
             self.log_fn(
                 f"[补焦] 方向判断阶段 {stage_idx} 结果: "
-                f"center={center_score:.4f}, plus={plus_score}, minus={minus_score}, "
+                f"center={center_score:.4f}, samples=[{', '.join(sample_summary)}], "
                 f"threshold={threshold:.4f}"
             )
 
             if not stage_candidates:
                 continue
 
-            stage_direction, stage_score, stage_ratio = max(
-                stage_candidates, key=lambda item: item[1]
+            stage_direction, stage_pos, stage_score, stage_ratio = max(
+                stage_candidates, key=lambda item: item[2]
             )
-            if best_score is None or stage_score > best_score:
-                best_direction = stage_direction
-                best_probe_step = probe_step
-                best_score = stage_score
-                best_ratio = stage_ratio
-                best_pos = stage_center_pos + (stage_direction * probe_step)
-
-        if best_direction is not None:
             self.log_fn(
-                f"[补焦] 动态双向采样确定方向: direction={best_direction}, "
-                f"probe_step={best_probe_step}, score={best_score:.4f}, ratio={best_ratio:.4f}"
+                f"[补焦] 动态多点采样确定方向: direction={stage_direction}, "
+                f"probe_step={probe_step}, score={stage_score:.4f}, ratio={stage_ratio:.4f}, "
+                f"best_pos={stage_pos}"
             )
-            return best_direction, best_probe_step, best_score, best_pos
+            return stage_direction, probe_step, stage_score, stage_pos
 
         if center_score_final is not None:
             self.log_fn(
-                f"[补焦] 动态双向采样未找到明显提升，center={center_score_final:.4f}"
+                f"[补焦] 动态多点采样未找到明显提升，center={center_score_final:.4f}"
             )
         else:
-            self.log_fn("[补焦] 动态双向采样全部失败，无法确定方向")
+            self.log_fn("[补焦] 动态多点采样全部失败，无法确定方向")
         return None, None, center_score_final, None
 
     def _refine_around_best(
@@ -391,18 +386,24 @@ class HillClimbSearch(BaseFocusSearch):
         probe_steps = max(1, int(self.cfg.z_probe_steps))
         search_steps = max(1, int(self.cfg.z_search_steps))
         decay = max(0.0, min(1.0, float(self.cfg.z_adaptive_step_decay)))
-        probe_schedule_raw = getattr(self.cfg, "z_direction_probe_steps", (probe_steps,))
-        if isinstance(probe_schedule_raw, str):
-            probe_schedule = [
-                int(v.strip())
-                for v in probe_schedule_raw.split(",")
-                if v.strip()
-            ]
-        elif isinstance(probe_schedule_raw, (tuple, list)):
-            probe_schedule = [int(v) for v in probe_schedule_raw if int(v) > 0]
+        stage_count = int(getattr(self.cfg, "z_direction_probe_stage_count", 0) or 0)
+        step_interval = int(getattr(self.cfg, "z_direction_probe_step_interval", 0) or 0)
+        if stage_count > 0 and step_interval > 0:
+            probe_schedule = [step_interval * i for i in range(1, stage_count + 1)]
         else:
-            probe_schedule = [int(probe_steps)]
+            probe_schedule_raw = getattr(self.cfg, "z_direction_probe_steps", (probe_steps,))
+            if isinstance(probe_schedule_raw, str):
+                probe_schedule = [
+                    int(v.strip())
+                    for v in probe_schedule_raw.split(",")
+                    if v.strip()
+                ]
+            elif isinstance(probe_schedule_raw, (tuple, list)):
+                probe_schedule = [int(v) for v in probe_schedule_raw if int(v) > 0]
+            else:
+                probe_schedule = [int(probe_steps)]
         sample_count = max(1, int(getattr(self.cfg, "z_direction_probe_samples", 3)))
+        points_per_step = max(1, int(getattr(self.cfg, "z_direction_probe_points_per_step", 5)))
 
         if initial_score is None:
             score, _ = self._measure("start", 0)
@@ -434,6 +435,7 @@ class HillClimbSearch(BaseFocusSearch):
             probe_steps=probe_schedule,
             min_improve=min_improve,
             sample_count=sample_count,
+            points_per_step=points_per_step,
         )
         if direction is None or chosen_probe_step is None or chosen_score is None or chosen_pos is None:
             if self.pos != 0:

@@ -39,9 +39,15 @@ class SafZStepsPatienceConfigTests(unittest.TestCase):
     def test_config_has_direction_probe_params(self):
         cfg = MeasurementConfig()
         self.assertTrue(hasattr(cfg, "focus_z_direction_probe_steps"))
+        self.assertTrue(hasattr(cfg, "focus_z_direction_probe_stage_count"))
+        self.assertTrue(hasattr(cfg, "focus_z_direction_probe_step_interval"))
         self.assertTrue(hasattr(cfg, "focus_z_direction_probe_samples"))
+        self.assertTrue(hasattr(cfg, "focus_z_direction_probe_points_per_step"))
         self.assertEqual(cfg.focus_z_direction_probe_steps, (10, 20, 30))
+        self.assertEqual(cfg.focus_z_direction_probe_stage_count, 3)
+        self.assertEqual(cfg.focus_z_direction_probe_step_interval, 10)
         self.assertEqual(cfg.focus_z_direction_probe_samples, 3)
+        self.assertEqual(cfg.focus_z_direction_probe_points_per_step, 5)
 
     def test_config_custom_values(self):
         cfg = MeasurementConfig(focus_z_search_steps=25, focus_z_patience=5)
@@ -85,7 +91,10 @@ class SafZStepsPatienceGUITests(unittest.TestCase):
         self.assertIn("z_search_steps", src)
         self.assertIn("z_patience", src)
         self.assertIn("z_direction_probe_steps", src)
+        self.assertIn("z_direction_probe_stage_count", src)
+        self.assertIn("z_direction_probe_step_interval", src)
         self.assertIn("z_direction_probe_samples", src)
+        self.assertIn("z_direction_probe_points_per_step", src)
 
     def test_sync_config_passes_new_params(self):
         """验证 _build_measurement_config_from_ui 传递新参数。"""
@@ -108,7 +117,7 @@ class SafZStepsPatienceGUITests(unittest.TestCase):
         src = inspect.getsource(MeasurementWorkflowGUI._build_ui)
         self.assertIn("Z轴移动步数", src)
         self.assertIn("方向判断连续次数", src)
-        self.assertIn("方向判定步长", src)
+        self.assertIn("阶段数/步数间隔", src)
         self.assertIn("重复采样", src)
 
     def test_make_focus_config_passes_new_params(self):
@@ -118,7 +127,10 @@ class SafZStepsPatienceGUITests(unittest.TestCase):
         self.assertIn("z_search_steps", src)
         self.assertIn("z_patience", src)
         self.assertIn("z_direction_probe_steps", src)
+        self.assertIn("z_direction_probe_stage_count", src)
+        self.assertIn("z_direction_probe_step_interval", src)
         self.assertIn("z_direction_probe_samples", src)
+        self.assertIn("z_direction_probe_points_per_step", src)
         self.assertIn("z_local_refine_enabled", src)
         self.assertIn("z_local_refine_decay", src)
         self.assertIn("z_local_refine_min_step", src)
@@ -146,8 +158,26 @@ class SafZStepsPatienceGUITests(unittest.TestCase):
         """验证 UI 布局代码包含动态双向采样控件。"""
         import inspect
         src = inspect.getsource(MeasurementWorkflowGUI._build_ui)
-        self.assertIn("方向判定步长", src)
+        self.assertIn("阶段数/步数间隔", src)
         self.assertIn("重复采样", src)
+        self.assertIn("每档点数", src)
+
+    def test_ui_layout_has_focus_score_preview_button(self):
+        """验证 UI 提供 FocusScore 曲线预览按钮。"""
+        import inspect
+        src = inspect.getsource(MeasurementWorkflowGUI._build_ui)
+        self.assertIn("预览FocusScore曲线", src)
+        self.assertIn("open_focus_score_preview", src)
+
+    def test_focus_score_preview_methods_exist(self):
+        """验证 FocusScore 实时预览窗口的核心方法存在。"""
+        import inspect
+        src = inspect.getsource(MeasurementWorkflowGUI.open_focus_score_preview)
+        self.assertIn("FigureCanvasTkAgg", src)
+        self.assertIn("_schedule_focus_score_preview_sample", src)
+        src_compute = inspect.getsource(MeasurementWorkflowGUI._compute_focus_score_preview_value)
+        self.assertIn("spectrum_autofocus_loop", src_compute)
+        self.assertIn("compute_current_focus_score", src_compute)
 
     def test_make_saf_config_runtime_passes_direction_probe_params(self):
         """运行时验证 _make_saf_config 的动态双向采样参数传递。"""
@@ -177,8 +207,10 @@ class SafZStepsPatienceGUITests(unittest.TestCase):
             saf_search_strategy_var=DummyVar("hill_climb"),
             saf_z_search_steps_var=DummyVar(10),
             saf_z_patience_var=DummyVar(3),
-            saf_z_direction_probe_steps_var=DummyVar("10,20,30"),
+            saf_z_direction_probe_stage_count_var=DummyVar(3),
+            saf_z_direction_probe_step_interval_var=DummyVar(10),
             saf_z_direction_probe_samples_var=DummyVar(3),
+            saf_z_direction_probe_points_var=DummyVar(5),
             saf_z_local_refine_enabled_var=DummyVar(True),
             saf_z_local_refine_decay_var=DummyVar(0.5),
             saf_z_local_refine_min_step_var=DummyVar(1),
@@ -188,7 +220,10 @@ class SafZStepsPatienceGUITests(unittest.TestCase):
         )
         cfg = MeasurementWorkflowGUI._make_saf_config(dummy)
         self.assertEqual(cfg.z_direction_probe_steps, (10, 20, 30))
+        self.assertEqual(cfg.z_direction_probe_stage_count, 3)
+        self.assertEqual(cfg.z_direction_probe_step_interval, 10)
         self.assertEqual(cfg.z_direction_probe_samples, 3)
+        self.assertEqual(cfg.z_direction_probe_points_per_step, 5)
         self.assertTrue(cfg.z_local_refine_enabled)
 
     def test_make_focus_config_runtime_passes_direction_probe_params(self):
@@ -209,7 +244,10 @@ class SafZStepsPatienceGUITests(unittest.TestCase):
             focus_z_search_steps=10,
             focus_z_patience=3,
             focus_z_direction_probe_steps=(10, 20, 30),
+            focus_z_direction_probe_stage_count=3,
+            focus_z_direction_probe_step_interval=10,
             focus_z_direction_probe_samples=3,
+            focus_z_direction_probe_points_per_step=5,
             focus_z_local_refine_enabled=True,
             focus_z_local_refine_decay=0.5,
             focus_z_local_refine_min_step=1,
@@ -221,7 +259,10 @@ class SafZStepsPatienceGUITests(unittest.TestCase):
         )
         cfg = _module.MeasurementWorkflow._make_focus_config(dummy)
         self.assertEqual(cfg.z_direction_probe_steps, (10, 20, 30))
+        self.assertEqual(cfg.z_direction_probe_stage_count, 3)
+        self.assertEqual(cfg.z_direction_probe_step_interval, 10)
         self.assertEqual(cfg.z_direction_probe_samples, 3)
+        self.assertEqual(cfg.z_direction_probe_points_per_step, 5)
         self.assertTrue(cfg.z_local_refine_enabled)
 
 
@@ -317,46 +358,82 @@ class DynamicDirectionSamplingTests(unittest.TestCase):
         search = HillClimbSearch(cfg, move, measure, logs.append)
         return search, logs
 
-    def test_direction_sampling_runs_10_20_30_and_uses_median(self):
+    def test_direction_sampling_stops_after_first_decisive_stage(self):
         score_map = {
             0: [1.00, 1.00, 1.00],
             10: [0.70, 1.20, 0.90],  # median = 0.90
-            -10: [0.95, 0.96, 0.94],  # median = 0.95
             20: [0.80, 1.10, 0.85],  # median = 0.85
-            -20: [0.90, 0.92, 0.91],  # median = 0.91
-            30: [1.02, 1.04, 1.06],  # median = 1.04
-            -30: [0.88, 0.89, 0.87],  # median = 0.88
+            30: [0.90, 0.91, 0.92],  # median = 0.91
+            40: [1.01, 1.02, 1.03],  # median = 1.02
+            50: [1.07, 1.08, 1.09],  # median = 1.08
+            100: [1.20, 1.21, 1.22],
+            150: [1.30, 1.31, 1.32],
         }
         search, logs = self._make_search(score_map, probe_steps=(10, 20, 30), min_improve=0.02)
         direction, probe_step, score, pos = search._determine_direction_with_dynamic_sampling(
             probe_steps=[10, 20, 30],
             min_improve=0.02,
             sample_count=3,
+            points_per_step=5,
         )
         self.assertEqual(direction, +1)
-        self.assertEqual(probe_step, 30)
-        self.assertEqual(pos, 30)
-        self.assertAlmostEqual(score, 1.04, places=2)
+        self.assertEqual(probe_step, 10)
+        self.assertEqual(pos, 50)
+        self.assertAlmostEqual(score, 1.08, places=2)
+        self.assertTrue(any("probe_step=10" in line for line in logs))
+        self.assertFalse(any("probe_step=20" in line for line in logs))
+        self.assertFalse(any("probe_step=30" in line for line in logs))
+        self.assertTrue(any("samples=[10:" in line and "50:" in line for line in logs))
+        self.assertTrue(any("动态多点采样确定方向" in line for line in logs))
+
+    def test_direction_sampling_tries_next_stage_when_previous_not_decisive(self):
+        score_map = {
+            0: [1.00, 1.00, 1.00],
+            10: [0.98, 0.99, 1.00],
+            20: [0.99, 1.00, 1.01],
+            30: [0.98, 0.99, 1.00],
+            40: [0.99, 1.00, 1.01],
+            50: [0.98, 0.99, 1.00],
+            60: [1.04, 1.05, 1.06],
+            80: [1.02, 1.03, 1.04],
+            100: [1.01, 1.02, 1.03],
+        }
+        search, logs = self._make_search(score_map, probe_steps=(10, 20, 30), min_improve=0.02)
+        direction, probe_step, score, pos = search._determine_direction_with_dynamic_sampling(
+            probe_steps=[10, 20, 30],
+            min_improve=0.02,
+            sample_count=3,
+            points_per_step=5,
+        )
+        self.assertEqual(direction, +1)
+        self.assertEqual(probe_step, 20)
+        self.assertEqual(pos, 60)
+        self.assertAlmostEqual(score, 1.05, places=2)
         self.assertTrue(any("probe_step=10" in line for line in logs))
         self.assertTrue(any("probe_step=20" in line for line in logs))
-        self.assertTrue(any("probe_step=30" in line for line in logs))
-        self.assertTrue(any("动态双向采样确定方向" in line for line in logs))
+        self.assertFalse(any("probe_step=30" in line for line in logs))
 
     def test_direction_sampling_no_improve_returns_none(self):
         score_map = {
             0: [1.00, 1.00, 1.00],
             10: [0.90, 0.91, 0.89],
-            -10: [0.90, 0.91, 0.89],
             20: [0.90, 0.91, 0.89],
-            -20: [0.90, 0.91, 0.89],
             30: [0.90, 0.91, 0.89],
-            -30: [0.90, 0.91, 0.89],
+            40: [0.90, 0.91, 0.89],
+            50: [0.90, 0.91, 0.89],
+            60: [0.90, 0.91, 0.89],
+            80: [0.90, 0.91, 0.89],
+            90: [0.90, 0.91, 0.89],
+            100: [0.90, 0.91, 0.89],
+            120: [0.90, 0.91, 0.89],
+            150: [0.90, 0.91, 0.89],
         }
         search, _ = self._make_search(score_map, probe_steps=(10, 20, 30), min_improve=0.05)
         direction, probe_step, score, pos = search._determine_direction_with_dynamic_sampling(
             probe_steps=[10, 20, 30],
             min_improve=0.05,
             sample_count=3,
+            points_per_step=5,
         )
         self.assertIsNone(direction)
         self.assertIsNone(probe_step)
