@@ -682,9 +682,11 @@ class HillClimbSearch(BaseFocusSearch):
                         f"[补焦] 无进步，步长衰减为 {search_steps}"
                     )
 
+            '''
             if no_improve_count >= patience:
                 self.log_fn(f"[补焦] 连续 {no_improve_count} 次无提升，停止")
                 break
+            '''
             iteration += 1
 
         # ---- 回退到最佳位置；只有进入目标范围后才允许停止或局部细搜 ----
@@ -746,9 +748,11 @@ class HillClimbSearch(BaseFocusSearch):
                     no_improve_count = 0
                 else:
                     no_improve_count += 1
+                '''
                 if no_improve_count >= patience:
                     self.log_fn(f"[补焦] 继续补焦连续 {no_improve_count} 次无提升，停止")
                     break
+                '''
                 iteration += 1
 
             if best_pos != self.pos:

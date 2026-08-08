@@ -15469,9 +15469,9 @@ class MeasurementWorkflowGUI:
         self.focus_preview_running = False
         self.focus_preview_sample_inflight = False
 
-        # 右侧列表：峰值波长-拟合峰值图的横纵坐标数据
+        # 右侧列表：角度-拟合峰值图的横纵坐标数据
         self.angle_fit_tree = None
-        self.angle_fit_list_status_var = tk.StringVar(value="峰值波长-拟合峰值列表：暂无数据")
+        self.angle_fit_list_status_var = tk.StringVar(value="角度-拟合峰值列表：暂无数据")
 
         # 信号ON时间输入框的运行时同步策略：
         # 1. 默认情况下，下一轮使用程序按角度差计算出的 wf.cfg.signal_on_time_ms；
@@ -16100,8 +16100,8 @@ class MeasurementWorkflowGUI:
         self.saf_wait_between_spectrum_var = tk.DoubleVar(value=120.0)
         self.saf_z_search_steps_var = tk.IntVar(value=10)
         self.saf_z_patience_var = tk.IntVar(value=3)
-        self.saf_consecutive_good_checks_var = tk.IntVar(value=3)
-        self.saf_max_failed_autofocus_var = tk.IntVar(value=5)
+        self.saf_consecutive_good_checks_var = tk.IntVar(value=1)
+        self.saf_max_failed_autofocus_var = tk.IntVar(value=20)
         self.saf_max_stale_checks_var = tk.IntVar(value=5)
         self.saf_missing_score_max_checks_var = tk.IntVar(value=3)
         self.saf_wait_timeout_var = tk.DoubleVar(value=0.0)
@@ -16437,14 +16437,14 @@ class MeasurementWorkflowGUI:
         log_scrollbar.grid(row=0, column=1, sticky="ns")
 
         # =====================================================
-        # 右侧：峰值波长-拟合峰值列表
+        # 右侧：角度-拟合峰值列表
         # =====================================================
         right_panel.columnconfigure(0, weight=1)
         right_panel.rowconfigure(0, weight=1)
 
         angle_fit_list_frame = ttk.LabelFrame(
             right_panel,
-            text="峰值波长-拟合峰值列表",
+            text="角度-拟合峰值列表",
             padding=10,
             style="Panel.TLabelframe",
         )
@@ -16460,8 +16460,8 @@ class MeasurementWorkflowGUI:
             height=24,
         )
         self.angle_fit_tree.heading("cycle", text="序号")
-        self.angle_fit_tree.heading("angle", text="横坐标：峰值波长/序号")
-        self.angle_fit_tree.heading("fit_peak", text="纵坐标：拟合峰值")
+        self.angle_fit_tree.heading("angle", text="角度")
+        self.angle_fit_tree.heading("fit_peak", text="纵坐标")
         self.angle_fit_tree.column("cycle", width=60, anchor="center", stretch=False)
         self.angle_fit_tree.column("angle", width=130, anchor="center", stretch=True)
         self.angle_fit_tree.column("fit_peak", width=130, anchor="center", stretch=True)
@@ -18435,11 +18435,11 @@ class MeasurementWorkflowGUI:
                 tree.insert("", tk.END, values=("", "", ""), tags=("padding",))
 
             self.angle_fit_list_status_var.set(
-                f"峰值波长-拟合峰值列表：{len(valid_points)} 个有效记录；"
-                "序号=有效记录序号（真实cycle可能跳过），横坐标=峰值波长/序号，纵坐标=拟合峰值"
+                f"角度-拟合峰值列表：{len(valid_points)} 个有效记录；"
+                "序号=有效记录序号（真实cycle可能跳过），角度=本轮保存角度，纵坐标=拟合峰值"
             )
         except Exception as e:
-            self.angle_fit_list_status_var.set(f"峰值波长-拟合峰值列表更新失败：{e}")
+            self.angle_fit_list_status_var.set(f"角度-拟合峰值列表更新失败：{e}")
 
 
     def refresh_result_labels(self, workflow: Optional[MeasurementWorkflow] = None):
