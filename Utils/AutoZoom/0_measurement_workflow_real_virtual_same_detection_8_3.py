@@ -12413,6 +12413,9 @@ class MeasurementWorkflow:
         self.context["raw_values"] = raw_values
         self.context["raw_filtered_values"] = threshold_values
         self.context["raw_median_values"] = median_values
+        self.context["raw_values_before_background"] = list(raw_values)
+        self.context["raw_filtered_values_before_background"] = list(threshold_values)
+        self.context["raw_median_values_before_background"] = list(median_values)
         self.context["raw_original_peak"] = parsed.get("raw_original_peak")
         self.context["raw_filtered_peak"] = parsed.get("raw_filtered_peak")
         self.context["raw_median_peak"] = parsed.get("raw_median_peak")
@@ -12421,6 +12424,7 @@ class MeasurementWorkflow:
         self.context["raw_peak"] = parsed.get("raw_peak")
         self.context["fit_peak"] = parsed.get("fit_peak")
         self.context["fit_values"] = fit_values
+        self.context["fit_values_before_background"] = list(fit_values)
         self.context["fit_params"] = parsed.get("fit_params")
 
         # 把解析后的真实峰值也写回 result，异步保存快照/GUI显示直接用同一组值。
@@ -12433,6 +12437,8 @@ class MeasurementWorkflow:
         result["raw_filter_threshold"] = self.cfg.raw_remove_above
         result["median_filter_window"] = self.cfg.median_filter_window
         result["x_axis_xlsx_path"] = self.cfg.x_axis_xlsx_path
+
+        self._apply_background_light_correction(result)
 
         self.log(
             f"[LabVIEW] 采集完成：index={result.get('index')}, "
@@ -12453,6 +12459,246 @@ class MeasurementWorkflow:
 
         self.notify_update()
         return result
+
+    @staticmethod
+    def _safe_float_list(values: Any) -> List[float]:
+        out: List[float] = []
+        for v in values or []:
+            try:
+                fv = float(v)
+                if math.isfinite(fv):
+                    out.append(fv)
+            except Exception:
+                continue
+        return out
+
+    @staticmethod
+    def _subtract_spectrum_values(values: List[float], background: List[float]) -> List[float]:
+        if not values:
+            return []
+        if not background:
+            return list(values)
+        n = min(len(values), len(background))
+        corrected = [float(values[i]) - float(background[i]) for i in range(n)]
+        if len(values) > n:
+            corrected.extend(float(v) for v in values[n:])
+        return corrected
+
+    @staticmethod
+    def _peak_x_from_series(x_values: List[float], y_values: List[float]) -> Optional[float]:
+        if not x_values or not y_values:
+            return None
+        n = min(len(x_values), len(y_values))
+        if n <= 0:
+            return None
+        best_i = None
+        best_y = None
+        for i in range(n):
+            try:
+                y = float(y_values[i])
+                x = float(x_values[i])
+            except Exception:
+                continue
+            if not (math.isfinite(x) and math.isfinite(y)):
+                continue
+            if best_y is None or y > best_y:
+                best_y = y
+                best_i = i
+        if best_i is None:
+            return None
+        return float(x_values[best_i])
+
+    def _background_light_xlsx_path(self, save_dir: Optional[Path] = None) -> Path:
+        if save_dir is None:
+            save_dir = self._get_today_save_dir()
+        return Path(save_dir) / "measurement_summary_background_light.xlsx"
+
+    def _read_background_light_spectrum(self, path: Optional[Path] = None) -> Optional[Dict[str, Any]]:
+        path = path or self._background_light_xlsx_path()
+        if not Path(path).exists():
+            return None
+        wb = load_workbook(path, data_only=True, read_only=True)
+        ws = wb.active
+        rows = list(ws.iter_rows(values_only=True))
+        try:
+            wb.close()
+        except Exception:
+            pass
+        if len(rows) < 2:
+            return None
+
+        headers = [str(v).strip() if v is not None else "" for v in rows[0]]
+
+        def _idx(*names: str) -> Optional[int]:
+            normalized = [h.replace(" ", "").lower() for h in headers]
+            for name in names:
+                target = name.replace(" ", "").lower()
+                for i, h in enumerate(normalized):
+                    if h == target or target in h:
+                        return i
+            return None
+
+        x_i = _idx("波长/索引", "wavelength", "x")
+        raw_i = _idx("原始强度", "raw", "raw_y")
+        threshold_i = _idx("阈值滤波", "threshold")
+        median_i = _idx("中值滤波", "median")
+        fit_i = _idx("拟合曲线", "fit")
+
+        x_values: List[float] = []
+        raw_values: List[float] = []
+        threshold_values: List[float] = []
+        median_values: List[float] = []
+        fit_values: List[float] = []
+
+        def _to_float(v: Any) -> Optional[float]:
+            try:
+                if v is None or str(v).strip() == "":
+                    return None
+                fv = float(v)
+                return fv if math.isfinite(fv) else None
+            except Exception:
+                return None
+
+        for row in rows[1:]:
+            if x_i is not None:
+                v = _to_float(row[x_i] if x_i < len(row) else None)
+                if v is not None:
+                    x_values.append(v)
+            if raw_i is not None:
+                v = _to_float(row[raw_i] if raw_i < len(row) else None)
+                if v is not None:
+                    raw_values.append(v)
+            if threshold_i is not None:
+                v = _to_float(row[threshold_i] if threshold_i < len(row) else None)
+                if v is not None:
+                    threshold_values.append(v)
+            if median_i is not None:
+                v = _to_float(row[median_i] if median_i < len(row) else None)
+                if v is not None:
+                    median_values.append(v)
+            if fit_i is not None:
+                v = _to_float(row[fit_i] if fit_i < len(row) else None)
+                if v is not None:
+                    fit_values.append(v)
+
+        if not raw_values and not median_values and not fit_values:
+            return None
+
+        fit_peak = max(fit_values) if fit_values else None
+        raw_peak = max(raw_values) if raw_values else None
+        median_peak = max(median_values) if median_values else None
+        return {
+            "path": str(path),
+            "x_axis_values": x_values,
+            "raw_values": raw_values,
+            "threshold_values": threshold_values,
+            "median_values": median_values,
+            "fit_values": fit_values,
+            "raw_peak": raw_peak,
+            "median_peak": median_peak,
+            "fit_peak": fit_peak,
+        }
+
+    def _apply_background_light_correction(self, result: Dict[str, Any]) -> None:
+        try:
+            bg = self._read_background_light_spectrum()
+        except Exception as e:
+            self.log(f"[背景光] 读取背景光文件失败，跳过扣背景：{e}")
+            return
+        if not bg:
+            self.context["background_light_applied"] = False
+            return
+
+        raw_values = self._safe_float_list(self.context.get("raw_values"))
+        threshold_values = self._safe_float_list(self.context.get("raw_filtered_values"))
+        median_values = self._safe_float_list(self.context.get("raw_median_values"))
+        fit_values = self._safe_float_list(self.context.get("fit_values"))
+
+        raw_corrected = self._subtract_spectrum_values(raw_values, bg.get("raw_values") or [])
+        threshold_corrected = self._subtract_spectrum_values(threshold_values, bg.get("threshold_values") or [])
+        median_corrected = self._subtract_spectrum_values(median_values, bg.get("median_values") or bg.get("raw_values") or [])
+        fit_corrected = self._subtract_spectrum_values(fit_values, bg.get("fit_values") or bg.get("median_values") or [])
+
+        self.context["raw_values"] = raw_corrected
+        self.context["raw_filtered_values"] = threshold_corrected
+        self.context["raw_median_values"] = median_corrected
+        self.context["fit_values"] = fit_corrected
+
+        self.context["raw_original_peak"] = max(raw_corrected) if raw_corrected else None
+        self.context["raw_filtered_peak"] = max(threshold_corrected) if threshold_corrected else None
+        self.context["raw_median_peak"] = max(median_corrected) if median_corrected else None
+        self.context["raw_peak"] = self.context["raw_median_peak"] or self.context["raw_filtered_peak"] or self.context["raw_original_peak"]
+        self.context["fit_peak"] = max(fit_corrected) if fit_corrected else self.context.get("fit_peak")
+
+        result["raw_original_peak"] = self.context["raw_original_peak"]
+        result["raw_filtered_peak"] = self.context["raw_filtered_peak"]
+        result["raw_median_peak"] = self.context["raw_median_peak"]
+        result["raw_peak"] = self.context["raw_peak"]
+        result["fit_peak"] = self.context["fit_peak"]
+        result["background_light_applied"] = True
+        result["background_light_path"] = bg.get("path")
+        self.context["background_light_applied"] = True
+        self.context["background_light_path"] = bg.get("path")
+        self.log(f"[背景光] 已扣除背景光光谱：{bg.get('path')}")
+
+    def save_background_light_spectrum_to_xlsx(self, save_dir: Optional[Path] = None) -> Optional[Path]:
+        """
+        固定覆盖保存背景光光谱：./save/{MM.DD}/measurement_summary_background_light.xlsx。
+
+        优先保存未扣背景的原始采集数组，避免用户重复点击时把已扣背景的数据写成背景。
+        """
+        try:
+            raw_values = self.context.get("raw_values_before_background") or self.context.get("raw_values") or []
+            threshold_values = self.context.get("raw_filtered_values_before_background") or self.context.get("raw_filtered_values") or []
+            median_values = self.context.get("raw_median_values_before_background") or self.context.get("raw_median_values") or []
+            fit_values = self.context.get("fit_values_before_background") or self.context.get("fit_values") or []
+            x_axis_values = self.context.get("x_axis_values") or []
+
+            raw_values = self._safe_float_list(raw_values)
+            threshold_values = self._safe_float_list(threshold_values)
+            median_values = self._safe_float_list(median_values)
+            fit_values = self._safe_float_list(fit_values)
+            x_axis_values = self._safe_float_list(x_axis_values)
+
+            if not raw_values:
+                self.log("[背景光] 无原始光谱数据，跳过保存")
+                return None
+
+            if save_dir is None:
+                save_dir = self._get_today_save_dir()
+            save_dir.mkdir(parents=True, exist_ok=True)
+            xlsx_path = self._background_light_xlsx_path(save_dir)
+
+            wb = Workbook()
+            ws = wb.active
+            ws.title = "背景光光谱数据"
+            ws.append(["波长/索引", "原始强度", "阈值滤波", "中值滤波", "拟合曲线"])
+
+            n = len(raw_values)
+            for i in range(n):
+                ws.append([
+                    x_axis_values[i] if i < len(x_axis_values) else i,
+                    raw_values[i],
+                    threshold_values[i] if i < len(threshold_values) else None,
+                    median_values[i] if i < len(median_values) else None,
+                    fit_values[i] if i < len(fit_values) else None,
+                ])
+
+            header_fill = PatternFill("solid", fgColor="7030A0")
+            header_font = Font(bold=True, color="FFFFFF")
+            center_alignment = Alignment(horizontal="center", vertical="center")
+            for cell in ws[1]:
+                cell.fill = header_fill
+                cell.font = header_font
+                cell.alignment = center_alignment
+            wb.save(xlsx_path)
+            self.context["background_light_path"] = str(xlsx_path)
+            self.log(f"[背景光] 已覆盖保存背景光光谱：{xlsx_path}")
+            return xlsx_path
+        except Exception as e:
+            self.log(f"[背景光] 保存失败：{e}")
+            self.log(traceback.format_exc())
+            return None
 
     def save_single_spectrum_to_xlsx(
         self,
@@ -13202,14 +13448,22 @@ class MeasurementWorkflow:
         # 右侧列表/绘图使用 Step 4 真实 TCP 解析得到的 fit_peak。
         # 只有脱机模式下 request_labview_spectrum() 才会把 fit_peak 设为 1000。
         fit_peak = ctx.get("fit_peak")
+        x_axis_values = list(ctx.get("x_axis_values") or [])
+        fit_values = list(ctx.get("fit_values") or [])
+        median_values = list(ctx.get("raw_median_values") or [])
+        peak_x = self._peak_x_from_series(
+            self._make_x_values_for_plot(fit_values or median_values, x_axis_values),
+            fit_values or median_values,
+        )
 
         point = {
             "cycle_index": int(cycle_index),
             "angle_deg": angle_value,
             "fit_peak": fit_peak,
+            "fit_peak_x": peak_x,
             "raw_values": list(ctx.get("raw_values") or []),
             "raw_median_values": list(ctx.get("raw_median_values") or []),
-            "x_axis_values": list(ctx.get("x_axis_values") or []),
+            "x_axis_values": x_axis_values,
         }
 
         self.plot_points.append(point)
@@ -13217,7 +13471,7 @@ class MeasurementWorkflow:
 
         self.log(
             f"[绘图] 已追加数据点：cycle={cycle_index}, "
-            f"angle={angle_value}, fit_peak={fit_peak}"
+            f"angle={angle_value}, peak_x={peak_x}, fit_peak={fit_peak}"
         )
 
     # --------------------------------------------------------
@@ -15202,6 +15456,8 @@ class MeasurementWorkflowGUI:
         self.ax_median = None
         self.plot_canvas: Optional[FigureCanvasTkAgg] = None
         self.plot_status_var = tk.StringVar(value="图像显示：暂无数据")
+        self.plot_x_min_var = tk.StringVar(value="")
+        self.plot_x_max_var = tk.StringVar(value="")
         self.focus_preview_window: Optional[tk.Toplevel] = None
         self.focus_preview_fig: Optional[Figure] = None
         self.focus_preview_ax = None
@@ -15213,9 +15469,9 @@ class MeasurementWorkflowGUI:
         self.focus_preview_running = False
         self.focus_preview_sample_inflight = False
 
-        # 右侧列表：原“角度-拟合峰值图”的横纵坐标数据
+        # 右侧列表：峰值波长-拟合峰值图的横纵坐标数据
         self.angle_fit_tree = None
-        self.angle_fit_list_status_var = tk.StringVar(value="角度-拟合峰值列表：暂无数据")
+        self.angle_fit_list_status_var = tk.StringVar(value="峰值波长-拟合峰值列表：暂无数据")
 
         # 信号ON时间输入框的运行时同步策略：
         # 1. 默认情况下，下一轮使用程序按角度差计算出的 wf.cfg.signal_on_time_ms；
@@ -16155,7 +16411,18 @@ class MeasurementWorkflowGUI:
 
         self.plot_canvas = FigureCanvasTkAgg(self.fig, master=plot_frame)
         self.plot_canvas.get_tk_widget().grid(row=0, column=0, sticky="nsew")
-        ttk.Label(plot_frame, textvariable=self.plot_status_var).grid(row=1, column=0, sticky="w", pady=(6, 0))
+        x_range_frame = ttk.Frame(plot_frame)
+        x_range_frame.grid(row=1, column=0, sticky="ew", pady=(6, 0))
+        x_range_frame.columnconfigure(5, weight=1)
+        ttk.Label(x_range_frame, text="X轴范围").grid(row=0, column=0, padx=(0, 4), sticky="w")
+        ttk.Label(x_range_frame, text="min").grid(row=0, column=1, padx=(4, 2), sticky="w")
+        ttk.Entry(x_range_frame, textvariable=self.plot_x_min_var, width=10).grid(row=0, column=2, padx=(0, 6), sticky="w")
+        ttk.Label(x_range_frame, text="max").grid(row=0, column=3, padx=(4, 2), sticky="w")
+        ttk.Entry(x_range_frame, textvariable=self.plot_x_max_var, width=10).grid(row=0, column=4, padx=(0, 6), sticky="w")
+        ttk.Button(x_range_frame, text="清空范围", command=self.clear_plot_x_range).grid(row=0, column=5, padx=(6, 0), sticky="w")
+        ttk.Label(plot_frame, textvariable=self.plot_status_var).grid(row=2, column=0, sticky="w", pady=(4, 0))
+        self.plot_x_min_var.trace_add("write", self._on_plot_x_range_change)
+        self.plot_x_max_var.trace_add("write", self._on_plot_x_range_change)
 
         # 中间下部：运行日志
         log_frame = ttk.LabelFrame(center_panel, text="运行日志", padding=10, style="Panel.TLabelframe")
@@ -16170,14 +16437,14 @@ class MeasurementWorkflowGUI:
         log_scrollbar.grid(row=0, column=1, sticky="ns")
 
         # =====================================================
-        # 右侧：角度-拟合峰值列表
+        # 右侧：峰值波长-拟合峰值列表
         # =====================================================
         right_panel.columnconfigure(0, weight=1)
         right_panel.rowconfigure(0, weight=1)
 
         angle_fit_list_frame = ttk.LabelFrame(
             right_panel,
-            text="角度-拟合峰值列表",
+            text="峰值波长-拟合峰值列表",
             padding=10,
             style="Panel.TLabelframe",
         )
@@ -16193,7 +16460,7 @@ class MeasurementWorkflowGUI:
             height=24,
         )
         self.angle_fit_tree.heading("cycle", text="序号")
-        self.angle_fit_tree.heading("angle", text="横坐标：角度/deg")
+        self.angle_fit_tree.heading("angle", text="横坐标：峰值波长/序号")
         self.angle_fit_tree.heading("fit_peak", text="纵坐标：拟合峰值")
         self.angle_fit_tree.column("cycle", width=60, anchor="center", stretch=False)
         self.angle_fit_tree.column("angle", width=130, anchor="center", stretch=True)
@@ -17845,6 +18112,121 @@ class MeasurementWorkflowGUI:
         wf = workflow or self.workflow
         self.root.after(0, lambda: self.update_angle_fit_peak_plot(wf))
 
+    def clear_plot_x_range(self):
+        self.plot_x_min_var.set("")
+        self.plot_x_max_var.set("")
+        self.schedule_plot_update()
+
+    def _on_plot_x_range_change(self, *args):
+        try:
+            self.schedule_plot_update()
+        except Exception:
+            pass
+
+    @staticmethod
+    def _parse_optional_float_text(text: Any) -> Optional[float]:
+        s = str(text).strip()
+        if not s:
+            return None
+        value = float(s)
+        if not math.isfinite(value):
+            return None
+        return value
+
+    def _get_plot_x_range(self) -> Tuple[Optional[float], Optional[float]]:
+        try:
+            x_min = self._parse_optional_float_text(self.plot_x_min_var.get())
+        except Exception:
+            x_min = None
+        try:
+            x_max = self._parse_optional_float_text(self.plot_x_max_var.get())
+        except Exception:
+            x_max = None
+        if x_min is not None and x_max is not None and x_min > x_max:
+            x_min, x_max = x_max, x_min
+        return x_min, x_max
+
+    @staticmethod
+    def _filter_xy_by_x_range(
+        x_values: List[float],
+        y_values: List[float],
+        x_min: Optional[float],
+        x_max: Optional[float],
+    ) -> Tuple[List[float], List[float]]:
+        xs: List[float] = []
+        ys: List[float] = []
+        for x, y in zip(x_values, y_values):
+            try:
+                xf = float(x)
+                yf = float(y)
+            except Exception:
+                continue
+            if not (math.isfinite(xf) and math.isfinite(yf)):
+                continue
+            if x_min is not None and xf < x_min:
+                continue
+            if x_max is not None and xf > x_max:
+                continue
+            xs.append(xf)
+            ys.append(yf)
+        return xs, ys
+
+    @staticmethod
+    def _lorentzian_model(x: Any, y0: float, z: float, w: float, c: float):
+        x_arr = np.asarray(x, dtype=float)
+        return y0 + z * w / (4.0 * (x_arr - c) ** 2 + w ** 2)
+
+    def _fit_lorentzian_curve(
+        self,
+        x_values: List[float],
+        y_values: List[float],
+    ) -> Optional[Dict[str, Any]]:
+        if len(x_values) < 4 or len(y_values) < 4:
+            return None
+        try:
+            from scipy.optimize import curve_fit  # type: ignore
+        except Exception:
+            return None
+
+        try:
+            x = np.asarray(x_values, dtype=float)
+            y = np.asarray(y_values, dtype=float)
+            finite = np.isfinite(x) & np.isfinite(y)
+            x = x[finite]
+            y = y[finite]
+            if x.size < 4:
+                return None
+
+            order = np.argsort(x)
+            x = x[order]
+            y = y[order]
+            y0 = float(np.nanmin(y))
+            ymax = float(np.nanmax(y))
+            c0 = float(x[int(np.nanargmax(y))])
+            w0 = max(float((np.nanmax(x) - np.nanmin(x)) / 8.0), 1e-6)
+            z0 = max((ymax - y0) * w0, 1e-6)
+            popt, _ = curve_fit(
+                self._lorentzian_model,
+                x,
+                y,
+                p0=[y0, z0, w0, c0],
+                maxfev=20000,
+            )
+            x_fit = np.linspace(float(np.nanmin(x)), float(np.nanmax(x)), 300)
+            y_fit = self._lorentzian_model(x_fit, *popt)
+            return {
+                "params": {
+                    "y0": float(popt[0]),
+                    "z": float(popt[1]),
+                    "w": float(popt[2]),
+                    "c": float(popt[3]),
+                },
+                "x_fit": [float(v) for v in x_fit],
+                "y_fit": [float(v) for v in y_fit],
+            }
+        except Exception:
+            return None
+
     def update_angle_fit_peak_plot(self, workflow: Optional[MeasurementWorkflow] = None):
         """
         实时更新界面：
@@ -17878,23 +18260,40 @@ class MeasurementWorkflowGUI:
                 # 真实轮次仍保存在 point["cycle_index"]、CSV/XLSX 和日志中。
                 record_index = len(list_points)
 
-                angle = p.get("angle_deg")
+                peak_x = p.get("fit_peak_x")
                 fit_peak = p.get("fit_peak")
 
-                angle_value = None if angle is None else float(angle)
+                x_value = record_index if peak_x is None else float(peak_x)
                 fit_peak_value = None if fit_peak is None else float(fit_peak)
 
-                list_points.append((record_index, angle_value, fit_peak_value))
+                list_points.append((record_index, x_value, fit_peak_value))
 
-                # 图1：有效记录序号 - 拟合峰值。
+                # 图1：优先使用峰值波长 - 拟合峰值；没有峰值波长时退回有效记录序号。
                 # 拟合峰值为空时不画该点，但右侧列表仍保留该条记录。
                 if fit_peak_value is not None and math.isfinite(fit_peak_value):
-                    fit_plot_x.append(record_index)
+                    fit_plot_x.append(float(x_value))
                     fit_plot_y.append(float(fit_peak_value))
             except Exception:
                 continue
 
-        self.update_angle_fit_xy_list(list_points)
+        x_min, x_max = self._get_plot_x_range()
+        filtered_list_points: List[Tuple[int, Optional[float], Optional[float]]] = []
+        for record_index, x_value, fit_peak in list_points:
+            if x_value is None:
+                filtered_list_points.append((record_index, x_value, fit_peak))
+                continue
+            try:
+                xf = float(x_value)
+            except Exception:
+                continue
+            if x_min is not None and xf < x_min:
+                continue
+            if x_max is not None and xf > x_max:
+                continue
+            filtered_list_points.append((record_index, x_value, fit_peak))
+
+        fit_plot_x, fit_plot_y = self._filter_xy_by_x_range(fit_plot_x, fit_plot_y, x_min, x_max)
+        self.update_angle_fit_xy_list(filtered_list_points)
 
         if self.fig is None or self.plot_canvas is None:
             return
@@ -17914,19 +18313,38 @@ class MeasurementWorkflowGUI:
 
         raw_x = wf._make_x_values_for_plot(raw_values, x_axis_values)
         median_x = wf._make_x_values_for_plot(median_values, x_axis_values)
+        raw_x, raw_values = self._filter_xy_by_x_range(raw_x, raw_values, x_min, x_max)
+        median_x, median_values = self._filter_xy_by_x_range(median_x, median_values, x_min, x_max)
         x_label = "xlsx横坐标" if x_axis_values else "index"
+        x_range_label = ""
+        if x_min is not None or x_max is not None:
+            x_range_label = f"；X范围=[{x_min if x_min is not None else '-∞'}, {x_max if x_max is not None else '+∞'}]"
+        bg_label = "；已扣背景光" if bool(wf.context.get("background_light_applied", False)) else ""
+        lorentz_result = self._fit_lorentzian_curve(fit_plot_x, fit_plot_y)
 
         self.ax_fit_peak.clear()
         self.ax_raw.clear()
         self.ax_median.clear()
 
-        # 图1：序号 - 拟合峰值
-        self.ax_fit_peak.set_title("序号 - 拟合峰值")
-        self.ax_fit_peak.set_xlabel("序号")
+        # 图1：峰值波长 - 拟合峰值，并叠加洛伦兹拟合曲线
+        self.ax_fit_peak.set_title("峰值波长 - 拟合峰值 / 洛伦兹拟合")
+        self.ax_fit_peak.set_xlabel("峰值波长/序号")
         self.ax_fit_peak.set_ylabel("拟合峰值")
         self.ax_fit_peak.grid(True)
         if fit_plot_x and fit_plot_y:
-            self.ax_fit_peak.plot(fit_plot_x, fit_plot_y, marker="o")
+            self.ax_fit_peak.plot(fit_plot_x, fit_plot_y, marker="o", linestyle="", label="峰值点")
+            if lorentz_result is not None:
+                params = lorentz_result["params"]
+                self.ax_fit_peak.plot(
+                    lorentz_result["x_fit"],
+                    lorentz_result["y_fit"],
+                    linestyle="-",
+                    label=(
+                        "Lorentz "
+                        f"c={params['c']:.4g}, w={params['w']:.4g}, z={params['z']:.4g}"
+                    ),
+                )
+            self.ax_fit_peak.legend(loc="best")
         else:
             self.ax_fit_peak.text(
                 0.5,
@@ -17938,7 +18356,7 @@ class MeasurementWorkflowGUI:
             )
 
         # 图2：xlsx横坐标 - 原始数据
-        self.ax_raw.set_title("xlsx横坐标 - 原始数据")
+        self.ax_raw.set_title("xlsx横坐标 - 原始数据（扣背景后）" if bg_label else "xlsx横坐标 - 原始数据")
         self.ax_raw.set_xlabel(x_label)
         self.ax_raw.set_ylabel("RAW_Y")
         self.ax_raw.grid(True)
@@ -17948,7 +18366,7 @@ class MeasurementWorkflowGUI:
             self.ax_raw.text(0.5, 0.5, "暂无原始数据", ha="center", va="center", transform=self.ax_raw.transAxes)
 
         # 图3：xlsx横坐标 - 中值滤波结果
-        self.ax_median.set_title("xlsx横坐标 - 中值滤波结果")
+        self.ax_median.set_title("xlsx横坐标 - 中值滤波结果（扣背景后）" if bg_label else "xlsx横坐标 - 中值滤波结果")
         self.ax_median.set_xlabel(x_label)
         self.ax_median.set_ylabel("median filtered")
         self.ax_median.grid(True)
@@ -17964,7 +18382,8 @@ class MeasurementWorkflowGUI:
             f"图像显示：序号-拟合峰值点数={len(fit_plot_y)}；"
             f"原始点数={len(raw_values)}；"
             f"中值滤波点数={len(median_values)}；"
-            f"光谱横坐标={x_label}"
+            f"光谱横坐标={x_label}{x_range_label}{bg_label}；"
+            f"洛伦兹拟合={'已叠加' if lorentz_result is not None else '未叠加'}"
         )
 
     @staticmethod
@@ -18016,11 +18435,11 @@ class MeasurementWorkflowGUI:
                 tree.insert("", tk.END, values=("", "", ""), tags=("padding",))
 
             self.angle_fit_list_status_var.set(
-                f"角度-拟合峰值列表：{len(valid_points)} 个有效记录；"
-                "序号=有效记录序号（真实cycle可能跳过），横坐标=本轮角度/deg，纵坐标=拟合峰值"
+                f"峰值波长-拟合峰值列表：{len(valid_points)} 个有效记录；"
+                "序号=有效记录序号（真实cycle可能跳过），横坐标=峰值波长/序号，纵坐标=拟合峰值"
             )
         except Exception as e:
-            self.angle_fit_list_status_var.set(f"角度-拟合峰值列表更新失败：{e}")
+            self.angle_fit_list_status_var.set(f"峰值波长-拟合峰值列表更新失败：{e}")
 
 
     def refresh_result_labels(self, workflow: Optional[MeasurementWorkflow] = None):
@@ -19502,15 +19921,12 @@ class MeasurementWorkflowGUI:
         self.run_in_thread(self.save_current_spectrum_background_light)
 
     def save_current_spectrum_background_light(self):
-        """将当前 context 中的实时光谱数据保存到 ./save/{MM.DD}。"""
+        """将当前 context 中的实时光谱数据覆盖保存为 ./save/{MM.DD}/measurement_summary_background_light.xlsx。"""
         try:
             wf = self.ensure_workflow()
             date_dir = datetime.now().strftime("%m.%d")
             save_dir = Path("./save") / date_dir
-            saved_path = wf.save_single_spectrum_to_xlsx(
-                save_dir=save_dir,
-                tag="background_light",
-            )
+            saved_path = wf.save_background_light_spectrum_to_xlsx(save_dir=save_dir)
             if saved_path is not None:
                 self.set_var(self.tcp_status_var, f"已保存背景光光谱：{saved_path}")
                 self.log(f"[TCP] 已保存当前光谱数据（背景光）：{saved_path}")
