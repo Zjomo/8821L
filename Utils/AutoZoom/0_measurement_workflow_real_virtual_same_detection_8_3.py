@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import sys
 import os
@@ -626,10 +626,17 @@ class MeasurementConfig:
     focus_z_speed: int = int(_cfg("focus_z_speed", 100))
     focus_z_accel: int = int(_cfg("focus_z_accel", 100))
     focus_search_strategy: str = str(_cfg("focus_search_strategy", "hill_climb"))
-    focus_max_checks_per_cycle: int = int(_cfg("focus_max_checks_per_cycle", 20))
+    focus_max_checks_per_cycle: int = int(_cfg("focus_max_checks_per_cycle", 0))
+    focus_consecutive_good_checks: int = int(_cfg("focus_consecutive_good_checks", 3))
+    focus_max_failed_autofocus_attempts: int = int(_cfg("focus_max_failed_autofocus_attempts", 5))
+    focus_max_stale_checks: int = int(_cfg("focus_max_stale_checks", 5))
+    focus_min_score_error_delta: float = float(_cfg("focus_min_score_error_delta", 0.002))
+    focus_missing_score_max_checks: int = int(_cfg("focus_missing_score_max_checks", 3))
+    focus_wait_timeout_s: float = float(_cfg("focus_wait_timeout_s", 0.0))
     focus_check_interval_s: float = float(_cfg("focus_check_interval_s", 0.2))
     focus_z_search_steps: int = int(_cfg("focus_z_search_steps", 10))
     focus_z_patience: int = int(_cfg("focus_z_patience", 3))
+    focus_trend_window: int = int(_cfg("focus_trend_window", 10))
     focus_z_direction_probe_steps: Tuple[int, ...] = tuple(_cfg("focus_z_direction_probe_steps", (10, 20, 30)))  # type: ignore
     focus_z_direction_probe_stage_count: int = int(_cfg("focus_z_direction_probe_stage_count", 3))
     focus_z_direction_probe_step_interval: int = int(_cfg("focus_z_direction_probe_step_interval", 10))
@@ -13496,6 +13503,12 @@ class MeasurementWorkflow:
             z_local_refine_decay=float(getattr(self.cfg, "focus_z_local_refine_decay", 0.5)),
             z_local_refine_min_step=int(getattr(self.cfg, "focus_z_local_refine_min_step", 1)),
             z_local_refine_max_rounds=int(getattr(self.cfg, "focus_z_local_refine_max_rounds", 4)),
+            focus_consecutive_good_checks=int(getattr(self.cfg, "focus_consecutive_good_checks", 3)),
+            focus_max_failed_autofocus_attempts=int(getattr(self.cfg, "focus_max_failed_autofocus_attempts", 5)),
+            focus_max_stale_checks=int(getattr(self.cfg, "focus_max_stale_checks", 5)),
+            focus_missing_score_max_checks=int(getattr(self.cfg, "focus_missing_score_max_checks", 3)),
+            focus_wait_timeout_s=float(getattr(self.cfg, "focus_wait_timeout_s", 0.0)),
+            focus_trend_window=int(getattr(self.cfg, "focus_trend_window", 10)),
         )
 
     def _ensure_focus_components(self) -> None:
@@ -13891,23 +13904,21 @@ class MeasurementWorkflow:
             self.log("[聚焦补焦] 触发补焦，启动闭环搜索")
             controller = self._ensure_focus_controller()
 
-            # 策略降级机制：如果上一次 hill_climb 结束但分数未达标，本次改用 full_sweep
-            current_strategy = str(getattr(self.cfg, "focus_search_strategy", "hill_climb"))
-            _last_search_failed = getattr(self, "_last_autofocus_search_failed", False)
-            if _last_search_failed and current_strategy != "full_sweep":
-                self.log(f"[聚焦补焦] 上次 {current_strategy} 搜索未达标，本次切换为 full_sweep")
-                original_strategy = self.cfg.focus_search_strategy
-                self.cfg.focus_search_strategy = "full_sweep"
-                try:
-                    autofocus_result = controller.run_closed_loop(initial_focus_score=score)
-                finally:
-                    self.cfg.focus_search_strategy = original_strategy
-            else:
-                autofocus_result = controller.run_closed_loop(initial_focus_score=score)
+            # Temporary policy: keep autofocus on hill_climb only.
+            self.cfg.focus_search_strategy = "hill_climb"
+            if hasattr(controller.cfg, "z_search_strategy"):
+                controller.cfg.z_search_strategy = "hill_climb"
+            autofocus_result = controller.run_closed_loop(initial_focus_score=score)
 
             result["autofocus_ok"] = bool(autofocus_result.get("ok", False))
             final_score = autofocus_result.get("best_score")
             result["final_score"] = final_score
+            result["search_reason"] = autofocus_result.get("reason")
+            result["best_relative_z_steps"] = autofocus_result.get("best_relative_z_steps")
+            result["final_relative_z_steps"] = autofocus_result.get("final_relative_z_steps")
+            result["direction"] = autofocus_result.get("direction")
+            result["direction_marked"] = autofocus_result.get("direction_marked")
+            result["history_len"] = len(autofocus_result.get("history") or [])
             if final_score is not None:
                 result["score"] = final_score
             self.log(
@@ -14401,8 +14412,46 @@ class MeasurementWorkflow:
                 # Step 10：补焦判断（循环等待直到补焦完成或分数达标）
                 self.log("========== Step 10：补焦判断（循环等待） ==========")
                 autofocus_check_count = 0
-                max_autofocus_checks = int(self.cfg.focus_max_checks_per_cycle) if hasattr(self.cfg, 'focus_max_checks_per_cycle') else 20
-                while autofocus_check_count < max_autofocus_checks:
+                max_autofocus_checks = max(0, int(getattr(self.cfg, "focus_max_checks_per_cycle", 0)))
+                required_good_checks = max(1, int(getattr(self.cfg, "focus_consecutive_good_checks", 2)))
+                max_failed_attempts = max(1, int(getattr(self.cfg, "focus_max_failed_autofocus_attempts", 3)))
+                max_stale_checks = max(1, int(getattr(self.cfg, "focus_max_stale_checks", 5)))
+                min_error_delta = max(0.0, float(getattr(self.cfg, "focus_min_score_error_delta", 0.002)))
+                max_missing_score_checks = max(1, int(getattr(self.cfg, "focus_missing_score_max_checks", 3)))
+                wait_timeout_s = max(0.0, float(getattr(self.cfg, "focus_wait_timeout_s", 0.0)))
+                consecutive_good_checks = 0
+                failed_autofocus_attempts = 0
+                stale_checks = 0
+                missing_score_checks = 0
+                best_score_error = None
+                autofocus_exit_reason = "not_started"
+                autofocus_wait_started_at = time.monotonic()
+
+                def _focus_score_error(value):
+                    if value is None:
+                        return None
+                    trigger_ratio = float(self.cfg.focus_trigger_ratio)
+                    absolute = bool(self.cfg.focus_trigger_absolute)
+                    if not absolute:
+                        return max(0.0, trigger_ratio - float(value))
+                    lower = min(trigger_ratio, 2.0 - trigger_ratio)
+                    upper = max(trigger_ratio, 2.0 - trigger_ratio)
+                    value = float(value)
+                    if value < lower:
+                        return lower - value
+                    if value > upper:
+                        return value - upper
+                    return 0.0
+
+                while True:
+                    if max_autofocus_checks > 0 and autofocus_check_count >= max_autofocus_checks:
+                        autofocus_exit_reason = f"legacy_max_checks_{max_autofocus_checks}"
+                        self.log(f"[Autofocus] legacy hard limit reached: {max_autofocus_checks}")
+                        break
+                    if wait_timeout_s > 0.0 and (time.monotonic() - autofocus_wait_started_at) >= wait_timeout_s:
+                        autofocus_exit_reason = f"timeout_{wait_timeout_s:.1f}s"
+                        self.log(f"[Autofocus] wait timeout reached: {wait_timeout_s:.1f}s")
+                        break
                     autofocus_check_count += 1
                     try:
                         autofocus_result = self.run_autofocus_if_needed(cycle_index)
@@ -14414,6 +14463,70 @@ class MeasurementWorkflow:
                         score = autofocus_result.get("score")
                         triggered = autofocus_result.get("triggered", False)
                         autofocus_ok = autofocus_result.get("autofocus_ok", False)
+
+                        score_error = _focus_score_error(score)
+                        if score is None:
+                            missing_score_checks += 1
+                            self.log(
+                                f"[Autofocus] score is None; missing="
+                                f"{missing_score_checks}/{max_missing_score_checks}"
+                            )
+                            if missing_score_checks >= max_missing_score_checks:
+                                autofocus_exit_reason = "missing_score_limit"
+                                break
+                        elif score_error == 0.0:
+                            missing_score_checks = 0
+                            consecutive_good_checks += 1
+                            self.log(
+                                f"[Autofocus] score in tolerance "
+                                f"{consecutive_good_checks}/{required_good_checks}; "
+                                f"score={score}; check={autofocus_check_count}"
+                            )
+                            if consecutive_good_checks >= required_good_checks:
+                                autofocus_exit_reason = "consecutive_good"
+                                break
+                        else:
+                            missing_score_checks = 0
+                            consecutive_good_checks = 0
+                            if best_score_error is None or score_error < best_score_error - min_error_delta:
+                                best_score_error = score_error
+                                stale_checks = 0
+                            else:
+                                stale_checks += 1
+
+                            if triggered:
+                                failed_autofocus_attempts += 1
+
+                            self.log(
+                                f"[Autofocus] score outside tolerance: score={score}, "
+                                f"error={score_error}, triggered={triggered}, "
+                                f"autofocus_ok={autofocus_ok}, failed_attempts="
+                                f"{failed_autofocus_attempts}/{max_failed_attempts}, "
+                                f"stale={stale_checks}/{max_stale_checks}"
+                            )
+
+                            if failed_autofocus_attempts >= max_failed_attempts:
+                                autofocus_exit_reason = "failed_autofocus_attempt_limit"
+                                self.log(
+                                    f"[Autofocus] failed attempt limit reached: "
+                                    f"{failed_autofocus_attempts}/{max_failed_attempts}"
+                                )
+                                break
+                            if stale_checks >= max_stale_checks:
+                                autofocus_exit_reason = "score_error_plateau"
+                                self.log(f"[Autofocus] score error plateau; stale={stale_checks}")
+                                break
+
+                        if self.stop_requested:
+                            return False
+                        if self._is_midrun_recalibration_requested():
+                            self._set_midrun_recalibration(cycle_index, f"autofocus_step10_subcycle_{sub_idx}")
+                            return False
+
+                        wait_s = float(self.cfg.focus_check_interval_s) if hasattr(self.cfg, 'focus_check_interval_s') else 1.5
+                        self.log(f"[Autofocus] wait {wait_s:.1f}s before next check")
+                        time.sleep(wait_s)
+                        continue
 
                         if score is not None and focus_score_ratio_in_tolerance(
                             score,
@@ -14443,6 +14556,10 @@ class MeasurementWorkflow:
                         last_autofocus_result = {"score": None, "triggered": False, "autofocus_ok": False, "error": str(e)}
                         self.context["last_autofocus_result"] = last_autofocus_result
                         # 异常后等待一会再重试
+                        missing_score_checks += 1
+                        if missing_score_checks >= max_missing_score_checks:
+                            autofocus_exit_reason = "exception_limit"
+                            break
                         time.sleep(1.0)
                         continue
                     
@@ -14452,7 +14569,13 @@ class MeasurementWorkflow:
                         self._set_midrun_recalibration(cycle_index, f"实际主循环第 {sub_idx} 次补焦")
                         return False
                 
-                if autofocus_check_count >= max_autofocus_checks:
+                self.log(
+                    f"[Autofocus] Step10 end: reason={autofocus_exit_reason}, "
+                    f"checks={autofocus_check_count}, failed_attempts={failed_autofocus_attempts}, "
+                    f"stale={stale_checks}, consecutive_good={consecutive_good_checks}"
+                )
+
+                if max_autofocus_checks > 0 and autofocus_check_count >= max_autofocus_checks:
                     self.log(f"[补焦判断] 已达到最大检查次数 {max_autofocus_checks}，继续进入下一步")
 
                 if self.stop_requested:
@@ -15620,6 +15743,12 @@ class MeasurementWorkflowGUI:
         self.saf_wait_between_spectrum_var = tk.DoubleVar(value=120.0)
         self.saf_z_search_steps_var = tk.IntVar(value=10)
         self.saf_z_patience_var = tk.IntVar(value=3)
+        self.saf_consecutive_good_checks_var = tk.IntVar(value=3)
+        self.saf_max_failed_autofocus_var = tk.IntVar(value=5)
+        self.saf_max_stale_checks_var = tk.IntVar(value=5)
+        self.saf_missing_score_max_checks_var = tk.IntVar(value=3)
+        self.saf_wait_timeout_var = tk.DoubleVar(value=0.0)
+        self.saf_trend_window_var = tk.IntVar(value=10)
         self.saf_z_direction_probe_stage_count_var = tk.IntVar(value=3)
         self.saf_z_direction_probe_step_interval_var = tk.IntVar(value=10)
         self.saf_z_direction_probe_samples_var = tk.IntVar(value=3)
@@ -15692,7 +15821,7 @@ class MeasurementWorkflowGUI:
         ttk.Combobox(
             saf_frame,
             textvariable=self.saf_search_strategy_var,
-            values=["hill_climb", "full_sweep", "curve_fit", "golden_section"],
+            values=["hill_climb", "full_sweep", "curve_fit", "golden_section", "feedback_closed_loop"],
             state="readonly",
             width=12,
         ).grid(row=4, column=3, padx=4, pady=4, sticky="w")
@@ -15823,9 +15952,51 @@ class MeasurementWorkflowGUI:
             row=11, column=3, padx=(70, 4), pady=4, sticky="w"
         )
 
-        # Row 12: 按钮
+        # Row 12: 反馈闭环参数 (feedback_closed_loop)
+        ttk.Label(saf_frame, text="连续达标退出").grid(
+            row=12, column=0, padx=4, pady=4, sticky="w"
+        )
+        ttk.Entry(saf_frame, textvariable=self.saf_consecutive_good_checks_var, width=8).grid(
+            row=12, column=1, padx=4, pady=4, sticky="w"
+        )
+        ttk.Label(saf_frame, text="连续失败退出").grid(
+            row=12, column=2, padx=4, pady=4, sticky="w"
+        )
+        ttk.Entry(saf_frame, textvariable=self.saf_max_failed_autofocus_var, width=8).grid(
+            row=12, column=3, padx=4, pady=4, sticky="w"
+        )
+
+        # Row 13: 反馈闭环参数续
+        ttk.Label(saf_frame, text="无改善退出").grid(
+            row=13, column=0, padx=4, pady=4, sticky="w"
+        )
+        ttk.Entry(saf_frame, textvariable=self.saf_max_stale_checks_var, width=8).grid(
+            row=13, column=1, padx=4, pady=4, sticky="w"
+        )
+        ttk.Label(saf_frame, text="空分数退出").grid(
+            row=13, column=2, padx=4, pady=4, sticky="w"
+        )
+        ttk.Entry(saf_frame, textvariable=self.saf_missing_score_max_checks_var, width=8).grid(
+            row=13, column=3, padx=4, pady=4, sticky="w"
+        )
+
+        # Row 14: 趋势窗口 / 超时
+        ttk.Label(saf_frame, text="趋势窗口").grid(
+            row=14, column=0, padx=4, pady=4, sticky="w"
+        )
+        ttk.Entry(saf_frame, textvariable=self.saf_trend_window_var, width=8).grid(
+            row=14, column=1, padx=4, pady=4, sticky="w"
+        )
+        ttk.Label(saf_frame, text="超时(s,0=关)").grid(
+            row=14, column=2, padx=4, pady=4, sticky="w"
+        )
+        ttk.Entry(saf_frame, textvariable=self.saf_wait_timeout_var, width=8).grid(
+            row=14, column=3, padx=4, pady=4, sticky="w"
+        )
+
+        # Row 15: 按钮
         saf_buttons = ttk.Frame(saf_frame)
-        saf_buttons.grid(row=12, column=0, columnspan=4, padx=2, pady=4, sticky="ew")
+        saf_buttons.grid(row=15, column=0, columnspan=4, padx=2, pady=4, sticky="ew")
         saf_buttons.columnconfigure(0, weight=1)
         saf_buttons.columnconfigure(1, weight=1)
         saf_buttons.columnconfigure(2, weight=1)
@@ -15847,9 +16018,9 @@ class MeasurementWorkflowGUI:
             command=self.open_focus_score_preview,
         ).grid(row=0, column=2, padx=4, pady=3, sticky="ew")
 
-        # Row 13: 状态
+        # Row 16: 状态
         ttk.Label(saf_frame, textvariable=self.saf_status_var, wraplength=450).grid(
-            row=13, column=0, columnspan=4, padx=4, pady=(4, 0), sticky="w"
+            row=16, column=0, columnspan=4, padx=4, pady=(4, 0), sticky="w"
         )
 
         # =====================================================
@@ -17327,6 +17498,12 @@ class MeasurementWorkflowGUI:
             focus_z_local_refine_decay=float(self.saf_z_local_refine_decay_var.get()),
             focus_z_local_refine_min_step=int(self.saf_z_local_refine_min_step_var.get()),
             focus_z_local_refine_max_rounds=int(self.saf_z_local_refine_max_rounds_var.get()),
+            focus_consecutive_good_checks=int(self.saf_consecutive_good_checks_var.get()),
+            focus_max_failed_autofocus_attempts=int(self.saf_max_failed_autofocus_var.get()),
+            focus_max_stale_checks=int(self.saf_max_stale_checks_var.get()),
+            focus_missing_score_max_checks=int(self.saf_missing_score_max_checks_var.get()),
+            focus_wait_timeout_s=float(self.saf_wait_timeout_var.get()),
+            focus_trend_window=int(self.saf_trend_window_var.get()),
         )
     
     def sync_config_from_ui_to_workflow(self) -> MeasurementWorkflow:
@@ -20159,6 +20336,12 @@ class MeasurementWorkflowGUI:
             z_local_refine_decay=float(self.saf_z_local_refine_decay_var.get()),
             z_local_refine_min_step=int(self.saf_z_local_refine_min_step_var.get()),
             z_local_refine_max_rounds=int(self.saf_z_local_refine_max_rounds_var.get()),
+            focus_consecutive_good_checks=int(self.saf_consecutive_good_checks_var.get()),
+            focus_max_failed_autofocus_attempts=int(self.saf_max_failed_autofocus_var.get()),
+            focus_max_stale_checks=int(self.saf_max_stale_checks_var.get()),
+            focus_missing_score_max_checks=int(self.saf_missing_score_max_checks_var.get()),
+            focus_wait_timeout_s=float(self.saf_wait_timeout_var.get()),
+            focus_trend_window=int(self.saf_trend_window_var.get()),
         )
 
     def open_focus_score_preview(self):

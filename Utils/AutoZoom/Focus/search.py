@@ -150,29 +150,6 @@ class BaseFocusSearch:
         self._settle()
         return self._measure(phase, iteration, use_cache=use_cache)
 
-    def search(
-        self,
-        initial_score: Optional[float],
-        target: float,
-        max_total_steps: int,
-        max_iter: int,
-        patience: int,
-        min_improve: float,
-        upper_target: Optional[float] = None,
-    ) -> Dict[str, Any]:
-        raise NotImplementedError
-
-
-class HillClimbSearch(BaseFocusSearch):
-    """
-    改进的爬山搜索。
-
-    在原算法基础上增加：
-      - 自适应步长：连续无进步时按 z_adaptive_step_decay 缩小 search_steps；
-      - 方向确定时先按步长序列做双向采样，再选更优方向；
-      - 粗搜后回到 best_pos，用逐步缩小的左右探测做局部细搜。
-    """
-
     def _score_is_better_for_target(
         self,
         score: Optional[float],
@@ -196,6 +173,29 @@ class HillClimbSearch(BaseFocusSearch):
         if best_in:
             return False
         return score_f > best_score * (1.0 + min_improve)
+
+    def search(
+        self,
+        initial_score: Optional[float],
+        target: float,
+        max_total_steps: int,
+        max_iter: int,
+        patience: int,
+        min_improve: float,
+        upper_target: Optional[float] = None,
+    ) -> Dict[str, Any]:
+        raise NotImplementedError
+
+
+class HillClimbSearch(BaseFocusSearch):
+    """
+    改进的爬山搜索。
+
+    在原算法基础上增加：
+      - 自适应步长：连续无进步时按 z_adaptive_step_decay 缩小 search_steps；
+      - 方向确定时先按步长序列做双向采样，再选更优方向；
+      - 粗搜后回到 best_pos，用逐步缩小的左右探测做局部细搜。
+    """
 
     def _measure_median_at_current_position(
         self,
@@ -226,11 +226,107 @@ class HillClimbSearch(BaseFocusSearch):
         self._settle()
         return self._measure_median_at_current_position(phase, iteration, sample_count)
 
+    def _summarize_direction_trend(
+        self,
+        center_score: float,
+        direction: int,
+        probe_step: int,
+        sample_scores: List[Optional[float]],
+        min_improve: float,
+        target: float,
+        upper_target: Optional[float],
+    ) -> Dict[str, Any]:
+        """Summarize a sampled direction by comparing every point with center_score."""
+        center = float(center_score)
+        threshold = max(abs(center) * max(0.0, float(min_improve)), 1e-12)
+        raw_positions = [0] + [
+            int(direction * probe_step * point_idx)
+            for point_idx in range(1, len(sample_scores) + 1)
+        ]
+        raw_scores: List[Optional[float]] = [center] + sample_scores
+        valid = [
+            (int(pos), float(score))
+            for pos, score in zip(raw_positions, raw_scores)
+            if score is not None
+        ]
+
+        if len(valid) <= 1:
+            return {
+                "valid": False,
+                "direction": int(direction),
+                "probe_step": int(probe_step),
+                "samples": raw_scores,
+                "positions": raw_positions,
+            }
+
+        positions = np.array([float(pos) for pos, _ in valid], dtype=float)
+        scores = np.array([float(score) for _, score in valid], dtype=float)
+        deltas = scores - center
+
+        best_idx = int(np.argmax(scores))
+        best_pos = int(round(float(positions[best_idx])))
+        best_score = float(scores[best_idx])
+        best_gain = float(best_score - center)
+        terminal_gain = float(deltas[-1])
+        avg_gain = float(np.mean(deltas[1:])) if len(deltas) > 1 else float(deltas[0])
+
+        slope = 0.0
+        if len(scores) >= 2:
+            try:
+                slope = float(np.polyfit(positions, scores, 1)[0])
+            except Exception:
+                slope = 0.0
+
+        peak_drop = 0.0
+        if 0 < best_idx < len(scores) - 1:
+            peak_drop = max(0.0, float(best_score - np.max(scores[best_idx + 1 :])))
+
+        peak_like = (
+            0 < best_idx < len(scores) - 1
+            and best_gain > threshold
+            and peak_drop > threshold
+        )
+        peak_in_tolerance = bool(
+            peak_like and self._in_tolerance(best_score, target, upper_target)
+        )
+        clear_up = (
+            avg_gain > threshold
+            and best_gain > threshold
+            and not peak_like
+        )
+        clear_down = (
+            avg_gain < -threshold
+            and terminal_gain < threshold
+            and best_gain <= threshold
+        )
+
+        return {
+            "valid": True,
+            "direction": int(direction),
+            "probe_step": int(probe_step),
+            "positions": raw_positions,
+            "samples": raw_scores,
+            "best_pos": best_pos,
+            "best_score": best_score,
+            "best_gain": best_gain,
+            "avg_gain": avg_gain,
+            "terminal_gain": terminal_gain,
+            "slope": slope,
+            "peak_drop": peak_drop,
+            "peak_like": bool(peak_like),
+            "peak_in_tolerance": bool(peak_in_tolerance),
+            "clear_up": bool(clear_up),
+            "clear_down": bool(clear_down),
+            "threshold": threshold,
+        }
+
     def _determine_direction_with_dynamic_sampling(
         self,
         probe_steps: List[int],
         min_improve: float,
         sample_count: int,
+        target: float,
+        upper_target: Optional[float],
         points_per_step: int = 5,
     ) -> Tuple[Optional[int], Optional[int], Optional[float], Optional[int]]:
         """按基础步长序列做多点采样，选择更优方向。"""
@@ -259,54 +355,117 @@ class HillClimbSearch(BaseFocusSearch):
                 )
                 continue
 
-            threshold = center_score * (1.0 + min_improve)
-            stage_candidates: List[Tuple[int, int, float, float]] = []
-            ratio_base = max(abs(center_score), 1e-12)
-            sample_summary: List[str] = []
+            stage_summaries: List[Dict[str, Any]] = []
 
-            for point_idx in range(1, points_per_step + 1):
-                target_pos = stage_center_pos + probe_step * point_idx
-                probe_score = self._measure_median_at_position(
-                    target_pos=target_pos,
-                    phase=f"direction_probe_s{probe_step}_p{point_idx}",
-                    iteration=stage_idx * 100 + point_idx,
-                    sample_count=sample_count,
-                )
-                sample_summary.append(
-                    f"{target_pos}:{probe_score:.4f}" if probe_score is not None else f"{target_pos}:None"
-                )
-                if probe_score is not None and probe_score > threshold:
-                    stage_candidates.append(
-                        (
-                            +1,
-                            int(target_pos),
-                            float(probe_score),
-                            float(probe_score / ratio_base),
-                        )
+            for direction in (+1, -1):
+                direction_scores: List[Optional[float]] = []
+                sample_summary: List[str] = []
+                for point_idx in range(1, points_per_step + 1):
+                    target_pos = stage_center_pos + direction * probe_step * point_idx
+                    probe_score = self._measure_median_at_position(
+                        target_pos=target_pos,
+                        phase=f"direction_probe_s{probe_step}_d{direction}_p{point_idx}",
+                        iteration=stage_idx * 100 + (10 if direction > 0 else 50) + point_idx,
+                        sample_count=sample_count,
+                    )
+                    direction_scores.append(probe_score)
+                    sample_summary.append(
+                        f"{target_pos}:{probe_score:.4f}"
+                        if probe_score is not None
+                        else f"{target_pos}:None"
                     )
 
-            if self.pos != stage_center_pos:
-                self._move(stage_center_pos - self.pos)
-                self._settle()
+                if self.pos != stage_center_pos:
+                    self._move(stage_center_pos - self.pos)
+                    self._settle()
 
-            self.log_fn(
-                f"[补焦] 方向判断阶段 {stage_idx} 结果: "
-                f"center={center_score:.4f}, samples=[{', '.join(sample_summary)}], "
-                f"threshold={threshold:.4f}"
-            )
+                summary = self._summarize_direction_trend(
+                    center_score=float(center_score),
+                    direction=direction,
+                    probe_step=probe_step,
+                    sample_scores=direction_scores,
+                    min_improve=min_improve,
+                    target=target,
+                    upper_target=upper_target,
+                )
+                stage_summaries.append(summary)
+                if summary.get("valid"):
+                    self.log_fn(
+                        "[Autofocus] direction trend "
+                        f"stage={stage_idx}, dir={direction:+d}, "
+                        f"center={center_score:.4f}, samples=[{', '.join(sample_summary)}], "
+                        f"avg_gain={summary['avg_gain']:.4f}, "
+                        f"terminal_gain={summary['terminal_gain']:.4f}, "
+                        f"best_score={summary['best_score']:.4f}, "
+                        f"best_pos={summary['best_pos']}, "
+                        f"peak_like={summary['peak_like']}, "
+                        f"peak_in_tolerance={summary['peak_in_tolerance']}"
+                    )
+                else:
+                    self.log_fn(
+                        "[Autofocus] direction trend invalid "
+                        f"stage={stage_idx}, dir={direction:+d}, "
+                        f"samples=[{', '.join(sample_summary)}]"
+                    )
 
-            if not stage_candidates:
-                continue
+            overshoot_candidates = [
+                summary
+                for summary in stage_summaries
+                if summary.get("valid") and summary.get("peak_in_tolerance")
+            ]
+            if overshoot_candidates:
+                chosen = max(
+                    overshoot_candidates,
+                    key=lambda item: (float(item["best_score"]), -abs(int(item["best_pos"]))),
+                )
+                self.log_fn(
+                    "[Autofocus] direction peak is inside tolerance; "
+                    f"return_to_best={chosen['best_pos']}, "
+                    f"score={chosen['best_score']:.4f}, dir={chosen['direction']:+d}"
+                )
+                return (
+                    int(chosen["direction"]),
+                    int(probe_step),
+                    float(chosen["best_score"]),
+                    int(chosen["best_pos"]),
+                )
 
-            stage_direction, stage_pos, stage_score, stage_ratio = max(
-                stage_candidates, key=lambda item: item[2]
-            )
-            self.log_fn(
-                f"[补焦] 动态多点采样确定方向: direction={stage_direction}, "
-                f"probe_step={probe_step}, score={stage_score:.4f}, ratio={stage_ratio:.4f}, "
-                f"best_pos={stage_pos}"
-            )
-            return stage_direction, probe_step, stage_score, stage_pos
+            trend_candidates = [
+                summary
+                for summary in stage_summaries
+                if summary.get("valid")
+                and summary.get("clear_up")
+                and not summary.get("peak_like")
+            ]
+            if trend_candidates:
+                chosen = max(
+                    trend_candidates,
+                    key=lambda item: (float(item["avg_gain"]), float(item["best_score"])),
+                )
+                self.log_fn(
+                    "[Autofocus] direction decided by trend: "
+                    f"dir={chosen['direction']:+d}, probe_step={probe_step}, "
+                    f"avg_gain={chosen['avg_gain']:.4f}, "
+                    f"best_score={chosen['best_score']:.4f}, "
+                    f"best_pos={chosen['best_pos']}"
+                )
+                return (
+                    int(chosen["direction"]),
+                    int(probe_step),
+                    float(chosen["best_score"]),
+                    int(chosen["best_pos"]),
+                )
+
+            if any(summary.get("peak_like") for summary in stage_summaries):
+                self.log_fn(
+                    "[Autofocus] first-rise-then-fall outside tolerance; "
+                    f"expand probe step after stage={stage_idx}"
+                )
+            else:
+                self.log_fn(
+                    "[Autofocus] no clear direction trend; "
+                    f"expand probe step after stage={stage_idx}"
+                )
 
         if center_score_final is not None:
             self.log_fn(
@@ -460,6 +619,8 @@ class HillClimbSearch(BaseFocusSearch):
             probe_steps=probe_schedule,
             min_improve=min_improve,
             sample_count=sample_count,
+            target=target,
+            upper_target=upper_target,
             points_per_step=points_per_step,
         )
         if direction is None or chosen_probe_step is None or chosen_score is None or chosen_pos is None:
@@ -1024,6 +1185,284 @@ class GoldenSectionSearch(BaseFocusSearch):
         }
 
 
+class FeedbackClosedLoopSearch(BaseFocusSearch):
+    """
+    反馈闭环搜索策略。
+
+    在确定方向后，沿方向逐步移动，每 focus_trend_window（默认 10）次检查记录趋势：
+      - 整体趋势提升 → 继续当前方向
+      - 整体趋势下降 → 反向继续
+
+    退出条件：
+      3.1 FocusScore 连续达标 focus_consecutive_good_checks 次后退出
+      3.2 补焦触发但连续失败达 focus_max_failed_autofocus_attempts 次后退出
+      3.3 FocusScore 到容差区间的误差连续 focus_max_stale_checks 次无明显改善后退出
+      3.4 分数为空/异常连续 focus_missing_score_max_checks 次后退出
+      3.5 可选 focus_wait_timeout_s 超时退出（默认 0 不启用）
+      3.6 用户停止 / 达到 max_total_steps / 达到 max_iter
+    """
+
+    def search(
+        self,
+        initial_score: Optional[float],
+        target: float,
+        max_total_steps: int,
+        max_iter: int,
+        patience: int,
+        min_improve: float,
+        upper_target: Optional[float] = None,
+    ) -> Dict[str, Any]:
+        search_steps = max(1, int(self.cfg.z_search_steps))
+        consecutive_good_target = max(1, int(getattr(self.cfg, "focus_consecutive_good_checks", 3)))
+        max_failed = max(1, int(getattr(self.cfg, "focus_max_failed_autofocus_attempts", 5)))
+        max_stale = max(1, int(getattr(self.cfg, "focus_max_stale_checks", 5)))
+        max_missing = max(1, int(getattr(self.cfg, "focus_missing_score_max_checks", 3)))
+        timeout_s = max(0.0, float(getattr(self.cfg, "focus_wait_timeout_s", 0.0)))
+        trend_window = max(1, int(getattr(self.cfg, "focus_trend_window", 10)))
+
+        start_time = time.time()
+
+        # ---- 初始测量 ----
+        if initial_score is None:
+            score, _ = self._measure("start", 0)
+            initial_score = score
+        else:
+            self._measure("start", 0)
+
+        if initial_score is None:
+            return {"ok": False, "reason": "no_initial_score", "history": self.history}
+
+        best_score = float(initial_score)
+        best_pos = 0
+        initial_error = abs(float(initial_score) - 1.0)
+
+        if self._in_tolerance(best_score, target, upper_target):
+            self.log_fn(
+                f"[反馈闭环] 初始 FocusScore={best_score:.4f} 在容差区间内，无需移动"
+            )
+            return {
+                "ok": True,
+                "reason": "already_in_tolerance",
+                "initial_score": float(initial_score),
+                "best_score": best_score,
+                "best_relative_z_steps": 0,
+                "history": self.history,
+            }
+
+        # ---- 方向确定：复用 HillClimb 的动态采样 ----
+        hill_climb = HillClimbSearch(self.cfg, self.move_fn, self.measure_fn, self.log_fn, self.should_stop)
+        hill_climb.pos = self.pos
+        hill_climb.history = self.history
+        hill_climb._cache = self._cache
+
+        probe_steps_cfg = max(1, int(self.cfg.z_probe_steps))
+        stage_count = int(getattr(self.cfg, "z_direction_probe_stage_count", 0) or 0)
+        step_interval = int(getattr(self.cfg, "z_direction_probe_step_interval", 0) or 0)
+        if stage_count > 0 and step_interval > 0:
+            probe_schedule = [step_interval * i for i in range(1, stage_count + 1)]
+        else:
+            probe_schedule_raw = getattr(self.cfg, "z_direction_probe_steps", (probe_steps_cfg,))
+            if isinstance(probe_schedule_raw, str):
+                probe_schedule = [int(v.strip()) for v in probe_schedule_raw.split(",") if v.strip()]
+            elif isinstance(probe_schedule_raw, (tuple, list)):
+                probe_schedule = [int(v) for v in probe_schedule_raw if int(v) > 0]
+            else:
+                probe_schedule = [int(probe_steps_cfg)]
+        sample_count = max(1, int(getattr(self.cfg, "z_direction_probe_samples", 3)))
+        points_per_step = max(1, int(getattr(self.cfg, "z_direction_probe_points_per_step", 5)))
+
+        direction, chosen_probe_step, chosen_score, chosen_pos = hill_climb._determine_direction_with_dynamic_sampling(
+            probe_steps=probe_schedule,
+            min_improve=min_improve,
+            sample_count=sample_count,
+            target=target,
+            upper_target=upper_target,
+            points_per_step=points_per_step,
+        )
+
+        # 同步 hill_climb 的状态回到 self
+        self.pos = hill_climb.pos
+        self.history = hill_climb.history
+        self._cache = hill_climb._cache
+
+        if direction is None or chosen_score is None or chosen_pos is None:
+            if self.pos != 0:
+                self._goto(0, "probe_return", 4)
+            return {
+                "ok": True,
+                "reason": "direction_undetermined",
+                "initial_score": float(initial_score),
+                "best_score": best_score,
+                "best_relative_z_steps": 0,
+                "history": self.history,
+            }
+
+        best_score = float(chosen_score)
+        best_pos = int(chosen_pos)
+        if self.pos != best_pos:
+            self._move(best_pos - self.pos)
+            self._settle()
+
+        self.log_fn(
+            f"[反馈闭环] 方向已确定: dir={direction:+d}, best_pos={best_pos}, "
+            f"best_score={best_score:.4f}, search_steps={search_steps}, "
+            f"trend_window={trend_window}"
+        )
+
+        # ---- 反馈闭环递进 ----
+        iteration = 5
+        consecutive_good = 0
+        consecutive_failed = 0
+        consecutive_stale = 0
+        consecutive_missing = 0
+        last_error = initial_error
+        trend_scores: List[float] = []
+
+        while iteration <= max_iter:
+            self._check_stop("feedback_closed_loop")
+
+            # 3.5 超时检查
+            if timeout_s > 0 and (time.time() - start_time) >= timeout_s:
+                self.log_fn(f"[反馈闭环] 超时 {timeout_s}s，退出")
+                break
+
+            # 3.6 最大步数检查
+            if abs(self.pos) >= max_total_steps:
+                self.log_fn(
+                    f"[反馈闭环] 达最大步数 |{self.pos}| >= {max_total_steps}，退出"
+                )
+                break
+
+            # 移动一步并测量
+            self._goto(self.pos + int(direction * search_steps), "fcl_search", iteration)
+            score = self.history[-1]["score"]
+
+            # 3.4 分数为空/异常
+            if score is None:
+                consecutive_missing += 1
+                consecutive_failed += 1
+                self.log_fn(
+                    f"[反馈闭环] iter={iteration}, score=None, "
+                    f"missing={consecutive_missing}/{max_missing}"
+                )
+                if consecutive_missing >= max_missing:
+                    self.log_fn(f"[反馈闭环] 连续 {max_missing} 次分数为空，退出")
+                    break
+                iteration += 1
+                continue
+
+            consecutive_missing = 0
+            score_f = float(score)
+
+            # 3.1 连续达标
+            if self._in_tolerance(score_f, target, upper_target):
+                consecutive_good += 1
+                consecutive_failed = 0
+                consecutive_stale = 0
+                if score_f > best_score or not self._in_tolerance(best_score, target, upper_target):
+                    best_score = score_f
+                    best_pos = self.pos
+                self.log_fn(
+                    f"[反馈闭环] iter={iteration}, score={score_f:.4f} 达标, "
+                    f"good={consecutive_good}/{consecutive_good_target}"
+                )
+                if consecutive_good >= consecutive_good_target:
+                    self.log_fn(
+                        f"[反馈闭环] 连续达标 {consecutive_good_target} 次，退出"
+                    )
+                    break
+                iteration += 1
+                continue
+
+            # 未达标，重置达标计数
+            consecutive_good = 0
+
+            # 记录趋势
+            trend_scores.append(score_f)
+            if len(trend_scores) > trend_window:
+                trend_scores = trend_scores[-trend_window:]
+
+            # 更新最佳
+            improved = self._score_is_better_for_target(
+                score_f, best_score, target, upper_target, min_improve
+            )
+            if improved:
+                best_score = score_f
+                best_pos = self.pos
+                consecutive_failed = 0
+            else:
+                consecutive_failed += 1
+
+            # 3.3 误差无明显改善
+            current_error = abs(score_f - 1.0)
+            if current_error < last_error - float(min_improve):
+                consecutive_stale = 0
+            else:
+                consecutive_stale += 1
+            last_error = current_error
+
+            self.log_fn(
+                f"[反馈闭环] iter={iteration}, score={score_f:.4f}, "
+                f"best={best_score:.4f}, failed={consecutive_failed}/{max_failed}, "
+                f"stale={consecutive_stale}/{max_stale}"
+            )
+
+            # 3.2 连续失败
+            if consecutive_failed >= max_failed:
+                self.log_fn(f"[反馈闭环] 连续失败 {max_failed} 次，退出")
+                break
+
+            # 3.3 连续无改善
+            if consecutive_stale >= max_stale:
+                # 趋势判断：若窗口内整体下降则反向
+                if len(trend_scores) >= trend_window:
+                    half = len(trend_scores) // 2
+                    first_half_avg = float(np.mean(trend_scores[:half])) if half > 0 else 0.0
+                    second_half_avg = float(np.mean(trend_scores[half:])) if half > 0 else 0.0
+                    if second_half_avg < first_half_avg:
+                        direction = -direction
+                        self.log_fn(
+                            f"[反馈闭环] 趋势下降 (前半={first_half_avg:.4f}, "
+                            f"后半={second_half_avg:.4f})，反向为 {direction:+d}"
+                        )
+                    else:
+                        self.log_fn(
+                            f"[反馈闭环] 趋势未下降但连续 {max_stale} 次无改善，退出"
+                        )
+                        break
+                else:
+                    self.log_fn(
+                        f"[反馈闭环] 连续 {max_stale} 次无改善且样本不足，退出"
+                    )
+                    break
+
+            iteration += 1
+
+        # 回退到最佳位置
+        if best_pos != self.pos:
+            self.log_fn(
+                f"[反馈闭环] 回退到最佳位置: best_pos={best_pos}, current_pos={self.pos}"
+            )
+            self._goto(best_pos, "return_to_best", iteration + 1)
+
+        ok = self._in_tolerance(best_score, target, upper_target)
+        self.log_fn(
+            f"[反馈闭环] 结束: ok={ok}, best_score={best_score:.4f}, "
+            f"best_z={best_pos}, total_iters={iteration}"
+        )
+        return {
+            "ok": bool(ok),
+            "reason": "done",
+            "initial_score": float(initial_score),
+            "best_score": float(best_score),
+            "best_relative_z_steps": int(best_pos),
+            "final_relative_z_steps": int(self.pos),
+            "target": target,
+            "direction": int(direction),
+            "history": self.history,
+        }
+
+
 def create_search(
     strategy: str,
     cfg: AutofocusConfig,
@@ -1040,4 +1479,6 @@ def create_search(
         return CurveFitSearch(cfg, move_fn, measure_fn, log_fn, should_stop)
     if strategy == "golden_section":
         return GoldenSectionSearch(cfg, move_fn, measure_fn, log_fn, should_stop)
+    if strategy == "feedback_closed_loop":
+        return FeedbackClosedLoopSearch(cfg, move_fn, measure_fn, log_fn, should_stop)
     return HillClimbSearch(cfg, move_fn, measure_fn, log_fn, should_stop)

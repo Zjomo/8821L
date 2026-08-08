@@ -202,6 +202,25 @@ class AutofocusConfig:
     z_local_refine_max_rounds: int = 4
     """局部细搜最大轮数。每轮会在 best_pos 左右各测一次。"""
 
+    # -------------------- 反馈闭环搜索策略（feedback_closed_loop） --------------------
+    focus_consecutive_good_checks: int = 3
+    """FocusScore 连续达标多少次后退出闭环搜索"""
+
+    focus_max_failed_autofocus_attempts: int = 5
+    """补焦触发但连续失败多少次后退出"""
+
+    focus_max_stale_checks: int = 5
+    """FocusScore 到容差区间的误差连续多少次无明显改善后退出"""
+
+    focus_missing_score_max_checks: int = 3
+    """分数为空/异常连续多少次后退出"""
+
+    focus_wait_timeout_s: float = 0.0
+    """闭环搜索超时时间（秒），0 表示不启用超时"""
+
+    focus_trend_window: int = 10
+    """趋势判断窗口大小：每 N 次检查记录一次用于趋势判断"""
+
     # -------------------- 参考建立 --------------------
     focus_reference_capture_count: int = 5
     """建立聚焦参考时采集次数"""
