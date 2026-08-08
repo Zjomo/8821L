@@ -13983,7 +13983,7 @@ class MeasurementWorkflow:
         # 照明光 OFF，等待稳定
         self.log(f"========== {off_label}：照明光 OFF，等待稳定 ==========")
         self.light_off()
-        if str(off_label).strip().lower() == "step 11":
+        if str(off_label).strip().lower() in ("step 3", "step 11"):
             self.excitation_light_on()
 
         wait_after_off = float(self.cfg.stable_wait_ms) / 1000.0
@@ -14008,6 +14008,10 @@ class MeasurementWorkflow:
         if self._is_midrun_recalibration_requested():
             self._set_midrun_recalibration(cycle_index, f"{acquire_label} 后")
             return False
+
+        # 激发光关闭（Step 5 在照明光 ON 之前关闭；Step 13 在照明光 ON 之后关闭）
+        if str(on_label).strip().lower() == "step 5":
+            self.excitation_light_off()
 
         # 照明光 ON
         self.log(f"========== {on_label}：照明光 ON ==========")
@@ -14050,9 +14054,9 @@ class MeasurementWorkflow:
         Step 1：角度检测一次，得到 current_angle
         Step 1.5（仅第一轮）：在照明光 OFF 前，截取当前 ROI 画面建立聚焦参考图
         Step 2：生成保存路径
-        Step 3：照明光 OFF，并按 stable_wait_ms 等待稳定
+        Step 3：照明光 OFF，打开激发光，并按 stable_wait_ms 等待稳定
         Step 4：LabVIEW 光谱采集
-        Step 5：照明光 ON
+        Step 5：关闭激发光，照明光 ON
         Step 6：保存本轮数据；保存角度使用 Step1 的 YOLO-OBB baseline 原始角度
 
 
@@ -14063,9 +14067,9 @@ class MeasurementWorkflow:
         Step 9：检测颜色区域中心，与提前选定位置对齐；偏离过大则移动1/2通道
         Step 10：补焦判断。计算当前 ROI 与参考图的 FocusScore_ratio；
                   若触发阈值，执行补焦。
-        Step 11：照明光 OFF，并按 stable_wait_ms 等待稳定
+        Step 11：照明光 OFF，打开激发光，并按 stable_wait_ms 等待稳定
         Step 12：LabVIEW 光谱采集
-        Step 13：照明光 ON
+        Step 13：关闭激发光，照明光 ON
         Step 14：保存本轮数据；保存角度使用 Step1 的 YOLO-OBB baseline 原始角度
 
         Step 15：继续 Step 7 到 Step 14 的循环（固定次数，由 sub_loop_iterations_per_cycle 控制）
