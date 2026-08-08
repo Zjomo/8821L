@@ -2673,6 +2673,64 @@ class MeasurementWorkflow:
         self.context["excitation_light_last_off_steps"] = int(steps)
         self.notify_update()
 
+    def _release_newport_motion_controllers(self, reason: str = "") -> None:
+        """
+        Release Newport motion-controller instances used by measurement.
+
+        This closes:
+          - self.laser_stage: Newport 8743-CL / Picomotor instance
+          - self._focus_controller: contains the ZAxisController for Newport 8742
+
+        It is intentionally separate from close_all() so stop/finish paths can
+        release serial/USB handles without also closing LabVIEW TCP.
+        """
+        label = f" ({reason})" if reason else ""
+
+        try:
+            if self.laser_stage is not None and bool(self.context.get("laser_on", False)):
+                try:
+                    self.laser_off()
+                except Exception as e:
+                    self.log(f"[Newport] 8743 laser_off before release failed{label}: {e}")
+        except Exception as e:
+            self.log(f"[Newport] 8743 laser_off guard failed{label}: {e}")
+
+        try:
+            if self.laser_stage is not None and bool(self.context.get("excitation_light_on", False)):
+                try:
+                    self.excitation_light_off()
+                except Exception as e:
+                    self.log(f"[Newport] 8743 excitation_light_off before release failed{label}: {e}")
+        except Exception as e:
+            self.log(f"[Newport] 8743 excitation_light_off guard failed{label}: {e}")
+
+        try:
+            if self.laser_stage is not None:
+                try:
+                    self.laser_stage.close()
+                except Exception as e:
+                    self.log(f"[Newport] close 8743 failed{label}: {e}")
+                finally:
+                    self.laser_stage = None
+                    self.context["laser_on"] = False
+                    self.context["excitation_light_on"] = False
+                    self.log(f"[Newport] 8743 instance released{label}")
+        except Exception as e:
+            self.log(f"[Newport] release 8743 failed{label}: {e}")
+
+        try:
+            if self._focus_controller is not None:
+                try:
+                    if hasattr(self._focus_controller, "close"):
+                        self._focus_controller.close()
+                except Exception as e:
+                    self.log(f"[Newport] close 8742 focus controller failed{label}: {e}")
+                finally:
+                    self._focus_controller = None
+                    self.log(f"[Newport] 8742 focus instance released{label}")
+        except Exception as e:
+            self.log(f"[Newport] release 8742 failed{label}: {e}")
+
     def connect_signal_generator(self):
         """
         兼容旧代码入口。
@@ -14853,6 +14911,8 @@ class MeasurementWorkflow:
         except Exception as e:
             self.log(f"[流程] 停止测量时关闭激光失败：{e}")
 
+        self._release_newport_motion_controllers(reason="request_stop")
+
         # 兜底：将当前未完成轮的已有数据刷入 measurement_summary.csv，防止数据丢失
         try:
             self._flush_unsaved_cycle_to_csv()
@@ -14947,6 +15007,8 @@ class MeasurementWorkflow:
                 self.log("[流程] 测量结束，激光已 OFF")
         except Exception as e:
             self.log(f"[流程] 测量结束时关闭激光失败：{e}")
+
+        self._release_newport_motion_controllers(reason="finish")
 
         # 照明光不在本次修改范围内，仍保持测量流程结束时的当前状态。
         try:
@@ -18804,6 +18866,11 @@ class MeasurementWorkflowGUI:
             err = str(e)
             self.root.after(0, lambda m=err: messagebox.showerror("Step7预检失败", m))
         finally:
+            try:
+                if self.workflow is not None:
+                    self.workflow._release_newport_motion_controllers(reason="gui_finally")
+            except Exception as release_exc:
+                self.log(f"[GUI] finally 释放 Newport 8742/8743 失败：{release_exc}")
             self.is_busy = False
 
     def reset_after_stop_for_recalibration_thread(self):
@@ -20617,6 +20684,11 @@ class MeasurementWorkflowGUI:
             self.log(traceback.format_exc())
             self.set_var(self.saf_status_var, "光谱补焦循环：运行失败")
         finally:
+            try:
+                if self.workflow is not None:
+                    self.workflow._release_newport_motion_controllers(reason="spectrum_autofocus_finally")
+            except Exception as release_exc:
+                self.log(f"[光谱补焦] finally 释放 Newport 8742/8743 失败：{release_exc}")
             self.spectrum_autofocus_thread = None
 
     def stop_spectrum_autofocus_loop(self):
