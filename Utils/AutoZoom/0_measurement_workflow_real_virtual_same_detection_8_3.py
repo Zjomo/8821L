@@ -617,6 +617,7 @@ class MeasurementConfig:
     saf_focus_roi: Tuple[int, int, int, int] = tuple(_cfg("saf_focus_roi", (0, 0, 300, 300)))  # type: ignore
 
     focus_trigger_ratio: float = float(_cfg("focus_trigger_ratio", 0.95))
+    focus_module_enabled: bool = bool(_cfg("focus_module_enabled", True))
     focus_stop_ratio: float = float(_cfg("focus_stop_ratio", 0.95))
     focus_trigger_count: int = int(_cfg("focus_trigger_count", 3))
     focus_trigger_absolute: bool = bool(_cfg("focus_trigger_absolute", True))
@@ -13514,6 +13515,10 @@ class MeasurementWorkflow:
     # 聚焦参考图与补焦（完整循环测量）
     # --------------------------------------------------------
 
+    def _is_focus_module_enabled(self) -> bool:
+        """完整循环测量是否启用 Step1.5/Step10 补焦模块。"""
+        return bool(getattr(self.cfg, "focus_module_enabled", True))
+
     def _make_focus_config(self) -> AutofocusConfig:
         """根据 GUI 当前值构造完整循环测量使用的 AutofocusConfig。
 
@@ -13810,6 +13815,10 @@ class MeasurementWorkflow:
         参考图建立成功后直接保存到文件，不再弹出 "Focus Reference Baseline Image"
         实时预览窗口，避免 OpenCV 窗口事件循环导致的"未响应"问题。
         """
+        if not self._is_focus_module_enabled():
+            self.log("[聚焦参考] 补焦模块未启用，跳过参考图建立")
+            return True
+
         self.log("========== Step 1.5：建立聚焦参考图 ==========")
         try:
             self._ensure_focus_components()
@@ -13918,6 +13927,12 @@ class MeasurementWorkflow:
             "triggered": False,
             "autofocus_ok": False,
         }
+        if not self._is_focus_module_enabled():
+            result["skipped"] = True
+            result["reason"] = "focus_module_disabled"
+            self.log("[聚焦补焦] 补焦模块未启用，跳过 FocusScore 检查与闭环补焦")
+            return result
+
         score = self.compute_current_focus_score()
         result["score"] = score
         result["pre_score"] = score
@@ -14213,12 +14228,14 @@ class MeasurementWorkflow:
             if current_angle is not None:
                 self.previous_cycle_angle = float(current_angle)
 
-            # 仅在第一轮且未建立参考图时建立聚焦参考；必须完成 ROI 选择
-            if cycle_index == 1 and not self._focus_reference_ready:
+            # 仅在第一轮且未建立参考图时建立聚焦参考；补焦模块关闭时完全跳过。
+            if self._is_focus_module_enabled() and cycle_index == 1 and not self._focus_reference_ready:
                 if not self.capture_focus_reference(cycle_index):
                     self.log("[流程] 聚焦参考图建立失败，无法继续测量")
                     self.stop_requested = True
                     return False
+            elif not self._is_focus_module_enabled() and cycle_index == 1:
+                self.log("[流程] 补焦模块未启用：跳过 Step 1.5 聚焦参考图建立")
 
             self.log("========== Step 2：生成保存路径 ==========")
             # 初始光谱采集使用序号0（基准测量）
@@ -14472,7 +14489,10 @@ class MeasurementWorkflow:
                     return False
 
                 # Step 10：补焦判断（循环等待直到补焦完成或分数达标）
-                self.log("========== Step 10：补焦判断（循环等待） ==========")
+                if self._is_focus_module_enabled():
+                    self.log("========== Step 10：补焦判断（循环等待） ==========")
+                else:
+                    self.log("========== Step 10：补焦模块未启用，跳过 ==========")
                 autofocus_check_count = 0
                 max_autofocus_checks = max(0, int(getattr(self.cfg, "focus_max_checks_per_cycle", 0)))
                 required_good_checks = max(1, int(getattr(self.cfg, "focus_consecutive_good_checks", 2)))
@@ -14488,6 +14508,19 @@ class MeasurementWorkflow:
                 best_score_error = None
                 autofocus_exit_reason = "not_started"
                 autofocus_wait_started_at = time.monotonic()
+                if not self._is_focus_module_enabled():
+                    autofocus_exit_reason = "focus_module_disabled"
+                    last_autofocus_result = {
+                        "score": None,
+                        "pre_score": None,
+                        "final_score": None,
+                        "triggered": False,
+                        "autofocus_ok": False,
+                        "skipped": True,
+                        "reason": "focus_module_disabled",
+                    }
+                    self.context["last_autofocus_result"] = last_autofocus_result
+                    self.notify_update()
 
                 def _focus_score_error(value):
                     if value is None:
@@ -14505,7 +14538,7 @@ class MeasurementWorkflow:
                         return value - upper
                     return 0.0
 
-                while True:
+                while self._is_focus_module_enabled():
                     if max_autofocus_checks > 0 and autofocus_check_count >= max_autofocus_checks:
                         autofocus_exit_reason = f"legacy_max_checks_{max_autofocus_checks}"
                         self.log(f"[Autofocus] legacy hard limit reached: {max_autofocus_checks}")
@@ -15194,6 +15227,7 @@ class MeasurementWorkflowGUI:
         self.hardware_mode_var = tk.StringVar(value=str(self.default_cfg.hardware_mode))
         self.virtual_spectrum_mode_var = tk.StringVar(value=str(self.default_cfg.virtual_spectrum_mode))
         self.virtual_spectrum_replay_csv_var = tk.StringVar(value=str(self.default_cfg.virtual_spectrum_replay_csv))
+        self.focus_module_enabled_var = tk.BooleanVar(value=bool(self.default_cfg.focus_module_enabled))
         self._tk_thread_ident = threading.get_ident()
         self.calibration_status_var = tk.StringVar(value="完整测量标定：未加载")
         self.calibration_path_var = tk.StringVar(value="标定文件：未设置")
@@ -15293,6 +15327,7 @@ class MeasurementWorkflowGUI:
         ttk.Button(button_grid, text="暂停运动并重新标定ABC", command=self.pause_midrun_recalibration_thread).grid(row=6, column=1, padx=4, pady=4, sticky="ew")
         ttk.Button(button_grid, text="完成重标定并继续测量", command=self.resume_midrun_recalibration_thread).grid(row=7, column=0, columnspan=2, padx=4, pady=4, sticky="ew")
         ttk.Button(button_grid, text="Step7 A/C 标定预检", command=self.step7_ac_preflight_thread).grid(row=8, column=0, columnspan=2, padx=4, pady=4, sticky="ew")
+        ttk.Checkbutton(button_grid, text="启用补焦模块", variable=self.focus_module_enabled_var).grid(row=9, column=0, columnspan=2, padx=4, pady=(2, 4), sticky="w")
 
         ttk.Label(flow_frame, textvariable=self.flow_status_var, wraplength=460).pack(fill=tk.X, padx=4, pady=(6, 0))
         ttk.Label(flow_frame, textvariable=self.calibration_status_var, wraplength=460, style="Value.TLabel").pack(fill=tk.X, padx=4, pady=(4, 0))
@@ -16330,6 +16365,7 @@ class MeasurementWorkflowGUI:
             self.rule_ac_color_v_tol_var,
             self.rule_ac_color_min_area_var,
             self.rule_ac_color_morph_kernel_var,
+            self.focus_module_enabled_var,
             self.saf_roi_var,
             self.saf_capture_area_var,
             self.saf_output_dir_var,
@@ -17540,6 +17576,7 @@ class MeasurementWorkflowGUI:
             focus_roi=self._parse_focus_roi(self.saf_roi_var.get()),
             saf_capture_area=self._parse_focus_roi(self.saf_capture_area_var.get()),
             saf_focus_roi=self._parse_focus_roi(self.saf_roi_var.get()),
+            focus_module_enabled=bool(self.focus_module_enabled_var.get()),
             focus_trigger_ratio=float(self.saf_trigger_ratio_var.get()),
             focus_stop_ratio=float(self.saf_stop_ratio_var.get()),
             focus_trigger_count=int(self.saf_trigger_count_var.get()),
@@ -18866,11 +18903,6 @@ class MeasurementWorkflowGUI:
             err = str(e)
             self.root.after(0, lambda m=err: messagebox.showerror("Step7预检失败", m))
         finally:
-            try:
-                if self.workflow is not None:
-                    self.workflow._release_newport_motion_controllers(reason="gui_finally")
-            except Exception as release_exc:
-                self.log(f"[GUI] finally 释放 Newport 8742/8743 失败：{release_exc}")
             self.is_busy = False
 
     def reset_after_stop_for_recalibration_thread(self):
@@ -19097,6 +19129,11 @@ class MeasurementWorkflowGUI:
             self.root.after(0, lambda msg=error_msg: messagebox.showerror("运行失败", msg))
 
         finally:
+            try:
+                if self.workflow is not None:
+                    self.workflow._release_newport_motion_controllers(reason="run_workflow_finally")
+            except Exception as release_exc:
+                self.log(f"[GUI] finally 释放 Newport 8742/8743 失败：{release_exc}")
             self.is_busy = False
 
     def request_stop(self):
