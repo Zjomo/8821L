@@ -83,6 +83,10 @@ from config_angle_repair_fixed import DEFAULT_CONFIG  # GUI 左侧所有输入�
 # 避免只改代码默认值但被 config_angle_repair_fixed.py 中的旧值覆盖。
 DEFAULT_CONFIG["rule_ab_angle_watch_interval_s"] = 0.5
 DEFAULT_CONFIG["rule_ab_realtime_save_every_angle_frame"] = False
+DEFAULT_CONFIG["rule_ab_yolo_obb_save_raw_frame"] = False
+DEFAULT_CONFIG["rule_ab_yolo_obb_save_meta_json"] = False
+DEFAULT_CONFIG["rule_ab_realtime_save_final_angle_overlay"] = True
+DEFAULT_CONFIG["rule_ab_realtime_cleanup_redundant_cache"] = True
 
 # 新增：光谱仪设备选择配置（不影响原有代码环境）
 DEFAULT_CONFIG["spectrometer_backend"] = "labview_tcp"  # 选项: labview_tcp, picam, picam_demo
@@ -537,6 +541,11 @@ class MeasurementConfig:
     rule_ab_realtime_overlay_dir_name: str = str(_cfg("rule_ab_realtime_overlay_dir_name", "ab_angle_realtime_bmask_longest_edge"))
     # 每帧保存 overlay 会显著拖慢 YOLO-OBB 检测。默认关闭；需要排查时再手动打开。
     rule_ab_realtime_save_every_angle_frame: bool = bool(_cfg("rule_ab_realtime_save_every_angle_frame", False))
+    # 原始帧和逐帧 meta 只在调试时保留，默认关闭以避免缓存膨胀。
+    rule_ab_yolo_obb_save_raw_frame: bool = bool(_cfg("rule_ab_yolo_obb_save_raw_frame", False))
+    rule_ab_yolo_obb_save_meta_json: bool = bool(_cfg("rule_ab_yolo_obb_save_meta_json", False))
+    rule_ab_realtime_save_final_angle_overlay: bool = bool(_cfg("rule_ab_realtime_save_final_angle_overlay", True))
+    rule_ab_realtime_cleanup_redundant_cache: bool = bool(_cfg("rule_ab_realtime_cleanup_redundant_cache", True))
     rule_ab_realtime_max_duration_s: float = float(_cfg("rule_ab_realtime_max_duration_s", 0.0))  # <=0 表示不额外限制，由停止/阈值决定
 
     # Stage34 默认参数。为了兼容 logic.rule_ab.RuntimeConfig，仍保留单组默认速度/加速度。
@@ -3201,11 +3210,42 @@ class MeasurementWorkflow:
             screen = np.array(sct.grab({"left": left, "top": top, "width": width, "height": height}))
         return cv2.cvtColor(screen, cv2.COLOR_BGRA2BGR), (left, top, width, height)
 
-    def _run_angle_detector_once_raw(self, use_second_detect: bool = False, label: str = "yolo_obb") -> Dict[str, Any]:
+    @staticmethod
+    def _remove_yolo_obb_redundant_cache_files(cache_dir: Path) -> Dict[str, int]:
+        removed = {"raw": 0, "meta": 0}
+        if not cache_dir.exists():
+            return removed
+        for path in cache_dir.glob("*_raw.png"):
+            try:
+                path.unlink()
+                removed["raw"] += 1
+            except Exception:
+                pass
+        for path in cache_dir.glob("*_YOLO_OBB_meta.json"):
+            try:
+                path.unlink()
+                removed["meta"] += 1
+            except Exception:
+                pass
+        return removed
+
+    def _run_angle_detector_once_raw(
+        self,
+        use_second_detect: bool = False,
+        label: str = "yolo_obb",
+        save_overlay: bool = True,
+        save_raw: Optional[bool] = None,
+        save_meta: Optional[bool] = None,
+    ) -> Dict[str, Any]:
         if self.angle_module is None:
             self.init_angle_module()
         if self.angle_module is None:
             raise RuntimeError("YOLO-OBB角度模块未初始化")
+
+        if save_raw is None:
+            save_raw = bool(getattr(self.cfg, "rule_ab_yolo_obb_save_raw_frame", False))
+        if save_meta is None:
+            save_meta = bool(getattr(self.cfg, "rule_ab_yolo_obb_save_meta_json", False))
 
         frame_bgr, (left, top, width, height) = self._capture_yolo_obb_frame_bgr()
         timestamp = time.time()
@@ -3218,9 +3258,12 @@ class MeasurementWorkflow:
         safe_label = "".join(ch if (ch.isalnum() or ch in "_-.()") else "_" for ch in str(label))[:90]
         stem = f"{datetime.now().strftime('%Y%m%d_%H%M%S_%f')[:-3]}_{safe_label}"
         raw_path = out_dir / f"{stem}_raw.png"
-        cv2.imwrite(str(raw_path), frame_bgr)
+        raw_path_text = ""
+        if save_raw:
+            cv2.imwrite(str(raw_path), frame_bgr)
+            raw_path_text = str(raw_path)
         if result.obb is None or len(result.obb) == 0:
-            return {"ok": False, "angle_ok": False, "angle_deg": None, "angle_deg_raw": None, "reason": "yolo_obb_no_detection", "angle_source": "yolo_obb_no_detection", "edge_selection_mode": "yolo_obb_long_edge", "image_path": str(raw_path), "raw_image_path": str(raw_path), "detection_count": 0, "timestamp": timestamp}
+            return {"ok": False, "angle_ok": False, "angle_deg": None, "angle_deg_raw": None, "reason": "yolo_obb_no_detection", "angle_source": "yolo_obb_no_detection", "edge_selection_mode": "yolo_obb_long_edge", "image_path": raw_path_text, "raw_image_path": raw_path_text, "detection_count": 0, "timestamp": timestamp}
 
         points_array = result.obb.xyxyxyxy.cpu().numpy()
         confs = result.obb.conf.cpu().numpy()
@@ -3244,17 +3287,25 @@ class MeasurementWorkflow:
 
         overlay_path = out_dir / f"{stem}_YOLO_OBB_overlay.png"
         meta_path = out_dir / f"{stem}_YOLO_OBB_meta.json"
+        overlay_path_text = ""
         try:
             annotated = result.plot()
         except Exception:
             annotated = frame_bgr.copy()
         cv2.line(annotated, (int(round(p1[0])), int(round(p1[1]))), (int(round(p2[0])), int(round(p2[1]))), (0, 0, 255), 3, cv2.LINE_AA)
         cv2.putText(annotated, f"{angle:.2f} deg conf={confidence:.3f}", (int(round(center[0])) + 8, int(round(center[1])) - 8), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2, cv2.LINE_AA)
-        cv2.imwrite(str(overlay_path), annotated)
-        meta = {"ok": True, "label": label, "method": "yolo_obb_long_edge_from_second_code", "angle_deg": angle, "angle_deg_raw": angle, "confidence": confidence, "class_id": class_id, "class_name": class_name, "center_region": [float(center[0]), float(center[1])], "center_screen": [float(screen_center[0]), float(screen_center[1])], "points_region": points.tolist(), "points_screen": screen_points.tolist(), "edge_length_px": float(edge_length), "capture_area": [int(left), int(top), int(width), int(height)], "detection_count": int(len(points_array)), "timestamp": timestamp, "raw_image_path": str(raw_path), "overlay_image_path": str(overlay_path)}
-        with meta_path.open("w", encoding="utf-8") as f:
-            json.dump(self._json_safe(meta), f, ensure_ascii=False, indent=2)
-        return {"ok": True, "angle_ok": True, "angle_deg": angle, "angle_deg_raw": angle, "label": label, "reason": "ok", "angle_source": "yolo_obb_long_edge", "edge_selection_mode": "yolo_obb_long_edge", "allow_close": True, "confidence": confidence, "class_id": class_id, "class_name": class_name, "center": [float(center[0]), float(center[1])], "center_screen": [float(screen_center[0]), float(screen_center[1])], "points_region": self._format_yolo_obb_points(points), "points_screen": self._format_yolo_obb_points(screen_points), "obb_points": points.tolist(), "obb_points_screen": screen_points.tolist(), "endpoints": [[float(p1[0]), float(p1[1])], [float(p2[0]), float(p2[1])]], "selected_b_edge": {"angle_deg": angle, "length_px": float(edge_length), "edge_length_px": float(edge_length), "endpoints": [[float(p1[0]), float(p1[1])], [float(p2[0]), float(p2[1])]], "angle_source": "yolo_obb_long_edge"}, "edge_length_px": float(edge_length), "detection_count": int(len(points_array)), "timestamp": timestamp, "image_path": str(raw_path), "raw_image_path": str(raw_path), "overlay_path": str(overlay_path), "overlay_image_path": str(overlay_path), "meta_path": str(meta_path)}
+        if save_overlay:
+            cv2.imwrite(str(overlay_path), annotated)
+            overlay_path_text = str(overlay_path)
+        meta = {"ok": True, "label": label, "method": "yolo_obb_long_edge_from_second_code", "angle_deg": angle, "angle_deg_raw": angle, "confidence": confidence, "class_id": class_id, "class_name": class_name, "center_region": [float(center[0]), float(center[1])], "center_screen": [float(screen_center[0]), float(screen_center[1])], "points_region": points.tolist(), "points_screen": screen_points.tolist(), "edge_length_px": float(edge_length), "capture_area": [int(left), int(top), int(width), int(height)], "detection_count": int(len(points_array)), "timestamp": timestamp, "raw_image_path": raw_path_text, "overlay_image_path": overlay_path_text}
+        meta_path_text = ""
+        if save_meta:
+            meta["raw_image_path"] = raw_path_text
+            meta["overlay_image_path"] = overlay_path_text
+            with meta_path.open("w", encoding="utf-8") as f:
+                json.dump(self._json_safe(meta), f, ensure_ascii=False, indent=2)
+            meta_path_text = str(meta_path)
+        return {"ok": True, "angle_ok": True, "angle_deg": angle, "angle_deg_raw": angle, "label": label, "reason": "ok", "angle_source": "yolo_obb_long_edge", "edge_selection_mode": "yolo_obb_long_edge", "allow_close": True, "confidence": confidence, "class_id": class_id, "class_name": class_name, "center": [float(center[0]), float(center[1])], "center_screen": [float(screen_center[0]), float(screen_center[1])], "points_region": self._format_yolo_obb_points(points), "points_screen": self._format_yolo_obb_points(screen_points), "obb_points": points.tolist(), "obb_points_screen": screen_points.tolist(), "endpoints": [[float(p1[0]), float(p1[1])], [float(p2[0]), float(p2[1])]], "selected_b_edge": {"angle_deg": angle, "length_px": float(edge_length), "edge_length_px": float(edge_length), "endpoints": [[float(p1[0]), float(p1[1])], [float(p2[0]), float(p2[1])]], "angle_source": "yolo_obb_long_edge"}, "edge_length_px": float(edge_length), "detection_count": int(len(points_array)), "timestamp": timestamp, "image_path": raw_path_text, "raw_image_path": raw_path_text, "overlay_path": overlay_path_text, "overlay_image_path": overlay_path_text, "meta_path": meta_path_text}
 
     @staticmethod
     def _normalize_angle_result(result: Any) -> Dict[str, Any]:
@@ -3309,11 +3360,11 @@ class MeasurementWorkflow:
                 return True
         return False
 
-    def detect_angle_once(self, label: str, allow_fail: bool = True) -> Dict[str, Any]:
+    def detect_angle_once(self, label: str, allow_fail: bool = True, save_overlay: bool = True) -> Dict[str, Any]:
         """单次 YOLO-OBB 长边角度检测。"""
         self.log(f"========== YOLO-OBB角度检测：{label} ==========")
         try:
-            result = self._normalize_angle_result(self._run_angle_detector_once_raw(use_second_detect=False, label=label))
+            result = self._normalize_angle_result(self._run_angle_detector_once_raw(use_second_detect=False, label=label, save_overlay=save_overlay))
         except Exception as e:
             result = {"ok": False, "angle_ok": False, "angle_deg": None, "angle_deg_raw": None, "reason": f"yolo_obb_angle_exception: {e}", "angle_source": "yolo_obb_failed", "error": str(e)}
             self.log(f"[YOLO-OBB角度-{label}] 检测异常：{e}")
@@ -5229,7 +5280,7 @@ class MeasurementWorkflow:
         当前版本不再使用 Bmask 最长边、AB 最近边、KLT、Profile 或任何角度修复。
         follower 参数仅保留调用兼容，不参与角度计算。
         """
-        result = self.detect_angle_once(label=str(label).replace("bmask_longest_edge", "yolo_obb"), allow_fail=allow_fail)
+        result = self.detect_angle_once(label=str(label).replace("bmask_longest_edge", "yolo_obb"), allow_fail=allow_fail, save_overlay=save_overlay)
         if result.get("ok", False) and baseline_angle is not None and result.get("angle_deg") is not None:
             try:
                 result["baseline_angle"] = float(baseline_angle)
@@ -5746,10 +5797,59 @@ class MeasurementWorkflow:
         t_controller.join(timeout=3.0)
         stop_event.set()
         t_angle.join(timeout=3.0)
+        if result_box.get("trigger_type") == "target_reached" and bool(getattr(self.cfg, "rule_ab_realtime_save_final_angle_overlay", True)):
+            old_override = self.context.get("bmask_longest_edge_overlay_dir_override")
+            self.context["bmask_longest_edge_overlay_dir_override"] = str(getattr(self.cfg, "rule_ab_realtime_overlay_dir_name", "ab_angle_realtime_bmask_longest_edge"))
+            try:
+                with self.rule_ab_vision_lock:
+                    final_overlay_result = self.detect_step7_yolo_obb_angle_once(
+                        follower=follower,
+                        label="step7_realtime_final_overlay",
+                        baseline_angle=baseline_angle,
+                        allow_fail=True,
+                        allow_close_from_relocation=False,
+                        save_overlay=True,
+                    )
+                final_ok = bool(final_overlay_result.get("ok", False) and final_overlay_result.get("angle_deg") is not None)
+                final_angle = float(final_overlay_result["angle_deg"]) if final_ok else None
+                final_delta = self.angle_diff_deg(float(final_angle), float(baseline_angle)) if final_angle is not None and baseline_angle is not None else None
+                _append_record({
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3],
+                    "frame_index": "final_overlay",
+                    "step": int(phase_state.get("step", step_counter.get("value", 0)) or 0),
+                    "phase": "final_overlay",
+                    "raw_angle": final_angle,
+                    "final_angle": final_angle,
+                    "angle_deg": final_angle,
+                    "baseline_angle": baseline_angle,
+                    "last_confirmed_angle_before": last_confirmed_angle_box.get("value"),
+                    "raw_delta_to_last": None,
+                    "delta_from_baseline": final_delta,
+                    "final_delta_to_baseline": final_delta,
+                    "angle_source": final_overlay_result.get("angle_source"),
+                    "edge_length_px": final_overlay_result.get("edge_length_px"),
+                    "endpoints": final_overlay_result.get("endpoints"),
+                    "trigger_type": "final_overlay",
+                    "controller_action": phase_state.get("controller_action", ""),
+                    "raw_image_path": final_overlay_result.get("raw_image_path") or final_overlay_result.get("image_path"),
+                    "overlay_image_path": final_overlay_result.get("overlay_image_path") or final_overlay_result.get("overlay_path"),
+                    "reason": final_overlay_result.get("reason"),
+                })
+            except Exception as e:
+                self.log(f"[Step7实时] 保存最终 YOLO-OBB overlay 失败：{e}")
+            finally:
+                if old_override is None:
+                    self.context.pop("bmask_longest_edge_overlay_dir_override", None)
+                else:
+                    self.context["bmask_longest_edge_overlay_dir_override"] = old_override
         try:
             self._write_step7_realtime_records_csv(records, csv_path)
         except Exception as e:
             self.log(f"[Step7实时] 保存实时角度 CSV 失败：{e}")
+        if bool(getattr(self.cfg, "rule_ab_realtime_cleanup_redundant_cache", True)):
+            removed = self._remove_yolo_obb_redundant_cache_files(realtime_dir)
+            if removed.get("raw", 0) or removed.get("meta", 0):
+                self.log(f"[Step7实时] 已清理冗余 YOLO-OBB 缓存：raw={removed.get('raw', 0)}, meta={removed.get('meta', 0)}, dir={realtime_dir}")
         trigger_type = result_box.get("trigger_type")
         ok = bool(trigger_type == "target_reached")
         overshoot = False
@@ -12610,25 +12710,20 @@ class MeasurementWorkflow:
             return
 
         raw_values = self._safe_float_list(self.context.get("raw_values"))
-        threshold_values = self._safe_float_list(self.context.get("raw_filtered_values"))
-        median_values = self._safe_float_list(self.context.get("raw_median_values"))
-        fit_values = self._safe_float_list(self.context.get("fit_values"))
-
         raw_corrected = self._subtract_spectrum_values(raw_values, bg.get("raw_values") or [])
-        threshold_corrected = self._subtract_spectrum_values(threshold_values, bg.get("threshold_values") or [])
-        median_corrected = self._subtract_spectrum_values(median_values, bg.get("median_values") or bg.get("raw_values") or [])
-        fit_corrected = self._subtract_spectrum_values(fit_values, bg.get("fit_values") or bg.get("median_values") or [])
+        threshold_corrected = self._remove_above_threshold(raw_corrected, self.cfg.raw_remove_above)
+        median_corrected = self._median_filter_1d(threshold_corrected, self.cfg.median_filter_window)
 
         self.context["raw_values"] = raw_corrected
         self.context["raw_filtered_values"] = threshold_corrected
         self.context["raw_median_values"] = median_corrected
-        self.context["fit_values"] = fit_corrected
+        self.context["fit_values"] = list(median_corrected)
 
         self.context["raw_original_peak"] = max(raw_corrected) if raw_corrected else None
         self.context["raw_filtered_peak"] = max(threshold_corrected) if threshold_corrected else None
         self.context["raw_median_peak"] = max(median_corrected) if median_corrected else None
         self.context["raw_peak"] = self.context["raw_median_peak"] or self.context["raw_filtered_peak"] or self.context["raw_original_peak"]
-        self.context["fit_peak"] = max(fit_corrected) if fit_corrected else self.context.get("fit_peak")
+        self.context["fit_peak"] = self.context["raw_median_peak"]
 
         result["raw_original_peak"] = self.context["raw_original_peak"]
         result["raw_filtered_peak"] = self.context["raw_filtered_peak"]
@@ -12639,7 +12734,7 @@ class MeasurementWorkflow:
         result["background_light_path"] = bg.get("path")
         self.context["background_light_applied"] = True
         self.context["background_light_path"] = bg.get("path")
-        self.log(f"[背景光] 已扣除背景光光谱：{bg.get('path')}")
+        self.log(f"[背景光] 已按 raw-bg 后重新中值滤波：{bg.get('path')}")
 
     def save_background_light_spectrum_to_xlsx(self, save_dir: Optional[Path] = None) -> Optional[Path]:
         """
@@ -18260,10 +18355,10 @@ class MeasurementWorkflowGUI:
                 # 真实轮次仍保存在 point["cycle_index"]、CSV/XLSX 和日志中。
                 record_index = len(list_points)
 
-                peak_x = p.get("fit_peak_x")
+                angle_value = p.get("angle_deg")
                 fit_peak = p.get("fit_peak")
 
-                x_value = record_index if peak_x is None else float(peak_x)
+                x_value = None if angle_value is None else float(angle_value)
                 fit_peak_value = None if fit_peak is None else float(fit_peak)
 
                 list_points.append((record_index, x_value, fit_peak_value))
@@ -18271,7 +18366,7 @@ class MeasurementWorkflowGUI:
                 # 图1：优先使用峰值波长 - 拟合峰值；没有峰值波长时退回有效记录序号。
                 # 拟合峰值为空时不画该点，但右侧列表仍保留该条记录。
                 if fit_peak_value is not None and math.isfinite(fit_peak_value):
-                    fit_plot_x.append(float(x_value))
+                    fit_plot_x.append(float(record_index))
                     fit_plot_y.append(float(fit_peak_value))
             except Exception:
                 continue
@@ -18320,31 +18415,19 @@ class MeasurementWorkflowGUI:
         if x_min is not None or x_max is not None:
             x_range_label = f"；X范围=[{x_min if x_min is not None else '-∞'}, {x_max if x_max is not None else '+∞'}]"
         bg_label = "；已扣背景光" if bool(wf.context.get("background_light_applied", False)) else ""
-        lorentz_result = self._fit_lorentzian_curve(fit_plot_x, fit_plot_y)
+        lorentz_result = self._fit_lorentzian_curve(median_x, median_values)
 
         self.ax_fit_peak.clear()
         self.ax_raw.clear()
         self.ax_median.clear()
 
-        # 图1：峰值波长 - 拟合峰值，并叠加洛伦兹拟合曲线
-        self.ax_fit_peak.set_title("峰值波长 - 拟合峰值 / 洛伦兹拟合")
-        self.ax_fit_peak.set_xlabel("峰值波长/序号")
+        # 图1：序号 - 拟合峰值
+        self.ax_fit_peak.set_title("序号 - 拟合峰值")
+        self.ax_fit_peak.set_xlabel("序号")
         self.ax_fit_peak.set_ylabel("拟合峰值")
         self.ax_fit_peak.grid(True)
         if fit_plot_x and fit_plot_y:
-            self.ax_fit_peak.plot(fit_plot_x, fit_plot_y, marker="o", linestyle="", label="峰值点")
-            if lorentz_result is not None:
-                params = lorentz_result["params"]
-                self.ax_fit_peak.plot(
-                    lorentz_result["x_fit"],
-                    lorentz_result["y_fit"],
-                    linestyle="-",
-                    label=(
-                        "Lorentz "
-                        f"c={params['c']:.4g}, w={params['w']:.4g}, z={params['z']:.4g}"
-                    ),
-                )
-            self.ax_fit_peak.legend(loc="best")
+            self.ax_fit_peak.plot(fit_plot_x, fit_plot_y, marker="o")
         else:
             self.ax_fit_peak.text(
                 0.5,
@@ -18365,13 +18448,25 @@ class MeasurementWorkflowGUI:
         else:
             self.ax_raw.text(0.5, 0.5, "暂无原始数据", ha="center", va="center", transform=self.ax_raw.transAxes)
 
-        # 图3：xlsx横坐标 - 中值滤波结果
-        self.ax_median.set_title("xlsx横坐标 - 中值滤波结果（扣背景后）" if bg_label else "xlsx横坐标 - 中值滤波结果")
+        # 图3：xlsx横坐标 - 中值滤波结果，并叠加洛伦兹拟合曲线
+        self.ax_median.set_title("xlsx横坐标 - 中值滤波结果（扣背景后）/ 洛伦兹拟合" if bg_label else "xlsx横坐标 - 中值滤波结果 / 洛伦兹拟合")
         self.ax_median.set_xlabel(x_label)
         self.ax_median.set_ylabel("median filtered")
         self.ax_median.grid(True)
         if median_values:
-            self.ax_median.plot(median_x, median_values)
+            self.ax_median.plot(median_x, median_values, label="中值滤波")
+            if lorentz_result is not None:
+                params = lorentz_result["params"]
+                self.ax_median.plot(
+                    lorentz_result["x_fit"],
+                    lorentz_result["y_fit"],
+                    linestyle="-",
+                    label=(
+                        "Lorentz "
+                        f"c={params['c']:.4g}, w={params['w']:.4g}, z={params['z']:.4g}"
+                    ),
+                )
+            self.ax_median.legend(loc="best")
         else:
             self.ax_median.text(0.5, 0.5, "暂无中值滤波结果", ha="center", va="center", transform=self.ax_median.transAxes)
 
@@ -19924,9 +20019,7 @@ class MeasurementWorkflowGUI:
         """将当前 context 中的实时光谱数据覆盖保存为 ./save/{MM.DD}/measurement_summary_background_light.xlsx。"""
         try:
             wf = self.ensure_workflow()
-            date_dir = datetime.now().strftime("%m.%d")
-            save_dir = Path("./save") / date_dir
-            saved_path = wf.save_background_light_spectrum_to_xlsx(save_dir=save_dir)
+            saved_path = wf.save_background_light_spectrum_to_xlsx(save_dir=wf._get_today_save_dir())
             if saved_path is not None:
                 self.set_var(self.tcp_status_var, f"已保存背景光光谱：{saved_path}")
                 self.log(f"[TCP] 已保存当前光谱数据（背景光）：{saved_path}")

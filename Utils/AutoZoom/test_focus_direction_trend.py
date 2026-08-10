@@ -65,8 +65,8 @@ def test_positive_direction_is_selected_from_overall_rising_trend() -> None:
     assert probe_step == 5
     assert score == pytest.approx(0.96)
     assert best_pos == 20
-    assert position["z"] == 0
-    assert any("direction decided by trend" in line and "dir=+1" in line for line in logs)
+    assert position["z"] == 20
+    assert any("direction probe reached tolerance" in line and "dir=+1" in line for line in logs)
 
 
 def test_negative_direction_is_selected_when_positive_side_declines() -> None:
@@ -78,11 +78,11 @@ def test_negative_direction_is_selected_when_positive_side_declines() -> None:
     assert probe_step == 5
     assert score == pytest.approx(0.96)
     assert best_pos == -20
-    assert position["z"] == 0
-    assert any("direction decided by trend" in line and "dir=-1" in line for line in logs)
+    assert position["z"] == -20
+    assert any("direction probe reached tolerance" in line and "dir=-1" in line for line in logs)
 
 
-def test_peak_inside_tolerance_returns_best_position_for_local_refine() -> None:
+def test_direction_probe_stops_at_first_position_inside_tolerance() -> None:
     scores = {
         0: 0.90,
         5: 0.96,
@@ -100,10 +100,10 @@ def test_peak_inside_tolerance_returns_best_position_for_local_refine() -> None:
 
     assert direction == 1
     assert probe_step == 5
-    assert score == pytest.approx(1.00)
-    assert best_pos == 10
-    assert position["z"] == 0
-    assert any("peak is inside tolerance" in line for line in logs)
+    assert score == pytest.approx(0.96)
+    assert best_pos == 5
+    assert position["z"] == 5
+    assert any("direction probe reached tolerance" in line for line in logs)
 
 
 def test_peak_outside_tolerance_expands_probe_step_before_deciding() -> None:
@@ -132,8 +132,59 @@ def test_peak_outside_tolerance_expands_probe_step_before_deciding() -> None:
 
     assert direction == 1
     assert probe_step == 25
-    assert score == pytest.approx(0.96)
-    assert best_pos == 100
-    assert position["z"] == 0
+    assert score == pytest.approx(0.95)
+    assert best_pos == 75
+    assert position["z"] == 75
     assert any("first-rise-then-fall outside tolerance" in line for line in logs)
-    assert any("stage=2" in line and "dir=+1" in line for line in logs)
+    assert any("direction probe reached tolerance" in line and "dir=+1" in line for line in logs)
+
+
+def test_bounded_target_best_score_prefers_midpoint_not_largest_score() -> None:
+    search, _position, _logs = _make_search(lambda z: 0.90)
+
+    assert search._score_is_better_for_target(
+        score=1.01,
+        best_score=1.23,
+        target=0.95,
+        upper_target=1.05,
+        min_improve=0.005,
+    )
+    assert not search._score_is_better_for_target(
+        score=1.23,
+        best_score=1.01,
+        target=0.95,
+        upper_target=1.05,
+        min_improve=0.005,
+    )
+
+    summary = search._summarize_direction_trend(
+        center_score=0.90,
+        direction=1,
+        probe_step=10,
+        sample_scores=[1.23, 1.20, 1.01],
+        min_improve=0.005,
+        target=0.95,
+        upper_target=1.05,
+    )
+    assert summary["best_score"] == pytest.approx(1.01)
+    assert summary["best_pos"] == 30
+
+
+def test_return_to_best_refreshes_score_after_open_loop_move() -> None:
+    scores_by_pos = {10: 0.97, 20: 0.80}
+    search, position, logs = _make_search(lambda z: scores_by_pos.get(z, 0.90))
+    search.pos = 20
+    position["z"] = 20
+
+    refreshed_score, iteration = search._return_to_best_with_refresh(
+        best_pos=10,
+        iteration=7,
+        phase="return_to_best",
+        fallback_score=1.02,
+    )
+
+    assert position["z"] == 10
+    assert search.pos == 10
+    assert iteration == 8
+    assert refreshed_score == pytest.approx(0.97)
+    assert any("refreshed best position" in line for line in logs)

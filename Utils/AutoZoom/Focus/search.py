@@ -164,15 +164,40 @@ class BaseFocusSearch:
         score_f = float(score)
         if upper_target is None:
             return score_f > best_score * (1.0 + min_improve)
-        score_in = self._in_tolerance(score_f, target, upper_target)
-        best_in = self._in_tolerance(best_score, target, upper_target)
-        if score_in:
-            if not best_in:
-                return True
-            return abs(score_f - 1.0) < abs(best_score - 1.0)
-        if best_in:
-            return False
-        return score_f > best_score * (1.0 + min_improve)
+        return self._score_distance_to_target_midpoint(
+            score_f, target, upper_target
+        ) < self._score_distance_to_target_midpoint(
+            float(best_score), target, upper_target
+        )
+
+    @staticmethod
+    def _target_midpoint(target: float, upper_target: Optional[float]) -> float:
+        if upper_target is None:
+            return float(target)
+        return (float(target) + float(upper_target)) / 2.0
+
+    def _score_distance_to_target_midpoint(
+        self,
+        score: Optional[float],
+        target: float,
+        upper_target: Optional[float],
+    ) -> float:
+        if score is None:
+            return float("inf")
+        if upper_target is None:
+            return max(0.0, float(target) - float(score))
+        return abs(float(score) - self._target_midpoint(target, upper_target))
+
+    def _choose_best_index_for_target(
+        self,
+        scores: np.ndarray,
+        target: float,
+        upper_target: Optional[float],
+    ) -> int:
+        if upper_target is None:
+            return int(np.argmax(scores))
+        midpoint = self._target_midpoint(target, upper_target)
+        return int(np.argmin(np.abs(scores - midpoint)))
 
     def search(
         self,
@@ -263,7 +288,7 @@ class HillClimbSearch(BaseFocusSearch):
         scores = np.array([float(score) for _, score in valid], dtype=float)
         deltas = scores - center
 
-        best_idx = int(np.argmax(scores))
+        best_idx = self._choose_best_index_for_target(scores, target, upper_target)
         best_pos = int(round(float(positions[best_idx])))
         best_score = float(scores[best_idx])
         best_gain = float(best_score - center)
@@ -374,6 +399,18 @@ class HillClimbSearch(BaseFocusSearch):
                         if probe_score is not None
                         else f"{target_pos}:None"
                     )
+                    if self._in_tolerance(probe_score, target, upper_target):
+                        self.log_fn(
+                            "[Autofocus] direction probe reached tolerance; "
+                            f"stop_at_current_pos={target_pos}, "
+                            f"score={float(probe_score):.4f}, dir={direction:+d}"
+                        )
+                        return (
+                            int(direction),
+                            int(probe_step),
+                            float(probe_score),
+                            int(target_pos),
+                        )
 
                 if self.pos != stage_center_pos:
                     self._move(stage_center_pos - self.pos)
@@ -414,9 +451,14 @@ class HillClimbSearch(BaseFocusSearch):
                 if summary.get("valid") and summary.get("peak_in_tolerance")
             ]
             if overshoot_candidates:
-                chosen = max(
+                chosen = min(
                     overshoot_candidates,
-                    key=lambda item: (float(item["best_score"]), -abs(int(item["best_pos"]))),
+                    key=lambda item: (
+                        self._score_distance_to_target_midpoint(
+                            float(item["best_score"]), target, upper_target
+                        ),
+                        abs(int(item["best_pos"])),
+                    ),
                 )
                 self.log_fn(
                     "[Autofocus] direction peak is inside tolerance; "
@@ -440,7 +482,12 @@ class HillClimbSearch(BaseFocusSearch):
             if trend_candidates:
                 chosen = max(
                     trend_candidates,
-                    key=lambda item: (float(item["avg_gain"]), float(item["best_score"])),
+                    key=lambda item: (
+                        float(item["avg_gain"]),
+                        -self._score_distance_to_target_midpoint(
+                            float(item["best_score"]), target, upper_target
+                        ),
+                    ),
                 )
                 self.log_fn(
                     "[Autofocus] direction decided by trend: "
@@ -474,6 +521,33 @@ class HillClimbSearch(BaseFocusSearch):
         else:
             self.log_fn("[补焦] 动态多点采样全部失败，无法确定方向")
         return None, None, center_score_final, None
+
+    def _return_to_best_with_refresh(
+        self,
+        best_pos: int,
+        iteration: int,
+        phase: str,
+        fallback_score: float,
+    ) -> Tuple[float, int]:
+        """回到 best_pos 后强制重新采样，不能复用开环移动前的旧分数。"""
+        iteration += 1
+        refreshed_score, _ = self._goto(
+            int(best_pos),
+            phase,
+            iteration,
+            use_cache=False,
+        )
+        if refreshed_score is None:
+            self.log_fn(
+                f"[Autofocus] refresh score at best_pos={best_pos} is None; "
+                f"keep previous score={fallback_score:.4f}"
+            )
+            return float(fallback_score), iteration
+        self.log_fn(
+            f"[Autofocus] refreshed best position: "
+            f"best_pos={best_pos}, score={float(refreshed_score):.4f}"
+        )
+        return float(refreshed_score), iteration
 
     def _refine_around_best(
         self,
@@ -511,8 +585,12 @@ class HillClimbSearch(BaseFocusSearch):
             round_index += 1
 
             if self.pos != best_pos:
-                iteration += 1
-                self._goto(best_pos, "local_refine_center", iteration, use_cache=True)
+                best_score, iteration = self._return_to_best_with_refresh(
+                    best_pos=best_pos,
+                    iteration=iteration,
+                    phase="local_refine_center",
+                    fallback_score=best_score,
+                )
 
             round_improved = False
             candidates = [best_pos - refine_step, best_pos + refine_step]
@@ -541,8 +619,12 @@ class HillClimbSearch(BaseFocusSearch):
                     )
 
             if self.pos != best_pos:
-                iteration += 1
-                self._goto(best_pos, "local_refine_return", iteration, use_cache=True)
+                best_score, iteration = self._return_to_best_with_refresh(
+                    best_pos=best_pos,
+                    iteration=iteration,
+                    phase="local_refine_return",
+                    fallback_score=best_score,
+                )
 
             next_step = max(min_step, int(refine_step * decay))
             if next_step >= refine_step:
@@ -651,6 +733,9 @@ class HillClimbSearch(BaseFocusSearch):
         # ---- 沿已标记方向递进搜索 ----
         no_improve_count = 0
         iteration = 4
+        refreshed_score, _ = self._measure("direction_best_confirm", 3, use_cache=False)
+        if refreshed_score is not None:
+            best_score = float(refreshed_score)
         while iteration <= max_iter:
             self._check_stop("hill_climb")
             if self._in_tolerance(best_score, target, upper_target):
@@ -694,8 +779,12 @@ class HillClimbSearch(BaseFocusSearch):
             self.log_fn(
                 f"[补焦] 回退到最佳位置: best_pos={best_pos}, current_pos={self.pos}"
             )
-            self._goto(best_pos, "return_to_best", iteration + 1)
-            iteration += 1
+            best_score, iteration = self._return_to_best_with_refresh(
+                best_pos=best_pos,
+                iteration=iteration,
+                phase="return_to_best",
+                fallback_score=best_score,
+            )
 
         while (
             self._in_tolerance(best_score, target, upper_target)
@@ -717,8 +806,12 @@ class HillClimbSearch(BaseFocusSearch):
                 self.log_fn(
                     f"[补焦] 细搜后回退到最佳位置: best_pos={best_pos}, current_pos={self.pos}"
                 )
-                self._goto(best_pos, "return_to_best", iteration + 1)
-                iteration += 1
+                best_score, iteration = self._return_to_best_with_refresh(
+                    best_pos=best_pos,
+                    iteration=iteration,
+                    phase="return_to_best",
+                    fallback_score=best_score,
+                )
 
             if self._in_tolerance(best_score, target, upper_target):
                 break
@@ -759,8 +852,12 @@ class HillClimbSearch(BaseFocusSearch):
                 self.log_fn(
                     f"[补焦] 继续补焦后回退到最佳位置: best_pos={best_pos}, current_pos={self.pos}"
                 )
-                self._goto(best_pos, "return_to_best", iteration + 1)
-                iteration += 1
+                best_score, iteration = self._return_to_best_with_refresh(
+                    best_pos=best_pos,
+                    iteration=iteration,
+                    phase="return_to_best",
+                    fallback_score=best_score,
+                )
 
         if not self._in_tolerance(best_score, target, upper_target):
             self.log_fn(
