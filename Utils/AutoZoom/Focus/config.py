@@ -168,7 +168,7 @@ class AutofocusConfig:
     z_max_iter: int = 40
     """最大搜索迭代次数"""
 
-    z_max_total_steps: int = 400
+    z_max_total_steps: int = 999999999
     """最大总移动步数绝对值"""
 
     z_patience: int = 3
