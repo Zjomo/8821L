@@ -1,0 +1,19 @@
+{
+  "source": "e:\\jupyter file\\2_Optics\\8821L\\Utils\\AutoZoom\\lorenzt\\cycle_0027_214234_084_spectrum.csv",
+  "target_column": "median_filtered_y",
+  "fit_mode": "full_spectrum",
+  "model": "y0 + z*w/(4*(x-c)^2+w^2)",
+  "fit_x_min_nm": 498.215,
+  "fit_x_max_nm": 533.596,
+  "fit_index_min": 0,
+  "fit_index_max": 1023,
+  "n_points": 1024,
+  "y0": 1203.2123331205457,
+  "z": 133.95226916681935,
+  "w": 1.2533177968379166,
+  "c": 516.4562606100222,
+  "peak_height_z_over_w": 106.87813538176584,
+  "fwhm_nm": 1.2533177968379166,
+  "r2": 0.5530084514947384,
+  "rmse": 15.145149842939121
+}

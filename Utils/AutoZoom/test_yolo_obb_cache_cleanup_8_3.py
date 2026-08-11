@@ -103,11 +103,34 @@ def test_yolo_obb_detector_respects_save_flags_without_writing_files():
     assert not list(out_dir.glob("*_YOLO_OBB_meta.json"))
 
 
+def test_yolo_obb_detector_exports_raw_image_and_angle_csv_for_overlay_detection():
+    module = _load_module()
+    cfg = module.MeasurementConfig()
+    cfg.capture_area = [0, 0, 64, 64]
+    cfg.save_root = tempfile.mkdtemp(prefix="yolo_angle_export_test_")
+    wf = module.MeasurementWorkflow(cfg)
+    wf.run_session_dir = Path(cfg.save_root) / "run"
+    wf.run_session_dir.mkdir(parents=True, exist_ok=True)
+    wf.angle_module = _FakeModel()
+    wf._capture_yolo_obb_frame_bgr = lambda: (np.zeros((64, 64, 3), dtype=np.uint8), (0, 0, 64, 64))
+
+    result = wf._run_angle_detector_once_raw(label="export_test", save_overlay=True, save_meta=False)
+
+    assert result["ok"] is True
+    assert result["raw_image_path"]
+    assert result["overlay_image_path"]
+    assert result["angle_csv_path"]
+    assert Path(result["raw_image_path"]).exists()
+    assert Path(result["overlay_image_path"]).exists()
+    assert Path(result["angle_csv_path"]).exists()
+
+
 def test_remove_yolo_obb_redundant_cache_files_keeps_overlay_and_csv():
     module = _load_module()
     with tempfile.TemporaryDirectory(prefix="yolo_cache_cleanup_") as tmpdir:
         cache_dir = Path(tmpdir)
         (cache_dir / "a_raw.png").write_bytes(b"raw")
+        (cache_dir / "step7_realtime_final_overlay_raw.png").write_bytes(b"final_raw")
         (cache_dir / "a_YOLO_OBB_meta.json").write_text("{}", encoding="utf-8")
         (cache_dir / "a_YOLO_OBB_overlay.png").write_bytes(b"overlay")
         (cache_dir / "step7_realtime_angle_records.csv").write_text("csv", encoding="utf-8")
@@ -116,6 +139,7 @@ def test_remove_yolo_obb_redundant_cache_files_keeps_overlay_and_csv():
 
         assert removed == {"raw": 1, "meta": 1}
         assert not (cache_dir / "a_raw.png").exists()
+        assert (cache_dir / "step7_realtime_final_overlay_raw.png").exists()
         assert not (cache_dir / "a_YOLO_OBB_meta.json").exists()
         assert (cache_dir / "a_YOLO_OBB_overlay.png").exists()
         assert (cache_dir / "step7_realtime_angle_records.csv").exists()

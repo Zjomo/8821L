@@ -85,6 +85,8 @@ DEFAULT_CONFIG["rule_ab_angle_watch_interval_s"] = 0.5
 DEFAULT_CONFIG["rule_ab_realtime_save_every_angle_frame"] = False
 DEFAULT_CONFIG["rule_ab_yolo_obb_save_raw_frame"] = False
 DEFAULT_CONFIG["rule_ab_yolo_obb_save_meta_json"] = False
+DEFAULT_CONFIG["rule_ab_yolo_obb_save_raw_with_overlay"] = True
+DEFAULT_CONFIG["rule_ab_yolo_obb_save_angle_csv"] = True
 DEFAULT_CONFIG["rule_ab_realtime_save_final_angle_overlay"] = True
 DEFAULT_CONFIG["rule_ab_realtime_cleanup_redundant_cache"] = True
 
@@ -108,6 +110,16 @@ DEFAULT_CONFIG["exit_slit_um"] = 50
 
 def _cfg(name: str, default: Any) -> Any:
     return DEFAULT_CONFIG.get(name, default)
+
+def _cfg_optional_float(name: str, default: Optional[float] = None) -> Optional[float]:
+    value = DEFAULT_CONFIG.get(name, default)
+    if value is None or value == "":
+        return None
+    try:
+        v = float(value)
+        return v if math.isfinite(v) else None
+    except Exception:
+        return default
 
 # ============================================================
 # 光谱仪/TCP 配置
@@ -276,6 +288,9 @@ class MeasurementConfig:
     median_filter_window: int = int(_cfg("median_filter_window", 5))
 
     x_axis_xlsx_path: str = str(_cfg("x_axis_xlsx_path", "516中心波长.xlsx"))
+    # UI 手动指定的光谱 X 轴/洛伦兹拟合范围，单位固定为 nm；None 表示使用当前光谱全范围。
+    lorentz_fit_x_min_nm: Optional[float] = _cfg_optional_float("lorentz_fit_x_min_nm", None)
+    lorentz_fit_x_max_nm: Optional[float] = _cfg_optional_float("lorentz_fit_x_max_nm", None)
 
     enable_delta_w_judge: bool = bool(_cfg("enable_delta_w_judge", False))
     delta_w_threshold: float = float(_cfg("delta_w_threshold", 0.0))
@@ -544,6 +559,8 @@ class MeasurementConfig:
     # 原始帧和逐帧 meta 只在调试时保留，默认关闭以避免缓存膨胀。
     rule_ab_yolo_obb_save_raw_frame: bool = bool(_cfg("rule_ab_yolo_obb_save_raw_frame", False))
     rule_ab_yolo_obb_save_meta_json: bool = bool(_cfg("rule_ab_yolo_obb_save_meta_json", False))
+    rule_ab_yolo_obb_save_raw_with_overlay: bool = bool(_cfg("rule_ab_yolo_obb_save_raw_with_overlay", True))
+    rule_ab_yolo_obb_save_angle_csv: bool = bool(_cfg("rule_ab_yolo_obb_save_angle_csv", True))
     rule_ab_realtime_save_final_angle_overlay: bool = bool(_cfg("rule_ab_realtime_save_final_angle_overlay", True))
     rule_ab_realtime_cleanup_redundant_cache: bool = bool(_cfg("rule_ab_realtime_cleanup_redundant_cache", True))
     rule_ab_realtime_max_duration_s: float = float(_cfg("rule_ab_realtime_max_duration_s", 0.0))  # <=0 表示不额外限制，由停止/阈值决定
@@ -3217,6 +3234,8 @@ class MeasurementWorkflow:
             return removed
         for path in cache_dir.glob("*_raw.png"):
             try:
+                if "final_overlay" in path.name:
+                    continue
                 path.unlink()
                 removed["raw"] += 1
             except Exception:
@@ -3243,7 +3262,9 @@ class MeasurementWorkflow:
             raise RuntimeError("YOLO-OBB角度模块未初始化")
 
         if save_raw is None:
-            save_raw = bool(getattr(self.cfg, "rule_ab_yolo_obb_save_raw_frame", False))
+            save_raw = bool(getattr(self.cfg, "rule_ab_yolo_obb_save_raw_frame", False)) or (
+                bool(save_overlay) and bool(getattr(self.cfg, "rule_ab_yolo_obb_save_raw_with_overlay", True))
+            )
         if save_meta is None:
             save_meta = bool(getattr(self.cfg, "rule_ab_yolo_obb_save_meta_json", False))
 
@@ -3258,12 +3279,20 @@ class MeasurementWorkflow:
         safe_label = "".join(ch if (ch.isalnum() or ch in "_-.()") else "_" for ch in str(label))[:90]
         stem = f"{datetime.now().strftime('%Y%m%d_%H%M%S_%f')[:-3]}_{safe_label}"
         raw_path = out_dir / f"{stem}_raw.png"
+        angle_csv_path = out_dir / f"{stem}_YOLO_OBB_angle.csv"
         raw_path_text = ""
         if save_raw:
             cv2.imwrite(str(raw_path), frame_bgr)
             raw_path_text = str(raw_path)
         if result.obb is None or len(result.obb) == 0:
-            return {"ok": False, "angle_ok": False, "angle_deg": None, "angle_deg_raw": None, "reason": "yolo_obb_no_detection", "angle_source": "yolo_obb_no_detection", "edge_selection_mode": "yolo_obb_long_edge", "image_path": raw_path_text, "raw_image_path": raw_path_text, "detection_count": 0, "timestamp": timestamp}
+            angle_csv_path_text = ""
+            if bool(getattr(self.cfg, "rule_ab_yolo_obb_save_angle_csv", True)) and (save_overlay or save_raw):
+                with angle_csv_path.open("w", encoding="utf-8-sig", newline="") as f:
+                    writer = csv.writer(f)
+                    writer.writerow(["timestamp", "label", "ok", "reason", "angle_deg", "confidence", "class_id", "class_name", "edge_length_px", "center_region", "center_screen", "endpoints", "raw_image_path", "overlay_image_path"])
+                    writer.writerow([timestamp, label, False, "yolo_obb_no_detection", "", "", "", "", "", "", "", "", raw_path_text, ""])
+                angle_csv_path_text = str(angle_csv_path)
+            return {"ok": False, "angle_ok": False, "angle_deg": None, "angle_deg_raw": None, "reason": "yolo_obb_no_detection", "angle_source": "yolo_obb_no_detection", "edge_selection_mode": "yolo_obb_long_edge", "image_path": raw_path_text, "raw_image_path": raw_path_text, "angle_csv_path": angle_csv_path_text, "detection_count": 0, "timestamp": timestamp}
 
         points_array = result.obb.xyxyxyxy.cpu().numpy()
         confs = result.obb.conf.cpu().numpy()
@@ -3297,7 +3326,30 @@ class MeasurementWorkflow:
         if save_overlay:
             cv2.imwrite(str(overlay_path), annotated)
             overlay_path_text = str(overlay_path)
+        angle_csv_path_text = ""
         meta = {"ok": True, "label": label, "method": "yolo_obb_long_edge_from_second_code", "angle_deg": angle, "angle_deg_raw": angle, "confidence": confidence, "class_id": class_id, "class_name": class_name, "center_region": [float(center[0]), float(center[1])], "center_screen": [float(screen_center[0]), float(screen_center[1])], "points_region": points.tolist(), "points_screen": screen_points.tolist(), "edge_length_px": float(edge_length), "capture_area": [int(left), int(top), int(width), int(height)], "detection_count": int(len(points_array)), "timestamp": timestamp, "raw_image_path": raw_path_text, "overlay_image_path": overlay_path_text}
+        if bool(getattr(self.cfg, "rule_ab_yolo_obb_save_angle_csv", True)) and (save_overlay or save_raw):
+            with angle_csv_path.open("w", encoding="utf-8-sig", newline="") as f:
+                writer = csv.writer(f)
+                writer.writerow(["timestamp", "label", "ok", "reason", "angle_deg", "confidence", "class_id", "class_name", "edge_length_px", "center_region", "center_screen", "endpoints", "raw_image_path", "overlay_image_path"])
+                writer.writerow([
+                    timestamp,
+                    label,
+                    True,
+                    "ok",
+                    angle,
+                    confidence,
+                    class_id,
+                    class_name,
+                    float(edge_length),
+                    json.dumps(self._json_safe([float(center[0]), float(center[1])]), ensure_ascii=False),
+                    json.dumps(self._json_safe([float(screen_center[0]), float(screen_center[1])]), ensure_ascii=False),
+                    json.dumps(self._json_safe([[float(p1[0]), float(p1[1])], [float(p2[0]), float(p2[1])]]), ensure_ascii=False),
+                    raw_path_text,
+                    overlay_path_text,
+                ])
+            angle_csv_path_text = str(angle_csv_path)
+            meta["angle_csv_path"] = angle_csv_path_text
         meta_path_text = ""
         if save_meta:
             meta["raw_image_path"] = raw_path_text
@@ -3305,7 +3357,7 @@ class MeasurementWorkflow:
             with meta_path.open("w", encoding="utf-8") as f:
                 json.dump(self._json_safe(meta), f, ensure_ascii=False, indent=2)
             meta_path_text = str(meta_path)
-        return {"ok": True, "angle_ok": True, "angle_deg": angle, "angle_deg_raw": angle, "label": label, "reason": "ok", "angle_source": "yolo_obb_long_edge", "edge_selection_mode": "yolo_obb_long_edge", "allow_close": True, "confidence": confidence, "class_id": class_id, "class_name": class_name, "center": [float(center[0]), float(center[1])], "center_screen": [float(screen_center[0]), float(screen_center[1])], "points_region": self._format_yolo_obb_points(points), "points_screen": self._format_yolo_obb_points(screen_points), "obb_points": points.tolist(), "obb_points_screen": screen_points.tolist(), "endpoints": [[float(p1[0]), float(p1[1])], [float(p2[0]), float(p2[1])]], "selected_b_edge": {"angle_deg": angle, "length_px": float(edge_length), "edge_length_px": float(edge_length), "endpoints": [[float(p1[0]), float(p1[1])], [float(p2[0]), float(p2[1])]], "angle_source": "yolo_obb_long_edge"}, "edge_length_px": float(edge_length), "detection_count": int(len(points_array)), "timestamp": timestamp, "image_path": raw_path_text, "raw_image_path": raw_path_text, "overlay_path": overlay_path_text, "overlay_image_path": overlay_path_text, "meta_path": meta_path_text}
+        return {"ok": True, "angle_ok": True, "angle_deg": angle, "angle_deg_raw": angle, "label": label, "reason": "ok", "angle_source": "yolo_obb_long_edge", "edge_selection_mode": "yolo_obb_long_edge", "allow_close": True, "confidence": confidence, "class_id": class_id, "class_name": class_name, "center": [float(center[0]), float(center[1])], "center_screen": [float(screen_center[0]), float(screen_center[1])], "points_region": self._format_yolo_obb_points(points), "points_screen": self._format_yolo_obb_points(screen_points), "obb_points": points.tolist(), "obb_points_screen": screen_points.tolist(), "endpoints": [[float(p1[0]), float(p1[1])], [float(p2[0]), float(p2[1])]], "selected_b_edge": {"angle_deg": angle, "length_px": float(edge_length), "edge_length_px": float(edge_length), "endpoints": [[float(p1[0]), float(p1[1])], [float(p2[0]), float(p2[1])]], "angle_source": "yolo_obb_long_edge"}, "edge_length_px": float(edge_length), "detection_count": int(len(points_array)), "timestamp": timestamp, "image_path": raw_path_text, "raw_image_path": raw_path_text, "overlay_path": overlay_path_text, "overlay_image_path": overlay_path_text, "angle_csv_path": angle_csv_path_text, "meta_path": meta_path_text}
 
     @staticmethod
     def _normalize_angle_result(result: Any) -> Dict[str, Any]:
@@ -5600,7 +5652,7 @@ class MeasurementWorkflow:
             "delta_from_baseline", "final_delta_to_baseline",
             "angle_source",
             "edge_length_px", "endpoints", "trigger_type", "controller_action",
-            "raw_image_path", "overlay_image_path", "reason",
+            "raw_image_path", "overlay_image_path", "angle_csv_path", "reason",
         ]
         with csv_path.open("w", encoding="utf-8-sig", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
@@ -5690,6 +5742,7 @@ class MeasurementWorkflow:
                             "controller_action": phase_state.get("controller_action", ""),
                             "raw_image_path": angle_result.get("raw_image_path") or angle_result.get("image_path"),
                             "overlay_image_path": angle_result.get("overlay_image_path") or angle_result.get("overlay_path"),
+                            "angle_csv_path": angle_result.get("angle_csv_path"),
                             "reason": angle_result.get("reason"),
                         }
                         if not angle_ok:
@@ -5727,7 +5780,7 @@ class MeasurementWorkflow:
                         _append_record(rec)
                     except Exception as e:
                         result_box["angle_error"] = str(e)
-                        _append_record({"timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3], "frame_index": int(frame_idx), "step": int(phase_state.get("step", 0) or 0), "phase": str(phase_state.get("phase", "unknown")), "angle_deg": None, "baseline_angle": baseline_angle, "delta_from_baseline": None, "angle_source": "bmask_longest_edge_failed", "edge_length_px": None, "endpoints": None, "trigger_type": "", "controller_action": phase_state.get("controller_action", ""), "raw_image_path": "", "overlay_image_path": "", "reason": f"angle_monitor_exception:{e}"})
+                        _append_record({"timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3], "frame_index": int(frame_idx), "step": int(phase_state.get("step", 0) or 0), "phase": str(phase_state.get("phase", "unknown")), "angle_deg": None, "baseline_angle": baseline_angle, "delta_from_baseline": None, "angle_source": "bmask_longest_edge_failed", "edge_length_px": None, "endpoints": None, "trigger_type": "", "controller_action": phase_state.get("controller_action", ""), "raw_image_path": "", "overlay_image_path": "", "angle_csv_path": "", "reason": f"angle_monitor_exception:{e}"})
                     self._interruptible_pause(float(getattr(self.cfg, "rule_ab_angle_watch_interval_s", 0.5)), stop_event, phase_state=None)
             finally:
                 if old_override is None:
@@ -5755,7 +5808,7 @@ class MeasurementWorkflow:
                     route_points = self._load_or_build_step7_c_edge_route(follower)
                     self.log(f"[Step7实时控制] step={step_idx}: 执行一次 C边沿路线运动；route_points={len(route_points)}；pause保留但可被stop_event打断。")
                     ok, route_info = self._run_one_c_edge_route_cycle(follower=follower, step_idx=step_idx, route_points=route_points, stop_event=stop_event, phase_state=phase_state)
-                    _append_record({"timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3], "frame_index": "", "step": int(step_idx), "phase": str(phase_state.get("phase", "unknown")), "angle_deg": None, "baseline_angle": baseline_angle, "delta_from_baseline": None, "angle_source": "controller", "edge_length_px": None, "endpoints": None, "trigger_type": "", "controller_action": phase_state.get("controller_action", ""), "raw_image_path": "", "overlay_image_path": route_info.get("route_overlay_path") if isinstance(route_info, dict) else "", "reason": route_info.get("reason", "controller_step_ok") if isinstance(route_info, dict) else "controller_step_ok"})
+                    _append_record({"timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3], "frame_index": "", "step": int(step_idx), "phase": str(phase_state.get("phase", "unknown")), "angle_deg": None, "baseline_angle": baseline_angle, "delta_from_baseline": None, "angle_source": "controller", "edge_length_px": None, "endpoints": None, "trigger_type": "", "controller_action": phase_state.get("controller_action", ""), "raw_image_path": "", "overlay_image_path": route_info.get("route_overlay_path") if isinstance(route_info, dict) else "", "angle_csv_path": "", "reason": route_info.get("reason", "controller_step_ok") if isinstance(route_info, dict) else "controller_step_ok"})
                     if stop_event.is_set():
                         break
                     if not ok:
@@ -5833,6 +5886,7 @@ class MeasurementWorkflow:
                     "controller_action": phase_state.get("controller_action", ""),
                     "raw_image_path": final_overlay_result.get("raw_image_path") or final_overlay_result.get("image_path"),
                     "overlay_image_path": final_overlay_result.get("overlay_image_path") or final_overlay_result.get("overlay_path"),
+                    "angle_csv_path": final_overlay_result.get("angle_csv_path"),
                     "reason": final_overlay_result.get("reason"),
                 })
             except Exception as e:
@@ -11896,6 +11950,119 @@ class MeasurementWorkflow:
 
         return filtered
 
+    @staticmethod
+    def _lorentzian_model_values(x: Any, y0: float, z: float, w: float, c: float):
+        x_arr = np.asarray(x, dtype=float)
+        return y0 + z * w / (4.0 * (x_arr - c) ** 2 + w ** 2)
+
+    def _fit_median_lorentz_for_export(
+        self,
+        x_values: List[Any],
+        median_values: List[Any],
+        x_min_nm: Optional[float] = None,
+        x_max_nm: Optional[float] = None,
+    ) -> Tuple[List[Optional[float]], Optional[Dict[str, Any]]]:
+        """
+        对中值滤波光谱做洛伦兹拟合，并返回与原始光谱等长的拟合 y。
+
+        x_min_nm/x_max_nm 固定按波长 nm 解释；范围外的拟合 y 写 None，避免把局部拟合曲线外推到全谱。
+        """
+        out_len = max(len(x_values or []), len(median_values or []))
+        fitted_values: List[Optional[float]] = [None] * out_len
+        if not x_values or not median_values:
+            return fitted_values, None
+
+        pairs: List[Tuple[int, float, float]] = []
+        for i, (x, y) in enumerate(zip(x_values, median_values)):
+            try:
+                xf = float(x)
+                yf = float(y)
+            except Exception:
+                continue
+            if not (math.isfinite(xf) and math.isfinite(yf)):
+                continue
+            pairs.append((i, xf, yf))
+        if len(pairs) < 4:
+            return fitted_values, None
+
+        if x_min_nm is not None and x_max_nm is not None and x_min_nm > x_max_nm:
+            x_min_nm, x_max_nm = x_max_nm, x_min_nm
+
+        selected = []
+        for item in pairs:
+            _, xf, _ = item
+            if x_min_nm is not None and xf < float(x_min_nm):
+                continue
+            if x_max_nm is not None and xf > float(x_max_nm):
+                continue
+            selected.append(item)
+        if len(selected) < 4:
+            return fitted_values, None
+
+        try:
+            from scipy.optimize import curve_fit  # type: ignore
+        except Exception:
+            return fitted_values, None
+
+        try:
+            selected.sort(key=lambda item: item[1])
+            selected_indices = [item[0] for item in selected]
+            x = np.asarray([item[1] for item in selected], dtype=float)
+            y = np.asarray([item[2] for item in selected], dtype=float)
+            x_min = float(np.nanmin(x))
+            x_max = float(np.nanmax(x))
+            if x_max <= x_min:
+                return fitted_values, None
+
+            y_base = float(np.nanpercentile(y, 10))
+            y_max = float(np.nanmax(y))
+            c0 = float(x[int(np.nanargmax(y))])
+            w0 = max(float((x_max - x_min) / 8.0), 1e-6)
+            z0 = max((y_max - y_base) * w0, 1e-6)
+            lower = [float(np.nanmin(y) - abs(y_max - y_base) * 5.0 - 1.0), 0.0, 1e-6, x_min]
+            upper = [float(y_max + abs(y_max - y_base) * 5.0 + 1.0), 1e9, max((x_max - x_min) * 2.0, 1e-6), x_max]
+            popt, _ = curve_fit(
+                self._lorentzian_model_values,
+                x,
+                y,
+                p0=[y_base, z0, w0, c0],
+                bounds=(lower, upper),
+                maxfev=20000,
+            )
+            y_fit = self._lorentzian_model_values(x, *popt)
+            residual = y - y_fit
+            ss_res = float(np.sum(residual ** 2))
+            ss_tot = float(np.sum((y - np.nanmean(y)) ** 2))
+            r2 = float(1.0 - ss_res / ss_tot) if ss_tot > 0 else None
+            rmse = float(math.sqrt(ss_res / float(x.size))) if x.size > 0 else None
+            for src_idx, fit_y in zip(selected_indices, y_fit):
+                fitted_values[src_idx] = float(fit_y)
+            finite_fit = [(selected_indices[i], float(x[i]), float(y_fit[i])) for i in range(len(selected_indices)) if math.isfinite(float(y_fit[i]))]
+            peak_idx, peak_x, peak_y = max(finite_fit, key=lambda item: item[2]) if finite_fit else (None, None, None)
+            fit_info = {
+                "ok": True,
+                "target_column": "median_filtered_y",
+                "output_column": "median_filtered_lorentz_fit_y",
+                "x_axis_unit": "nm",
+                "range_min_nm": x_min_nm,
+                "range_max_nm": x_max_nm,
+                "fit_x_min_nm": x_min,
+                "fit_x_max_nm": x_max,
+                "n_points": int(x.size),
+                "y0": float(popt[0]),
+                "z": float(popt[1]),
+                "w": float(popt[2]),
+                "c": float(popt[3]),
+                "peak_x_nm": peak_x,
+                "peak_y": peak_y,
+                "peak_source_index": peak_idx,
+                "r2": r2,
+                "rmse": rmse,
+            }
+            return fitted_values, fit_info
+        except Exception:
+            return fitted_values, None
+
     def _resolve_existing_path(self, path_text: Optional[str]) -> Optional[Path]:
         """
         解析 GUI 里填写的文件路径。
@@ -12000,6 +12167,23 @@ class MeasurementWorkflow:
             return [float(v) for v in x_values[:n]]
 
         return list(range(n))
+
+    @staticmethod
+    def _looks_like_index_axis_for_workflow(x_values: List[float], expected_len: int) -> bool:
+        if not x_values or expected_len <= 1 or len(x_values) < expected_len:
+            return False
+        try:
+            first = float(x_values[0])
+            last = float(x_values[expected_len - 1])
+            mid_i = expected_len // 2
+            mid = float(x_values[mid_i])
+        except Exception:
+            return False
+        return (
+            abs(first - 0.0) <= 1e-6
+            and abs(last - float(expected_len - 1)) <= 1e-6
+            and abs(mid - float(mid_i)) <= 1e-6
+        )
 
     def _get_expected_spectrum_point_count_quiet(self) -> Optional[int]:
         """
@@ -12370,13 +12554,15 @@ class MeasurementWorkflow:
             n = 1024
         n = max(1, n)
 
-        # virtual 固定值模式不再读取 x_axis_xlsx，也不再做任何真实光谱处理。
-        # 这里给一个 index 横坐标和常数光谱数组，仅用于兼容后续保存/绘图字段。
-        plot_x_values = [float(i) for i in range(n)]
         raw_values = [fixed_peak for _ in range(n)]
         threshold_values = list(raw_values)
         median_values = list(raw_values)
         fit_values = list(raw_values)
+        # virtual 固定值模式不做真实光谱处理，但横坐标仍优先使用用户配置的 wavelength 轴。
+        # 读取失败时才退回 index，避免 UI 标签为 wavelength(nm) 但图上仍显示 0~1023。
+        x_axis_values = self.load_x_axis_values_from_xlsx()
+        plot_x_values = self._make_x_values_for_plot(raw_values, x_axis_values)
+        x_axis_source = "xlsx_wavelength" if x_axis_values and not self._looks_like_index_axis_for_workflow(x_axis_values, n) else "index_fallback"
 
         raw_original_peak = fixed_peak
         raw_filtered_peak = fixed_peak
@@ -12386,7 +12572,8 @@ class MeasurementWorkflow:
 
         self.context["wavelength"] = plot_x_values
         self.context["x_axis_values"] = plot_x_values
-        self.context["x_axis_xlsx_path"] = ""
+        self.context["x_axis_source"] = x_axis_source
+        self.context["x_axis_xlsx_path"] = self.cfg.x_axis_xlsx_path if x_axis_values else ""
         self.context["intensity"] = median_values
         self.context["raw_values"] = raw_values
         self.context["raw_filtered_values"] = threshold_values
@@ -12494,9 +12681,15 @@ class MeasurementWorkflow:
                 f"preview={self._preview_labview_value(result)}"
             )
 
-        # 图2/图3/保存 CSV 横坐标：优先使用 GUI 选择的 xlsx 第一列；
-        # 这一步与“单次光谱采集”完全一致。读取失败时绘图/保存再退回 index 或 LabVIEW wavelength。
-        x_axis_values = self.load_x_axis_values_from_xlsx()
+        # 图2/图3/保存 CSV 横坐标：优先使用 LabVIEW/CSV 真实 wavelength；
+        # 只有返回结果没有有效 wavelength 时，才退回 GUI 配置的 xlsx 第一列；两者都没有再退回 index。
+        parsed_wavelength = self._safe_float_list(parsed.get("wavelength"))
+        if len(parsed_wavelength) >= len(raw_values):
+            x_axis_values = parsed_wavelength
+            x_axis_source = "labview_csv_wavelength"
+        else:
+            x_axis_values = self.load_x_axis_values_from_xlsx()
+            x_axis_source = "xlsx_wavelength" if x_axis_values and not self._looks_like_index_axis_for_workflow(x_axis_values, len(raw_values)) else "index_fallback"
         plot_x_values = self._make_x_values_for_plot(raw_values, x_axis_values)
 
         # 若 LabVIEW 只给了原始 y，没有 fit_y，则用中值滤波曲线作为显示/保存的拟合曲线兜底；
@@ -12506,8 +12699,9 @@ class MeasurementWorkflow:
             fit_values = list(median_values)
             parsed["fit_values"] = fit_values
 
-        self.context["wavelength"] = parsed.get("wavelength")
-        self.context["x_axis_values"] = x_axis_values
+        self.context["wavelength"] = plot_x_values
+        self.context["x_axis_values"] = plot_x_values
+        self.context["x_axis_source"] = x_axis_source
         self.context["x_axis_xlsx_path"] = self.cfg.x_axis_xlsx_path
         self.context["intensity"] = median_values
         self.context["raw_values"] = raw_values
@@ -12537,6 +12731,7 @@ class MeasurementWorkflow:
         result["raw_filter_threshold"] = self.cfg.raw_remove_above
         result["median_filter_window"] = self.cfg.median_filter_window
         result["x_axis_xlsx_path"] = self.cfg.x_axis_xlsx_path
+        result["x_axis_source"] = x_axis_source
 
         self._apply_background_light_correction(result)
 
@@ -12547,6 +12742,7 @@ class MeasurementWorkflow:
         self.log(
             f"[光谱] 真实采集完成：num_points={len(raw_values)}, "
             f"x_points={len(x_axis_values)}, plot_x_points={len(plot_x_values)}, "
+            f"x_axis_source={x_axis_source}, "
             f"raw_original_peak={self.context['raw_original_peak']}, "
             f"raw_filtered_peak={self.context['raw_filtered_peak']}, "
             f"raw_median_peak={self.context['raw_median_peak']}, "
@@ -13415,6 +13611,17 @@ class MeasurementWorkflow:
                     len(filtered_values),
                     len(median_values),
                 )
+                wavelength_values = list(wavelength or [])
+                lorentz_fit_values, lorentz_fit_info = self._fit_median_lorentz_for_export(
+                    wavelength_values,
+                    list(median_values),
+                    getattr(self.cfg, "lorentz_fit_x_min_nm", None),
+                    getattr(self.cfg, "lorentz_fit_x_max_nm", None),
+                )
+                ctx["median_filtered_lorentz_fit_values"] = lorentz_fit_values
+                ctx["median_filtered_lorentz_fit_info"] = lorentz_fit_info
+                ctx["median_filtered_lorentz_fit_peak"] = (lorentz_fit_info or {}).get("peak_y")
+                ctx["median_filtered_lorentz_fit_peak_x"] = (lorentz_fit_info or {}).get("peak_x_nm")
                 with open(paths["spectrum_csv"], "w", encoding="utf-8-sig", newline="") as f:
                     writer = csv.writer(f)
                     writer.writerow([
@@ -13423,17 +13630,20 @@ class MeasurementWorkflow:
                         "raw_y",
                         "threshold_filtered_y",
                         "median_filtered_y",
+                        "median_filtered_lorentz_fit_y",
                         "angle_deg",
                     ])
                     for i in range(max_len):
-                        x = wavelength[i] if wavelength is not None and i < len(wavelength) else ""
+                        x = wavelength_values[i] if i < len(wavelength_values) else ""
                         raw_y = raw_values[i] if i < len(raw_values) else ""
                         filt_y = filtered_values[i] if i < len(filtered_values) else ""
                         med_y = median_values[i] if i < len(median_values) else ""
-                        writer.writerow([i, x, raw_y, filt_y, med_y, angle_value])
+                        lorentz_y = lorentz_fit_values[i] if i < len(lorentz_fit_values) and lorentz_fit_values[i] is not None else ""
+                        writer.writerow([i, x, raw_y, filt_y, med_y, lorentz_y, angle_value])
                 self.log(
                     f"[保存] 光谱 CSV：{paths['spectrum_csv']}；"
-                    f"wavelength列已写入中心波长；已写入本轮角度 angle_deg={angle_value}"
+                    f"wavelength列已写入中心波长；已写入本轮角度 angle_deg={angle_value}；"
+                    f"median_filtered_lorentz_fit_y={'已写入' if lorentz_fit_info else '未写入'}"
                 )
             else:
                 self.log(
@@ -13556,8 +13766,12 @@ class MeasurementWorkflow:
             "angle_deg": angle_value,
             "fit_peak": fit_peak,
             "fit_peak_x": peak_x,
+            "median_filtered_lorentz_fit_peak": ctx.get("median_filtered_lorentz_fit_peak"),
+            "median_filtered_lorentz_fit_peak_x": ctx.get("median_filtered_lorentz_fit_peak_x"),
+            "median_filtered_lorentz_fit_info": copy.deepcopy(ctx.get("median_filtered_lorentz_fit_info")),
             "raw_values": list(ctx.get("raw_values") or []),
             "raw_median_values": list(ctx.get("raw_median_values") or []),
+            "median_filtered_lorentz_fit_values": list(ctx.get("median_filtered_lorentz_fit_values") or []),
             "x_axis_values": x_axis_values,
         }
 
@@ -13566,7 +13780,8 @@ class MeasurementWorkflow:
 
         self.log(
             f"[绘图] 已追加数据点：cycle={cycle_index}, "
-            f"angle={angle_value}, peak_x={peak_x}, fit_peak={fit_peak}"
+            f"angle={angle_value}, peak_x={peak_x}, fit_peak={fit_peak}, "
+            f"lorentz_peak={ctx.get('median_filtered_lorentz_fit_peak')}"
         )
 
     # --------------------------------------------------------
@@ -16485,12 +16700,12 @@ class MeasurementWorkflowGUI:
         # 中间上部：图像/曲线显示。
         # 现在固定显示三张图：
         #   1. 序号 - 拟合峰值；
-        #   2. xlsx横坐标 - 原始数据；
-        #   3. xlsx横坐标 - 中值滤波结果。
+        #   2. wavelength(nm) - 原始数据；
+        #   3. wavelength(nm) - 中值滤波结果。
         # 右侧仍然保留“角度-拟合峰值列表”。
         plot_frame = ttk.LabelFrame(
             center_panel,
-            text="图像显示：序号-拟合峰值 / xlsx横坐标-原始数据 / xlsx横坐标-中值滤波结果",
+            text="图像显示：序号-拟合峰值 / wavelength(nm)-原始数据 / wavelength(nm)-中值滤波结果",
             padding=10,
             style="Panel.TLabelframe",
         )
@@ -16509,12 +16724,12 @@ class MeasurementWorkflowGUI:
         x_range_frame = ttk.Frame(plot_frame)
         x_range_frame.grid(row=1, column=0, sticky="ew", pady=(6, 0))
         x_range_frame.columnconfigure(5, weight=1)
-        ttk.Label(x_range_frame, text="X轴范围").grid(row=0, column=0, padx=(0, 4), sticky="w")
+        ttk.Label(x_range_frame, text="光谱X轴/洛伦兹拟合范围").grid(row=0, column=0, padx=(0, 4), sticky="w")
         ttk.Label(x_range_frame, text="min").grid(row=0, column=1, padx=(4, 2), sticky="w")
         ttk.Entry(x_range_frame, textvariable=self.plot_x_min_var, width=10).grid(row=0, column=2, padx=(0, 6), sticky="w")
         ttk.Label(x_range_frame, text="max").grid(row=0, column=3, padx=(4, 2), sticky="w")
         ttk.Entry(x_range_frame, textvariable=self.plot_x_max_var, width=10).grid(row=0, column=4, padx=(0, 6), sticky="w")
-        ttk.Button(x_range_frame, text="清空范围", command=self.clear_plot_x_range).grid(row=0, column=5, padx=(6, 0), sticky="w")
+        ttk.Button(x_range_frame, text="清空范围(全谱)", command=self.clear_plot_x_range).grid(row=0, column=5, padx=(6, 0), sticky="w")
         ttk.Label(plot_frame, textvariable=self.plot_status_var).grid(row=2, column=0, sticky="w", pady=(4, 0))
         self.plot_x_min_var.trace_add("write", self._on_plot_x_range_change)
         self.plot_x_max_var.trace_add("write", self._on_plot_x_range_change)
@@ -17852,6 +18067,8 @@ class MeasurementWorkflowGUI:
             raw_remove_above=float(self.raw_remove_above_var.get()),
             median_filter_window=int(self.median_filter_window_var.get()),
             x_axis_xlsx_path=self.x_axis_xlsx_path_var.get().strip(),
+            lorentz_fit_x_min_nm=self._get_plot_x_range()[0],
+            lorentz_fit_x_max_nm=self._get_plot_x_range()[1],
 
             enable_delta_w_judge=bool(self.enable_delta_w_judge_var.get()),
             delta_w_threshold=float(self.delta_w_threshold_var.get()),
@@ -18267,6 +18484,23 @@ class MeasurementWorkflowGUI:
         return xs, ys
 
     @staticmethod
+    def _looks_like_index_axis(x_values: List[float], expected_len: int) -> bool:
+        if not x_values or expected_len <= 1 or len(x_values) < expected_len:
+            return False
+        try:
+            first = float(x_values[0])
+            last = float(x_values[expected_len - 1])
+            mid_i = expected_len // 2
+            mid = float(x_values[mid_i])
+        except Exception:
+            return False
+        return (
+            abs(first - 0.0) <= 1e-6
+            and abs(last - float(expected_len - 1)) <= 1e-6
+            and abs(mid - float(mid_i)) <= 1e-6
+        )
+
+    @staticmethod
     def _lorentzian_model(x: Any, y0: float, z: float, w: float, c: float):
         x_arr = np.asarray(x, dtype=float)
         return y0 + z * w / (4.0 * (x_arr - c) ** 2 + w ** 2)
@@ -18295,19 +18529,32 @@ class MeasurementWorkflowGUI:
             order = np.argsort(x)
             x = x[order]
             y = y[order]
-            y0 = float(np.nanmin(y))
+            x_min = float(np.nanmin(x))
+            x_max = float(np.nanmax(x))
+            if not math.isfinite(x_min) or not math.isfinite(x_max) or x_max <= x_min:
+                return None
+            y0 = float(np.nanpercentile(y, 10))
             ymax = float(np.nanmax(y))
             c0 = float(x[int(np.nanargmax(y))])
-            w0 = max(float((np.nanmax(x) - np.nanmin(x)) / 8.0), 1e-6)
+            w0 = max(float((x_max - x_min) / 8.0), 1e-6)
             z0 = max((ymax - y0) * w0, 1e-6)
+            lower = [float(np.nanmin(y) - abs(ymax - y0) * 5.0 - 1.0), 0.0, 1e-6, x_min]
+            upper = [float(ymax + abs(ymax - y0) * 5.0 + 1.0), 1e9, max((x_max - x_min) * 2.0, 1e-6), x_max]
             popt, _ = curve_fit(
                 self._lorentzian_model,
                 x,
                 y,
                 p0=[y0, z0, w0, c0],
+                bounds=(lower, upper),
                 maxfev=20000,
             )
-            x_fit = np.linspace(float(np.nanmin(x)), float(np.nanmax(x)), 300)
+            y_pred = self._lorentzian_model(x, *popt)
+            residual = y - y_pred
+            ss_res = float(np.sum(residual ** 2))
+            ss_tot = float(np.sum((y - np.nanmean(y)) ** 2))
+            r2 = float(1.0 - ss_res / ss_tot) if ss_tot > 0 else None
+            rmse = float(math.sqrt(ss_res / float(x.size))) if x.size > 0 else None
+            x_fit = np.linspace(x_min, x_max, 300)
             y_fit = self._lorentzian_model(x_fit, *popt)
             return {
                 "params": {
@@ -18315,6 +18562,14 @@ class MeasurementWorkflowGUI:
                     "z": float(popt[1]),
                     "w": float(popt[2]),
                     "c": float(popt[3]),
+                    "peak_height_z_over_w": float(popt[1] / popt[2]) if float(popt[2]) != 0 else None,
+                },
+                "fit_quality": {
+                    "n_points": int(x.size),
+                    "x_min": x_min,
+                    "x_max": x_max,
+                    "r2": r2,
+                    "rmse": rmse,
                 },
                 "x_fit": [float(v) for v in x_fit],
                 "y_fit": [float(v) for v in y_fit],
@@ -18331,8 +18586,8 @@ class MeasurementWorkflowGUI:
                - 纵坐标：拟合峰值。
             2. 中间图像显示区固定显示三张图：
                - 序号 - 拟合峰值；
-               - xlsx横坐标 - 原始数据；
-               - xlsx横坐标 - 中值滤波结果。
+               - wavelength(nm) - 原始数据；
+               - wavelength(nm) - 中值滤波结果。
         """
         wf = workflow or self.workflow
         if wf is None:
@@ -18346,6 +18601,8 @@ class MeasurementWorkflowGUI:
         list_points: List[Tuple[int, Optional[float], Optional[float]]] = []
         fit_plot_x: List[int] = []
         fit_plot_y: List[float] = []
+        lorentz_peak_plot_x: List[int] = []
+        lorentz_peak_plot_y: List[float] = []
 
         for p in points:
             try:
@@ -18368,27 +18625,17 @@ class MeasurementWorkflowGUI:
                 if fit_peak_value is not None and math.isfinite(fit_peak_value):
                     fit_plot_x.append(float(record_index))
                     fit_plot_y.append(float(fit_peak_value))
+                lorentz_peak_value = p.get("median_filtered_lorentz_fit_peak")
+                if lorentz_peak_value is not None:
+                    lorentz_peak_value = float(lorentz_peak_value)
+                    if math.isfinite(lorentz_peak_value):
+                        lorentz_peak_plot_x.append(float(record_index))
+                        lorentz_peak_plot_y.append(float(lorentz_peak_value))
             except Exception:
                 continue
 
         x_min, x_max = self._get_plot_x_range()
-        filtered_list_points: List[Tuple[int, Optional[float], Optional[float]]] = []
-        for record_index, x_value, fit_peak in list_points:
-            if x_value is None:
-                filtered_list_points.append((record_index, x_value, fit_peak))
-                continue
-            try:
-                xf = float(x_value)
-            except Exception:
-                continue
-            if x_min is not None and xf < x_min:
-                continue
-            if x_max is not None and xf > x_max:
-                continue
-            filtered_list_points.append((record_index, x_value, fit_peak))
-
-        fit_plot_x, fit_plot_y = self._filter_xy_by_x_range(fit_plot_x, fit_plot_y, x_min, x_max)
-        self.update_angle_fit_xy_list(filtered_list_points)
+        self.update_angle_fit_xy_list(list_points)
 
         if self.fig is None or self.plot_canvas is None:
             return
@@ -18408,14 +18655,37 @@ class MeasurementWorkflowGUI:
 
         raw_x = wf._make_x_values_for_plot(raw_values, x_axis_values)
         median_x = wf._make_x_values_for_plot(median_values, x_axis_values)
+        expected_axis_len = max(len(raw_values), len(median_values))
         raw_x, raw_values = self._filter_xy_by_x_range(raw_x, raw_values, x_min, x_max)
         median_x, median_values = self._filter_xy_by_x_range(median_x, median_values, x_min, x_max)
-        x_label = "xlsx横坐标" if x_axis_values else "index"
+        x_axis_source = str(wf.context.get("x_axis_source") or "")
+        axis_is_index = (
+            not x_axis_values
+            or x_axis_source == "index_fallback"
+            or self._looks_like_index_axis([float(v) for v in x_axis_values], expected_axis_len)
+        )
+        x_label = "index" if axis_is_index else "wavelength(nm)"
         x_range_label = ""
         if x_min is not None or x_max is not None:
             x_range_label = f"；X范围=[{x_min if x_min is not None else '-∞'}, {x_max if x_max is not None else '+∞'}]"
         bg_label = "；已扣背景光" if bool(wf.context.get("background_light_applied", False)) else ""
         lorentz_result = self._fit_lorentzian_curve(median_x, median_values)
+        lorentz_status = "未叠加"
+        if lorentz_result is not None:
+            l_params = lorentz_result.get("params", {})
+            l_quality = lorentz_result.get("fit_quality", {})
+            r2 = l_quality.get("r2")
+            rmse = l_quality.get("rmse")
+            r2_text = "None" if r2 is None else f"{float(r2):.4f}"
+            rmse_text = "None" if rmse is None else f"{float(rmse):.4f}"
+            lorentz_status = (
+                "已叠加"
+                f"(c={float(l_params.get('c')):.6g}, "
+                f"w={float(l_params.get('w')):.6g}, "
+                f"z={float(l_params.get('z')):.6g}, "
+                f"R²={r2_text}, RMSE={rmse_text}, "
+                f"n={int(l_quality.get('n_points', 0) or 0)})"
+            )
 
         self.ax_fit_peak.clear()
         self.ax_raw.clear()
@@ -18426,8 +18696,12 @@ class MeasurementWorkflowGUI:
         self.ax_fit_peak.set_xlabel("序号")
         self.ax_fit_peak.set_ylabel("拟合峰值")
         self.ax_fit_peak.grid(True)
-        if fit_plot_x and fit_plot_y:
-            self.ax_fit_peak.plot(fit_plot_x, fit_plot_y, marker="o")
+        if (fit_plot_x and fit_plot_y) or (lorentz_peak_plot_x and lorentz_peak_plot_y):
+            if fit_plot_x and fit_plot_y:
+                self.ax_fit_peak.plot(fit_plot_x, fit_plot_y, marker="o", label="拟合峰值")
+            if lorentz_peak_plot_x and lorentz_peak_plot_y:
+                self.ax_fit_peak.plot(lorentz_peak_plot_x, lorentz_peak_plot_y, marker="x", linestyle="--", label="Lorentz峰值")
+            self.ax_fit_peak.legend(loc="best")
         else:
             self.ax_fit_peak.text(
                 0.5,
@@ -18438,8 +18712,8 @@ class MeasurementWorkflowGUI:
                 transform=self.ax_fit_peak.transAxes,
             )
 
-        # 图2：xlsx横坐标 - 原始数据
-        self.ax_raw.set_title("xlsx横坐标 - 原始数据（扣背景后）" if bg_label else "xlsx横坐标 - 原始数据")
+        # 图2：wavelength(nm) - 原始数据
+        self.ax_raw.set_title("wavelength(nm) - 原始数据（扣背景后）" if bg_label else "wavelength(nm) - 原始数据")
         self.ax_raw.set_xlabel(x_label)
         self.ax_raw.set_ylabel("RAW_Y")
         self.ax_raw.grid(True)
@@ -18448,8 +18722,8 @@ class MeasurementWorkflowGUI:
         else:
             self.ax_raw.text(0.5, 0.5, "暂无原始数据", ha="center", va="center", transform=self.ax_raw.transAxes)
 
-        # 图3：xlsx横坐标 - 中值滤波结果，并叠加洛伦兹拟合曲线
-        self.ax_median.set_title("xlsx横坐标 - 中值滤波结果（扣背景后）/ 洛伦兹拟合" if bg_label else "xlsx横坐标 - 中值滤波结果 / 洛伦兹拟合")
+        # 图3：wavelength(nm) - 中值滤波结果，并叠加洛伦兹拟合曲线
+        self.ax_median.set_title("wavelength(nm) - 中值滤波结果（扣背景后）/ 洛伦兹拟合" if bg_label else "wavelength(nm) - 中值滤波结果 / 洛伦兹拟合")
         self.ax_median.set_xlabel(x_label)
         self.ax_median.set_ylabel("median filtered")
         self.ax_median.grid(True)
@@ -18475,10 +18749,11 @@ class MeasurementWorkflowGUI:
 
         self.plot_status_var.set(
             f"图像显示：序号-拟合峰值点数={len(fit_plot_y)}；"
+            f"Lorentz峰值点数={len(lorentz_peak_plot_y)}；"
             f"原始点数={len(raw_values)}；"
             f"中值滤波点数={len(median_values)}；"
-            f"光谱横坐标={x_label}{x_range_label}{bg_label}；"
-            f"洛伦兹拟合={'已叠加' if lorentz_result is not None else '未叠加'}"
+            f"光谱横坐标={x_label}, source={x_axis_source or ('index_fallback' if axis_is_index else 'unknown')}{x_range_label}{bg_label}；"
+            f"洛伦兹拟合={lorentz_status}"
         )
 
     @staticmethod
@@ -18491,7 +18766,7 @@ class MeasurementWorkflowGUI:
         except Exception:
             return str(value)
 
-    def update_angle_fit_xy_list(self, valid_points: List[Tuple[int, Optional[float], Optional[float]]]):
+    def update_angle_fit_xy_list(self, valid_points: List[Tuple[int, Optional[float], Optional[float]]], allow_empty_clear: bool = False):
         """
         把原“角度-拟合峰值图”的 x/y 数据显示到右侧列表。
 
@@ -18504,6 +18779,13 @@ class MeasurementWorkflowGUI:
             return
 
         try:
+            if not valid_points and not allow_empty_clear:
+                existing = [item for item in tree.get_children() if "padding" not in tree.item(item, "tags")]
+                if existing:
+                    self.angle_fit_list_status_var.set(
+                        f"角度-拟合峰值列表：保留已有 {len(existing)} 个记录；本次空刷新未清空"
+                    )
+                    return
             for item in tree.get_children():
                 tree.delete(item)
 
@@ -19501,7 +19783,7 @@ class MeasurementWorkflowGUI:
 
             # 每次点击“运行完整循环测量”都新建一个总文件夹，并清空右侧列表/本次绘图点。
             wf.begin_new_run_session()
-            self.root.after(0, lambda: self.update_angle_fit_xy_list([]))
+            self.root.after(0, lambda: self.update_angle_fit_xy_list([], allow_empty_clear=True))
 
             # 1. 完整测量前先检查统一标定包。
             #    注意：这一步必须在初始化全部设备之前完成，保证人工标定不依赖设备初始化。

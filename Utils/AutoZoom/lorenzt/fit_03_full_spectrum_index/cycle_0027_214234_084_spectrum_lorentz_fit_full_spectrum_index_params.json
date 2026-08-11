@@ -1,0 +1,24 @@
+{
+  "source": "e:\\jupyter file\\2_Optics\\8821L\\Utils\\AutoZoom\\lorenzt\\cycle_0027_214234_084_spectrum.csv",
+  "target_column": "median_filtered_y",
+  "fit_mode": "full_spectrum_index_x_axis",
+  "model": "y0 + z*w/(4*(x-c)^2+w^2)",
+  "x_axis": "index",
+  "fit_index_min": 0,
+  "fit_index_max": 1023,
+  "n_points": 1024,
+  "y0": 1203.2148298057105,
+  "z": 3871.5848561193975,
+  "w_index": 36.216828588548644,
+  "c_index": 524.1847756505554,
+  "peak_height_z_over_w": 106.90016235556168,
+  "fwhm_index": 36.216828588548644,
+  "r2": 0.552914693387828,
+  "rmse": 15.146738134853344,
+  "index_to_wavelength_linear": {
+    "wavelength_nm_per_index": 0.034589492911138144,
+    "wavelength_nm_intercept": 498.28772339939025,
+    "c_wavelength_est_nm": 516.4190089808817,
+    "fwhm_wavelength_est_nm": 1.2527217357275087
+  }
+}
