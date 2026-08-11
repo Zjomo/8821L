@@ -1,0 +1,26 @@
+{
+  "source_csv": "E:\\jupyter file\\2_Optics\\8821L\\Utils\\AutoZoom\\lorenzt\\光谱\\cycle_0040_201619_052_spectrum.csv",
+  "x_column": "wavelength",
+  "y_column": "median_filtered_y",
+  "model": "y0 + z*w/(4*(x-c)^2+w^2)",
+  "requested_range": {
+    "x_min": 510.0,
+    "x_max": 522.0
+  },
+  "params": {
+    "y0": 1111.7008706316808,
+    "z": 69.13535201997661,
+    "w": 0.9239056683397496,
+    "c": 516.3240020529615,
+    "peak_height_z_over_w": 74.82944892438232
+  },
+  "quality": {
+    "n_points": 347,
+    "fit_x_min": 510.003,
+    "fit_x_max": 521.972,
+    "r2": 0.8601356189204036,
+    "rmse": 6.557367980957464
+  },
+  "curve_csv": "E:\\jupyter file\\2_Optics\\8821L\\Utils\\AutoZoom\\lorenzt\\光谱\\lorentz_fit_output\\cycle_0040_201619_052_spectrum\\cycle_0040_201619_052_spectrum_lorentz_fit_curve.csv",
+  "plot_png": "E:\\jupyter file\\2_Optics\\8821L\\Utils\\AutoZoom\\lorenzt\\光谱\\lorentz_fit_output\\cycle_0040_201619_052_spectrum\\cycle_0040_201619_052_spectrum_lorentz_fit.png"
+}
