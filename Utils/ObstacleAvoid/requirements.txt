@@ -1,0 +1,6 @@
+numpy>=1.24
+opencv-python>=4.8
+scipy>=1.10
+# Qt 绑定（本机已装 PyQt5；如需可取消注释）
+# PyQt5>=5.15
+pytest>=7.0

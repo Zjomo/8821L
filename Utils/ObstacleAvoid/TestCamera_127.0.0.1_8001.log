@@ -1,0 +1,4 @@
+2026-09-05 15:53:36,757:TestCamera (microscope.device_server):INFO:PID 21512: Device initialized; starting daemon.
+2026-09-05 15:53:36,758:TestCamera (microscope.device_server):INFO:PID 21512: Serving PYRO:TestCamera@127.0.0.1:8001
+2026-09-05 15:53:37,782:TestCamera (microscope.device_server):INFO:PID 22208: Device initialized; starting daemon.
+2026-09-05 15:53:37,782:TestCamera (microscope.device_server):INFO:PID 22208: Serving PYRO:TestCamera@127.0.0.1:8001

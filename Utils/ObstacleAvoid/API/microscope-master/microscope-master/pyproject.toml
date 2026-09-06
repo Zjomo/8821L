@@ -1,0 +1,99 @@
+[project]
+name = "microscope"
+version = "0.7.0+dev"
+description = "An interface for control of microscope devices"
+readme = "README.rst"
+license = {file = "COPYING"}
+
+# Names are in alphabetical order.  This is the list of active
+# maintainers.  For the full list of people that have contributed to
+# the development of the project, see `doc/authors.rst`.
+maintainers = [
+    {name = "David Miguel Susano Pinto"},
+    {name = "Ian Dobbie"},
+    {name = "Julio Mateos-Langerak"},
+]
+
+# https://pypi.org/classifiers
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Topic :: Scientific/Engineering",
+]
+
+requires-python = ">=3.7"
+dependencies = [
+    "Pillow",
+    "Pyro4",
+    "hidapi",
+    "numpy",
+    "pyserial",
+    "scipy",
+]
+
+[project.optional-dependencies]
+GUI = ["PyQt"]
+
+[project.scripts]
+device-server = "microscope.device_server:_setuptools_entry_point"
+deviceserver = "microscope.device_server:_setuptools_entry_point"
+
+[project.gui-scripts]
+microscope-gui = "microscope.gui:_setuptools_entry_point [GUI]"
+
+[project.urls]
+Homepage = "https://www.python-microscope.org"
+Download = "https://pypi.org/project/microscope/"
+Documentation = "https://www.python-microscope.org/doc/"
+News = "https://www.python-microscope.org/doc/news.html"
+Source = "https://github.com/python-microscope/microscope"
+Tracker = "https://github.com/python-microscope/microscope"
+
+
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.package-dir]
+microscope = "microscope"
+
+
+[tool.isort]
+profile = "black"
+line_length = 79
+
+
+[tool.black]
+line-length = 79
+
+
+[tool.pylint.FORMAT]
+max-line-length = 79
+
+
+[tool.pytest.ini_options]
+testpaths = ["microscope/testsuite",]
+# python_classes must be an empty string otherwise it defaults to all
+# Test* classes which then include the TestDevices imported in the
+# test_* modules.  By using an empty value, it defaults to only
+# picking classes that subclass from unittest.TestCase.  If we ever
+# move away from the unittest framework, an alternative is to import
+# the TestDevice classes under a different name.
+python_classes = ""
+
+
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+# We need to set isolated_build because: 'pyproject.toml file found.
+# To use a PEP 517 build-backend you are required to configure tox to
+# use an isolated_build"
+isolated_build = True
+envlist = py
+
+[testenv]
+description = run whole test suite
+commands = python -m unittest discover \
+    --start-directory microscope/testsuite \
+    --verbose
+"""
