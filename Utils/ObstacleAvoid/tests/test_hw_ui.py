@@ -156,3 +156,26 @@ def test_ui04_xyz_jog_and_estop(qapp):
         stage.move_by({"z": -1.0})
     finally:
         win.close()
+
+
+def test_ui05_xyz_panel_compact_layout(qapp):
+    """XYZ 面板保持紧凑，控件不依赖横向滚动也不会被裁切。"""
+    from obstacle_avoidance.app import MainWindow
+
+    win = MainWindow()
+    try:
+        win.resize(1280, 800)
+        win.show()
+        qapp.processEvents()
+        assert win.xyz_box.height() <= 270
+        assert win.xyz_telemetry_out.height() <= 100
+        # Jog controls share one row; maintenance controls share another.
+        assert win.xyz_jog_minus.geometry().center().y() == \
+            win.xyz_jog_plus.geometry().center().y()
+        centers = [getattr(win, name).geometry().center().x() for name in
+                   ("xyz_home_btn", "xyz_zero_btn", "xyz_enable_btn",
+                    "xyz_stop_btn")]
+        assert centers == sorted(centers)
+        assert win.xyz_position_label.objectName() == "xyzPositionLabel"
+    finally:
+        win.close()

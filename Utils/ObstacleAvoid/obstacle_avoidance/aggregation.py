@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
 from .controller import ControllerConfig, ObstacleAvoidController, RunResult
 from .models import (ConfigError, FailureReason, GoalRegion, Obstacle, Point,
@@ -56,11 +56,15 @@ class AggregationPlanner:
     def __init__(self, planner: Optional[GridPlanner] = None,
                  vision: Optional[VisionPipeline] = None,
                  config: Optional[AggregationConfig] = None,
-                 reporter: Optional[RunReporter] = None) -> None:
+                 reporter: Optional[RunReporter] = None,
+                 controller_sink: Optional[dict] = None,
+                 stage_factory: Optional[Callable[[], object]] = None) -> None:
         self.grid = planner or GridPlanner()
         self.vision = vision or VisionPipeline()
         self.config = config or AggregationConfig()
         self.reporter = reporter or RunReporter()
+        self.controller_sink = controller_sink
+        self.stage_factory = stage_factory
 
     # ---------------- validation
     def validate_region(self, snap: WorkspaceSnapshot,
@@ -137,10 +141,24 @@ class AggregationPlanner:
             target = assignment[tid]
             goal = GoalRegion(center=target,
                               radius_px=cfg.controller.tolerance_px + 1.0)
-            stage = world.make_stage(tid)
+            # Worlds that render/track a designated target omit that ball from
+            # the dynamic-obstacle list.  Rotate the designation for every
+            # sequentially controlled ball; otherwise the previously selected
+            # ball could disappear from collision planning in later runs.
+            if hasattr(world, "target_track_id"):
+                world.target_track_id = tid
+            if self.stage_factory is not None:
+                stage = self.stage_factory()
+            else:
+                try:
+                    stage = world.make_stage(tid)
+                except TypeError:
+                    stage = world.make_stage()
             controller = ObstacleAvoidController(
                 stage=stage, vision=self.vision, planner=self.grid,
                 config=cfg.controller, reporter=self.reporter)
+            if self.controller_sink is not None:
+                self.controller_sink["controller"] = controller
             run = controller.run(
                 world.snapshot(), tid, goal, task_id=f"{task_id}/ball{tid}",
                 extra_obstacles=list(placed),

@@ -123,6 +123,14 @@ class VideoWorld:
 
         return DryRunStage(_move)
 
+    def particle_position(self, track_id: int) -> Point:
+        if self.pipeline is None:
+            raise KeyError(track_id)
+        for item in self.pipeline.tracker.active_particles():
+            if item.track_id == track_id:
+                return item.position_px
+        raise KeyError(track_id)
+
     # ---------------- snapshot（滞后一帧：由上一视觉结果构造）
     def bind_pipeline(self, pipeline: VisionPipeline) -> None:
         self.pipeline = pipeline
@@ -214,6 +222,14 @@ class CameraWorld:
                                       cv2.BORDER_CONSTANT)
         return crop
 
+    def particle_position(self, track_id: int) -> Point:
+        if self.pipeline is None:
+            raise KeyError(track_id)
+        for item in self.pipeline.tracker.active_particles():
+            if item.track_id == track_id:
+                return item.position_px
+        raise KeyError(track_id)
+
     def snapshot(self) -> WorkspaceSnapshot:
         self._frame_counter += 1
         particles = (self.pipeline.tracker.active_particles()
@@ -269,7 +285,9 @@ def _initial_detect(world: VideoWorld, detector: YoloDetector,
 def build_video_scenario(task: str = "video01", weights: str = WEIGHTS,
                          video: str = VIDEO, config: Optional["RoiConfig"] = None,
                          motor: Optional[dict] = None,
-                         cfg_overrides: Optional[dict] = None):
+                         cfg_overrides: Optional[dict] = None,
+                         task_mode: str = "oa",
+                         controller_sink: Optional[dict] = None):
     """返回 (world, run_fn)，与 cli.build_scenario 契约一致。
 
     task=video03：从 RoiConfig 构建——ROI=固定视野，goal 区=终点，
@@ -394,8 +412,19 @@ def build_video_scenario(task: str = "video01", weights: str = WEIGHTS,
                         rep.log("goal_adjusted", from_px=list(goal.center),
                                 to_px=list(fixed))
                     goal = GoalRegion(center=fixed, radius_px=goal.radius_px)
+            if task_mode == "ag":
+                from .aggregation import AggregationConfig, AggregationPlanner
+                ag = AggregationPlanner(
+                    planner, world.pipeline,
+                    AggregationConfig(required_count=len(snap.particles),
+                                      controller=cfg),
+                    rep, controller_sink=controller_sink,
+                    stage_factory=(factory if motor is not None else None))
+                return ag.run(world, snap, goal, task_id=task)
             ctl = ObstacleAvoidController(stage, world.pipeline,
                                           planner, cfg, rep)
+            if controller_sink is not None:
+                controller_sink["controller"] = ctl
             return ctl.run(snap, tid, goal, task_id=task,
                            get_frame=world.render, get_snapshot=world.snapshot)
         finally:

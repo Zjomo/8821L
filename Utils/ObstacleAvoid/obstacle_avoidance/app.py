@@ -27,7 +27,9 @@ if __package__ in (None, ""):  # 支持直接运行：python app.py
                                             MotionStateError)
     from obstacle_avoidance.planner import CollisionModel
     from obstacle_avoidance.reporter import replay, summarize
-    from obstacle_avoidance.roi_zones import RoiConfig, Zone
+    from obstacle_avoidance.roi_zones import (LayoutValidationError, RoiConfig,
+                                               Zone, rect_contains_rect,
+                                               validate_sim_layout)
     from obstacle_avoidance.vision import (get_shared_detector,
                                            try_shared_detector,
                                            warmup_shared_detector_async)
@@ -41,7 +43,8 @@ else:
                          MotionStateError)
     from .planner import CollisionModel
     from .reporter import replay, summarize
-    from .roi_zones import RoiConfig, Zone
+    from .roi_zones import (LayoutValidationError, RoiConfig, Zone,
+                            rect_contains_rect, validate_sim_layout)
     from .vision import (get_shared_detector, try_shared_detector,
                          warmup_shared_detector_async)
 
@@ -123,6 +126,31 @@ class WorkerThread(QtCore.QThread):
         self._sim_layout: Optional[dict] = None   # sim01 多衬底 ROI 布局
         self._run_mode: str = "oa"                # "oa" 避障 / "ag" 组装
 
+    def toggle_pause(self) -> bool:
+        """Toggle the active controller pause state."""
+        ctl = self._controller_ref.get("controller")
+        if ctl is None:
+            return False
+        paused = getattr(ctl, "_pause", None)
+        if paused is not None and paused.is_set():
+            ctl.resume()
+            return False
+        ctl.pause()
+        return True
+
+    def request_estop(self) -> None:
+        """Request controller stop and latch every active stage."""
+        ctl = self._controller_ref.get("controller")
+        if ctl is not None:
+            ctl.request_estop()
+        for stage in list(self._stage_sink):
+            stop = getattr(stage, "stop_all", None)
+            if callable(stop):
+                try:
+                    stop()
+                except Exception as exc:  # noqa: BLE001
+                    _log_exception("worker estop failed", exc)
+
     @property
     def stages(self) -> list:
         """运行期间注册的真实位移台（PicoMotorStage/SerialXYStage）。"""
@@ -177,11 +205,14 @@ class WorkerThread(QtCore.QThread):
         cfg = ControllerConfig(
             max_step_mm=0.05, tolerance_px=8.0, stable_frames=3,
             max_iterations=400, max_track_jump_px=250.0)
-        stage = world.make_stage()
+        stage = world.make_stage(tid)
+        self._stage_sink.append(stage)
         planner = GridPlanner()
         pipeline = VisionPipeline(
             detector, tracker=ParticleTracker(max_jump_px=220.0))
         ctl = ObstacleAvoidController(stage, pipeline, planner, cfg, rep)
+        self._controller_ref["controller"] = ctl
+        self._controller_ref["controller"] = ctl
         return ctl.run(snap, tid, goal, task_id="sim01-oa",
                        get_frame=world.render, get_snapshot=world.snapshot)
 
@@ -207,6 +238,13 @@ class WorkerThread(QtCore.QThread):
             if self._sim_layout and self.scenario == "sim01":
                 layout = self._sim_layout
                 mode = self._run_mode
+                try:
+                    ball_groups = validate_sim_layout(layout, mode=mode)
+                except LayoutValidationError as exc:
+                    self.state_ready.emit("ABORTED", str(exc))
+                    self.error_occurred.emit(str(exc))
+                    self.finished_run.emit(1)
+                    return
                 world, _ = _cli_build("sim01",
                                       sample_spec=self._sample_spec,
                                       sim_layout=layout)
@@ -277,17 +315,20 @@ class WorkerThread(QtCore.QThread):
                     return (grect[0] <= bcx <= grect[0] + grect[2]
                             and grect[1] <= bcy <= grect[1] + grect[3])
 
-                ball_groups: list = [[] for _ in grounds]
-                for bi, b in enumerate(balls):
-                    bcx, bcy = b[0] + b[2] / 2, b[1] + b[3] / 2
-                    for gi, g in enumerate(grounds):
-                        if _in_ground(bcx, bcy, g):
-                            ball_groups[gi].append(bi); break
+                # ball_groups was produced by validate_sim_layout so each
+                # ball belongs to exactly one substrate.
 
                 # 逐 ground 串行执行
                 final_state = None
+                run_failed = False
                 for gi, grect in enumerate(grounds):
                     ball_idx = ball_groups[gi]
+                    world.substrate = world.substrate.__class__(
+                        polygon=[(grect[0], grect[1]),
+                                 (grect[0] + grect[2], grect[1]),
+                                 (grect[0] + grect[2], grect[1] + grect[3]),
+                                 (grect[0], grect[1] + grect[3])],
+                        safety_margin_px=4.0)
                     if not ball_idx:
                         self.state_ready.emit(f"G{gi} 无球，跳过", "")
                         continue
@@ -302,7 +343,11 @@ class WorkerThread(QtCore.QThread):
                         # 逐球串行：先移动第一个球到目标，然后第二个球...
                         for bi in ball_idx:
                             # 把该球设为目标球，其他球当障碍
-                            self._run_single_oa(world, rep, balls[bi], goal_pt)
+                            result = self._run_single_oa(world, rep, balls[bi], goal_pt)
+                            if result is None or result.final_state != RunState.COMPLETE:
+                                final_state = getattr(result, "final_state", RunState.ABORTED)
+                                run_failed = True
+                                break
                             pump_events()   # run_end 在最后一次渲染后，需补泵
                     else:  # ag
                         gr = goal_ranges[gi]
@@ -311,20 +356,46 @@ class WorkerThread(QtCore.QThread):
                         goal = GoalRegion(center=(cx, cy),
                                           radius_px=max(min(gr[2], gr[3]) / 2, 20))
                         # AggregationPlanner.run 把所有检出球聚到 goal
+                        if world.pipeline is None:
+                            if __package__ in (None, ""):
+                                from obstacle_avoidance.sim_microscope import _initial_detect
+                                from obstacle_avoidance.vision import ParticleTracker
+                            else:
+                                from .sim_microscope import _initial_detect
+                                from .vision import ParticleTracker
+                            detector = world.make_detector()
+                            _initial_detect(
+                                world, detector, hint=None,
+                                pipeline=VisionPipeline(
+                                    detector,
+                                    tracker=ParticleTracker(max_jump_px=220.0)))
                         ag = AggregationPlanner(
                             GridPlanner(),
                             world.pipeline or VisionPipeline(),
-                            AggregationConfig(required_count=len(ball_idx)),
-                            rep)
+                            AggregationConfig(
+                                required_count=len(ball_idx),
+                                controller=ControllerConfig(
+                                    max_step_mm=0.05,
+                                    tolerance_px=8.0,
+                                    stable_frames=3,
+                                    max_iterations=400,
+                                    max_track_jump_px=250.0,
+                                    prefer_track_id=True)),
+                            rep, controller_sink=self._controller_ref)
                         result = ag.run(world, world.snapshot(),
                                         goal, task_id=f"sim01-G{gi}-ag")
                         pump_events()   # run_end 在最后一次渲染后，需补泵
                         final_state = result.final_state
+                        run_failed = result.final_state != RunState.COMPLETE
+                    if run_failed:
+                        break
                 world.close()
                 self.state_ready.emit(
                     final_state.value if final_state else "COMPLETE",
                     f"sim01 [{mode}] 全部 ground 完成")
-                self.finished_run.emit(0)
+                self.finished_run.emit(0 if not run_failed and
+                                       final_state in (None, RunState.COMPLETE)
+                                       else 1)
                 return
 
             # ---- 默认路径（单 ground / 其他场景） ----
@@ -586,6 +657,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.resize(1360, 800)
         self.setMinimumSize(1360, 640)
         self.worker: Optional[WorkerThread] = None
+        self._controller_ref: dict = {}
         self._last_frame: Optional[np.ndarray] = None
 
         central = QtWidgets.QWidget()
@@ -716,9 +788,12 @@ class MainWindow(QtWidgets.QMainWindow):
         panel.addWidget(self.estop_btn)
 
         self.xyz_box = QtWidgets.QGroupBox("XYZ stage (um)")
-        xyz = QtWidgets.QGridLayout(self.xyz_box)
+        xyz = QtWidgets.QVBoxLayout(self.xyz_box)
+        xyz.setContentsMargins(10, 8, 10, 8)
+        xyz.setSpacing(5)
         self.xyz_axis_combo = QtWidgets.QComboBox()
         self.xyz_axis_combo.addItems(["x", "y", "z"])
+        self.xyz_axis_combo.setFixedWidth(70)
         self.xyz_step_spin = QtWidgets.QDoubleSpinBox()
         self.xyz_step_spin.setRange(0.001, 1000.0)
         self.xyz_step_spin.setDecimals(3)
@@ -747,41 +822,57 @@ class MainWindow(QtWidgets.QMainWindow):
         self.xyz_stop_btn = QtWidgets.QPushButton("stop")
         self.xyz_stop_btn.setStyleSheet("background:#c0392b;color:white;")
         self.xyz_stop_btn.clicked.connect(self._stop_xyz)
-        # Large numeric ranges otherwise make QDoubleSpinBox request several
-        # hundred pixels, forcing the whole parameter panel to grow.
+        # Keep the numeric editors compact; the panel is also used beside the
+        # live microscope canvas and should not force a wide horizontal scroll.
         for spin in (self.xyz_step_spin, self.xyz_steps_spin,
                      self.xyz_speed_spin, self.xyz_accel_spin):
-            spin.setFixedWidth(115)
-        self.xyz_apply_btn.setFixedWidth(130)
+            spin.setFixedWidth(92)
         for button in (self.xyz_jog_minus, self.xyz_jog_plus):
-            button.setFixedWidth(100)
+            button.setFixedWidth(88)
         for button in (self.xyz_home_btn, self.xyz_zero_btn,
                        self.xyz_enable_btn, self.xyz_stop_btn):
-            button.setFixedWidth(82)
-        xyz.addWidget(QtWidgets.QLabel("axis"), 0, 0)
-        xyz.addWidget(self.xyz_axis_combo, 0, 1)
-        xyz.addWidget(QtWidgets.QLabel("step"), 0, 2)
-        xyz.addWidget(self.xyz_step_spin, 0, 3)
-        xyz.addWidget(self.xyz_jog_minus, 1, 0, 1, 2)
-        xyz.addWidget(self.xyz_jog_plus, 1, 2, 1, 2)
-        xyz.addWidget(QtWidgets.QLabel("steps/unit"), 2, 0)
-        xyz.addWidget(self.xyz_steps_spin, 2, 1)
-        xyz.addWidget(QtWidgets.QLabel("max speed"), 2, 2)
-        xyz.addWidget(self.xyz_speed_spin, 2, 3)
-        xyz.addWidget(QtWidgets.QLabel("accel"), 3, 0)
-        xyz.addWidget(self.xyz_accel_spin, 3, 1)
-        xyz.addWidget(self.xyz_apply_btn, 3, 2, 1, 2)
-        xyz.addWidget(self.xyz_home_btn, 4, 0)
-        xyz.addWidget(self.xyz_zero_btn, 4, 1)
-        xyz.addWidget(self.xyz_enable_btn, 4, 2)
-        xyz.addWidget(self.xyz_stop_btn, 4, 3)
+            button.setFixedWidth(78)
+        self.xyz_apply_btn.setFixedWidth(108)
+
+        def _row(*widgets):
+            row = QtWidgets.QHBoxLayout()
+            row.setContentsMargins(0, 0, 0, 0)
+            row.setSpacing(4)
+            for widget in widgets:
+                row.addWidget(widget)
+            return row
+
+        axis_label = QtWidgets.QLabel("Axis")
+        axis_label.setMinimumWidth(34)
+        step_label = QtWidgets.QLabel("Step (um)")
+        step_label.setMinimumWidth(58)
+        xyz.addLayout(_row(axis_label, self.xyz_axis_combo,
+                           step_label, self.xyz_step_spin,
+                           self.xyz_jog_minus, self.xyz_jog_plus))
+
+        steps_label = QtWidgets.QLabel("Steps/unit")
+        steps_label.setMinimumWidth(67)
+        speed_label = QtWidgets.QLabel("Max speed")
+        speed_label.setMinimumWidth(61)
+        accel_label = QtWidgets.QLabel("Accel")
+        accel_label.setMinimumWidth(38)
+        xyz.addLayout(_row(steps_label, self.xyz_steps_spin,
+                           speed_label, self.xyz_speed_spin,
+                           accel_label, self.xyz_accel_spin,
+                           self.xyz_apply_btn))
+
+        xyz.addLayout(_row(self.xyz_home_btn, self.xyz_zero_btn,
+                           self.xyz_enable_btn, self.xyz_stop_btn))
         self.xyz_position_label = QtWidgets.QLabel("x=--  y=--  z=--")
-        xyz.addWidget(self.xyz_position_label, 5, 0, 1, 4)
+        self.xyz_position_label.setObjectName("xyzPositionLabel")
+        self.xyz_position_label.setMinimumHeight(22)
+        xyz.addWidget(self.xyz_position_label)
         self.xyz_telemetry_out = QtWidgets.QPlainTextEdit()
         self.xyz_telemetry_out.setReadOnly(True)
         self.xyz_telemetry_out.setMaximumBlockCount(80)
-        self.xyz_telemetry_out.setFixedHeight(115)
-        xyz.addWidget(self.xyz_telemetry_out, 6, 0, 1, 4)
+        self.xyz_telemetry_out.setFixedHeight(88)
+        self.xyz_telemetry_out.setPlaceholderText("Telemetry will appear here")
+        xyz.addWidget(self.xyz_telemetry_out)
         panel.addWidget(self.xyz_box)
 
         self.state_label = QtWidgets.QLabel("IDLE")
@@ -1224,6 +1315,12 @@ class MainWindow(QtWidgets.QMainWindow):
                 return i
         return -1
 
+    def _find_ground_for_rect(self, rect) -> int:
+        """Return the sole ground containing the complete rectangle."""
+        owners = [i for i, g in enumerate(self._sim_cfg["grounds"])
+                  if rect_contains_rect(g["rect"], rect)]
+        return owners[0] if len(owners) == 1 else -1
+
     def _sim_rect(self, x: int, y: int, w: int, h: int) -> None:
         """sim01：按画框模式记录 ROI；目标点/范围归属到其所在 ground。"""
         mode = self.mode_combo.currentText()
@@ -1244,7 +1341,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if w <= 6 or h <= 6:
                 self.detail_label.setText("圆球框太小")
                 return
-            if self._find_ground_for(cx, cy) < 0:
+            if self._find_ground_for_rect((x, y, w, h)) < 0:
                 self.detail_label.setText(
                     "⚠ 圆球必须在衬底范围内（先画衬底）")
                 return
@@ -1258,7 +1355,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if w <= 6 or h <= 6:
                 self.detail_label.setText("障碍框太小")
                 return
-            if self._find_ground_for(cx, cy) < 0:
+            if self._find_ground_for_rect((x, y, w, h)) < 0:
                 self.detail_label.setText(
                     "⚠ 障碍物必须在衬底范围内（先画衬底）")
                 return
@@ -1283,7 +1380,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self._simlog(f"设定目标点 -> {self._sim_cfg['grounds'][gi]['id']}"
                          f": ({cx},{cy})")
         elif mode == "目标范围(组装)":
-            gi = self._find_ground_for(cx, cy)
+            gi = self._find_ground_for_rect((x, y, w, h))
             if gi < 0:
                 self.detail_label.setText(
                     "⚠ 目标范围必须在某个衬底范围内")
@@ -1815,6 +1912,28 @@ class MainWindow(QtWidgets.QMainWindow):
             self.live_btn.setChecked(False)   # 停实时检测，独占推理资源
         scenario = self.scenario_combo.currentText()
         motor = self.mode_sel.currentIndex() == 1
+        if motor:
+            try:
+                roi_cfg, motor_cfg = self._motor_params()
+                self._controller_ref = {}
+                builder = lambda: video_sim.build_video_scenario(
+                    "video03", config=roi_cfg, motor=motor_cfg,
+                    task_mode=mode, controller_sink=self._controller_ref)
+            except Exception as exc:  # noqa: BLE001
+                self.detail_label.setText(str(exc))
+                return
+            self.state_label.setText(f"RUNNING video03 [{mode}]")
+            self.worker = WorkerThread("video03", self._controller_ref,
+                                       builder=builder)
+            self.worker.frame_ready.connect(self.on_frame)
+            self.worker.state_ready.connect(self.on_state)
+            self.worker.metrics_ready.connect(self.on_metrics)
+            self.worker.motion_ready.connect(self.on_motion)
+            self.worker.finished_run.connect(self.on_done)
+            self.worker.error_occurred.connect(self.on_error_dialog)
+            self.worker.log_ready.connect(self.on_log_line)
+            self.worker.start()
+            return
         c = self._sim_cfg
 
         # ---- 校验：每个 ground 对应一个目标
@@ -1852,6 +1971,11 @@ class MainWindow(QtWidgets.QMainWindow):
             "ground_goal_ranges": [g.get("goal_range") for g in c["grounds"]],
             "run_mode": mode,
         }
+        try:
+            validate_sim_layout(layout, mode=mode)
+        except LayoutValidationError as exc:
+            self.detail_label.setText(str(exc))
+            return
 
         if motor:
             self.detail_label.setText("电机模式需真实硬件连接，当前暂不可用")
@@ -1896,10 +2020,17 @@ class MainWindow(QtWidgets.QMainWindow):
 
     @Slot()
     def on_pause(self) -> None:
+        if self.worker is None or not self.worker.isRunning():
+            return
+        paused = self.worker.toggle_pause()
+        self.pause_btn.setText("继续" if paused else "暂停")
+        self._simlog("任务已暂停" if paused else "任务已恢复，重新验证")
         pass  # dryrun 场景由 controller 内部处理；UI 预留
 
     @Slot()
     def on_estop(self) -> None:
+        if self.worker is not None:
+            self.worker.request_estop()
         """急停：真实 stage 立即 stop_all（immediate），非阻塞发送。"""
         self.state_label.setText("ESTOP REQUESTED")
         self._simlog("⚠ 急停请求（ESTOP）")
@@ -1929,6 +2060,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     @Slot(int)
     def on_done(self, code: int) -> None:
+        self.pause_btn.setText("暂停")
         self.state_label.setText(self.state_label.text() +
                                  (" [OK]" if code == 0 else " [FAIL]"))
         self._simlog(f"运行完成 exit={code}")

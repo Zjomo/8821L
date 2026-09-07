@@ -55,7 +55,8 @@ SAMPLE_CATEGORIES = ("ground", "mask", "obstacle")
 #   ball1 (550,220) 随台位漂移作为动态障碍。
 # 球半径 12px 与 CollisionModel.ball_radius_px 一致（视觉检测 = 规划膨胀模型）。
 DEFAULT_BALLS = [((1420.0, 1150.0), 12.0), ((1650.0, 920.0), 12.0)]
-DEFAULT_OBSTACLES = [(480.0, 435.0, 55.0)]
+# Stored in sample coordinates; this maps to window (480, 435) initially.
+DEFAULT_OBSTACLES = [(1580.0, 1135.0, 55.0)]
 GOAL = (620.0, 450.0)        # 终点（窗口坐标）
 TARGET_HINT = (320.0, 450.0)  # 目标球初始位置提示（窗口坐标）
 
@@ -223,8 +224,30 @@ class SimMicroscopeWorld:
         return frame
 
     # ---------------- stage
-    def make_stage(self) -> DryRunStage:
+    def _ball_index_for_track(self, track_id: Optional[int]) -> Optional[int]:
+        if track_id is None or self.pipeline is None:
+            return None
+        particles = self.pipeline.tracker.active_particles()
+        particle = next((p for p in particles if p.track_id == track_id), None)
+        if particle is None:
+            return None
+        wx, wy = particle.position_px
+        best = min(range(len(self._balls)),
+                   key=lambda i: math.dist(self._to_window(self._balls[i][:2]),
+                                           (wx, wy)),
+                   default=None)
+        return best
+
+    def make_stage(self, track_id: Optional[int] = None) -> DryRunStage:
         def _move(dx_mm: float, dy_mm: float) -> None:
+            ball_index = self._ball_index_for_track(track_id)
+            if ball_index is not None:
+                x, y, r = self._balls[ball_index]
+                self._balls[ball_index] = (
+                    x + dx_mm * self.transform.px_per_mm,
+                    y + dy_mm * self.transform.px_per_mm,
+                    r)
+                return
             # 契约：命令 (dx,dy) -> 球画面位移 +(dx,dy)*ppm。
             # 相机视野中心 = 台位，故台位需向反方向移动。
             try:
@@ -241,13 +264,22 @@ class SimMicroscopeWorld:
     def bind_pipeline(self, pipeline: VisionPipeline) -> None:
         self.pipeline = pipeline
 
+    def particle_position(self, track_id: int) -> Point:
+        if self.pipeline is None:
+            raise KeyError(track_id)
+        for particle in self.pipeline.tracker.active_particles():
+            if particle.track_id == track_id:
+                return particle.position_px
+        raise KeyError(track_id)
+
     def snapshot(self) -> WorkspaceSnapshot:
         self.frame_counter += 1
         particles = (self.pipeline.tracker.active_particles()
                      if self.pipeline is not None else [])
         obstacles: List[Obstacle] = []
-        for x, y, r in self._obstacles:   # 相机固定（窗口坐标）
-            obstacles.append(Obstacle(kind="circle", center=(x, y),
+        for x, y, r in self._obstacles:   # stored in sample coordinates
+            wx, wy = self._to_window((x, y))
+            obstacles.append(Obstacle(kind="circle", center=(wx, wy),
                                       radius=r, obstacle_id="sim-obs"))
         for p in particles:
             if p.track_id == self.target_track_id:
@@ -321,12 +353,13 @@ def build_sim_scenario(balls: Sequence[Tuple[Point, float]] = DEFAULT_BALLS,
         gx0 = SAMPLE_CENTER[0] - WINDOW[0] / 2.0
         gy0 = SAMPLE_CENTER[1] - WINDOW[1] / 2.0
         lb = layout.get("balls") or []
-        if lb:
+        if "balls" in layout:
             balls = [((x + w / 2.0 + gx0, y + h / 2.0 + gy0), min(w, h) / 2.0)
                      for x, y, w, h in lb]
-            hint = (lb[0][0] + lb[0][2] / 2.0, lb[0][1] + lb[0][3] / 2.0)
+            hint = ((lb[0][0] + lb[0][2] / 2.0,
+                     lb[0][1] + lb[0][3] / 2.0) if lb else None)
         lo = layout.get("obstacles") or []
-        if lo:
+        if "obstacles" in layout:
             obstacles = [(x + w / 2.0, y + h / 2.0, min(w, h) / 2.0)
                          for x, y, w, h in lo]
         lg = layout.get("goal")
@@ -355,13 +388,13 @@ def build_sim_scenario(balls: Sequence[Tuple[Point, float]] = DEFAULT_BALLS,
         cfg = cfg or ControllerConfig(
             max_step_mm=0.05,      # 0.05mm = 100px @2000px/mm
             tolerance_px=8.0, stable_frames=3, max_iterations=400,
-            max_track_jump_px=250.0)
+            max_track_jump_px=250.0, prefer_track_id=True)
         # 一步位移 100px > tracker 默认关联半径 40px，必须放宽，
         # 否则目标 track 停留原地（coast）-> 滑移误报
         pipeline = VisionPipeline(
             detector, tracker=ParticleTracker(max_jump_px=220.0))
         stage = (stage_factory() if stage_factory is not None
-                 else world.make_stage())
+                 else world.make_stage(tid))
         if stage_sink is not None:
             stage_sink.append(stage)
         try:

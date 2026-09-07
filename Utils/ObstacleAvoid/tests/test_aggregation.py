@@ -123,3 +123,36 @@ def test_aggregation_requires_min_balls():
     with pytest.raises(ConfigError):
         ag.run(world, snap, GoalRegion(center=(470, 240), radius_px=60),
                task_id="ag-min")
+
+
+def test_sim_microscope_multi_ball_aggregation_binds_each_target():
+    """显微镜仿真聚拢必须逐球绑定，不能把整个位移台视作所有球一起移动。"""
+    pytest.importorskip("simulator_app")
+    from obstacle_avoidance.controller import ControllerConfig
+    from obstacle_avoidance.sim_microscope import _initial_detect
+    from obstacle_avoidance.vision import ParticleTracker
+
+    layout = {
+        "grounds": [[40, 40, 500, 400]],
+        "balls": [[100, 200, 30, 30], [180, 220, 30, 30]],
+        "obstacles": [[300, 150, 60, 60]],
+    }
+    world, _ = build_scenario("sim01", sim_layout=layout)
+    try:
+        detector = world.make_detector()
+        pipeline = VisionPipeline(
+            detector, tracker=ParticleTracker(max_jump_px=220.0))
+        snap, _ = _initial_detect(world, detector, pipeline=pipeline)
+        ag = AggregationPlanner(
+            GridPlanner(), pipeline,
+            AggregationConfig(
+                required_count=2,
+                controller=ControllerConfig(
+                    max_step_mm=0.05, tolerance_px=8.0, stable_frames=3,
+                    max_iterations=400, max_track_jump_px=250.0,
+                    prefer_track_id=True)))
+        result = ag.run(world, snap, GoalRegion(center=(400, 340), radius_px=70),
+                        task_id="sim-ag")
+        assert result.completed, result.detail
+    finally:
+        world.close()

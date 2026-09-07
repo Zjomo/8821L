@@ -18,6 +18,83 @@ Rect = Tuple[int, int, int, int]  # (x, y, w, h)
 ZONE_KINDS = ("goal", "obstacle", "free")
 
 
+class LayoutValidationError(ValueError):
+    """Invalid simulation/motor task layout."""
+
+
+def rect_contains_rect(outer, inner, margin: float = 0.0) -> bool:
+    """Return True when the complete inner rectangle is inside outer."""
+    ox, oy, ow, oh = [float(v) for v in outer]
+    ix, iy, iw, ih = [float(v) for v in inner]
+    return (ix >= ox + margin and iy >= oy + margin and
+            ix + iw <= ox + ow - margin and
+            iy + ih <= oy + oh - margin)
+
+
+def validate_sim_layout(layout: dict, mode: str = "oa") -> list[list[int]]:
+    """Validate a multi-ground layout and return ball indexes per ground.
+
+    Every drawable object must be fully contained by exactly one substrate.
+    A ground containing balls must have exactly one task target for the
+    selected mode (point for ``oa``, rectangle for ``ag``).
+    """
+    if mode not in ("oa", "ag"):
+        raise LayoutValidationError(f"unsupported task mode: {mode}")
+    grounds = layout.get("grounds") or []
+    balls = layout.get("balls") or []
+    obstacles = layout.get("obstacles") or []
+    if not grounds:
+        raise LayoutValidationError("at least one substrate ground is required")
+
+    def owners(rect):
+        return [i for i, g in enumerate(grounds)
+                if rect_contains_rect(g, rect)]
+
+    for index, rect in enumerate(grounds):
+        if len(rect) != 4 or rect[2] <= 0 or rect[3] <= 0:
+            raise LayoutValidationError(f"substrate {index} has invalid rectangle")
+
+    groups = [[] for _ in grounds]
+    for kind, items in (("ball", balls), ("obstacle", obstacles)):
+        for index, rect in enumerate(items):
+            if len(rect) != 4 or rect[2] <= 0 or rect[3] <= 0:
+                raise LayoutValidationError(f"{kind} {index} has invalid rectangle")
+            own = owners(rect)
+            if len(own) != 1:
+                raise LayoutValidationError(
+                    f"{kind} {index} must be fully inside exactly one substrate")
+            if kind == "ball":
+                groups[own[0]].append(index)
+
+    goals = layout.get("ground_goals") or []
+    ranges = layout.get("ground_goal_ranges") or []
+    if len(goals) > len(grounds) or len(ranges) > len(grounds):
+        raise LayoutValidationError("target mapping count cannot exceed substrate count")
+    for i, g in enumerate(grounds):
+        goal = goals[i] if i < len(goals) else None
+        region = ranges[i] if i < len(ranges) else None
+        if groups[i]:
+            if mode == "oa" and goal is None:
+                raise LayoutValidationError(
+                    f"substrate {i} must have exactly one target point")
+            if mode == "ag" and region is None:
+                raise LayoutValidationError(
+                    f"substrate {i} must have exactly one target range")
+            if mode == "oa" and region is not None:
+                raise LayoutValidationError(
+                    f"substrate {i} must have only one target point in avoidance mode")
+            if mode == "ag" and goal is not None:
+                raise LayoutValidationError(
+                    f"substrate {i} must have only one target range in assembly mode")
+        if goal is not None:
+            if len(goal) != 2 or not (g[0] <= goal[0] <= g[0] + g[2] and
+                                      g[1] <= goal[1] <= g[1] + g[3]):
+                raise LayoutValidationError(f"target point for substrate {i} is outside ground")
+        if region is not None and not rect_contains_rect(g, region):
+            raise LayoutValidationError(f"target range for substrate {i} is outside ground")
+    return groups
+
+
 @dataclass
 class Zone:
     """视野内一个命名区域：goal=目标/组装区，obstacle=障碍区，free=自由区。"""

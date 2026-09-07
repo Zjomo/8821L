@@ -45,10 +45,13 @@ class DryRunStage(XYStageProtocol):
         self._seq = 0
         self.timeout_s: Optional[float] = None  # 设置后模拟通信超时
         self._lock = threading.Lock()
+        self._stopped = threading.Event()
 
     def move_by(self, dx_mm: float, dy_mm: float,
                 task_id: str = "", track_id: int = -1, waypoint_index: int = -1,
                 frame_id: int = -1, plan_version: int = -1) -> bool:
+        if self._stopped.is_set():
+            raise StageError("stage stopped")
         if self.timeout_s is not None:
             raise StageError(f"stage communication timeout "
                              f"(simulated, timeout={self.timeout_s}s)")
@@ -65,6 +68,10 @@ class DryRunStage(XYStageProtocol):
             self._last = cmd
         self._on_move(dx_mm, dy_mm)
         return True
+
+    def stop_all(self) -> None:
+        """Latch an emergency stop for this stage instance."""
+        self._stopped.set()
 
     @property
     def last_command(self) -> Optional[StageCommand]:

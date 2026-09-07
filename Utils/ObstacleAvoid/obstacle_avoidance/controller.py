@@ -38,6 +38,7 @@ class ControllerConfig:
     # 语义：一条 stage 命令 (dx,dy) 后，球在图像中的预期位移 = sign * (dx,dy)*px_per_mm。
     # sign=+1：球随光斑/载物移动（SimWorld）；sign=-1：衬底反向移动、球锁定衬底（VideoWorld/相机）。
     ball_shift_sign: int = 1
+    prefer_track_id: bool = False
     slip_threshold_px: float = 25.0    # 实际位移偏离预期超过该值记一次滑移事件
     slip_abort_px: float = 60.0        # 单次滑移超过该值立即安全停止
     slip_max_events: int = 3           # 累计滑移事件上限，超过则停止
@@ -241,7 +242,9 @@ class ObstacleAvoidController:
                               uncertain=False, reason="",
                               particles=[p.to_dict() for p in vis.particles])
 
-            particle = self._match_particle(vis.particles, last_pos)
+            particle = self._match_particle(
+                vis.particles, last_pos,
+                track_id if cfg.prefer_track_id else None)
             if particle is None:
                 # 跟踪丢失（最近邻匹配失败），按不确定处理
                 uncertain_streak += 1
@@ -386,8 +389,16 @@ class ObstacleAvoidController:
                           metrics=result.to_dict())
         return result
 
-    def _match_particle(self, particles, last_pos: Point):
+    def _match_particle(self, particles, last_pos: Point,
+                        preferred_track_id: Optional[int] = None):
         """最近位置链匹配：从检测结果中挑出距 last_pos 最近的球。"""
+        if preferred_track_id is not None:
+            preferred = next((p for p in particles
+                              if p.track_id == preferred_track_id), None)
+            if preferred is not None:
+                d = math.dist(preferred.position_px, last_pos)
+                if d <= self.config.max_track_jump_px:
+                    return preferred
         best, best_d = None, float("inf")
         for p in particles:
             d = math.dist(p.position_px, last_pos)

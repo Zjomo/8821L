@@ -3,7 +3,8 @@ import os
 
 import pytest
 
-from obstacle_avoidance.roi_zones import RoiConfig, Zone
+from obstacle_avoidance.roi_zones import (LayoutValidationError, RoiConfig, Zone,
+                                          validate_sim_layout)
 from obstacle_avoidance import video_sim
 
 VIDEO_SIZE = (1112, 888)
@@ -68,6 +69,43 @@ def test_planner_edge_clearance_configurable():
     b_strict, _ = strict.build_occupancy(snap)
     b_loose, _ = loose.build_occupancy(snap)
     assert b_loose.sum() < b_strict.sum()
+
+
+def test_sim_layout_requires_complete_single_ground_ownership():
+    base = {
+        "grounds": [[0, 0, 100, 100]],
+        "balls": [[10, 10, 20, 20]],
+        "obstacles": [[40, 40, 20, 20]],
+        "ground_goals": [[80, 80]],
+        "ground_goal_ranges": [None],
+    }
+    assert validate_sim_layout(base, mode="oa") == [[0]]
+
+    partly_out = {**base, "balls": [[90, 90, 20, 20]]}
+    with pytest.raises(LayoutValidationError, match="fully inside"):
+        validate_sim_layout(partly_out, mode="oa")
+
+    overlap = {**base, "grounds": [[0, 0, 80, 100], [20, 0, 80, 100]]}
+    with pytest.raises(LayoutValidationError, match="exactly one substrate"):
+        validate_sim_layout(overlap, mode="oa")
+
+
+def test_sim_layout_task_target_contracts():
+    common = {
+        "grounds": [[0, 0, 100, 100]],
+        "balls": [[10, 10, 20, 20]],
+        "obstacles": [],
+    }
+    with pytest.raises(LayoutValidationError, match="target point"):
+        validate_sim_layout({**common, "ground_goals": [None]}, mode="oa")
+    with pytest.raises(LayoutValidationError, match="target range"):
+        validate_sim_layout({**common, "ground_goal_ranges": [None]}, mode="ag")
+    with pytest.raises(LayoutValidationError, match="only one target point"):
+        validate_sim_layout({**common, "ground_goals": [[50, 50]],
+                             "ground_goal_ranges": [[20, 20, 20, 20]]}, mode="oa")
+    with pytest.raises(LayoutValidationError, match="only one target range"):
+        validate_sim_layout({**common, "ground_goals": [[50, 50]],
+                             "ground_goal_ranges": [[20, 20, 20, 20]]}, mode="ag")
 
 
 # ---------------- video03 闭环（需权重+视频）
