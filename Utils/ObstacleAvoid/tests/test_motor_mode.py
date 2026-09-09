@@ -294,7 +294,7 @@ def test_picomotor_xyz_stage_maps_profiled_axes(monkeypatch):
     assert dev.moves == [(4, 6), (1, -2)]
 
 
-def test_kinesis_detects_serials_and_maps_xyz(monkeypatch):
+def test_kinesis_uses_one_controller_serial(monkeypatch):
     from obstacle_avoidance.stages import KinesisKIM101Stage, KinesisXYZStage
 
     class Device:
@@ -322,7 +322,7 @@ def test_kinesis_detects_serials_and_maps_xyz(monkeypatch):
         def SetPositionAs(self, _channel, position): self.position = int(position)
         def Stop(self, _channel): pass
 
-    devices = {serial: Device(serial) for serial in ("X1", "Y2", "Z3")}
+    devices = {"K1": Device("K1")}
     channels = SimpleNamespace(Channel1=1)
     api = {
         "manager": SimpleNamespace(
@@ -336,9 +336,9 @@ def test_kinesis_detects_serials_and_maps_xyz(monkeypatch):
     monkeypatch.setattr(KinesisKIM101Stage, "_load_api",
                         classmethod(lambda cls: api))
     records = KinesisKIM101Stage.detect_devices()
-    assert [record["serial"] for record in records] == ["X1", "Y2", "Z3"]
+    assert [record["serial"] for record in records] == ["K1"]
     stage = KinesisXYZStage(
-        {"x": "X1", "y": "Y2", "z": "Z3"},
+        serial_no="K1",
         profiles={"x": {"steps_per_unit": 2.0}}, confirmed=True)
     stage.move_by({"x": 3.0}, source="test")
-    assert devices["X1"].moves == [6]
+    assert devices["K1"].moves == [6]

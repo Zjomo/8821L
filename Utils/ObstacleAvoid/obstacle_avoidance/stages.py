@@ -485,11 +485,16 @@ class PicoMotorXYZStage:
 class KinesisKIM101Stage(XYStageProtocol):
     """Thorlabs Kinesis KIM101/KCube inertial-motor stage.
 
-    The KIM101 is a single-channel controller, so a practical XYZ stage uses
-    one Kinesis serial number per axis.  The API follows the reference code in
-    ``Kinesis控制器代码.txt``: ``BuildDeviceList`` ->
-    ``CreateKCubeInertialMotor`` -> ``Connect`` -> polling/enable, followed by
-    ``MoveTo`` and ``SetPositionAs`` on ``Channel1``.
+    A KIM101 is one controller and is identified by one serial number.  The
+    logical X/Y(/Z) moves used by the application are dispatched sequentially
+    through that controller's ``Channel1``; the controller is never created
+    once per logical axis.  ``serial_by_axis`` remains accepted as a backwards
+    compatible input, but only its first non-empty value is used.
+
+    The API follows the reference code in ``Kinesis控制器代码.txt``:
+    ``BuildDeviceList`` -> ``CreateKCubeInertialMotor`` -> ``Connect`` ->
+    polling/enable, followed by ``MoveTo`` and ``SetPositionAs`` on
+    ``Channel1``.
 
     pythonnet and the Kinesis DLLs are imported lazily.  This keeps virtual
     mode usable on machines without Kinesis installed and makes detection
@@ -503,8 +508,9 @@ class KinesisKIM101Stage(XYStageProtocol):
         "ThorLabs.MotionControl.KCube.InertialMotorCLI.dll",
     )
 
-    def __init__(self, serial_by_axis: dict, steps_per_mm: float = 1000.0,
+    def __init__(self, serial_no: str = "", steps_per_mm: float = 1000.0,
                  steps_per_mm_by_axis: Optional[dict] = None,
+                 serial_by_axis: Optional[dict] = None,
                  channel=None, confirmed: bool = False,
                  max_step_mm: float = 1.0, speed_steps: Optional[float] = None,
                  timeout_ms: int = 60000) -> None:
@@ -513,13 +519,22 @@ class KinesisKIM101Stage(XYStageProtocol):
                 "real hardware NOT confirmed: 勾选硬件确认后再控制 Kinesis")
         if steps_per_mm <= 0:
             raise StageError("steps_per_mm must be > 0")
-        self.serial_by_axis = {
-            str(axis).lower(): str(serial).strip()
-            for axis, serial in (serial_by_axis or {}).items()
-            if str(serial).strip()
-        }
-        if not all(axis in self.serial_by_axis for axis in ("x", "y")):
-            raise StageError("Kinesis 需要至少配置 X/Y 控制器序列号")
+        # ``serial_by_axis`` was used by an earlier UI revision.  Accept it so
+        # saved configurations keep working, while enforcing the real KIM101
+        # contract: exactly one controller serial number.
+        if isinstance(serial_no, dict) and serial_by_axis is None:
+            serial_by_axis = serial_no
+            serial_no = ""
+        serial_no = str(serial_no or "").strip()
+        if not serial_no:
+            for value in (serial_by_axis or {}).values():
+                value = str(value or "").strip()
+                if value:
+                    serial_no = value
+                    break
+        if not serial_no:
+            raise StageError("Kinesis 需要配置 KIM101 控制器序列号")
+        self.serial_no = serial_no
         self.steps_per_mm_by_axis = {"x": float(steps_per_mm),
                                      "y": float(steps_per_mm),
                                      "z": float(steps_per_mm)}
@@ -533,7 +548,7 @@ class KinesisKIM101Stage(XYStageProtocol):
         self.timeout_ms = int(timeout_ms)
         self.channel = channel
         self.speed_steps = speed_steps
-        self.devices = {}
+        self.device = None
         self._api = self._load_api()
         self._connect_all()
         self.position_mm = [0.0, 0.0]
@@ -636,23 +651,23 @@ class KinesisKIM101Stage(XYStageProtocol):
         channel = self._channel_value(self._api["channels"], self.channel)
         self.channel = channel
         try:
-            for axis, serial in self.serial_by_axis.items():
-                device = self._api["motor"].CreateKCubeInertialMotor(serial)
-                device.Connect(serial)
-                if not device.IsSettingsInitialized():
-                    device.WaitForSettingsInitialized(10000)
-                device.StartPolling(250)
-                time.sleep(0.05)
-                device.EnableDevice()
-                time.sleep(0.05)
-                if self.speed_steps and self.speed_steps > 0:
-                    config = device.GetInertialMotorConfiguration(serial)
-                    settings = self._api["settings"].GetSettings(config)
-                    settings.Drive.Channel(channel).StepRate = int(self.speed_steps)
-                    settings.Drive.Channel(channel).StepAcceleration = int(
-                        max(1, self.speed_steps * 10))
-                    device.SetSettings(settings, True, True)
-                self.devices[axis] = device
+            serial = self.serial_no
+            device = self._api["motor"].CreateKCubeInertialMotor(serial)
+            device.Connect(serial)
+            if not device.IsSettingsInitialized():
+                device.WaitForSettingsInitialized(10000)
+            device.StartPolling(250)
+            time.sleep(0.05)
+            device.EnableDevice()
+            time.sleep(0.05)
+            if self.speed_steps and self.speed_steps > 0:
+                config = device.GetInertialMotorConfiguration(serial)
+                settings = self._api["settings"].GetSettings(config)
+                settings.Drive.Channel(channel).StepRate = int(self.speed_steps)
+                settings.Drive.Channel(channel).StepAcceleration = int(
+                    max(1, self.speed_steps * 10))
+                device.SetSettings(settings, True, True)
+            self.device = device
         except Exception as exc:  # noqa: BLE001 - close partial connections
             self.close()
             raise StageError(f"连接 Kinesis 控制器失败: {exc}") from exc
@@ -661,11 +676,10 @@ class KinesisKIM101Stage(XYStageProtocol):
     def last_command(self) -> Optional[StageCommand]:
         return self._last
 
-    def _device(self, axis: str):
-        try:
-            return self.devices[str(axis).lower()]
-        except KeyError as exc:
-            raise StageError(f"Kinesis 未配置 {axis.upper()} 控制器") from exc
+    def _device(self, axis: str = ""):
+        if self.device is None:
+            raise StageError("Kinesis KIM101 控制器未连接")
+        return self.device
 
     def move_axis_steps(self, axis: str, steps: int) -> None:
         if not steps:
@@ -704,8 +718,6 @@ class KinesisKIM101Stage(XYStageProtocol):
 
     def prepare_focus(self, z_safe_um: float = 5.0,
                       z_focus_um: float = 0.0) -> None:
-        if "z" not in self.devices:
-            return
         scale = self.steps_per_mm_by_axis["z"] / 1000.0
         self.move_axis_steps("z", int(round(z_safe_um * scale)))
         self.move_axis_steps("z", int(round((z_focus_um - z_safe_um) * scale)))
@@ -714,14 +726,16 @@ class KinesisKIM101Stage(XYStageProtocol):
         self._device(axis).SetPositionAs(self.channel, 0)
 
     def stop_all(self) -> None:
-        for device in self.devices.values():
+        if self.device is not None:
             try:
-                device.Stop(self.channel)
+                self.device.Stop(self.channel)
             except Exception:  # noqa: BLE001
                 pass
 
     def close(self) -> None:
-        for device in list(self.devices.values()):
+        device = self.device
+        self.device = None
+        if device is not None:
             try:
                 device.StopPolling()
             except Exception:  # noqa: BLE001
@@ -730,18 +744,22 @@ class KinesisKIM101Stage(XYStageProtocol):
                 device.Disconnect()
             except Exception:  # noqa: BLE001
                 pass
-        self.devices.clear()
 
 
 class KinesisXYZStage:
-    """XYZ UI facade using one Kinesis KIM101 controller per axis."""
+    """XYZ UI facade backed by one Kinesis KIM101 controller."""
 
-    def __init__(self, serial_by_axis: dict, steps_per_mm: float = 1000.0,
+    def __init__(self, serial_no: str = "", steps_per_mm: float = 1000.0,
                  steps_per_mm_by_axis: Optional[dict] = None,
+                 serial_by_axis: Optional[dict] = None,
                  profiles: Optional[dict] = None, confirmed: bool = False,
                  speed_steps: Optional[float] = None):
+        if isinstance(serial_no, dict) and serial_by_axis is None:
+            serial_by_axis = serial_no
+            serial_no = ""
         self.driver = KinesisKIM101Stage(
-            serial_by_axis=serial_by_axis, steps_per_mm=steps_per_mm,
+            serial_no=serial_no, serial_by_axis=serial_by_axis,
+            steps_per_mm=steps_per_mm,
             steps_per_mm_by_axis=steps_per_mm_by_axis,
             confirmed=confirmed, speed_steps=speed_steps)
         config = default_motion_config()

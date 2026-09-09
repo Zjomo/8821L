@@ -1467,19 +1467,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.baud_spin.setValue(115200)
         form.addRow("波特率", self.baud_spin)
         self.serial_widgets = [self.port_edit, self.baud_spin]
-        # -- Thorlabs Kinesis KIM101 参数：每个轴使用一个控制器序列号
+        # -- Thorlabs Kinesis KIM101 参数：一个控制器只使用一个序列号
         self.kinesis_widgets = []
-        self.kinesis_serial_x_edit = QtWidgets.QLineEdit()
-        self.kinesis_serial_x_edit.setPlaceholderText("KIM101 X 序列号")
-        self.kinesis_serial_y_edit = QtWidgets.QLineEdit()
-        self.kinesis_serial_y_edit.setPlaceholderText("KIM101 Y 序列号")
-        self.kinesis_serial_z_edit = QtWidgets.QLineEdit()
-        self.kinesis_serial_z_edit.setPlaceholderText("可选：KIM101 Z 序列号")
-        for label, widget in (("Kinesis X 序列号", self.kinesis_serial_x_edit),
-                              ("Kinesis Y 序列号", self.kinesis_serial_y_edit),
-                              ("Kinesis Z 序列号", self.kinesis_serial_z_edit)):
-            form.addRow(label, widget)
-            self.kinesis_widgets.append(widget)
+        self.kinesis_serial_edit = QtWidgets.QLineEdit()
+        self.kinesis_serial_edit.setPlaceholderText("KIM101 控制器序列号")
+        form.addRow("Kinesis 序列号", self.kinesis_serial_edit)
+        self.kinesis_widgets.append(self.kinesis_serial_edit)
         self.kinesis_scan_btn = QtWidgets.QPushButton("检测 Kinesis 控制器")
         self.kinesis_scan_btn.setToolTip(
             "调用 Kinesis DeviceManagerCLI，读取已连接 KIM101 序列号")
@@ -2008,7 +2001,7 @@ class MainWindow(QtWidgets.QMainWindow):
         try:
             if self.driver_combo.currentIndex() == 2:
                 stage = KinesisXYZStage(
-                    serial_by_axis=self._kinesis_serial_map(),
+                    serial_no=self._kinesis_serial(),
                     steps_per_mm=self.spm_spin.value(),
                     profiles=profiles,
                     speed_steps=(self.speed_spin.value() or None),
@@ -2030,8 +2023,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self._xyz_stage = stage
         self._update_xyz_view(stage)
         if self.driver_combo.currentIndex() == 2:
-            self._simlog("XYZ Kinesis 控制器已连接: {}".format(
-                self._kinesis_serial_map()))
+            self._simlog("XYZ Kinesis 控制器已连接: {} (Channel1)".format(
+                self._kinesis_serial()))
         else:
             self._simlog(
                 "XYZ 控制器已连接: USB={} axes=X{} Y{} Z{}".format(
@@ -3454,16 +3447,18 @@ class MainWindow(QtWidgets.QMainWindow):
             self.kinesis_id_label.setText(f"Kinesis: 未检测 ({error})")
             self.kinesis_id_label.setStyleSheet("color:#c00;")
             return
-        # Automatic mapping follows the physical stage convention: first
-        # detected KIM101 -> X, second -> Y, third -> Z.
-        edits = (self.kinesis_serial_x_edit, self.kinesis_serial_y_edit,
-                 self.kinesis_serial_z_edit)
-        for edit, rec in zip(edits, good[:3]):
-            edit.setText(str(rec["serial"]))
+        # KIM101 is a single controller; never interpret multiple detected
+        # devices as X/Y/Z serial fields.  Select the first valid device and
+        # keep the remaining records available for diagnostics.
+        selected = good[0]
+        serial = str(selected["serial"])
+        self.kinesis_serial_edit.setText(serial)
         desc = ", ".join(str(r.get("serial")) for r in good)
-        self.kinesis_id_label.setText(f"Kinesis: {desc}")
+        self.kinesis_id_label.setText(
+            f"Kinesis: KIM101 {serial} (Channel1)" +
+            (f"；另有 {len(good) - 1} 台" if len(good) > 1 else ""))
         self.kinesis_id_label.setStyleSheet("color:#080;")
-        self._simlog(f"Kinesis 检测: {desc} -> X/Y/Z 自动映射")
+        self._simlog(f"Kinesis 检测: {desc} -> 选用控制器 {serial}")
 
     def _frame_source_desc(self) -> str:
         """当前帧源的可读描述（电机模式）。"""
@@ -3474,12 +3469,9 @@ class MainWindow(QtWidgets.QMainWindow):
             return f"屏幕区域 ({x},{y}) {w}x{h}"
         return f"相机 index={self.cam_spin.value()}"
 
-    def _kinesis_serial_map(self) -> dict:
-        return {
-            "x": self.kinesis_serial_x_edit.text().strip(),
-            "y": self.kinesis_serial_y_edit.text().strip(),
-            "z": self.kinesis_serial_z_edit.text().strip(),
-        }
+    def _kinesis_serial(self) -> str:
+        """Return the single KIM101 controller serial configured in the UI."""
+        return self.kinesis_serial_edit.text().strip()
 
     def _motor_params(self):
         """电机模式参数预检：配置完整性 + 硬件确认门控。"""
@@ -3528,19 +3520,17 @@ class MainWindow(QtWidgets.QMainWindow):
                      "speed_steps": (self.speed_spin.value() or None),
                      **common}
         elif self.driver_combo.currentIndex() == 2:  # Thorlabs Kinesis KIM101
-            serials = self._kinesis_serial_map()
-            if not serials.get("x") or not serials.get("y"):
-                raise RuntimeError("Kinesis 至少需要 X/Y 控制器序列号")
+            serial = self._kinesis_serial()
+            if not serial:
+                raise RuntimeError("请输入或检测 KIM101 控制器序列号")
             detected = {str(r.get("serial")) for r in self._kinesis_devices
                         if r.get("ok") and r.get("serial")}
-            if detected:
-                missing = [serial for serial in serials.values()
-                           if serial and serial not in detected]
-                if missing:
-                    raise RuntimeError(
-                        f"Kinesis 序列号未在检测列表中: {missing}")
+            if detected and serial not in detected:
+                raise RuntimeError(
+                    f"Kinesis 序列号未在检测列表中: {serial}")
             motor = {"driver": "kinesis",
-                     "serial_by_axis": serials,
+                     "serial_no": serial,
+                     "channel": 1,
                      "steps_per_mm": self.spm_spin.value(),
                      "steps_per_mm_by_axis": {
                          axis: float(self._xyz_axis_profiles.get(axis, {}).get(
@@ -3587,11 +3577,18 @@ class MainWindow(QtWidgets.QMainWindow):
             driver_desc = ("Kinesis" if motor_cfg.get("driver") == "kinesis"
                            else ("Picomotor" if motor_cfg.get("driver") == "picomotor"
                                  else "串口"))
+            if motor_cfg.get("driver") == "kinesis":
+                axis_desc = (f"KIM101 {motor_cfg.get('serial_no', '')} "
+                             "Channel1（单控制器）")
+            elif motor_cfg.get("driver") == "picomotor":
+                axis_desc = (f"X{motor_cfg.get('x_axis', '相机')} "
+                             f"Y{motor_cfg.get('y_axis', '相机')} "
+                             f"Z{motor_cfg.get('z_axis', '未用')}")
+            else:
+                axis_desc = "相机/串口"
             self.detail_label.setText(
                 f"驱动: {driver_desc} | 帧源: {self._frame_source_desc()} | "
-                f"轴映射 X{motor_cfg.get('x_axis', motor_cfg.get('serial_by_axis', {}).get('x', '相机'))} "
-                f"Y{motor_cfg.get('y_axis', motor_cfg.get('serial_by_axis', {}).get('y', '相机'))} "
-                f"Z{motor_cfg.get('z_axis', motor_cfg.get('serial_by_axis', {}).get('z', '未用'))} | "
+                f"轴映射 {axis_desc} | "
                 f"单步 {self.step_mm_spin.value():.3f}mm | "
                 f"最大步数 {self.iters_spin.value()}")
             self._simlog(self.detail_label.text())

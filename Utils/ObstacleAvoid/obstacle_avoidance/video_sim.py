@@ -474,7 +474,9 @@ def build_video_scenario(task: str = "video01", weights: str = WEIGHTS,
         elif motor.get("driver", "picomotor") == "kinesis":
             from .stages import KinesisKIM101Stage
             default_stage_factory = lambda: KinesisKIM101Stage(
-                serial_by_axis=motor.get("serial_by_axis", {}),
+                serial_no=motor.get("serial_no", ""),
+                # Keep loading reports/configurations written by the old UI.
+                serial_by_axis=motor.get("serial_by_axis"),
                 steps_per_mm=float(motor.get("steps_per_mm", 1000.0)),
                 steps_per_mm_by_axis=motor.get("steps_per_mm_by_axis"),
                 speed_steps=motor.get("speed_steps"),
