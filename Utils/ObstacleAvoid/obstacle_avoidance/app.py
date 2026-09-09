@@ -1987,10 +1987,11 @@ class MainWindow(QtWidgets.QMainWindow):
             return self._motor_xyz_stage
         if not self.confirm_chk.isChecked():
             raise MotionStateError("请先勾选真实电机安全确认，再使用 XYZ 台位")
-        try:
+        if __package__ in (None, ""):   # 直接运行 app.py 无包上下文
+            from obstacle_avoidance.stages import (KinesisXYZStage,
+                                                   PicoMotorXYZStage)
+        else:
             from .stages import KinesisXYZStage, PicoMotorXYZStage
-        except ImportError:  # direct app.py execution
-            from obstacle_avoidance.stages import KinesisXYZStage, PicoMotorXYZStage
         profiles = dict(self._xyz_axis_profiles)
         default_steps_per_unit = self.spm_spin.value() / 1000.0
         for axis in ("x", "y", "z"):
@@ -3423,10 +3424,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.kinesis_id_label.setText("Kinesis: 检测中...")
 
         def _probe():
-            try:
-                from .stages import KinesisKIM101Stage
-            except ImportError:
+            if __package__ in (None, ""):   # 直接运行 app.py 无包上下文
                 from obstacle_avoidance.stages import KinesisKIM101Stage
+            else:
+                from .stages import KinesisKIM101Stage
             records = KinesisKIM101Stage.detect_devices()
             if not getattr(self, "_ui_closing", False):
                 try:
