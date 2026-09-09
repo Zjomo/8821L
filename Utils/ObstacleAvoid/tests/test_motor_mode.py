@@ -275,3 +275,19 @@ def test_picomotor_estop_and_axes_sign(monkeypatch):
     assert dev.moves == [(1, -100)]    # 方向标定生效
     stage.stop_all()
     assert dev.stops == [("all", True)]
+
+
+def test_picomotor_xyz_stage_maps_profiled_axes(monkeypatch):
+    """XYZ panel moves use the detected channel mapping and µm calibration."""
+    from obstacle_avoidance.stages import PicoMotorStage, PicoMotorXYZStage
+    dev = FakePicoDev()
+    monkeypatch.setattr(PicoMotorStage, "_open",
+                        staticmethod(lambda conn, timeout: dev))
+    stage = PicoMotorXYZStage(
+        confirmed=True, x_axis=4, y_axis=2, z_axis=1,
+        steps_per_mm=1000.0,
+        profiles={"x": {"steps_per_unit": 2.0},
+                  "z": {"steps_per_unit": 0.5}})
+    stage.move_by({"x": 3.0}, source="test")
+    stage.move_by({"z": -4.0}, source="test")
+    assert dev.moves == [(4, 6), (1, -2)]

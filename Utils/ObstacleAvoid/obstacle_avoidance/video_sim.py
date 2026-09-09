@@ -477,7 +477,9 @@ def build_video_scenario(task: str = "video01", weights: str = WEIGHTS,
                 conn=int(motor.get("conn", 0)),
                 x_axis=int(motor.get("x_axis", 1)),
                 y_axis=int(motor.get("y_axis", 2)),
+                z_axis=int(motor.get("z_axis", 3)),
                 steps_per_mm=float(motor.get("steps_per_mm", 1000.0)),
+                steps_per_mm_by_axis=motor.get("steps_per_mm_by_axis"),
                 speed_steps=motor.get("speed_steps"),
                 axes_sign=tuple(motor.get("axes_sign", (1.0, 1.0))),
                 max_step_mm=float(motor.get("max_step_mm", 0.30)),
@@ -492,10 +494,21 @@ def build_video_scenario(task: str = "video01", weights: str = WEIGHTS,
             stage_sink=None):
         from .models import FailureReason
         factory = stage_factory or default_stage_factory
-        stage = factory() if factory is not None else world.make_stage()
-        if stage_sink is not None:   # 注册真实 stage：UI 急停可直接 stop_all
+        # Assembly creates one stage per ball through AggregationPlanner.  Do
+        # not open an extra controller here, otherwise the USB handle remains
+        # locked when the first per-ball stage is created.
+        stage = (None if task_mode == "ag" and factory is not None
+                 else (factory() if factory is not None else world.make_stage()))
+        if stage is not None and stage_sink is not None:
             stage_sink.append(stage)
         try:
+            if (motor is not None and motor.get("algorithm") == "Alg2"
+                    and hasattr(stage, "prepare_focus")):
+                # Alg2 fixed-beam operation explicitly selects the Z focus
+                # before the shared XY controller starts.
+                stage.prepare_focus(
+                    z_safe_um=float(motor.get("z_safe_um", 5.0)),
+                    z_focus_um=float(motor.get("z_focus_um", 0.0)))
             snap, tid = _initial_detect(world, detector, hint)
             # goal 自动微调：目标区中心 clearance 不足但仍在衬底内时，
             # 就近挪到第一个可行点（安全层拒绝之前最后一道用户体验防线）
@@ -509,12 +522,23 @@ def build_video_scenario(task: str = "video01", weights: str = WEIGHTS,
                     goal = GoalRegion(center=fixed, radius_px=goal.radius_px)
             if task_mode == "ag":
                 from .aggregation import AggregationConfig, AggregationPlanner
+                def aggregation_stage_factory():
+                    next_stage = factory() if factory is not None else world.make_stage()
+                    if stage_sink is not None:
+                        stage_sink.append(next_stage)
+                    if (motor is not None and motor.get("algorithm") == "Alg2"
+                            and hasattr(next_stage, "prepare_focus")):
+                        next_stage.prepare_focus(
+                            z_safe_um=float(motor.get("z_safe_um", 5.0)),
+                            z_focus_um=float(motor.get("z_focus_um", 0.0)))
+                    return next_stage
                 ag = AggregationPlanner(
                     planner, world.pipeline,
                     AggregationConfig(required_count=len(snap.particles),
                                       controller=cfg),
                     rep, controller_sink=controller_sink,
-                    stage_factory=(factory if motor is not None else None))
+                    stage_factory=(aggregation_stage_factory
+                                   if motor is not None else None))
                 return ag.run(world, snap, goal, task_id=task)
             ctl = ObstacleAvoidController(stage, world.pipeline,
                                           planner, cfg, rep)

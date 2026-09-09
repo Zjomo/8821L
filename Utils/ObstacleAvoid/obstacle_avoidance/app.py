@@ -1269,6 +1269,7 @@ class _MetricsCanvas(QtWidgets.QWidget):
 
 class MainWindow(QtWidgets.QMainWindow):
     usb_count_ready = Signal(int)   # Picomotor USB 设备数（后台检测回填）
+    controller_scan_ready = Signal(object)  # 控制器 ID/可用轴扫描结果
 
     def __init__(self) -> None:
         super().__init__()
@@ -1279,6 +1280,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setMinimumSize(1180, 640)
         self.worker: Optional[WorkerThread] = None
         self._controller_ref: dict = {}
+        self._ui_closing = False
         self._last_frame: Optional[np.ndarray] = None
 
         central = QtWidgets.QWidget()
@@ -1414,6 +1416,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self.pico_count_label = QtWidgets.QLabel("USB 设备: ?")
         form.addRow(self.pico_count_label)
         self.pico_widgets.append(self.pico_count_label)
+        self.controller_scan_btn = QtWidgets.QPushButton("检测并映射控制器")
+        self.controller_scan_btn.setToolTip(
+            "扫描 USB 8742/8743，读取控制器 ID 和可用轴，并自动填入 X/Y/Z 轴号")
+        self.controller_scan_btn.clicked.connect(self._refresh_usb_count)
+        form.addRow(self.controller_scan_btn)
+        self.pico_widgets.append(self.controller_scan_btn)
+        self.controller_id_label = QtWidgets.QLabel("控制器: 未检测")
+        self.controller_id_label.setStyleSheet("color:#888;")
+        form.addRow(self.controller_id_label)
+        self.pico_widgets.append(self.controller_id_label)
         self.axis_x_spin = QtWidgets.QSpinBox()
         self.axis_x_spin.setRange(1, 4)
         self.axis_x_spin.setValue(1)
@@ -1422,7 +1434,15 @@ class MainWindow(QtWidgets.QMainWindow):
         self.axis_y_spin.setRange(1, 4)
         self.axis_y_spin.setValue(2)
         form.addRow("Y 轴号", self.axis_y_spin)
-        self.pico_widgets += [self.axis_x_spin, self.axis_y_spin]
+        self.axis_z_spin = QtWidgets.QSpinBox()
+        self.axis_z_spin.setRange(1, 4)
+        self.axis_z_spin.setValue(3)
+        form.addRow("Z 轴号", self.axis_z_spin)
+        self.pico_widgets += [self.axis_x_spin, self.axis_y_spin,
+                              self.axis_z_spin]
+        for _spin in (self.conn_spin, self.axis_x_spin, self.axis_y_spin,
+                      self.axis_z_spin):
+            _spin.valueChanged.connect(lambda _value: self._close_motor_xyz_stage())
         self.spm_spin = QtWidgets.QDoubleSpinBox()
         self.spm_spin.setRange(1.0, 200000.0)
         self.spm_spin.setDecimals(1)
@@ -1881,6 +1901,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self._pending_scenario: Optional[str] = None
         self._sim_drag_acc = (0, 0)  # 位移台拖拽累计增量 px
         self._xyz_stage = None
+        self._motor_xyz_stage = None
+        self._controller_scan = []
+        self._selected_controller = None
+        self._xyz_axis_profiles = {}
         self._cam_frame_size = None  # 电机模式帧源全画幅 (w,h)，ROI 校验用
         self._screen_region = None   # 屏幕区域帧源 (x,y,w,h)，虚拟桌面全局坐标
         self._live_src_kind = None   # 当前电机模式帧源类型 'camera'/'screen'
@@ -1893,8 +1917,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 f"YOLO 权重预热失败: {exc}"))
         self.usb_count_ready.connect(
             lambda n: self.pico_count_label.setText(f"USB 设备: {n}"))
+        self.controller_scan_ready.connect(self._on_controller_scan)
 
     def closeEvent(self, ev) -> None:  # noqa: N802 - 退出时回收线程
+        self._ui_closing = True
         if self._live_timer.isActive():
             self._live_timer.stop()
         if self._live_detect is not None:
@@ -1915,6 +1941,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if isinstance(self._live_world, video_sim.CameraWorld):
             self._live_world.close()     # 电机模式真实相机
             self._live_world = None
+        self._close_motor_xyz_stage()
         super().closeEvent(ev)
 
     # ---------------- 实时检测 / 区域划分
@@ -1924,11 +1951,61 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def _get_xyz_stage(self):
         if self._is_motor_mode():
-            raise MotionStateError(
-                "电机模式下 XYZ 微调不可用（真实台位由避障/组装控制器驱动）")
+            return self._ensure_motor_xyz_stage()
         world = self._ensure_live()
         self._xyz_stage = world.motion_stage
         return self._xyz_stage
+
+    def _ensure_motor_xyz_stage(self):
+        """Open the selected hardware controller for manual XYZ operations."""
+        if self.driver_combo.currentIndex() != 0:
+            raise MotionStateError(
+                "串口 G 代码驱动当前仅支持避障/组装 XY；XYZ 面板请选择 8742/8743")
+        if self._motor_xyz_stage is not None:
+            return self._motor_xyz_stage
+        if not self.confirm_chk.isChecked():
+            raise MotionStateError("请先勾选真实电机安全确认，再使用 XYZ 台位")
+        try:
+            from .stages import PicoMotorXYZStage
+        except ImportError:  # direct app.py execution
+            from obstacle_avoidance.stages import PicoMotorXYZStage
+        profiles = dict(self._xyz_axis_profiles)
+        default_steps_per_unit = self.spm_spin.value() / 1000.0
+        for axis in ("x", "y", "z"):
+            profiles.setdefault(axis, {})
+            profiles[axis].setdefault("steps_per_unit", default_steps_per_unit)
+        # The first profile is also used as the initial calibration for the
+        # selected axis; defaults match the existing XYZ panel units (µm).
+        try:
+            stage = PicoMotorXYZStage(
+                conn=self.conn_spin.value(),
+                x_axis=self.axis_x_spin.value(),
+                y_axis=self.axis_y_spin.value(),
+                z_axis=self.axis_z_spin.value(),
+                steps_per_mm=self.spm_spin.value(),
+                profiles=profiles,
+                speed_steps=(self.speed_spin.value() or None),
+                max_step_mm=self.step_mm_spin.value(),
+                confirmed=True)
+        except Exception as exc:  # noqa: BLE001 - surface driver errors in UI
+            raise MotionStateError(f"XYZ 控制器连接失败: {exc}") from exc
+        self._motor_xyz_stage = stage
+        self._xyz_stage = stage
+        self._update_xyz_view(stage)
+        self._simlog(
+            "XYZ 控制器已连接: USB={} axes=X{} Y{} Z{}".format(
+                self.conn_spin.value(), self.axis_x_spin.value(),
+                self.axis_y_spin.value(), self.axis_z_spin.value()))
+        return stage
+
+    def _close_motor_xyz_stage(self) -> None:
+        stage = getattr(self, "_motor_xyz_stage", None)
+        self._motor_xyz_stage = None
+        if stage is not None:
+            try:
+                stage.close()
+            except Exception:  # noqa: BLE001 - shutdown must be best-effort
+                pass
 
     def _update_xyz_view(self, stage) -> None:
         pos = stage.position
@@ -1946,19 +2023,24 @@ class MainWindow(QtWidgets.QMainWindow):
             self._update_xyz_view(stage)
             self.on_motion(telemetry.to_dict())
             self._refresh_sim_preview()
-        except (MotionConfigError, MotionLimitError, MotionStateError) as exc:
+        except (MotionConfigError, MotionLimitError, MotionStateError,
+                RuntimeError) as exc:
             self.detail_label.setText(str(exc))
 
     def _apply_xyz_profile(self) -> None:
         try:
             stage = self._get_xyz_stage()
             axis = self.xyz_axis_combo.currentText()
-            stage.configure_axis(axis,
-                                 steps_per_unit=self.xyz_steps_spin.value(),
-                                 max_speed=self.xyz_speed_spin.value(),
-                                 acceleration=self.xyz_accel_spin.value())
+            profile = {
+                "steps_per_unit": self.xyz_steps_spin.value(),
+                "max_speed": self.xyz_speed_spin.value(),
+                "acceleration": self.xyz_accel_spin.value(),
+            }
+            stage.configure_axis(axis, **profile)
+            self._xyz_axis_profiles[axis] = profile
             self.detail_label.setText(f"{axis} motion profile applied")
-        except (MotionConfigError, MotionLimitError, MotionStateError) as exc:
+        except (MotionConfigError, MotionLimitError, MotionStateError,
+                RuntimeError) as exc:
             self.detail_label.setText(str(exc))
 
     def _home_xyz(self) -> None:
@@ -1968,7 +2050,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self._update_xyz_view(stage)
             self.on_motion(telemetry.to_dict())
             self._refresh_sim_preview()
-        except (MotionConfigError, MotionLimitError, MotionStateError) as exc:
+        except (MotionConfigError, MotionLimitError, MotionStateError,
+                RuntimeError) as exc:
             self.detail_label.setText(str(exc))
 
     def _zero_xyz(self) -> None:
@@ -1977,7 +2060,8 @@ class MainWindow(QtWidgets.QMainWindow):
             stage.zero()
             self._update_xyz_view(stage)
             self._refresh_sim_preview()
-        except (MotionConfigError, MotionLimitError, MotionStateError) as exc:
+        except (MotionConfigError, MotionLimitError, MotionStateError,
+                RuntimeError) as exc:
             self.detail_label.setText(str(exc))
 
     def _enable_xyz(self) -> None:
@@ -1985,7 +2069,7 @@ class MainWindow(QtWidgets.QMainWindow):
             stage = self._get_xyz_stage()
             stage.enable()
             self._update_xyz_view(stage)
-        except MotionStateError as exc:
+        except (MotionStateError, RuntimeError) as exc:
             self.detail_label.setText(str(exc))
 
     def _stop_xyz(self) -> None:
@@ -1994,7 +2078,7 @@ class MainWindow(QtWidgets.QMainWindow):
             stage.stop()
             self._update_xyz_view(stage)
             self.detail_label.setText("XYZ stage stopped; press enable to resume")
-        except MotionStateError as exc:
+        except (MotionStateError, RuntimeError) as exc:
             self.detail_label.setText(str(exc))
 
     @Slot(dict)
@@ -3156,6 +3240,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.live_btn.setChecked(False)
         self._live_world = None
         self._live_dets = []
+        if not motor:
+            self._close_motor_xyz_stage()
         self._switch_draw_modes(motor)
         self.sim_spec_btn.setVisible(not motor)   # 仿真图层仅虚拟模式可用
         self._refresh_mode_preview()
@@ -3217,6 +3303,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     @Slot(int)
     def on_driver_changed(self, idx: int) -> None:
+        self._close_motor_xyz_stage()
         pico = idx == 0
         for w in self.pico_widgets:
             w.setVisible(pico)
@@ -3226,8 +3313,9 @@ class MainWindow(QtWidgets.QMainWindow):
             self._refresh_usb_count()
 
     def _refresh_usb_count(self) -> None:
-        """后台枚举 Picomotor USB 设备数（pylablib 扫描可能耗时）。"""
+        """后台枚举 Picomotor 控制器、ID 和可用轴（扫描可能耗时）。"""
         self.pico_count_label.setText("USB 设备: 检测中...")
+        self.controller_id_label.setText("控制器: 检测中...")
 
         def _probe():
             if __package__ in (None, ""):   # 直接运行 app.py 无包上下文
@@ -3235,13 +3323,59 @@ class MainWindow(QtWidgets.QMainWindow):
             else:
                 from .stages import PicoMotorStage
             try:
-                n = PicoMotorStage.usb_device_count()
-            except Exception:  # noqa: BLE001 - pylablib 缺失/无设备
-                n = -1
-            self.usb_count_ready.emit(n)
+                records = PicoMotorStage.scan_usb_controllers()
+                n = sum(1 for rec in records if rec.get("ok"))
+            except Exception as exc:  # noqa: BLE001 - pylablib missing/no device
+                records = [{"conn": 0, "id": "", "axes": [],
+                            "ok": False, "error": str(exc)}]
+                n = 0
+            if not getattr(self, "_ui_closing", False):
+                try:
+                    self.usb_count_ready.emit(n)
+                    self.controller_scan_ready.emit(records)
+                except RuntimeError:
+                    # The window may have been destroyed while the probe was
+                    # still connecting to a controller.
+                    pass
 
         threading.Thread(target=_probe, daemon=True,
                          name="pico-usb-probe").start()
+
+    @Slot(object)
+    def _on_controller_scan(self, records) -> None:
+        """Apply the first detected controller and map its first 3 axes to XYZ."""
+        self._controller_scan = list(records or [])
+        good = [rec for rec in self._controller_scan if rec.get("ok")]
+        if not good:
+            error = (self._controller_scan[0].get("error")
+                     if self._controller_scan else "未发现 USB 8742/8743")
+            self._selected_controller = None
+            self.controller_id_label.setText(f"控制器: 未检测 ({error})")
+            self.controller_id_label.setStyleSheet("color:#c00;")
+            return
+        selected = good[0]
+        self._close_motor_xyz_stage()
+        self._selected_controller = selected
+        self.conn_spin.setValue(int(selected.get("conn", 0)))
+        axes = sorted({int(a) for a in selected.get("axes", [])})
+        if len(axes) >= 3:
+            self.axis_x_spin.setValue(axes[0])
+            self.axis_y_spin.setValue(axes[1])
+            self.axis_z_spin.setValue(axes[2])
+        elif len(axes) >= 2:
+            self.axis_x_spin.setValue(axes[0])
+            self.axis_y_spin.setValue(axes[1])
+            self.controller_id_label.setStyleSheet("color:#c60;")
+        self.controller_id_label.setText(
+            f"控制器: {selected.get('id') or '8742/8743'} | "
+            f"USB {selected.get('conn')} | 可用轴 {axes or '?'}")
+        if len(axes) >= 3:
+            self.controller_id_label.setStyleSheet("color:#080;")
+        self._simlog(
+            "控制器检测: id={} USB={} axes={} -> X{} Y{} Z{}".format(
+                selected.get("id") or "8742/8743", selected.get("conn"),
+                axes or "?", self.axis_x_spin.value(), self.axis_y_spin.value(),
+                self.axis_z_spin.value()))
 
     def _frame_source_desc(self) -> str:
         """当前帧源的可读描述（电机模式）。"""
@@ -3262,6 +3396,7 @@ class MainWindow(QtWidgets.QMainWindow):
             raise RuntimeError("安全门控：请勾选'我确认已连接真实电机'后再运行")
         shift_sign = 1 if self.shift_sign_combo.currentIndex() == 0 else -1
         common = {"ball_shift_sign": shift_sign, "confirmed": True,
+                  "algorithm": self.alg_combo.currentText(),
                   "max_step_mm": float(self.step_mm_spin.value())}
         if self._using_screen_source():
             if self._screen_region is None:
@@ -3271,11 +3406,30 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             common["camera_index"] = self.cam_spin.value()
         if self.driver_combo.currentIndex() == 0:   # 8742/8743 Picomotor
+            axis_map = (self.axis_x_spin.value(), self.axis_y_spin.value(),
+                        self.axis_z_spin.value())
+            if len(set(axis_map)) != 3:
+                raise RuntimeError("8742/8743 的 X/Y/Z 轴号必须一一对应且不能重复")
+            if (self._selected_controller and
+                    int(self._selected_controller.get("conn", -1)) ==
+                    self.conn_spin.value()):
+                available = {int(a) for a in
+                             self._selected_controller.get("axes", [])}
+                missing = [axis for axis in axis_map if axis not in available]
+                if available and missing:
+                    raise RuntimeError(
+                        f"控制器仅提供轴 {sorted(available)}，映射轴 {missing} 不可用")
+            axis_steps = {
+                axis: float(self._xyz_axis_profiles.get(axis, {}).get(
+                    "steps_per_unit", self.spm_spin.value() / 1000.0)) * 1000.0
+                for axis in ("x", "y", "z")}
             motor = {"driver": "picomotor",
                      "conn": self.conn_spin.value(),
                      "x_axis": self.axis_x_spin.value(),
                      "y_axis": self.axis_y_spin.value(),
+                     "z_axis": self.axis_z_spin.value(),
                      "steps_per_mm": self.spm_spin.value(),
+                     "steps_per_mm_by_axis": axis_steps,
                      "speed_steps": (self.speed_spin.value() or None),
                      **common}
         else:                                        # 串口 G 代码
@@ -3299,6 +3453,9 @@ class MainWindow(QtWidgets.QMainWindow):
         motor = self.mode_sel.currentIndex() == 1
         if motor:
             try:
+                # Manual XYZ jog and a closed-loop run must not hold the same
+                # USB controller concurrently.  Reopen it in WorkerThread.
+                self._close_motor_xyz_stage()
                 roi_cfg, motor_cfg = self._motor_params()
                 self._controller_ref = {}
                 builder = lambda: video_sim.build_video_scenario(
@@ -3313,12 +3470,16 @@ class MainWindow(QtWidgets.QMainWindow):
             self.state_label.setText(f"RUNNING video03 [{mode}]")
             self.detail_label.setText(
                 f"帧源: {self._frame_source_desc()} | "
+                f"轴映射 X{motor_cfg.get('x_axis', '相机')} "
+                f"Y{motor_cfg.get('y_axis', '相机')} "
+                f"Z{motor_cfg.get('z_axis', '未用')} | "
                 f"单步 {self.step_mm_spin.value():.3f}mm | "
                 f"最大步数 {self.iters_spin.value()}")
             self._simlog(self.detail_label.text())
             self.worker = WorkerThread("video03", self._controller_ref,
                                        builder=builder)
             self.worker._execution_mode = "motor"
+            self.worker._algorithm = self.alg_combo.currentText()
             self.worker.frame_ready.connect(self.on_frame)
             self.worker.state_ready.connect(self.on_state)
             self.worker.metrics_ready.connect(self.on_metrics)

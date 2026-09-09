@@ -186,11 +186,23 @@ class AggregationPlanner:
                 config=cfg.controller, reporter=self.reporter)
             if self.controller_sink is not None:
                 self.controller_sink["controller"] = controller
-            run = controller.run(
-                world.snapshot(), tid, goal, task_id=f"{task_id}/ball{tid}",
-                extra_obstacles=list(placed),
-                get_frame=world.render,
-                get_snapshot=world.snapshot)
+            try:
+                run = controller.run(
+                    world.snapshot(), tid, goal, task_id=f"{task_id}/ball{tid}",
+                    extra_obstacles=list(placed),
+                    get_frame=world.render,
+                    get_snapshot=world.snapshot)
+            finally:
+                # Hardware assembly opens a controller per ball so that every
+                # task can select a new track.  Release the USB/serial handle
+                # before the next ball is started; virtual stages simply have
+                # no close method and remain unaffected.
+                close = getattr(stage, "close", None)
+                if callable(close):
+                    try:
+                        close()
+                    except Exception:  # noqa: BLE001 - preserve run result
+                        pass
             result.per_ball[tid] = run
             if run.final_state == RunState.COMPLETE:
                 pos = world.particle_position(tid)
