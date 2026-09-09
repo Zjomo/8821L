@@ -166,6 +166,9 @@ class ObstacleAvoidController:
             self.reporter.log("error", task_id=task_id, reason=result.detail)
             return result
         start = particle.position_px
+        # 碰撞体积适配：运动球自身实际检测半径并入模型（模型值偏小时
+        # 防止低估碰撞体积；只增不减，序列控制的后续球保持保守膨胀）
+        self._adapt_ball_radius(particle)
         reason = self.planner.check_point(snap, start, extra)
         kind = "start"
         if reason is None:
@@ -259,6 +262,9 @@ class ObstacleAvoidController:
                 continue
             last_pos = particle.position_px
             pos = particle.position_px
+            # 移动中碰撞体积跟随检测：实际半径增大 -> 更新模型并强制重规划
+            if self._adapt_ball_radius(particle):
+                force_replan = True
             # ---- 光斑-球失位校准：实际位移 vs 预期位移（stage 命令反推）
             if pending_check is not None:
                 p0, shift = pending_check
@@ -388,6 +394,21 @@ class ObstacleAvoidController:
         self.reporter.log("run_end", final_state="FAULT",
                           metrics=result.to_dict())
         return result
+
+    def _adapt_ball_radius(self, particle) -> bool:
+        """把运动球实际检测半径并入碰撞模型（只增不减）。
+
+        返回 True 表示模型半径被上调，调用方应强制重规划。
+        """
+        model = self.planner.config.model
+        r = float(getattr(particle, "radius_px", 0.0) or 0.0)
+        if r > model.ball_radius_px:
+            self.reporter.log("collision_model_update",
+                              ball_radius_px=round(model.ball_radius_px, 1),
+                              effective_radius_px=round(r, 1))
+            model.ball_radius_px = r
+            return True
+        return False
 
     def _match_particle(self, particles, last_pos: Point,
                         preferred_track_id: Optional[int] = None):

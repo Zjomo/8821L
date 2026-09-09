@@ -19,3 +19,4 @@ except ImportError:  # pragma: no cover - 后备绑定
 
 Signal = QtCore.Signal if hasattr(QtCore, "Signal") else QtCore.pyqtSignal
 Slot = QtCore.Slot if hasattr(QtCore, "Slot") else QtCore.pyqtSlot
+Qt = QtCore.Qt

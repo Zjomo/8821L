@@ -97,16 +97,40 @@ def validate_sim_layout(layout: dict, mode: str = "oa") -> list[list[int]]:
 
 @dataclass
 class Zone:
-    """视野内一个命名区域：goal=目标/组装区，obstacle=障碍区，free=自由区。"""
+    """视野内一个命名区域：goal=目标/组装区，obstacle=障碍区，free=自由区。
+
+    shape 描述框定形状："rect"=矩形，"circle"=圆形（rect 为其外接正方形），
+    "free"=自由多边形（points 为顶点视频绝对坐标，rect 为外接矩形）。
+    """
 
     name: str
     kind: str                     # "goal" | "obstacle" | "free"
-    rect: Rect                    # 视频绝对坐标 (x, y, w, h)
+    rect: Rect                    # 视频绝对坐标 (x, y, w, h)；free=外接矩形
+    shape: str = "rect"           # "rect" | "circle" | "free"
+    points: Optional[List[Tuple[float, float]]] = None  # free 多边形顶点
 
     def center(self) -> Tuple[float, float]:
         return (self.rect[0] + self.rect[2] / 2, self.rect[1] + self.rect[3] / 2)
 
+    def radius(self) -> float:
+        """圆形半径（min(w,h)/2）；非圆形返回 0。"""
+        return (min(self.rect[2], self.rect[3]) / 2
+                if self.shape == "circle" else 0.0)
+
     def contains(self, p: Tuple[float, float]) -> bool:
+        if self.shape == "free" and self.points:
+            # 射线法：顶点向右发射线，穿越奇数次则在多边形内
+            px, py = p
+            inside = False
+            n = len(self.points)
+            for i in range(n):
+                x1, y1 = self.points[i]
+                x2, y2 = self.points[(i + 1) % n]
+                if (y1 > py) != (y2 > py):
+                    xi = x1 + (py - y1) * (x2 - x1) / (y2 - y1)
+                    if px < xi:
+                        inside = not inside
+            return inside
         x, y, w, h = self.rect
         return x <= p[0] <= x + w and y <= p[1] <= y + h
 
@@ -137,6 +161,14 @@ class RoiConfig:
             zx, zy, zw, zh = z.rect
             if z.kind not in ZONE_KINDS:
                 raise ValueError(f"区域类型非法: {z.kind}")
+            if z.shape not in ("rect", "circle", "free"):
+                raise ValueError(f"区域形状非法: {z.name} {z.shape}")
+            if z.shape == "free":
+                if not z.points or len(z.points) < 3:
+                    raise ValueError(
+                        f"自由多边形区域 {z.name} 至少需要 3 个顶点")
+            elif z.points:
+                raise ValueError(f"区域 {z.name} 仅有 free 形状支持顶点集")
             if zw <= 0 or zh <= 0:
                 raise ValueError(f"区域尺寸非法: {z.name} {z.rect}")
             if zx < x or zy < y or zx + zw > x + w or zy + zh > y + h:
@@ -172,7 +204,10 @@ class RoiConfig:
                   px_per_mm=float(d.get("px_per_mm", 100.0)),
                   edge_clearance_px=float(d.get("edge_clearance_px", 39.0)),
                   zones=[Zone(name=z["name"], kind=z["kind"],
-                              rect=tuple(z["rect"]))       # type: ignore[arg-type]
+                              rect=tuple(z["rect"]),       # type: ignore[arg-type]
+                              shape=z.get("shape", "rect"),
+                              points=([tuple(p) for p in z["points"]]
+                                      if z.get("points") else None))
                          for z in d.get("zones", [])])
         cfg.validate()
         return cfg

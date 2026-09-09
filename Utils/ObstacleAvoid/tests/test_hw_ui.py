@@ -82,6 +82,8 @@ def test_ui01_offscreen_launch(qapp, tmp_path):
     win = MainWindow()
     assert win.scenario_combo.count() == 1   # UI 仅保留 sim01
     assert win.scenario_combo.currentText() == "sim01"
+    assert win.alg_combo.count() == 2
+    assert [win.alg_combo.itemText(i) for i in range(2)] == ["Alg1", "Alg2"]
     # 样例帧渲染 -> QImage 转换
     world, _ = build_scenario("oa01")
     img = frame_to_pix(world.render())
@@ -166,8 +168,10 @@ def test_ui05_xyz_panel_compact_layout(qapp):
     try:
         win.resize(1280, 800)
         win.show()
+        win.tabs.setCurrentIndex(1)   # XYZ 页需激活后才会完成布局
         qapp.processEvents()
-        assert win.xyz_box.height() <= 270
+        # 选项卡布局：面板独占一页，垂直不被拉伸（高度不超过 sizeHint）
+        assert win.xyz_box.height() <= win.xyz_box.sizeHint().height() + 1
         assert win.xyz_telemetry_out.height() <= 100
         # Jog controls share one row; maintenance controls share another.
         assert win.xyz_jog_minus.geometry().center().y() == \

@@ -1,3 +1,6 @@
 2026-09-05 15:53:41,588:TestFloatingDevice (microscope.device_server):INFO:PID 27292: Device initialized; starting daemon.
 2026-09-05 15:53:41,588:TestFloatingDevice (microscope.device_server):INFO:PID 27292: Serving PYRO:TestFloatingDevice@127.0.0.1:8001
 2026-09-05 15:53:41,589:TestFloatingDevice (microscope.device_server):INFO:PID 27292: Device UID on port 8001 is foo
+2026-09-09 15:16:22,912:TestFloatingDevice (microscope.device_server):INFO:PID 2240: Device initialized; starting daemon.
+2026-09-09 15:16:22,913:TestFloatingDevice (microscope.device_server):INFO:PID 2240: Serving PYRO:TestFloatingDevice@127.0.0.1:8001
+2026-09-09 15:16:22,913:TestFloatingDevice (microscope.device_server):INFO:PID 2240: Device UID on port 8001 is foo

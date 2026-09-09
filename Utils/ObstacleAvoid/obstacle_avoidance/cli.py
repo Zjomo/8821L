@@ -41,11 +41,13 @@ def _make_world(particles: List[Tuple[Point, float]],
 
 
 def build_scenario(name: str, sample_spec: Optional[dict] = None,
-                   sim_layout: Optional[dict] = None):
+                   sim_layout: Optional[dict] = None,
+                   origin_um: Optional[tuple] = None):
     """返回 (world, run_fn, report_path_hint)。
 
-    sample_spec / sim_layout 仅 sim01 有效：前者为仿真显微镜图层配置
-    （掩码/衬底/障碍物），后者为 UI ROI 划分布局（球/衬底/障碍/目标点）。
+    sample_spec / sim_layout / origin_um 仅 sim01 有效：前两者为仿真显微镜
+    图层配置（掩码/衬底/障碍物）与 UI ROI 划分布局（球/衬底/障碍/目标点），
+    origin_um 为布局窗口坐标对应的视窗原点（台位 µm，None=样本中心）。
     """
     r_eff = CollisionModel().ball_radius_px
     if name == "oa01":   # 单球无障碍直线路径
@@ -165,7 +167,8 @@ def build_scenario(name: str, sample_spec: Optional[dict] = None,
     if name == "sim01":   # 显微镜仿真：microscope-master 相机+位移台闭环
         from . import sim_microscope
         return sim_microscope.build_sim_scenario(sample_spec=sample_spec,
-                                                 layout=sim_layout)
+                                                 layout=sim_layout,
+                                                 origin_um=origin_um)
     raise SystemExit(f"unknown scenario: {name}")
 
 
@@ -237,7 +240,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         os.remove(report_path)  # 每次CLI运行生成独立报告（replay可复现单次任务）
     rep = RunReporter(report_path)
     rep.log("run_start", scenario=args.scenario, dryrun=(args.mode == "virtual"),
-            mode=args.mode)
+            mode=args.mode, algorithm="Alg1", task_mode=args.scenario,
+            controller="8742/8743-sim" if args.mode == "virtual" else args.xy_driver)
     sample_spec = _load_sample_spec(args.sample_spec)
     if sample_spec is not None:
         rep.log("sample_spec", spec=sample_spec)
@@ -262,9 +266,11 @@ def main(argv: Optional[List[str]] = None) -> int:
     except Exception as exc:  # CLI 层兜底，报告后向上传递退出码
         rep.log("error", reason=f"{type(exc).__name__}: {exc}")
         rep.log("run_end", final_state="FAULT")
+        rep.finalize_experiment()
         rep.close()
         print(f"[FAIL] {type(exc).__name__}: {exc}", flush=True)
         return 1
+    rep.finalize_experiment()
     rep.close()
 
     ok = result.final_state in (RunState.COMPLETE,) or getattr(

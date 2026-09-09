@@ -67,11 +67,26 @@ class AggregationPlanner:
         self.stage_factory = stage_factory
 
     # ---------------- validation
+    def _effective_radius(self, snap: WorkspaceSnapshot,
+                          track_ids: Sequence[int]) -> float:
+        """碰撞体积有效半径：模型默认值与所有球实际检测半径取最大。
+
+        驻点间距/区域容量按此值计算，保证相邻球驻点不重叠。
+        """
+        r = self.config.controller.model.ball_radius_px
+        for tid in track_ids:
+            p = snap.particle(tid)
+            if p is not None:
+                r = max(r, float(p.radius_px))
+        return r
+
     def validate_region(self, snap: WorkspaceSnapshot,
-                        region: GoalRegion, n_balls: int) -> None:
+                        region: GoalRegion, n_balls: int,
+                        ball_radius_px: Optional[float] = None) -> None:
         """AG-04：区域非法时拒绝任务（ConfigError）。"""
         ccfg = self.config.controller
-        r_eff = ccfg.model.ball_radius_px
+        r_eff = (ccfg.model.ball_radius_px if ball_radius_px is None
+                 else max(ccfg.model.ball_radius_px, float(ball_radius_px)))
         if not snap.substrate.is_feasible(region.center,
                                           clearance_px=r_eff):
             raise ConfigError(
@@ -88,7 +103,8 @@ class AggregationPlanner:
                track_ids: Sequence[int]) -> Dict[int, Point]:
         """Hungarian 分配：区域内按环形排布驻点，间距 >= 2*r_eff。"""
         n = len(track_ids)
-        r_eff = self.config.controller.model.ball_radius_px
+        # 环形间距按实际球半径（含模型下限）计算，驻点上球互不重叠
+        r_eff = self._effective_radius(snap, track_ids)
         targets = _ring_targets(region.center, region.radius_px * 0.5, n,
                                 spacing=2 * r_eff * 1.2)
         cost = []
@@ -120,7 +136,8 @@ class AggregationPlanner:
         if len(track_ids) < cfg.required_count:
             raise ConfigError(
                 f"need {cfg.required_count} balls, got {len(track_ids)}")
-        self.validate_region(snap, region, len(track_ids))
+        self.validate_region(snap, region, len(track_ids),
+                             ball_radius_px=self._effective_radius(snap, track_ids))
         self.reporter.log("task_config", task_id=task_id, kind="aggregation",
                           region=region.to_dict(),
                           track_ids=list(track_ids),
@@ -147,11 +164,21 @@ class AggregationPlanner:
             # ball could disappear from collision planning in later runs.
             if hasattr(world, "target_track_id"):
                 world.target_track_id = tid
+            if getattr(world, "alg2_mode", False) and hasattr(world, "set_alg2_target"):
+                world.set_alg2_target(tid)
+                self.reporter.log("beam_target", task_id=f"{task_id}/ball{tid}",
+                                  track_id=tid, action="select",
+                                  algorithm="Alg2")
             if self.stage_factory is not None:
                 stage = self.stage_factory()
             else:
                 try:
-                    stage = world.make_stage(tid)
+                    if getattr(world, "alg2_mode", False) and hasattr(world, "make_alg2_stage"):
+                        from .algorithm2 import Alg2Stage
+                        stage = Alg2Stage(world, tid)
+                        stage.prepare_focus()
+                    else:
+                        stage = world.make_stage(tid)
                 except TypeError:
                     stage = world.make_stage()
             controller = ObstacleAvoidController(
@@ -181,6 +208,16 @@ class AggregationPlanner:
                 return result
 
         # ---- 完成判定（闭环）
+        # 停稳判定：补处理两帧再取快照。tracker 速度按帧间位移计算，
+        # 最后一个控制帧常残留 1~2px 量化移动，直接判定会把已就位的
+        # 任务误报 speed_ok=False -> ABORTED。
+        try:
+            fid = int(getattr(world, "frame_counter", 0))
+            for _ in range(2):
+                fid += 1
+                self.vision.process(world.render(), frame_id=fid)
+        except Exception:  # noqa: BLE001 - 渲染失败不影响既有快照判定
+            pass
         final = world.snapshot()
         in_region = [p for p in final.particles
                      if region.contains_center(p.position_px, p.radius_px)]

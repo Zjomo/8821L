@@ -39,6 +39,7 @@ MICRO_REPO = os.path.join(PROJECT_ROOT, "API", "microscope-master",
 SIM_APP = os.path.join(PROJECT_ROOT, "API", "microscope-master",
                        "simulator_app")
 SIM_DB = os.path.join(PROJECT_ROOT, "artifacts", "sim_microscope.db")
+SIM_PIXEL_SIZE = 0.5   # µm/px（SampleAwareCamera 默认像素当量）
 
 WINDOW = (800, 600)          # SampleAwareCamera 传感器 (w, h)
 SAMPLE_CENTER = (1500.0, 1000.0)   # 合成样本 3000x2000 的中心（样本 px）
@@ -96,7 +97,11 @@ class SimMicroscopeWorld:
                  DEFAULT_OBSTACLES,
                  db_path: str = SIM_DB,
                  stage_limits_um: Tuple[float, float] = (-1000.0, 1000.0),
-                 sample_spec: Optional[Mapping[str, Mapping]] = None) -> None:
+                 sample_spec: Optional[Mapping[str, Mapping]] = None,
+                 recenter: bool = True,
+                 origin_um: Optional[Tuple[float, float]] = None,
+                 polygon_obstacles: Optional[
+                     Sequence[Sequence[Point]]] = None) -> None:
         SQLiteStage, SampleAwareCamera, Database = _import_sim_devices()
         os.makedirs(os.path.dirname(db_path), exist_ok=True)
         self._db = Database(db_path)
@@ -110,10 +115,18 @@ class SimMicroscopeWorld:
         self.cam.enable()
         self.cam.set_fast_preview(True)   # 仿真闭环跳过曝光等待
         # 台位 (0,0)µm 对准样本左上角；移到样本中心，使默认球/障碍布局
-        # 落在初始视野内（SQLite 持久化，重复设置幂等）
-        cx_um = SAMPLE_CENTER[0] * self.cam._pixel_size
-        cy_um = SAMPLE_CENTER[1] * self.cam._pixel_size
-        self.micro_stage.move_to({"x": cx_um, "y": cy_um})
+        # 落在初始视野内。worker 每次运行都用全新世界（必须居中，布局
+        # 坐标以初始视野为基准）；UI 实时世界 recenter=False，恢复上次
+        # 会话的位置（SQLite 已持久化）。
+        # origin_um：自定义初始视野（µm，台位位置）——运行窗口跟随用户
+        # 当前视野（WYSIWYG），球画在哪儿运行窗口就在哪儿。
+        if recenter:
+            if origin_um is not None:
+                cx_um, cy_um = float(origin_um[0]), float(origin_um[1])
+            else:
+                cx_um = SAMPLE_CENTER[0] * self.cam._pixel_size
+                cy_um = SAMPLE_CENTER[1] * self.cam._pixel_size
+            self.micro_stage.move_to({"x": cx_um, "y": cy_um})
 
         self.window = WINDOW
         self.pixel_size_um = float(self.cam._pixel_size)   # 0.5 µm/px
@@ -128,6 +141,10 @@ class SimMicroscopeWorld:
                        for p, r in balls]
         self._obstacles = [(float(x), float(y), float(r))
                            for x, y, r in static_obstacles]
+        # 自由多边形障碍（Free 框定，样本坐标；碰撞按真实边界）
+        self._poly_obstacles = [
+            [(float(px), float(py)) for px, py in poly]
+            for poly in (polygon_obstacles or [])]
         self._stage_limits_um = lim
         self.motion_stage = VirtualXYZStage(
             MotionConfig(axes={
@@ -142,6 +159,7 @@ class SimMicroscopeWorld:
                                        max_speed=20.0, acceleration=40.0),
             }),
             initial_position=dict(self.micro_stage.position),
+            home_position={"x": 500.0, "y": 500.0, "z": 0.0},
             on_move=lambda pos: self.micro_stage.move_to(pos),
         )
         self.pipeline: Optional[VisionPipeline] = None
@@ -152,8 +170,12 @@ class SimMicroscopeWorld:
 
     # ---------------- 视野几何
     def make_detector(self):
-        """返回适配本世界帧的检测器（UI 实时检测/调试用）。"""
-        return _SimLensDetector(self.substrate, min_particle_radius_px=8.0)
+        """返回适配本世界帧的检测器（UI 实时检测/调试用）。
+
+        min_particle_radius_px=2.0：真实圆球可能很小（直径 ~4px），
+        只过滤像素级噪声斑点。
+        """
+        return _SimLensDetector(self.substrate, min_particle_radius_px=2.0)
 
     def _apply_sample_spec(self, sample_spec: Mapping[str, Mapping]) -> None:
         """应用镜头图层配置（掩码/衬底/障碍物），按类别/字段与当前配置合并。
@@ -210,6 +232,18 @@ class SimMicroscopeWorld:
             wx, wy = self._to_window((x, y))
             if -r < wx < self.window[0] + r and -r < wy < self.window[1] + r:
                 cv2.circle(frame, (int(wx), int(wy)), int(r), (30, 30, 30), -1)
+        for poly in self._poly_obstacles:
+            pts = np.array([self._to_window(p) for p in poly],
+                           np.int32).reshape(-1, 1, 2)
+            cv2.fillPoly(frame, [pts], (30, 30, 30))
+        # Draw the optical spot before the particle so its green ring cannot
+        # cut the white particle contour used by the vision detector.
+        if getattr(self, "alg2_mode", False):
+            spot = self.alg2_spot_position()
+            if spot is not None:
+                sx, sy = int(round(spot[0])), int(round(spot[1]))
+                cv2.circle(frame, (sx, sy), 18, (0, 220, 0), 2)
+                cv2.circle(frame, (sx, sy), 4, (0, 255, 0), -1)
         for i, (x, y, r) in enumerate(self._balls):
             wx, wy = self._to_window((x, y))
             if -r < wx < self.window[0] + r and -r < wy < self.window[1] + r:
@@ -251,14 +285,62 @@ class SimMicroscopeWorld:
             # 契约：命令 (dx,dy) -> 球画面位移 +(dx,dy)*ppm。
             # 相机视野中心 = 台位，故台位需向反方向移动。
             try:
-                self.motion_stage.move_by({"x": -dx_mm * 1000.0,
-                                           "y": -dy_mm * 1000.0},
-                                          source="controller")
+                tel = self.motion_stage.move_by(
+                    {"x": -dx_mm * 1000.0, "y": -dy_mm * 1000.0},
+                    source="controller")
             except MotionConfigError as exc:
                 # Preserve the existing XYStageProtocol error contract.
                 raise StageError(str(exc)) from exc
+            # 速度/加速度生效：按运动学耗时 pacing（封顶 2s 防低速卡死）
+            dur = float(getattr(tel, "duration_s", 0.0) or 0.0)
+            if dur > 0:
+                time.sleep(min(dur, 2.0))
 
         return DryRunStage(_move)
+
+    def make_alg2_stage(self, track_id: Optional[int] = None) -> DryRunStage:
+        """Return a fixed-beam stage adapter for Alg2.
+
+        Unlike Alg1's direct particle callback, Alg2 moves the microscope XYZ
+        stage.  The camera view therefore shifts while sample objects remain in
+        sample coordinates; the controller uses ``ball_shift_sign=-1`` for
+        this physical convention.
+        """
+        self.target_track_id = int(track_id) if track_id is not None else -1
+
+        def _move(dx_mm: float, dy_mm: float) -> None:
+            # Record a real XYZ-stage move, but keep the camera/beam fixed in
+            # this virtual experiment.  The selected particle is displaced by
+            # the commanded amount, representing optical-thermal trapping;
+            # non-selected particles remain static in the image.
+            before = dict(self.micro_stage.position)
+            try:
+                self.motion_stage.move_by(
+                    {"x": -dx_mm * 1000.0, "y": -dy_mm * 1000.0},
+                    source="alg2-controller")
+            except MotionConfigError as exc:
+                raise StageError(str(exc)) from exc
+            self.micro_stage.move_to({"x": before["x"], "y": before["y"]})
+            idx = self._ball_index_for_track(track_id)
+            if idx is not None:
+                x, y, r = self._balls[idx]
+                self._balls[idx] = (
+                    x + dx_mm * self.transform.px_per_mm,
+                    y + dy_mm * self.transform.px_per_mm, r)
+
+        return DryRunStage(_move)
+
+    def set_alg2_target(self, track_id: Optional[int]) -> None:
+        self.target_track_id = int(track_id) if track_id is not None else -1
+
+    def alg2_spot_position(self) -> Optional[Point]:
+        tid = int(getattr(self, "target_track_id", -1))
+        if tid < 0 or self.pipeline is None:
+            return None
+        for p in self.pipeline.tracker.active_particles():
+            if p.track_id == tid:
+                return p.position_px
+        return None
 
     # ---------------- snapshot（滞后一帧：由上一视觉结果构造）
     def bind_pipeline(self, pipeline: VisionPipeline) -> None:
@@ -281,6 +363,11 @@ class SimMicroscopeWorld:
             wx, wy = self._to_window((x, y))
             obstacles.append(Obstacle(kind="circle", center=(wx, wy),
                                       radius=r, obstacle_id="sim-obs"))
+        for i, poly in enumerate(self._poly_obstacles):
+            obstacles.append(Obstacle(
+                kind="polygon",
+                polygon=[self._to_window(p) for p in poly],
+                obstacle_id=f"sim-poly-obs-{i}"))
         for p in particles:
             if p.track_id == self.target_track_id:
                 continue  # 目标球不是障碍
@@ -337,7 +424,8 @@ def build_sim_scenario(balls: Sequence[Tuple[Point, float]] = DEFAULT_BALLS,
                        goal: Point = GOAL, hint: Optional[Point] = TARGET_HINT,
                        cfg: Optional[ControllerConfig] = None,
                        sample_spec: Optional[Mapping[str, Mapping]] = None,
-                       layout: Optional[Mapping] = None):
+                       layout: Optional[Mapping] = None,
+                       origin_um: Optional[Tuple[float, float]] = None):
     """返回 (world, run)。sim01：显微镜仿真闭环（目标球 -> 终点绕障）。
 
     sample_spec：仿真镜头图层配置（掩码/衬底/障碍物），见 SimMicroscopeWorld。
@@ -345,13 +433,24 @@ def build_sim_scenario(balls: Sequence[Tuple[Point, float]] = DEFAULT_BALLS,
       - balls [[x,y,w,h],..]：圆球框 -> 样本坐标球（框中心=球心，min(w,h)/2=半径）；
       - grounds [[x,y,w,h],..]：衬底框 -> 各框包围盒作为可行域多边形；
       - obstacles [[x,y,w,h],..]：障碍框 -> 相机固定圆；
+      - ground_polys [poly|None,..]：Free 衬底多边形（窗口坐标顶点，
+        与 grounds 平行）；单衬底且含多边形时直接作为可行域边界；
+      - obstacle_polys [poly|None,..]：Free 障碍多边形（窗口坐标顶点，
+        与 obstacles 平行）-> 碰撞按真实边界（边数=顶点数）；
       - goal [x,y]：目标点（窗口坐标）。
+    origin_um：布局窗口坐标对应的视窗原点（台位 µm）。None = 默认样本中心
+    初始视野；UI 传入用户当前视野位置实现"所见即所得"运行窗口。
     """
     balls = list(balls)
     obstacles = list(static_obstacles)
+    poly_obstacles: list = []          # Free 多边形障碍（样本坐标；无布局为空）
     if layout:
-        gx0 = SAMPLE_CENTER[0] - WINDOW[0] / 2.0
-        gy0 = SAMPLE_CENTER[1] - WINDOW[1] / 2.0
+        if origin_um is not None:
+            gx0 = origin_um[0] / SIM_PIXEL_SIZE - WINDOW[0] / 2.0
+            gy0 = origin_um[1] / SIM_PIXEL_SIZE - WINDOW[1] / 2.0
+        else:
+            gx0 = SAMPLE_CENTER[0] - WINDOW[0] / 2.0
+            gy0 = SAMPLE_CENTER[1] - WINDOW[1] / 2.0
         lb = layout.get("balls") or []
         if "balls" in layout:
             balls = [((x + w / 2.0 + gx0, y + h / 2.0 + gy0), min(w, h) / 2.0)
@@ -360,25 +459,43 @@ def build_sim_scenario(balls: Sequence[Tuple[Point, float]] = DEFAULT_BALLS,
                      lb[0][1] + lb[0][3] / 2.0) if lb else None)
         lo = layout.get("obstacles") or []
         if "obstacles" in layout:
-            obstacles = [(x + w / 2.0, y + h / 2.0, min(w, h) / 2.0)
+            # 布局障碍是窗口坐标，与球一样需加窗口原点 (gx0, gy0) 转样本坐标，
+            # 否则 _to_window 反算后障碍漂移到画布外 -> 规划直穿（真实 bug）
+            obstacles = [(x + w / 2.0 + gx0, y + h / 2.0 + gy0, min(w, h) / 2.0)
                          for x, y, w, h in lo]
+        # Free 多边形障碍（窗口坐标顶点，平行于 obstacles 列表；None=矩形障碍）
+        poly_obstacles = []
+        for poly in (layout.get("obstacle_polys") or []):
+            poly_obstacles.append([(px + gx0, py + gy0) for px, py in poly]
+                                  if poly else None)
         lg = layout.get("goal")
         if lg:
             goal = (float(lg[0]), float(lg[1]))
     world = SimMicroscopeWorld(balls=balls, static_obstacles=obstacles,
-                               sample_spec=sample_spec)
+                               sample_spec=sample_spec, origin_um=origin_um,
+                               polygon_obstacles=[p for p in poly_obstacles
+                                                  if p])
     if layout and layout.get("grounds"):
         gs = layout["grounds"]
-        x0 = min(g[0] for g in gs)
-        y0 = min(g[1] for g in gs)
-        x1 = max(g[0] + g[2] for g in gs)
-        y1 = max(g[1] + g[3] for g in gs)
-        if x1 - x0 > 20 and y1 - y0 > 20:
+        gp = layout.get("ground_polys") or []
+        # Free 单衬底：直接用其多边形顶点作为可行域边界（窗口坐标，
+        # 运行期衬底固定于窗口参考系）；多衬底/混合退回包围盒合并
+        sole_poly = (gp[0] if len(gs) == 1 and gp and gp[0] else None)
+        if sole_poly and len(sole_poly) >= 3:
             world.substrate = SubstrateRegion(
-                polygon=[(x0, y0), (x1, y0), (x1, y1), (x0, y1)],
+                polygon=[(float(px), float(py)) for px, py in sole_poly],
                 safety_margin_px=4.0)
+        else:
+            x0 = min(g[0] for g in gs)
+            y0 = min(g[1] for g in gs)
+            x1 = max(g[0] + g[2] for g in gs)
+            y1 = max(g[1] + g[3] for g in gs)
+            if x1 - x0 > 20 and y1 - y0 > 20:
+                world.substrate = SubstrateRegion(
+                    polygon=[(x0, y0), (x1, y0), (x1, y1), (x0, y1)],
+                    safety_margin_px=4.0)
     goal_region = GoalRegion(center=goal, radius_px=25)
-    detector = _SimLensDetector(world.substrate, min_particle_radius_px=8.0)
+    detector = _SimLensDetector(world.substrate, min_particle_radius_px=2.0)
 
     def run(world=world, detector=detector, goal=goal_region, hint=hint,
             cfg=cfg, rep=None, stage_factory=None, stage_sink=None):

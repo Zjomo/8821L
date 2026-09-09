@@ -1,0 +1,155 @@
+% =====================================================================
+% 显微镜下微球自动操控系统 —— 相关文献（2022–2026）
+% 主题：显微视觉检测(YOLO) / 多微粒路径规划与避障 / 组装控制 / 微操控综述
+% 全部条目经 DOI / arXiv / PubMed 页面核实（2026-09）
+% =====================================================================
+
+% ---------- 综述与框架 ----------
+
+@article{lu2026microdexterity,
+  author  = {Lu, Kangyi and Wei, Lan and Tan, Zongcai and Zhang, Dandan},
+  title   = {Micro-Dexterity in Biological Micromanipulation: Embodiment, Perception, and Control},
+  journal = {arXiv preprint arXiv:2604.11640},
+  year    = {2026},
+  doi     = {10.48550/arXiv.2604.11640},
+  url     = {https://arxiv.org/abs/2604.11640}
+}
+
+% ---------- 显微视觉感知与检测 ----------
+
+@article{liu2026aiassistedoet,
+  author  = {Liu, Jiaxin and Zheng, Zhiqiang and others and Hou, Yaozhen and Shi, Qing and Huang, Qiang and Han, Jie and Sitti, Metin and Wang, Huaping},
+  title   = {{AI}-Assisted Optoelectrokinetic Control of Active Self-Propelling Micromotors for Independent Navigation with Multimode Motions},
+  journal = {Science Advances},
+  volume  = {12},
+  number  = {33},
+  year    = {2026},
+  doi     = {10.1126/sciadv.aef0741},
+  note    = {YOLOv11/YOLOv11-seg 微马达定位与语义分割，多马达独立导航与并行操控}
+}
+
+@article{liu2025biyolo,
+  author  = {Liu, Guozhi and Kang, Shengzheng and Li, Tao and Xu, Yifan and Zhou, Jie},
+  title   = {Deep-Learning-Based Real-Time Visual Detection Method for Robotic Cell Microinjection System with High Accuracy and Efficiency},
+  journal = {Journal of Robotics},
+  volume  = {2025},
+  pages   = {8556780},
+  year    = {2025},
+  doi     = {10.1155/joro/8556780},
+  note    = {改进 YOLOv8n（BI-YOLO），显微镜下细胞/针尖实时检测}
+}
+
+@article{tian2026steadyhand,
+  author  = {Tian, Huanyu and Huber, Martin and Zeng, Lingyun and Han, Zhe and Bennett, Wayne and Silvestri, Giuseppe and Mendizabal-Ruiz, Gerardo and Vercauteren, Tom and Chavez-Badiola, Alejandro and Bergeles, Christos},
+  title   = {Learning From a Steady Hand: A Weakly Supervised Agent for Robot Assistance under Microscopy},
+  journal = {arXiv preprint arXiv:2601.20776},
+  year    = {2026},
+  doi     = {10.48550/arXiv.2601.20776},
+  url     = {https://arxiv.org/abs/2601.20776}
+}
+
+% ---------- 多微粒路径规划与避障 ----------
+
+@article{liu2022pomdp,
+  author  = {Liu, Jiaxin and Wang, Huaping and Liu, Menghua and Zhao, Ran and Zhao, Yanfeng and Sun, Tao and others},
+  title   = {{POMDP}-Based Real-Time Path Planning for Manipulation of Multiple Microparticles via Optoelectronic Tweezers},
+  journal = {Cyborg and Bionic Systems},
+  volume  = {2022},
+  pages   = {9890607},
+  year    = {2022},
+  doi     = {10.34133/2022/9890607},
+  note    = {Kuhn-Munkres 球-目标分配 + POMDP 集中规划 + 两级优先级防球间碰撞}
+}
+
+@inproceedings{tan2025otgym,
+  author    = {Tan, Zongcai and Zhang, Dandan},
+  title     = {Interactive {OT} Gym: A Reinforcement Learning-Based Interactive Optical Tweezer ({OT})-Driven Microrobotics Simulation Platform},
+  booktitle = {Proceedings of the IEEE International Conference on Robotics and Automation (ICRA)},
+  year      = {2025},
+  doi       = {10.48550/arXiv.2505.20751},
+  note      = {A* 全局规划 + B 样条平滑 + DQN 局部速度控制 + 共享控制}
+}
+
+@article{su2025fovplanning,
+  author  = {Su, Zhaowen and Fang, Lijun and Kim, Hoyeon and Cheang, U. Kei},
+  title   = {Enhancing Microrobot Swarm Stability and Adaptation by Autonomous Field-of-View Planning},
+  journal = {Advanced Intelligent Systems},
+  volume  = {8},
+  number  = {1},
+  pages   = {2500369},
+  year    = {2026},
+  doi     = {10.1002/aisy.202500369},
+  note    = {A* 全局 + OI-RRT* 局部 + 跨视野（FOV）自主导航}
+}
+
+@article{chowdhury2016independent,
+  author  = {Chowdhury, Sagar and Jing, Wuming and Cappelleri, David J.},
+  title   = {Towards Independent Control of Multiple Magnetic Mobile Microrobots},
+  journal = {Micromachines},
+  volume  = {7},
+  number  = {12},
+  pages   = {217},
+  year    = {2016},
+  doi     = {10.3390/mi7120217},
+  note    = {多微机器人独立控制 + D* Lite 无碰路径规划（经典基线）}
+}
+
+@article{zhang2026imitationrl,
+  author  = {Zhang, Youchao and Wang, Fanghao and Guo, Xiangyu and Ying, Yibin and Zhou, Mingchuan and Jiang, Zhongliang and Knoll, Alois},
+  title   = {Robotic Cell Micromanipulation Skill Learning via Imitation-Enhanced Reinforcement Learning},
+  journal = {CAAI Transactions on Intelligence Technology},
+  volume  = {11},
+  number  = {1},
+  pages   = {123--136},
+  year    = {2026},
+  doi     = {10.1049/cit2.70076}
+}
+
+% ---------- 微球组装 / 图案化执行 ----------
+
+@article{erben2025mpcthermoviscous,
+  author  = {Erben, Elena and Saraev, Ivan and Liao, Weida and Nan, Fan and Lauga, Eric and Kreysing, Moritz},
+  title   = {Optical Micromanipulations Based on Model Predictive Control of Thermoviscous Flows},
+  journal = {Small},
+  volume  = {21},
+  number  = {38},
+  pages   = {e01039},
+  year    = {2025},
+  doi     = {10.1002/smll.202501039},
+  note    = {MPC 控制激光诱导热黏流场，抑制多粒子近距离流体动力学耦合与碰撞失稳}
+}
+
+@article{chen2025ocet,
+  author  = {Chen, Xi and Duan, Shifang and Cao, Dezhou and Tang, Jinyao and Ma, Xing and Kuang, Ting and Zhang, Shuailong and Wang, Wei},
+  title   = {Reconfigurable Transport and Assembly of Colloidal Particles via Opto-Chemical-Electronic Tweezer ({OCET})},
+  journal = {ACS Applied Materials \& Interfaces},
+  volume  = {17},
+  number  = {18},
+  pages   = {27422--27433},
+  year    = {2025},
+  doi     = {10.1021/acsami.5c02233},
+  note    = {SiO2 微球 $\sim$1 um/s 定向输运与可重构任意图案组装}
+}
+
+@article{wang2025pidep,
+  author  = {Wang, Ao and Liang, Shuzhang and Ni, Caiding and Jia, Yongyi and Wu, Kangjie and Niu, Wenyan and Huang, Shunxiao and Peng, Kaiyi and Wang, Chutian and Guo, Yingjian and Zhao, Zhijun and Zhang, Lingze and Liu, Mingjie and Feng, Lin},
+  title   = {Particle-Assisted Optoelectronic Tweezers for Manipulating Single Cells and Microparticles},
+  journal = {Advanced Science},
+  volume  = {12},
+  number  = {26},
+  pages   = {2501032},
+  year    = {2025},
+  doi     = {10.1002/advs.202501032},
+  note    = {PiDEP + OET 单细胞/微粒无损伤间接操控}
+}
+
+@article{liang2022microspiral,
+  author  = {Liang, Shuzhang and Sun, Jiayu and Zhang, Chaonan and Zhu, Zixi and Dai, Yuguo and Gan, Chunyuan and Cai, Jun and Chen, Huawei and Feng, Lin},
+  title   = {Parallel Manipulation and Flexible Assembly of Micro-Spiral via Optoelectronic Tweezers},
+  journal = {Frontiers in Bioengineering and Biotechnology},
+  volume  = {10},
+  pages   = {868821},
+  year    = {2022},
+  doi     = {10.3389/fbioe.2022.868821},
+  note    = {多光斑并行操控与柔性组装（T 型电路/连杆/微线圈对）}
+}

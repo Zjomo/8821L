@@ -165,7 +165,10 @@ def _video_size(video_path: str = VIDEO) -> Tuple[int, int]:
 
 
 def camera_source(index: int):
-    """真实相机帧源：返回 read() -> Optional[np.ndarray] 的可调用。"""
+    """真实相机帧源：返回 read() -> Optional[np.ndarray] 的可调用。
+
+    附带 close() 属性用于释放相机（UI 退出/停止实时检测时调用）。
+    """
     cap = cv2.VideoCapture(index)
     if not cap.isOpened():
         raise RuntimeError(f"cannot open camera index {index}")
@@ -174,6 +177,49 @@ def camera_source(index: int):
         ok, frame = cap.read()
         return frame if ok else None
 
+    def _close() -> None:
+        try:
+            cap.release()
+        except Exception:  # noqa: BLE001
+            pass
+
+    _read.close = _close
+    return _read
+
+
+def screen_source(region=None, monitor: int = 1):
+    """屏幕捕获帧源：截取某个显示屏的一部分区域。
+
+    region=(x,y,w,h) 为虚拟桌面全局坐标；None 时取整块显示器。
+    返回 read() -> Optional[np.ndarray]（BGR）可调用，附带 close()。
+    """
+    try:
+        import mss
+    except ImportError as exc:  # pragma: no cover
+        raise RuntimeError("mss 未安装: pip install mss") from exc
+    if region is not None:
+        if len(region) != 4 or int(region[2]) <= 0 or int(region[3]) <= 0:
+            raise RuntimeError(f"screen region 非法: {region}")
+    sct = mss.MSS() if hasattr(mss, "MSS") else mss.mss()
+    if region is None:
+        mons = sct.monitors
+        m = mons[monitor] if 0 < monitor < len(mons) else mons[1]
+        region = (int(m["left"]), int(m["top"]),
+                  int(m["width"]), int(m["height"]))
+    x, y, w, h = (int(v) for v in region)
+    box = {"left": x, "top": y, "width": w, "height": h}
+
+    def _read() -> Optional[np.ndarray]:
+        img = np.asarray(sct.grab(box))
+        return cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
+
+    def _close() -> None:
+        try:
+            sct.close()
+        except Exception:  # noqa: BLE001
+            pass
+
+    _read.close = _close
     return _read
 
 
@@ -205,6 +251,24 @@ class CameraWorld:
 
     def bind_pipeline(self, pipeline: VisionPipeline) -> None:
         self.pipeline = pipeline
+
+    def close(self) -> None:
+        """释放底层相机资源（frame_source 需附带 close 属性）。"""
+        close = getattr(self._source, "close", None)
+        if callable(close):
+            close()
+
+    def set_window(self, window: Tuple[int, int],
+                   offset: Tuple[float, float]) -> None:
+        """重设固定视野（UI 划定 ROI 后调用），并同步衬底可行域。"""
+        self.window = (int(window[0]), int(window[1]))
+        self.offset = [float(offset[0]), float(offset[1])]
+        self.substrate = SubstrateRegion(
+            polygon=[(10.0, 10.0),
+                     (self.window[0] - 10.0, 10.0),
+                     (self.window[0] - 10.0, self.window[1] - 10.0),
+                     (10.0, self.window[1] - 10.0)],
+            safety_margin_px=4.0)
 
     def render(self) -> Optional[np.ndarray]:
         frame = self._source()
@@ -255,13 +319,18 @@ def _initial_detect(world: VideoWorld, detector: YoloDetector,
     """首帧检测：建立初始快照并选择目标 track（hint 最近者，无 hint 取最大球）。
 
     pipeline 可注入自定义 tracker（如 sim 场景需放宽 max_jump_px）。
+    初始快照由 world.snapshot() 构建——含用户标注静态障碍（障碍区/仿真
+    障碍），保证首次规划即绕行（此前仅含检出粒子，导致障碍不生效）。
     """
     frame = world.render()
     pipeline = pipeline or VisionPipeline(detector)
     world.bind_pipeline(pipeline)
     vis = pipeline.process(frame, 1)
     if not vis.particles:
-        raise RuntimeError("no balls detected in initial window")
+        raise RuntimeError(
+            f"首帧未检测到球（视野 {world.window[0]}x{world.window[1]}）："
+            "请确认画面中有球、球未被障碍/图层遮挡、对比度足够（阈值 235），"
+            "且光照正常")
     if hint is not None:
         target = min(vis.particles,
                      key=lambda p: math.dist(p.position_px, hint))
@@ -270,15 +339,17 @@ def _initial_detect(world: VideoWorld, detector: YoloDetector,
         target = min(vis.particles,
                      key=lambda p: math.dist(p.position_px, center))
     world.target_track_id = target.track_id
-    snap = WorkspaceSnapshot(
-        frame_id=1, timestamp=time.time(),
-        substrate=world.substrate,
-        obstacles=[Obstacle(kind="circle", center=p.position_px,
-                            radius=float(p.radius_px),
-                            obstacle_id=f"ball-{p.track_id}")
-                   for p in vis.particles if p.track_id != target.track_id],
-        particles=vis.particles, transform=world.transform,
-        frame_size=world.window)
+    snap = world.snapshot()   # 静态障碍 + 非目标粒子一并计入
+    if not snap.particles:    # snapshot 与 vis 不同源时兜底
+        snap = WorkspaceSnapshot(
+            frame_id=1, timestamp=time.time(),
+            substrate=world.substrate,
+            obstacles=[Obstacle(kind="circle", center=p.position_px,
+                                radius=float(p.radius_px),
+                                obstacle_id=f"ball-{p.track_id}")
+                       for p in vis.particles if p.track_id != target.track_id],
+            particles=vis.particles, transform=world.transform,
+            frame_size=world.window)
     return snap, target.track_id
 
 
@@ -330,8 +401,23 @@ def build_video_scenario(task: str = "video01", weights: str = WEIGHTS,
                     (x - offset[0] + w, y - offset[1] + h),
                     (x - offset[0], y - offset[1] + h)]
 
-        static_obs = [Obstacle(kind="polygon", polygon=_zone_poly_win(z),
-                               obstacle_id=z.name)
+        def _zone_obstacle_win(z: Zone) -> Obstacle:
+            """区域 -> 障碍：圆形 zone 生成圆障碍（rect 为外接正方形），
+            Free 自由多边形 zone 顶点首尾连通生成多边形障碍。"""
+            if getattr(z, "shape", "rect") == "circle":
+                cx, cy = z.center()
+                return Obstacle(kind="circle",
+                                center=(cx - offset[0], cy - offset[1]),
+                                radius=z.radius(), obstacle_id=z.name)
+            if getattr(z, "shape", "rect") == "free" and z.points:
+                return Obstacle(kind="polygon",
+                                polygon=[(px - offset[0], py - offset[1])
+                                         for px, py in z.points],
+                                obstacle_id=z.name)
+            return Obstacle(kind="polygon", polygon=_zone_poly_win(z),
+                            obstacle_id=z.name)
+
+        static_obs = [_zone_obstacle_win(z)
                       for z in config.obstacle_zones()]
         px_per_mm = config.px_per_mm
         hint = None
@@ -357,6 +443,10 @@ def build_video_scenario(task: str = "video01", weights: str = WEIGHTS,
     cfg = ControllerConfig(max_step_mm=0.30, tolerance_px=8.0,
                            stable_frames=3, max_iterations=300,
                            max_track_jump_px=90.0)
+    # 双模型同步：AG 驻点间距/容量校验用 cfg.model，规划膨胀用 planner
+    # 模型——必须同一实例，否则（如 motor 模式）环形驻点按 12px 间距
+    # 排布而实际球 25px，聚拢完成后球体互相重叠
+    cfg.model = model
     if cfg_overrides:
         for k, v in cfg_overrides.items():
             setattr(cfg, k, v)
@@ -366,8 +456,12 @@ def build_video_scenario(task: str = "video01", weights: str = WEIGHTS,
     if motor is not None:
         if task != "video03":
             raise SystemExit("motor 模式当前仅支持 video03（需要 ROI/区域配置）")
+        # 帧源可注入（屏幕区域捕获）；默认真实相机
+        src = motor.get("frame_source")
+        if src is None:
+            src = camera_source(int(motor["camera_index"]))
         world = CameraWorld(
-            frame_source=camera_source(int(motor["camera_index"])),
+            frame_source=src,
             window=window, offset=offset,
             static_obstacles=static_obs, px_per_mm=px_per_mm)
         if motor.get("driver", "picomotor") == "serial":
@@ -375,6 +469,7 @@ def build_video_scenario(task: str = "video01", weights: str = WEIGHTS,
                 port=motor["port"], baudrate=int(motor.get("baudrate", 115200)),
                 cmd_template=motor.get("cmd_template",
                                        "G91 G1 X{dx:.4f} Y{dy:.4f}\n"),
+                max_step_mm=float(motor.get("max_step_mm", 0.30)),
                 confirmed=bool(motor.get("confirmed", False)))
         else:   # 8742/8743 Picomotor（默认驱动）
             from .stages import PicoMotorStage

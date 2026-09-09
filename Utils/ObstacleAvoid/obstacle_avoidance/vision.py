@@ -117,7 +117,12 @@ class ClassicDetector:
             if merged:
                 ambiguous.append({"area": float(area), "ratio": float(ratio)})
                 continue
-            if r_eq < self.min_particle_radius_px or circularity < 0.5:
+            if r_eq < self.min_particle_radius_px:
+                continue
+            # 小 blob 的周长受像素阶梯/高光分裂主导，圆度阈值按半径放宽：
+            # r_eq>=6 用 0.5（正常圆判定），更小的球放宽到 0.15（真实小球可以很小）
+            circ_min = 0.5 if r_eq >= 6.0 else 0.15
+            if circularity < circ_min:
                 continue
             if m["m00"] == 0:
                 continue

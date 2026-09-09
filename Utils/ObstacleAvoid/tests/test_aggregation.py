@@ -15,6 +15,55 @@ from obstacle_avoidance.vision import VisionPipeline
 R = CollisionModel().ball_radius_px
 
 
+def _synthetic_snap(radius_px: float, n: int = 4):
+    """合成快照：n 个半径 radius_px 的球（用于碰撞体积单元测试）。"""
+    from obstacle_avoidance.models import (CoordinateTransform, Particle,
+                                           SubstrateRegion,
+                                           WorkspaceSnapshot)
+    sub = SubstrateRegion(polygon=[(0, 0), (400, 0), (400, 400), (0, 400)])
+    parts = [Particle(track_id=i + 1, position_px=(100.0 + i * 10.0, 100.0),
+                      radius_px=radius_px) for i in range(n)]
+    return WorkspaceSnapshot(frame_id=1, timestamp=0.0, substrate=sub,
+                             obstacles=[], particles=parts,
+                             transform=CoordinateTransform(),
+                             frame_size=(400, 400))
+
+
+def test_assign_spacing_uses_actual_radius():
+    """驻点间距按实际球半径计算：大球（>模型默认）驻点互不重叠。"""
+    ag = AggregationPlanner(GridPlanner())
+    snap = _synthetic_snap(radius_px=30.0)
+    region = GoalRegion(center=(200, 200), radius_px=120)
+    mapping = ag.assign(snap, region, [1, 2, 3, 4])
+    targets = list(mapping.values())
+    # 实际半径 30 > 模型 12：间距必须 >= 2*30*1.2 = 72
+    min_d = min(math.dist(a, b) for i, a in enumerate(targets)
+                for b in targets[i + 1:])
+    assert min_d >= 2 * 30.0 * 1.2 - 1e-6
+
+
+def test_validate_region_capacity_uses_actual_radius():
+    """区域容量校验按实际球半径：大球装不下时拒绝。"""
+    ag = AggregationPlanner(GridPlanner(),
+                            AggregationConfig(required_count=4))
+    snap = _synthetic_snap(radius_px=30.0)
+    # 容量按 r=30 校验：need = 4*pi*30^2*1.35 ≈ 15268 > pi*40^2
+    with pytest.raises(ConfigError):
+        ag.validate_region(snap, GoalRegion(center=(200, 200), radius_px=40),
+                           4, ball_radius_px=30.0)
+
+
+def test_controller_adapts_ball_radius_only_grows():
+    """运动球实际半径并入碰撞模型：只增不减，增大返回 True。"""
+    from obstacle_avoidance.controller import ObstacleAvoidController
+    from obstacle_avoidance.models import Particle
+    ctl = ObstacleAvoidController(stage=None)
+    p = Particle(track_id=1, position_px=(0.0, 0.0), radius_px=30.0)
+    assert ctl._adapt_ball_radius(p) is True
+    assert ctl.planner.config.model.ball_radius_px == 30.0
+    assert ctl._adapt_ball_radius(p) is False   # 已并入，不重复触发重规划
+
+
 def test_ag01_single_ball_aggregation():
     world, run = build_scenario("ag01")
     result = run(rep=RunReporter(None))

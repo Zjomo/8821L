@@ -260,12 +260,28 @@ def _get_cjk_font(size: int = 16):
     return _CJK_FONT
 
 
+_SAMPLE_CACHE: dict = {}
+_SAMPLE_CACHE_MAX = 3   # 复用相同 (spec, seed) 样本：worker 每次运行
+                        # 构建新世界时省去 ~1s 的 PIL 重绘
+
+
 def generate_sample(spec: Mapping[str, Mapping], seed: int, height: int = 2000, width: int = 3000):
     """按图层配置生成 H&E 组织风格样本，返回 (灰度数组, 对象清单)。
 
     只保留灰度（相机逐帧输出灰度），照明不均用稀疏网格叠加，
     不加静态噪声（读出噪声在每帧 _fetch_data 中添加），保证生成速度。
+    相同 (spec, seed, 尺寸) 直接命中进程级缓存（数组只读共享，
+    相机仅做切片裁剪不就地修改）。
     """
+    cache_key = (
+        int(seed), int(height), int(width),
+        tuple(sorted(
+            (str(cat), tuple(sorted((str(k), str(v)) for k, v in cfg.items())))
+            for cat, cfg in (spec or {}).items())),
+    )
+    cached = _SAMPLE_CACHE.get(cache_key)
+    if cached is not None:
+        return cached
     from PIL import Image, ImageDraw
 
     rng = np.random.default_rng(seed)
@@ -344,7 +360,11 @@ def generate_sample(spec: Mapping[str, Mapping], seed: int, height: int = 2000, 
         + 0.12 * np.sin(xx / 700.0) * np.cos(yy / 500.0)
         + 0.05 * np.cos(xx / 250.0 + yy / 300.0)
     ).astype(np.float32)
-    return np.clip(gray, 0, 255).astype(np.uint8), objects
+    result = (np.clip(gray, 0, 255).astype(np.uint8), objects)
+    if len(_SAMPLE_CACHE) >= _SAMPLE_CACHE_MAX:
+        _SAMPLE_CACHE.pop(next(iter(_SAMPLE_CACHE)))
+    _SAMPLE_CACHE[cache_key] = result
+    return result
 
 
 class SampleAwareCamera(SimulatedCamera):
@@ -403,8 +423,13 @@ class SampleAwareCamera(SimulatedCamera):
         return list(self._objects)
 
     def set_sample_spec(self, spec: Mapping[str, Mapping]) -> None:
-        """按新配置重建样本（整体换引用，采集线程读到旧/新样本均一致）。"""
-        self._spec = {
+        """按新配置重建样本（整体换引用，采集线程读到旧/新样本均一致）。
+
+        配置与当前完全一致时直接返回（不重播种、不重绘）——worker 每次
+        运行构建新世界都会重放同一 spec，跳过后命中 generate_sample
+        进程缓存，省去 ~1-16s 的样本重绘。
+        """
+        new_spec = {
             cat: {
                 "count": int(spec.get(cat, {}).get("count", d["count"])),
                 "shape": str(spec.get(cat, {}).get("shape", d["shape"])),
@@ -414,6 +439,9 @@ class SampleAwareCamera(SimulatedCamera):
             }
             for cat, d in DEFAULT_SAMPLE_SPEC.items()
         }
+        if new_spec == self._spec:
+            return
+        self._spec = new_spec
         seed = int(np.random.default_rng().integers(1, 2**31 - 1))
         new_sample, objects = generate_sample(self._spec, seed)
         self._seed = seed
@@ -523,6 +551,15 @@ class SampleAwareCamera(SimulatedCamera):
         # 曝光/增益 → 亮度因子 + 噪声（单次 float32 高斯复用为
         # 散粒/读出两项，比逐像素泊松快约 10 倍）
         factor = (self._exposure_time / _REFERENCE_EXPOSURE_S) * (1.0 + self._gain / 8.0)
+        if abs(factor - 1.0) < 1e-6:
+            # 快速路径（默认曝光/增益）：uint8 域加性高斯噪声
+            # （cv2.randn SIMD，比 float32 逐像素路径快约 8 倍）。
+            # cv2.add 不带 dst → 新数组，绝不就地写缓存样本
+            import cv2
+
+            noise = np.empty(gray.shape, np.uint8)
+            cv2.randn(noise, 0, 6)
+            return cv2.add(gray, noise)
         rng = np.random.default_rng()
         n = rng.standard_normal(gray.shape, dtype=np.float32)
         signal = gray.astype(np.float32) * factor

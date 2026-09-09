@@ -24,6 +24,66 @@ class MotionStateError(RuntimeError):
     """Motion was requested while the stage is disabled or stopped."""
 
 
+class Simulated874xController:
+    """Deterministic 8742/8743-style step accounting for virtual runs.
+
+    The real controllers receive signed step counts per motor channel.  This
+    adapter does not drive hardware; it converts every virtual displacement to
+    the equivalent channel, direction and step count so reports can be audited
+    exactly like a motor experiment.
+    """
+
+    def __init__(self, steps_per_mm: float = 33333.0,
+                 channels: Optional[Mapping[str, int]] = None) -> None:
+        if steps_per_mm <= 0:
+            raise MotionConfigError("steps_per_mm must be > 0")
+        self.steps_per_mm = float(steps_per_mm)
+        self.channels = {"x": 1, "y": 2, "z": 3}
+        if channels:
+            self.channels.update({str(k).lower(): int(v)
+                                  for k, v in channels.items()})
+        self.sequence = 0
+        self.cumulative_steps = {axis: 0 for axis in self.channels}
+        self._residual_steps = {axis: 0.0 for axis in self.channels}
+
+    def command(self, delta_mm: Mapping[str, float], source: str = "virtual",
+                task_id: str = "", track_id: int = -1) -> list[dict]:
+        self.sequence += 1
+        out = []
+        for axis in ("x", "y", "z"):
+            value = float(delta_mm.get(axis, 0.0) or 0.0)
+            if abs(value) <= 1e-15:
+                continue
+            exact = value * self.steps_per_mm + self._residual_steps[axis]
+            signed_steps = int(round(exact))
+            self._residual_steps[axis] = exact - signed_steps
+            if signed_steps == 0:
+                continue
+            self.cumulative_steps[axis] += signed_steps
+            out.append({
+                "controller": "8742/8743",
+                "sequence": self.sequence,
+                "channel": self.channels[axis],
+                "axis": axis.upper(),
+                "direction": "+" if signed_steps > 0 else "-",
+                "signed_steps": signed_steps,
+                "steps": abs(signed_steps),
+                "delta_mm": value,
+                "delta_um": value * 1000.0,
+                "cumulative_steps": self.cumulative_steps[axis],
+                "steps_per_mm": self.steps_per_mm,
+                "source": source,
+                "task_id": task_id,
+                "track_id": track_id,
+            })
+        return out
+
+    def snapshot(self) -> dict:
+        return {"steps_per_mm": self.steps_per_mm,
+                "cumulative_steps": dict(self.cumulative_steps),
+                "channels": dict(self.channels)}
+
+
 @dataclass(frozen=True)
 class AxisMotionConfig:
     name: str
@@ -169,7 +229,8 @@ class VirtualXYZStage:
 
     def __init__(self, config: MotionConfig | None = None,
                  initial_position: Optional[Mapping[str, float]] = None,
-                 on_move: Optional[Callable[[Mapping[str, float]], None]] = None):
+                 on_move: Optional[Callable[[Mapping[str, float]], None]] = None,
+                 home_position: Optional[Mapping[str, float]] = None):
         self.config = config or MotionConfig()
         initial = {name: 0.0 for name in self.config.axes}
         initial.update({str(k).lower(): float(v)
@@ -179,6 +240,9 @@ class VirtualXYZStage:
             if not axis.minimum <= value <= axis.maximum:
                 raise MotionLimitError(f"initial {name}={value} outside limits")
         self._position = initial
+        # home 目标位置（未指定的轴回 0）
+        self._home_position = {str(k).lower(): float(v)
+                               for k, v in (home_position or {}).items()}
         self._on_move = on_move
         self._enabled = True
         self._sequence = 0
@@ -303,7 +367,8 @@ class VirtualXYZStage:
 
     def home(self, axes=None, source: str = "home") -> MotionTelemetry:
         names = [str(a).lower() for a in (axes or self.config.axes)]
-        return self.move_to({name: 0.0 for name in names}, source=source)
+        return self.move_to({name: self._home_position.get(name, 0.0)
+                             for name in names}, source=source)
 
     def zero(self, axes=None) -> None:
         names = [str(a).lower() for a in (axes or self.config.axes)]

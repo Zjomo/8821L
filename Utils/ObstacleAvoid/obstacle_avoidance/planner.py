@@ -34,12 +34,15 @@ class PlanConfig:
     model: CollisionModel = field(default_factory=CollisionModel)
     # 衬底边界最小间隙（球心距边界）；None=用模型全膨胀（默认安全行为）。
     # 障碍碰撞始终用全膨胀，不受此参数影响。
+    # 无论用户如何配置，间隙下限为球半径（碰撞体积下限：球心更近
+    # 即球体越过衬底边界），见 edge_clearance。
     edge_clearance_px: Optional[float] = None
 
     @property
     def edge_clearance(self) -> float:
+        floor = self.model.ball_radius_px
         if self.edge_clearance_px is not None:
-            return max(1.0, float(self.edge_clearance_px))
+            return max(floor, float(self.edge_clearance_px))
         return self.model.inflation_px
 
 
