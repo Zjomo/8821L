@@ -1094,7 +1094,10 @@ class _ReplayCanvas(QtWidgets.QWidget):
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
-        self.setMinimumHeight(220)
+        self.setMinimumHeight(260)
+        self.setMaximumHeight(420)
+        self.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
+                           QtWidgets.QSizePolicy.Expanding)
         self.setStyleSheet("background-color: #101418;")
         self._traj = None
         self._idx = -1
@@ -1211,6 +1214,9 @@ class _MetricsCanvas(QtWidgets.QWidget):
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self.setMinimumHeight(150)
+        self.setMaximumHeight(360)
+        self.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
+                           QtWidgets.QSizePolicy.Preferred)
         self.setStyleSheet("background-color: #101418;")
         self._data = {}
 
@@ -1315,6 +1321,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self._tab_scrolls = {}
 
         def _tab_page(name: str = "", scroll: bool = False) -> QtWidgets.QVBoxLayout:
+            if not name:
+                name = ("run", "xyz", "roi", "log")[len(self._tab_pages)]
+                scroll = name == "log"
             page = QtWidgets.QWidget()
             outer = QtWidgets.QVBoxLayout(page)
             outer.setContentsMargins(6, 6, 6, 6)
@@ -1342,10 +1351,11 @@ class MainWindow(QtWidgets.QMainWindow):
             self._tab_pages[name] = page
             return vbox
 
-        self._p_run = _tab_page()   # 运行控制
-        self._p_xyz = _tab_page()   # XYZ 台位
-        self._p_roi = _tab_page()   # 检测 / ROI
-        self._p_log = _tab_page()   # 日志 / 报告
+        # 日志/报告页内容较长，明确放入垂直滚动区域；其它页保持紧凑布局。
+        self._p_run = _tab_page("run", scroll=False)   # 运行控制
+        self._p_xyz = _tab_page("xyz", scroll=False)   # XYZ 台位
+        self._p_roi = _tab_page("roi", scroll=False)   # 检测 / ROI
+        self._p_log = _tab_page("log", scroll=True)    # 日志 / 报告
         self.tabs.setTabText(0, "运行控制")
         self.tabs.setTabText(1, "XYZ 台位")
         self.tabs.setTabText(2, "检测 / ROI")
@@ -1691,25 +1701,58 @@ class MainWindow(QtWidgets.QMainWindow):
         self.zones_label = QtWidgets.QLabel("zones: 0")
         self._p_roi.addWidget(self.zones_label)
 
-        # ---- 对象属性实时面板（需求3：位置/顶点/尺寸实时更新）
-        self._p_log.addWidget(QtWidgets.QLabel("对象属性 (实时)"))
+        # ---- 日志/报告页 -------------------------------------------------
+        # 每个区域单独成组，避免固定高度控件挤在同一个布局中。外层日志
+        # 页由 QScrollArea 承载，因此窄窗口也能完整访问下方内容。
+        def _report_group(title: str):
+            group = QtWidgets.QGroupBox(title)
+            group.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
+                                QtWidgets.QSizePolicy.Preferred)
+            group.setStyleSheet(
+                "QGroupBox {"
+                "  font-weight: 600;"
+                "  border: 1px solid #3a4652;"
+                "  border-radius: 5px;"
+                "  margin-top: 8px;"
+                "  padding-top: 8px;"
+                "}"
+                "QGroupBox::title {"
+                "  subcontrol-origin: margin;"
+                "  left: 8px;"
+                "  padding: 0 4px;"
+                "}"
+            )
+            body = QtWidgets.QVBoxLayout(group)
+            body.setContentsMargins(8, 8, 8, 8)
+            body.setSpacing(6)
+            self._p_log.addWidget(group)
+            return group, body
+
+        self._props_group, props_layout = _report_group("对象属性（实时）")
         self.props_out = QtWidgets.QPlainTextEdit()
         self.props_out.setReadOnly(True)
         self.props_out.setMaximumBlockCount(400)
         self.props_out.setFont(QtGui.QFont("Consolas", 8))
-        self.props_out.setFixedHeight(120)
-        self._p_log.addWidget(self.props_out)
+        self.props_out.setLineWrapMode(QtWidgets.QPlainTextEdit.NoWrap)
+        self.props_out.setMinimumHeight(80)
+        self.props_out.setMaximumHeight(180)
+        self.props_out.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
+                                     QtWidgets.QSizePolicy.Preferred)
+        props_layout.addWidget(self.props_out)
 
-        # ---- 操作日志框（需求5：移动/新建等全部入框）
-        self._p_log.addWidget(QtWidgets.QLabel("操作日志"))
+        self._log_group, log_layout = _report_group("操作日志")
         self.log_out = QtWidgets.QPlainTextEdit()
         self.log_out.setReadOnly(True)
         self.log_out.setMaximumBlockCount(500)
         self.log_out.setFont(QtGui.QFont("Consolas", 8))
-        self.log_out.setFixedHeight(120)
-        self._p_log.addWidget(self.log_out)
+        self.log_out.setLineWrapMode(QtWidgets.QPlainTextEdit.NoWrap)
+        self.log_out.setMinimumHeight(90)
+        self.log_out.setMaximumHeight(220)
+        self.log_out.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
+                                   QtWidgets.QSizePolicy.Preferred)
+        log_layout.addWidget(self.log_out)
 
-        self._p_log.addWidget(QtWidgets.QLabel("报告回放 (JSONL)"))
+        self._replay_group, replay_layout = _report_group("报告回放（JSONL）")
         rp_row = QtWidgets.QHBoxLayout()
         self.report_path = QtWidgets.QLineEdit()
         self.report_path.setPlaceholderText("Reports/run_*.jsonl（运行后自动填入）")
@@ -1718,14 +1761,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self.replay_last_btn.setToolTip("自动加载 Reports/ 下最新一轮运行的报告并回放")
         self.replay_last_btn.clicked.connect(self.on_replay_last)
         rp_row.addWidget(self.replay_last_btn)
-        self._p_log.addLayout(rp_row)
         self.replay_btn = QtWidgets.QPushButton("回放")
         self.replay_btn.clicked.connect(self.on_replay)
-        self._p_log.addWidget(self.replay_btn)
+        rp_row.addWidget(self.replay_btn)
+        replay_layout.addLayout(rp_row)
 
         # 回放动画：圆球移动完整过程（目标/路径/轨迹/球位）
         self.replay_canvas = _ReplayCanvas()
-        self._p_log.addWidget(self.replay_canvas, 1)
+        self.replay_canvas.setMinimumHeight(260)
+        self.replay_canvas.setMaximumHeight(460)
+        replay_layout.addWidget(self.replay_canvas)
         rp_ctl = QtWidgets.QHBoxLayout()
         self.rp_play_btn = QtWidgets.QPushButton("播放")
         self.rp_play_btn.setEnabled(False)
@@ -1748,25 +1793,45 @@ class MainWindow(QtWidgets.QMainWindow):
         self.rp_speed = QtWidgets.QComboBox()
         self.rp_speed.addItems(["0.5x", "1x", "2x", "4x"])
         self.rp_speed.setCurrentIndex(1)
-        rp_ctl.addWidget(self.rp_speed)
         self.rp_label = QtWidgets.QLabel("无回放数据")
-        rp_ctl.addWidget(self.rp_label)
-        self._p_log.addLayout(rp_ctl)
+        replay_layout.addLayout(rp_ctl)
+
+        # 速度和状态单独放在第二行，避免窄窗口下与三个控制按钮争抢宽度。
+        rp_info = QtWidgets.QHBoxLayout()
+        rp_info.addWidget(QtWidgets.QLabel("速度"))
+        rp_info.addWidget(self.rp_speed)
+        rp_info.addStretch(1)
+        rp_info.addWidget(self.rp_label)
+        replay_layout.addLayout(rp_info)
 
         self.replay_out = QtWidgets.QPlainTextEdit()
         self.replay_out.setReadOnly(True)
         self.replay_out.setFont(QtGui.QFont("Consolas", 8))
-        self.replay_out.setFixedHeight(96)
-        self._p_log.addWidget(self.replay_out)
+        self.replay_out.setLineWrapMode(QtWidgets.QPlainTextEdit.NoWrap)
+        self.replay_out.setMinimumHeight(72)
+        self.replay_out.setMaximumHeight(160)
+        self.replay_out.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
+                                      QtWidgets.QSizePolicy.Preferred)
+        replay_layout.addWidget(self.replay_out)
 
-        self._p_log.addWidget(QtWidgets.QLabel("实验统计与算法对比"))
+        self._comparison_group, comparison_layout = _report_group(
+            "实验统计与算法对比")
         self.experiment_stats_out = QtWidgets.QPlainTextEdit()
         self.experiment_stats_out.setReadOnly(True)
         self.experiment_stats_out.setFont(QtGui.QFont("Consolas", 8))
-        self.experiment_stats_out.setFixedHeight(130)
-        self._p_log.addWidget(self.experiment_stats_out)
+        self.experiment_stats_out.setLineWrapMode(
+            QtWidgets.QPlainTextEdit.NoWrap)
+        self.experiment_stats_out.setMinimumHeight(90)
+        self.experiment_stats_out.setMaximumHeight(220)
+        self.experiment_stats_out.setSizePolicy(
+            QtWidgets.QSizePolicy.Expanding,
+            QtWidgets.QSizePolicy.Preferred)
+        comparison_layout.addWidget(self.experiment_stats_out)
         self.experiment_canvas = _MetricsCanvas()
-        self._p_log.addWidget(self.experiment_canvas)
+        self.experiment_canvas.setMinimumHeight(190)
+        self.experiment_canvas.setMaximumHeight(360)
+        comparison_layout.addWidget(self.experiment_canvas)
+        self._p_log.addStretch(1)
 
         # 仿真镜头图层配置入口（mask/ground/obstacle 数量/标签/形状）
         self.sim_spec_btn = QtWidgets.QPushButton("仿真镜头图层...")
