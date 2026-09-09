@@ -471,6 +471,15 @@ def build_video_scenario(task: str = "video01", weights: str = WEIGHTS,
                                        "G91 G1 X{dx:.4f} Y{dy:.4f}\n"),
                 max_step_mm=float(motor.get("max_step_mm", 0.30)),
                 confirmed=bool(motor.get("confirmed", False)))
+        elif motor.get("driver", "picomotor") == "kinesis":
+            from .stages import KinesisKIM101Stage
+            default_stage_factory = lambda: KinesisKIM101Stage(
+                serial_by_axis=motor.get("serial_by_axis", {}),
+                steps_per_mm=float(motor.get("steps_per_mm", 1000.0)),
+                steps_per_mm_by_axis=motor.get("steps_per_mm_by_axis"),
+                speed_steps=motor.get("speed_steps"),
+                max_step_mm=float(motor.get("max_step_mm", 0.30)),
+                confirmed=bool(motor.get("confirmed", False)))
         else:   # 8742/8743 Picomotor（默认驱动）
             from .stages import PicoMotorStage
             default_stage_factory = lambda: PicoMotorStage(  # noqa: E731

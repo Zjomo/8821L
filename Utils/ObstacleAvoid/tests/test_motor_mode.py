@@ -1,5 +1,6 @@
 """电机模式测试：SerialXYStage 门控/指令/限位 + 失位检测 + CameraWorld。"""
 import math
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -291,3 +292,53 @@ def test_picomotor_xyz_stage_maps_profiled_axes(monkeypatch):
     stage.move_by({"x": 3.0}, source="test")
     stage.move_by({"z": -4.0}, source="test")
     assert dev.moves == [(4, 6), (1, -2)]
+
+
+def test_kinesis_detects_serials_and_maps_xyz(monkeypatch):
+    from obstacle_avoidance.stages import KinesisKIM101Stage, KinesisXYZStage
+
+    class Device:
+        def __init__(self, serial):
+            self.serial = serial
+            self.position = 0
+            self.moves = []
+            self.connected = False
+
+        def Connect(self, serial):
+            self.connected = True
+        def Disconnect(self):
+            self.connected = False
+        def IsSettingsInitialized(self): return True
+        def WaitForSettingsInitialized(self, _timeout): pass
+        def StartPolling(self, _period): pass
+        def StopPolling(self): pass
+        def EnableDevice(self): pass
+        def GetDeviceInfo(self):
+            return SimpleNamespace(Description=f"KIM101-{self.serial}")
+        def GetPosition(self, _channel): return self.position
+        def MoveTo(self, _channel, position, _timeout):
+            self.position = int(position)
+            self.moves.append(self.position)
+        def SetPositionAs(self, _channel, position): self.position = int(position)
+        def Stop(self, _channel): pass
+
+    devices = {serial: Device(serial) for serial in ("X1", "Y2", "Z3")}
+    channels = SimpleNamespace(Channel1=1)
+    api = {
+        "manager": SimpleNamespace(
+            BuildDeviceList=lambda: None,
+            GetDeviceList=lambda: list(devices)),
+        "motor": SimpleNamespace(
+            CreateKCubeInertialMotor=lambda serial: devices[str(serial)]),
+        "channels": channels,
+        "settings": SimpleNamespace(),
+    }
+    monkeypatch.setattr(KinesisKIM101Stage, "_load_api",
+                        classmethod(lambda cls: api))
+    records = KinesisKIM101Stage.detect_devices()
+    assert [record["serial"] for record in records] == ["X1", "Y2", "Z3"]
+    stage = KinesisXYZStage(
+        {"x": "X1", "y": "Y2", "z": "Z3"},
+        profiles={"x": {"steps_per_unit": 2.0}}, confirmed=True)
+    stage.move_by({"x": 3.0}, source="test")
+    assert devices["X1"].moves == [6]

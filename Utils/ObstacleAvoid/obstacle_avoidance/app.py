@@ -1270,6 +1270,7 @@ class _MetricsCanvas(QtWidgets.QWidget):
 class MainWindow(QtWidgets.QMainWindow):
     usb_count_ready = Signal(int)   # Picomotor USB 设备数（后台检测回填）
     controller_scan_ready = Signal(object)  # 控制器 ID/可用轴扫描结果
+    kinesis_scan_ready = Signal(object)  # Kinesis serial/description records
 
     def __init__(self) -> None:
         super().__init__()
@@ -1403,7 +1404,8 @@ class MainWindow(QtWidgets.QMainWindow):
         form = QtWidgets.QFormLayout(self.motor_box)
         self.driver_combo = QtWidgets.QComboBox()
         self.driver_combo.addItems(["8742/8743 Picomotor (USB)",
-                                    "串口 G 代码位移台"])
+                                    "串口 G 代码位移台",
+                                    "Kinesis KIM101 (Thorlabs)"])
         self.driver_combo.currentIndexChanged.connect(self.on_driver_changed)
         form.addRow("驱动", self.driver_combo)
         # -- Picomotor（pylablib）参数
@@ -1465,6 +1467,29 @@ class MainWindow(QtWidgets.QMainWindow):
         self.baud_spin.setValue(115200)
         form.addRow("波特率", self.baud_spin)
         self.serial_widgets = [self.port_edit, self.baud_spin]
+        # -- Thorlabs Kinesis KIM101 参数：每个轴使用一个控制器序列号
+        self.kinesis_widgets = []
+        self.kinesis_serial_x_edit = QtWidgets.QLineEdit()
+        self.kinesis_serial_x_edit.setPlaceholderText("KIM101 X 序列号")
+        self.kinesis_serial_y_edit = QtWidgets.QLineEdit()
+        self.kinesis_serial_y_edit.setPlaceholderText("KIM101 Y 序列号")
+        self.kinesis_serial_z_edit = QtWidgets.QLineEdit()
+        self.kinesis_serial_z_edit.setPlaceholderText("可选：KIM101 Z 序列号")
+        for label, widget in (("Kinesis X 序列号", self.kinesis_serial_x_edit),
+                              ("Kinesis Y 序列号", self.kinesis_serial_y_edit),
+                              ("Kinesis Z 序列号", self.kinesis_serial_z_edit)):
+            form.addRow(label, widget)
+            self.kinesis_widgets.append(widget)
+        self.kinesis_scan_btn = QtWidgets.QPushButton("检测 Kinesis 控制器")
+        self.kinesis_scan_btn.setToolTip(
+            "调用 Kinesis DeviceManagerCLI，读取已连接 KIM101 序列号")
+        self.kinesis_scan_btn.clicked.connect(self._refresh_kinesis_devices)
+        form.addRow(self.kinesis_scan_btn)
+        self.kinesis_widgets.append(self.kinesis_scan_btn)
+        self.kinesis_id_label = QtWidgets.QLabel("Kinesis: 未检测")
+        self.kinesis_id_label.setStyleSheet("color:#888;")
+        form.addRow(self.kinesis_id_label)
+        self.kinesis_widgets.append(self.kinesis_id_label)
         # -- 公共参数
         self.step_mm_spin = QtWidgets.QDoubleSpinBox()
         self.step_mm_spin.setRange(0.005, 5.0)
@@ -1508,6 +1533,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.confirm_chk.setStyleSheet("color:#c00;")
         form.addRow(self.confirm_chk)
         self.motor_box.setVisible(False)
+        for _w in self.serial_widgets + self.kinesis_widgets:
+            _w.setVisible(False)
         for _w in self.screen_widgets:   # 默认帧源=相机，屏幕区域控件隐藏
             _w.setVisible(False)
         self._p_run.addWidget(self.motor_box)
@@ -1904,6 +1931,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._motor_xyz_stage = None
         self._controller_scan = []
         self._selected_controller = None
+        self._kinesis_devices = []
         self._xyz_axis_profiles = {}
         self._cam_frame_size = None  # 电机模式帧源全画幅 (w,h)，ROI 校验用
         self._screen_region = None   # 屏幕区域帧源 (x,y,w,h)，虚拟桌面全局坐标
@@ -1918,6 +1946,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.usb_count_ready.connect(
             lambda n: self.pico_count_label.setText(f"USB 设备: {n}"))
         self.controller_scan_ready.connect(self._on_controller_scan)
+        self.kinesis_scan_ready.connect(self._on_kinesis_scan)
 
     def closeEvent(self, ev) -> None:  # noqa: N802 - 退出时回收线程
         self._ui_closing = True
@@ -1958,17 +1987,17 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def _ensure_motor_xyz_stage(self):
         """Open the selected hardware controller for manual XYZ operations."""
-        if self.driver_combo.currentIndex() != 0:
+        if self.driver_combo.currentIndex() == 1:
             raise MotionStateError(
-                "串口 G 代码驱动当前仅支持避障/组装 XY；XYZ 面板请选择 8742/8743")
+                "串口 G 代码驱动当前仅支持避障/组装 XY；请选择 8742/8743 或 Kinesis")
         if self._motor_xyz_stage is not None:
             return self._motor_xyz_stage
         if not self.confirm_chk.isChecked():
             raise MotionStateError("请先勾选真实电机安全确认，再使用 XYZ 台位")
         try:
-            from .stages import PicoMotorXYZStage
+            from .stages import KinesisXYZStage, PicoMotorXYZStage
         except ImportError:  # direct app.py execution
-            from obstacle_avoidance.stages import PicoMotorXYZStage
+            from obstacle_avoidance.stages import KinesisXYZStage, PicoMotorXYZStage
         profiles = dict(self._xyz_axis_profiles)
         default_steps_per_unit = self.spm_spin.value() / 1000.0
         for axis in ("x", "y", "z"):
@@ -1977,25 +2006,37 @@ class MainWindow(QtWidgets.QMainWindow):
         # The first profile is also used as the initial calibration for the
         # selected axis; defaults match the existing XYZ panel units (µm).
         try:
-            stage = PicoMotorXYZStage(
-                conn=self.conn_spin.value(),
-                x_axis=self.axis_x_spin.value(),
-                y_axis=self.axis_y_spin.value(),
-                z_axis=self.axis_z_spin.value(),
-                steps_per_mm=self.spm_spin.value(),
-                profiles=profiles,
-                speed_steps=(self.speed_spin.value() or None),
-                max_step_mm=self.step_mm_spin.value(),
-                confirmed=True)
+            if self.driver_combo.currentIndex() == 2:
+                stage = KinesisXYZStage(
+                    serial_by_axis=self._kinesis_serial_map(),
+                    steps_per_mm=self.spm_spin.value(),
+                    profiles=profiles,
+                    speed_steps=(self.speed_spin.value() or None),
+                    confirmed=True)
+            else:
+                stage = PicoMotorXYZStage(
+                    conn=self.conn_spin.value(),
+                    x_axis=self.axis_x_spin.value(),
+                    y_axis=self.axis_y_spin.value(),
+                    z_axis=self.axis_z_spin.value(),
+                    steps_per_mm=self.spm_spin.value(),
+                    profiles=profiles,
+                    speed_steps=(self.speed_spin.value() or None),
+                    max_step_mm=self.step_mm_spin.value(),
+                    confirmed=True)
         except Exception as exc:  # noqa: BLE001 - surface driver errors in UI
             raise MotionStateError(f"XYZ 控制器连接失败: {exc}") from exc
         self._motor_xyz_stage = stage
         self._xyz_stage = stage
         self._update_xyz_view(stage)
-        self._simlog(
-            "XYZ 控制器已连接: USB={} axes=X{} Y{} Z{}".format(
-                self.conn_spin.value(), self.axis_x_spin.value(),
-                self.axis_y_spin.value(), self.axis_z_spin.value()))
+        if self.driver_combo.currentIndex() == 2:
+            self._simlog("XYZ Kinesis 控制器已连接: {}".format(
+                self._kinesis_serial_map()))
+        else:
+            self._simlog(
+                "XYZ 控制器已连接: USB={} axes=X{} Y{} Z{}".format(
+                    self.conn_spin.value(), self.axis_x_spin.value(),
+                    self.axis_y_spin.value(), self.axis_z_spin.value()))
         return stage
 
     def _close_motor_xyz_stage(self) -> None:
@@ -3247,6 +3288,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self._refresh_mode_preview()
         if motor and self.driver_combo.currentIndex() == 0:
             self._refresh_usb_count()
+        elif motor and self.driver_combo.currentIndex() == 2:
+            self._refresh_kinesis_devices()
 
     def _using_screen_source(self) -> bool:
         """电机模式帧源是否为屏幕区域捕获。"""
@@ -3305,12 +3348,17 @@ class MainWindow(QtWidgets.QMainWindow):
     def on_driver_changed(self, idx: int) -> None:
         self._close_motor_xyz_stage()
         pico = idx == 0
+        kinesis = idx == 2
         for w in self.pico_widgets:
             w.setVisible(pico)
         for w in self.serial_widgets:
-            w.setVisible(not pico)
+            w.setVisible(idx == 1)
+        for w in self.kinesis_widgets:
+            w.setVisible(kinesis)
         if pico:
             self._refresh_usb_count()
+        elif kinesis:
+            self._refresh_kinesis_devices()
 
     def _refresh_usb_count(self) -> None:
         """后台枚举 Picomotor 控制器、ID 和可用轴（扫描可能耗时）。"""
@@ -3377,6 +3425,46 @@ class MainWindow(QtWidgets.QMainWindow):
                 axes or "?", self.axis_x_spin.value(), self.axis_y_spin.value(),
                 self.axis_z_spin.value()))
 
+    def _refresh_kinesis_devices(self) -> None:
+        """Scan Kinesis DeviceManagerCLI in a worker thread."""
+        self.kinesis_id_label.setText("Kinesis: 检测中...")
+
+        def _probe():
+            try:
+                from .stages import KinesisKIM101Stage
+            except ImportError:
+                from obstacle_avoidance.stages import KinesisKIM101Stage
+            records = KinesisKIM101Stage.detect_devices()
+            if not getattr(self, "_ui_closing", False):
+                try:
+                    self.kinesis_scan_ready.emit(records)
+                except RuntimeError:
+                    pass
+
+        threading.Thread(target=_probe, daemon=True,
+                         name="kinesis-device-probe").start()
+
+    @Slot(object)
+    def _on_kinesis_scan(self, records) -> None:
+        records = list(records or [])
+        self._kinesis_devices = records
+        good = [r for r in records if r.get("ok") and r.get("serial")]
+        if not good:
+            error = records[0].get("error") if records else "未发现 Kinesis KIM101"
+            self.kinesis_id_label.setText(f"Kinesis: 未检测 ({error})")
+            self.kinesis_id_label.setStyleSheet("color:#c00;")
+            return
+        # Automatic mapping follows the physical stage convention: first
+        # detected KIM101 -> X, second -> Y, third -> Z.
+        edits = (self.kinesis_serial_x_edit, self.kinesis_serial_y_edit,
+                 self.kinesis_serial_z_edit)
+        for edit, rec in zip(edits, good[:3]):
+            edit.setText(str(rec["serial"]))
+        desc = ", ".join(str(r.get("serial")) for r in good)
+        self.kinesis_id_label.setText(f"Kinesis: {desc}")
+        self.kinesis_id_label.setStyleSheet("color:#080;")
+        self._simlog(f"Kinesis 检测: {desc} -> X/Y/Z 自动映射")
+
     def _frame_source_desc(self) -> str:
         """当前帧源的可读描述（电机模式）。"""
         if self._using_screen_source():
@@ -3385,6 +3473,13 @@ class MainWindow(QtWidgets.QMainWindow):
             x, y, w, h = self._screen_region
             return f"屏幕区域 ({x},{y}) {w}x{h}"
         return f"相机 index={self.cam_spin.value()}"
+
+    def _kinesis_serial_map(self) -> dict:
+        return {
+            "x": self.kinesis_serial_x_edit.text().strip(),
+            "y": self.kinesis_serial_y_edit.text().strip(),
+            "z": self.kinesis_serial_z_edit.text().strip(),
+        }
 
     def _motor_params(self):
         """电机模式参数预检：配置完整性 + 硬件确认门控。"""
@@ -3432,6 +3527,27 @@ class MainWindow(QtWidgets.QMainWindow):
                      "steps_per_mm_by_axis": axis_steps,
                      "speed_steps": (self.speed_spin.value() or None),
                      **common}
+        elif self.driver_combo.currentIndex() == 2:  # Thorlabs Kinesis KIM101
+            serials = self._kinesis_serial_map()
+            if not serials.get("x") or not serials.get("y"):
+                raise RuntimeError("Kinesis 至少需要 X/Y 控制器序列号")
+            detected = {str(r.get("serial")) for r in self._kinesis_devices
+                        if r.get("ok") and r.get("serial")}
+            if detected:
+                missing = [serial for serial in serials.values()
+                           if serial and serial not in detected]
+                if missing:
+                    raise RuntimeError(
+                        f"Kinesis 序列号未在检测列表中: {missing}")
+            motor = {"driver": "kinesis",
+                     "serial_by_axis": serials,
+                     "steps_per_mm": self.spm_spin.value(),
+                     "steps_per_mm_by_axis": {
+                         axis: float(self._xyz_axis_profiles.get(axis, {}).get(
+                             "steps_per_unit", self.spm_spin.value() / 1000.0)) * 1000.0
+                         for axis in ("x", "y", "z")},
+                     "speed_steps": (self.speed_spin.value() or None),
+                     **common}
         else:                                        # 串口 G 代码
             motor = {"driver": "serial",
                      "port": self.port_edit.text().strip(),
@@ -3468,11 +3584,14 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.detail_label.setText(str(exc))
                 return
             self.state_label.setText(f"RUNNING video03 [{mode}]")
+            driver_desc = ("Kinesis" if motor_cfg.get("driver") == "kinesis"
+                           else ("Picomotor" if motor_cfg.get("driver") == "picomotor"
+                                 else "串口"))
             self.detail_label.setText(
-                f"帧源: {self._frame_source_desc()} | "
-                f"轴映射 X{motor_cfg.get('x_axis', '相机')} "
-                f"Y{motor_cfg.get('y_axis', '相机')} "
-                f"Z{motor_cfg.get('z_axis', '未用')} | "
+                f"驱动: {driver_desc} | 帧源: {self._frame_source_desc()} | "
+                f"轴映射 X{motor_cfg.get('x_axis', motor_cfg.get('serial_by_axis', {}).get('x', '相机'))} "
+                f"Y{motor_cfg.get('y_axis', motor_cfg.get('serial_by_axis', {}).get('y', '相机'))} "
+                f"Z{motor_cfg.get('z_axis', motor_cfg.get('serial_by_axis', {}).get('z', '未用'))} | "
                 f"单步 {self.step_mm_spin.value():.3f}mm | "
                 f"最大步数 {self.iters_spin.value()}")
             self._simlog(self.detail_label.text())
