@@ -256,8 +256,35 @@ class WorkspaceSnapshot:
                 return p
         return None
 
-    def obstacle_signature(self) -> str:
-        return "|".join(sorted(o.signature() for o in self.obstacles))
+    def obstacle_signature(self, quantum_px: float = 0.0) -> str:
+        """Return a stable obstacle signature for replanning decisions.
+
+        ``quantum_px`` is intentionally opt-in.  Exact signatures remain the
+        default for model/tests, while closed-loop camera control can use a
+        small positional quantization to ignore detector jitter of fractions
+        of a pixel between frames.
+        """
+        q = float(quantum_px or 0.0)
+        if q <= 0:
+            return "|".join(sorted(o.signature() for o in self.obstacles))
+
+        def quantize(value: float) -> float:
+            return round(float(value) / q) * q
+
+        signatures = []
+        for obstacle in self.obstacles:
+            if obstacle.kind == "circle":
+                signatures.append(
+                    f"{obstacle.obstacle_id}:c:"
+                    f"{quantize(obstacle.center[0]):.2f}:"
+                    f"{quantize(obstacle.center[1]):.2f}:"
+                    f"{quantize(obstacle.radius):.2f}")
+            else:
+                points = ";".join(
+                    f"{quantize(x):.2f},{quantize(y):.2f}"
+                    for x, y in obstacle.polygon)
+                signatures.append(f"{obstacle.obstacle_id}:p:{points}")
+        return "|".join(sorted(signatures))
 
     def to_dict(self) -> dict:
         return {

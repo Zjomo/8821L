@@ -33,6 +33,7 @@ class ControllerConfig:
     uncertain_retry_limit: int = 5     # 检测不确定重试上限
     min_clearance_px: float = 2.0      # 规划最小 clearance 门限
     max_track_jump_px: float = 80.0    # 跨帧匹配最大跳变
+    obstacle_replan_quantum_px: float = 2.0  # 忽略检测坐标的亚像素抖动
     model: CollisionModel = field(default_factory=CollisionModel)
     # ---- 光斑-球失位防护（电机/视觉闭环通用）
     # 语义：一条 stage 命令 (dx,dy) 后，球在图像中的预期位移 = sign * (dx,dy)*px_per_mm。
@@ -188,7 +189,11 @@ class ObstacleAvoidController:
 
         self._set_state(RunState.TRACKING, task_id)
         plan: Optional[PlanResult] = None
-        last_obstacle_sig = snap.obstacle_signature()
+        # Camera detections jitter slightly even while the sample is still.
+        # Quantize only the control-loop signature so this does not cause a
+        # needless replan before every movement command.
+        obstacle_sig_q = max(0.0, float(cfg.obstacle_replan_quantum_px))
+        last_obstacle_sig = snap.obstacle_signature(obstacle_sig_q)
         stable = 0
         uncertain_streak = 0
         wp_index = 0
@@ -310,7 +315,7 @@ class ObstacleAvoidController:
                 stable = 0
 
             # ---- 障碍突现检测：签名变化 -> 立即重规划（OA-05）
-            sig = snap.obstacle_signature()
+            sig = snap.obstacle_signature(obstacle_sig_q)
             need_replan = (plan is None or force_replan
                            or sig != last_obstacle_sig
                            or wp_index >= len(plan.waypoints_px))
@@ -341,7 +346,38 @@ class ObstacleAvoidController:
                     self.reporter.log("run_end", final_state="ABORTED",
                                       metrics=result.to_dict())
                     return result
+
+                # A* can map start and goal into the same coarse grid cell.
+                # In that case the simplified path contains one point and the
+                # old loop kept replanning forever without issuing a command.
+                # Preserve a safe direct segment when it is collision-free;
+                # otherwise fail explicitly with a useful planning reason.
+                if len(plan.waypoints_px) < 2 and error_px > cfg.tolerance_px:
+                    if self.planner._line_free(pos, goal.center, snap, extra):
+                        plan.waypoints_px = [pos, goal.center]
+                        plan.length_px = math.dist(pos, goal.center)
+                        plan.min_clearance_px = self.planner._min_clearance(
+                            plan.waypoints_px, snap, extra)
+                    else:
+                        result.final_state = RunState.ABORTED
+                        result.failure_reason = FailureReason.NO_SAFE_PATH
+                        result.detail = (
+                            "planner returned a degenerate path and the "
+                            "direct segment is blocked")
+                        result.plan = plan
+                        self._set_state(RunState.ABORTED, task_id)
+                        self.reporter.log("run_end", final_state="ABORTED",
+                                          metrics=result.to_dict())
+                        return result
                 last_obstacle_sig = sig
+
+                # Grid plans include the current position as their first
+                # waypoint.  Consume all zero-length leading waypoints now;
+                # otherwise a replan triggered by camera jitter can repeatedly
+                # select the same start point and never issue a stage command.
+                while (wp_index < len(plan.waypoints_px) - 1 and
+                       math.dist(pos, plan.waypoints_px[wp_index]) < 1e-6):
+                    wp_index += 1
 
             # ---- MOVING：沿 waypoint 小步移动
             self._set_state(RunState.MOVING, task_id)
