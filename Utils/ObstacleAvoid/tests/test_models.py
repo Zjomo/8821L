@@ -58,3 +58,25 @@ def test_goal_region_contains():
     assert g.contains_center((110, 100), ball_radius_px=5)
     assert not g.contains_center((130, 100), ball_radius_px=5)
     assert point_in_polygon((50, 50), [(0, 0), (100, 0), (100, 100), (0, 100)])
+
+
+def test_target_lock_requires_stable_identity():
+    from obstacle_avoidance.models import (Particle, TargetLock, TargetLockState,
+                                           TargetSelection)
+    selected = Particle(2, (100, 100), 10, 0.95, 1)
+    lock = TargetLock(TargetSelection.from_particle(selected),
+                      stable_frames_required=2)
+    assert lock.update([selected]).track_id == 2
+    assert lock.state == TargetLockState.SELECTING
+    current = Particle(2, (102, 101), 10, 0.95, 2)
+    assert lock.update([current]).track_id == 2
+    assert lock.state == TargetLockState.LOCKED
+
+
+def test_target_lock_rejects_large_identity_jump():
+    from obstacle_avoidance.models import (Particle, TargetLock, TargetLockState,
+                                           TargetSelection)
+    selected = Particle(2, (100, 100), 10, 0.95, 1)
+    lock = TargetLock(TargetSelection.from_particle(selected), max_jump_px=20)
+    assert lock.update([Particle(2, (140, 100), 10, 0.95, 2)]) is None
+    assert lock.state == TargetLockState.AMBIGUOUS

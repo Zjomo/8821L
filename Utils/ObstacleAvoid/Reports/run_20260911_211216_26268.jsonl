@@ -1,0 +1,1 @@
+{"seq": 1, "run_id": "c5b77c33e1ab", "ts": 1789132336.1226404, "event": "run_start", "task_id": "", "scenario": "video03", "algorithm": "Alg1", "task_mode": "oa", "mode": "motor", "controller": "real-stage"}

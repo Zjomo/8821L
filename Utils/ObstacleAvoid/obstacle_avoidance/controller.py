@@ -17,7 +17,8 @@ from dataclasses import dataclass, field
 from typing import Callable, List, Optional, Sequence, Tuple
 
 from .models import (FailureReason, GoalRegion, Obstacle, Point, RunState,
-                     StageCommand, WorkspaceSnapshot, now)
+                     StageCommand, TargetLock, TargetLockState,
+                     TargetSelection, WorkspaceSnapshot, now)
 from .planner import CollisionModel, GridPlanner, PlanResult
 from .reporter import RunReporter
 from .simulator import StageError, XYStageProtocol
@@ -40,6 +41,8 @@ class ControllerConfig:
     # sign=+1：球随光斑/载物移动（SimWorld）；sign=-1：衬底反向移动、球锁定衬底（VideoWorld/相机）。
     ball_shift_sign: int = 1
     prefer_track_id: bool = False
+    target_stable_frames: int = 2
+    target_max_lost_frames: int = 2
     slip_threshold_px: float = 25.0    # 实际位移偏离预期超过该值记一次滑移事件
     slip_abort_px: float = 60.0        # 单次滑移超过该值立即安全停止
     slip_max_events: int = 3           # 累计滑移事件上限，超过则停止
@@ -95,6 +98,7 @@ class ObstacleAvoidController:
         self._estop_requested_at: Optional[float] = None
         self._last_frame: Optional[object] = None       # 最近一帧图像（UI 用）
         self._last_plan: Optional[PlanResult] = None    # 最近规划（UI 用）
+        self.target_lock: Optional[TargetLock] = None
 
     # ---------------- external safety controls
     def request_estop(self) -> None:
@@ -158,14 +162,22 @@ class ObstacleAvoidController:
                           stable_frames=cfg.stable_frames)
 
         # ---- CALIBRATING: 初始检测 + 任务校验（拒绝层）
-        self._set_state(RunState.CALIBRATING, task_id)
+        self._set_state(RunState.TARGET_SELECTING, task_id)
         particle = snap.particle(track_id)
         if particle is None:
-            result.final_state = RunState.FAULT
-            result.failure_reason = FailureReason.DETECTION_UNCERTAIN
-            result.detail = f"initial detection missing track {track_id}"
+            result.final_state = RunState.ABORTED
+            result.failure_reason = FailureReason.TARGET_LOST
+            result.detail = f"initial target missing track {track_id}"
             self.reporter.log("error", task_id=task_id, reason=result.detail)
             return result
+        self.target_lock = TargetLock(
+            TargetSelection.from_particle(particle, selection_method="task"),
+            stable_frames_required=cfg.target_stable_frames,
+            max_lost_frames=cfg.target_max_lost_frames,
+            max_jump_px=cfg.max_track_jump_px)
+        self.reporter.log("target_selected", task_id=task_id,
+                          target=self.target_lock.selection.to_dict())
+        self._set_state(RunState.TARGET_LOCKED, task_id)
         start = particle.position_px
         # 碰撞体积适配：运动球自身实际检测半径并入模型（模型值偏小时
         # 防止低估碰撞体积；只增不减，序列控制的后续球保持保守膨胀）
@@ -250,10 +262,24 @@ class ObstacleAvoidController:
                               uncertain=False, reason="",
                               particles=[p.to_dict() for p in vis.particles])
 
-            particle = self._match_particle(
-                vis.particles, last_pos,
-                track_id if cfg.prefer_track_id else None)
+            particle = (self.target_lock.update(vis.particles)
+                        if self.target_lock else None)
             if particle is None:
+                if self.target_lock and self.target_lock.state == TargetLockState.AMBIGUOUS:
+                    result.final_state = RunState.ABORTED
+                    result.failure_reason = FailureReason.TARGET_AMBIGUOUS
+                    result.detail = 'target identity became ambiguous'
+                    self.reporter.log('target_ambiguous', task_id=task_id,
+                                      track_id=track_id)
+                    self._set_state(RunState.ABORTED, task_id)
+                    self.reporter.log('run_end', final_state='ABORTED',
+                                      metrics=result.to_dict())
+                    return result
+                self._set_state(RunState.TARGET_LOST, task_id)
+                self.reporter.log('target_lost', task_id=task_id,
+                                  track_id=track_id,
+                                  lost_frames=(self.target_lock.lost_frames
+                                               if self.target_lock else None))
                 # 跟踪丢失（最近邻匹配失败），按不确定处理
                 uncertain_streak += 1
                 self._set_state(RunState.DETECTION_UNCERTAIN, task_id)

@@ -32,6 +32,8 @@ class FailureReason(str, Enum):
     PAUSED = "paused"
     MAX_STEPS = "max_steps_exceeded"
     SPOT_SLIP = "spot_slip"                   # 光斑-球失位（滑移超限）
+    TARGET_LOST = "target_lost"
+    TARGET_AMBIGUOUS = "target_ambiguous"
 
 
 class RunState(str, Enum):
@@ -45,6 +47,9 @@ class RunState(str, Enum):
     ABORTED = "ABORTED"
     FAULT = "FAULT"
     DETECTION_UNCERTAIN = "DETECTION_UNCERTAIN"
+    TARGET_SELECTING = "TARGET_SELECTING"
+    TARGET_LOCKED = "TARGET_LOCKED"
+    TARGET_LOST = "TARGET_LOST"
 
 
 # ---------------------------------------------------------------- geometry
@@ -233,6 +238,77 @@ class Particle:
                    confidence=float(d.get("confidence", 1.0)),
                    frame_id=int(d.get("frame_id", -1)))
 
+
+class TargetLockState(str, Enum):
+    SELECTING = "selecting"
+    LOCKED = "locked"
+    TEMPORARILY_LOST = "temporarily_lost"
+    AMBIGUOUS = "ambiguous"
+    INVALID = "invalid"
+
+
+@dataclass
+class TargetSelection:
+    """用户选择的目标球快照。"""
+    track_id: int
+    position_px: Point
+    radius_px: float
+    confidence: float
+    frame_id: int
+    selected_at: float = field(default_factory=time.time)
+    selection_method: str = "ui"
+
+    @classmethod
+    def from_particle(cls, particle: Particle, selection_method: str = "ui"):
+        return cls(particle.track_id, particle.position_px, particle.radius_px,
+                   particle.confidence, particle.frame_id,
+                   selection_method=selection_method)
+
+    def to_dict(self) -> dict:
+        return {"track_id": self.track_id, "position_px": list(self.position_px),
+                "radius_px": self.radius_px, "confidence": self.confidence,
+                "frame_id": self.frame_id, "selected_at": self.selected_at,
+                "selection_method": self.selection_method}
+
+
+@dataclass
+class TargetLock:
+    """将用户选择稳定化，避免按检测列表序号控制错误球。"""
+    selection: TargetSelection
+    state: TargetLockState = TargetLockState.SELECTING
+    stable_frames_required: int = 2
+    stable_frames: int = 0
+    lost_frames: int = 0
+    max_lost_frames: int = 2
+    max_jump_px: float = 80.0
+    last_particle: Optional[Particle] = None
+
+    def update(self, particles: Sequence[Particle]) -> Optional[Particle]:
+        candidates = [p for p in particles if p.track_id == self.selection.track_id]
+        if not candidates:
+            self.lost_frames += 1
+            self.state = (TargetLockState.TEMPORARILY_LOST
+                          if self.lost_frames <= self.max_lost_frames
+                          else TargetLockState.INVALID)
+            return None
+        particle = candidates[0]
+        reference = self.last_particle or Particle(
+            self.selection.track_id, self.selection.position_px,
+            self.selection.radius_px, self.selection.confidence,
+            self.selection.frame_id)
+        if math.dist(reference.position_px, particle.position_px) > self.max_jump_px:
+            self.state = TargetLockState.AMBIGUOUS
+            return None
+        self.last_particle = particle
+        self.lost_frames = 0
+        self.stable_frames += 1
+        if self.stable_frames >= max(1, self.stable_frames_required):
+            self.state = TargetLockState.LOCKED
+        return particle
+
+    def to_dict(self) -> dict:
+        return {"state": self.state.value, "selection": self.selection.to_dict(),
+                "stable_frames": self.stable_frames, "lost_frames": self.lost_frames}
 
 # ---------------------------------------------------------------- snapshot
 @dataclass

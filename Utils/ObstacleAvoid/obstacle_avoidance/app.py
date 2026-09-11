@@ -149,6 +149,7 @@ class WorkerThread(QtCore.QThread):
         self._motion_params: Optional[dict] = None  # 球步长/速度/加速度
         self._origin_um: Optional[tuple] = None   # 运行视窗原点（WYSIWYG）
         self._virtual_motor: Optional[Simulated874xController] = None
+        self.selected_ball_index: Optional[int] = None
 
     layout_updated = Signal(list)   # 运行成功后回传最终球位置（初始视窗坐标）
 
@@ -549,6 +550,9 @@ class WorkerThread(QtCore.QThread):
 
                 for gi, grect in enumerate(grounds):
                     ball_idx = ball_groups[gi]
+                    if self.selected_ball_index is not None:
+                        ball_idx = [bi for bi in ball_idx
+                                    if bi == self.selected_ball_index]
                     world.substrate = world.substrate.__class__(
                         polygon=[(grect[0], grect[1]),
                                  (grect[0] + grect[2], grect[1]),
@@ -828,6 +832,7 @@ class Canvas(QtWidgets.QLabel):
     drag_start = Signal(int, int)            # 帧坐标 x, y（鼠标按下）
     drag_move = Signal(int, int)             # 帧坐标增量 dx, dy（鼠标移动）
     drag_end = Signal()                      # 鼠标释放（拖拽结束）
+    target_clicked = Signal(int, int)
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -932,6 +937,8 @@ class Canvas(QtWidgets.QLabel):
                 x0, y0 = self._origin
                 x, y = min(x0, end[0]), min(y0, end[1])
                 w, h = abs(end[0] - x0), abs(end[1] - y0)
+                if w <= 4 and h <= 4:
+                    self.target_clicked.emit(int(end[0]), int(end[1]))
                 if w > 4 and h > 4 and self.drawing_enabled:
                     self.rect_drawn.emit(int(x), int(y), int(w), int(h))
             self._origin = None
@@ -1283,6 +1290,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._controller_ref: dict = {}
         self._ui_closing = False
         self._last_frame: Optional[np.ndarray] = None
+        self.selected_ball_index: Optional[int] = None
 
         central = QtWidgets.QWidget()
         self.setCentralWidget(central)
@@ -1298,6 +1306,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.drag_start.connect(self._on_sim_drag_start)
         self.canvas.drag_move.connect(self._on_sim_drag_move)
         self.canvas.drag_end.connect(self._on_sim_drag_end)
+        self.canvas.target_clicked.connect(self._on_target_clicked)
         layout.addWidget(self.canvas, 3)
 
         # 右：选项卡面板（运行控制 / XYZ 台位 / 检测与ROI / 日志与报告），
@@ -2649,6 +2658,28 @@ class MainWindow(QtWidgets.QMainWindow):
                              f"r={r:.0f} conf={conf:.2f}")
         self.props_out.setPlainText("\n".join(lines) or "(无对象)")
 
+    @Slot(int, int)
+    def _on_target_clicked(self, x: int, y: int) -> None:
+        """点击选择目标球：点击坐标为窗口坐标，球存样本绝对坐标，
+        须按当前视窗原点换算后再匹配（否则永远选不中）。"""
+        if self.worker is not None and self.worker.isRunning():
+            return
+        ox, oy = self._sim_origin()
+        sx, sy = x + ox, y + oy
+        candidates = []
+        for index, ball in enumerate(self._sim_cfg.get("balls", [])):
+            cx = ball[0] + ball[2] / 2.0
+            cy = ball[1] + ball[3] / 2.0
+            distance = ((cx - sx) ** 2 + (cy - sy) ** 2) ** 0.5
+            if distance <= max(ball[2], ball[3]) * 0.75:
+                candidates.append((distance, index))
+        if not candidates:
+            return
+        self.selected_ball_index = min(candidates)[1]
+        self.detail_label.setText(
+            f"Selected target ball #{self.selected_ball_index + 1}; it will be locked before motion")
+        self._update_sim_zones_label()
+
     def _update_sim_zones_label(self) -> None:
         c = self._sim_cfg
         g_goals = sum(1 for g in c["grounds"] if g.get("goal"))
@@ -2712,8 +2743,13 @@ class MainWindow(QtWidgets.QMainWindow):
             else:
                 x, y, w, h = self._rect_s2w(ob, (ox, oy))
                 cv2.rectangle(out, (x, y), (x + w, y + h), (0, 0, 255), 1)
-        for x, y, w, h in (self._rect_s2w(b, (ox, oy)) for b in c["balls"]):
-            cv2.rectangle(out, (x, y), (x + w, y + h), (255, 255, 0), 1)
+        for ball_index, b in enumerate(c["balls"]):
+            x, y, w, h = self._rect_s2w(b, (ox, oy))
+            color = (0, 255, 255) if ball_index == self.selected_ball_index else (255, 255, 0)
+            thickness = 3 if ball_index == self.selected_ball_index else 1
+            cv2.rectangle(out, (x, y), (x + w, y + h), color, thickness)
+            cv2.putText(out, f"ball-{ball_index + 1}", (x, max(16, y - 4)),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.45, color, 1)
         return out
 
     def _refresh_sim_preview(self) -> None:
@@ -3684,6 +3720,7 @@ class MainWindow(QtWidgets.QMainWindow):
                      f"障碍{len(layout['obstacles'])}")
         self.worker = WorkerThread(scenario, {}, builder=None,
                                    sample_spec=self._load_sample_spec())
+        self.worker.selected_ball_index = self.selected_ball_index
         self.worker._execution_mode = "virtual"
         self.worker._sim_layout = layout       # 直接注入 WorkerThread
         self.worker._run_mode = mode
