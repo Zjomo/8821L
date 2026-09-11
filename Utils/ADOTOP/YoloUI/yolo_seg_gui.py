@@ -477,6 +477,7 @@ class MainWindow(QMainWindow):
 
         gl.addWidget(QLabel("图片目录:"), 0, 0)
         self.le_ds_img = QLineEdit()
+        self.le_ds_img.setText(str(YOLO_UI_ROOT / "Dataset" / "Fore_BackGround_471_images"))
         gl.addWidget(self.le_ds_img, 0, 1)
         btn = QPushButton("浏览...")
         btn.clicked.connect(lambda: self._browse_dir(self.le_ds_img, "选择图片目录"))
@@ -484,6 +485,7 @@ class MainWindow(QMainWindow):
 
         gl.addWidget(QLabel("标注目录:"), 1, 0)
         self.le_ds_lbl = QLineEdit()
+        self.le_ds_lbl.setText(str(YOLO_UI_ROOT / "Dataset" / "Fore_BackGround_471_annotion" / "labels" / "train"))
         gl.addWidget(self.le_ds_lbl, 1, 1)
         btn2 = QPushButton("浏览...")
         btn2.clicked.connect(lambda: self._browse_dir(self.le_ds_lbl, "选择标注目录"))
@@ -496,7 +498,7 @@ class MainWindow(QMainWindow):
 
         gl.addWidget(QLabel("输出目录:"), 3, 0)
         self.le_ds_out = QLineEdit()
-        self.le_ds_out.setText(str(YOLO_UI_ROOT / "Dataset" / "my_dataset"))
+        self.le_ds_out.setText(str(YOLO_UI_ROOT / "Dataset" / "my_dataset" / "V1"))
         gl.addWidget(self.le_ds_out, 3, 1)
         btn3 = QPushButton("浏览...")
         btn3.clicked.connect(lambda: self._browse_dir(self.le_ds_out, "选择输出目录"))

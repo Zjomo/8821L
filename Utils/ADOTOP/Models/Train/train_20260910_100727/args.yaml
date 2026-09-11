@@ -1,8 +1,8 @@
 task: segment
 mode: train
-model: yolov8l-seg.pt
-data: E:/jupyter file/2_Optics/8821L/Utils/YoloUI/Dataset/Fore_BackGround_201_annotation\data.yaml
-epochs: 100
+model: yolov8n-seg.pt
+data: E:\jupyter file\2_Optics\8821L\Utils\ADOTOP\YoloUI\Dataset\my_dataset\data.yaml
+epochs: 1
 time: null
 patience: 100
 batch: 8
@@ -10,10 +10,10 @@ imgsz: 640
 save: true
 save_period: -1
 cache: false
-device: '0'
+device: cpu
 workers: 8
-project: runs/segment
-name: gui_train
+project: E:\jupyter file\2_Optics\8821L\Utils\ADOTOP\Models\Train
+name: train_20260910_100727
 exist_ok: true
 pretrained: true
 optimizer: auto
@@ -107,4 +107,4 @@ auto_augment: randaugment
 erasing: 0.4
 cfg: null
 tracker: botsort.yaml
-save_dir: E:\jupyter file\2_Optics\8821L\runs\segment\runs\segment\gui_train
+save_dir: E:\jupyter file\2_Optics\8821L\Utils\ADOTOP\Models\Train\train_20260910_100727
