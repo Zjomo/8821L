@@ -294,10 +294,21 @@ class WorkerThread(QtCore.QThread):
             ball_shift_sign=1)
         if is_alg2:
             if __package__ in (None, ""):
-                from obstacle_avoidance.algorithm2 import Alg2Stage
+                from obstacle_avoidance.algorithm2 import (Alg2Config,
+                                                            Alg2Stage,
+                                                            FixedBeamController)
             else:
-                from .algorithm2 import Alg2Stage
-            stage = Alg2Stage(world, tid)
+                from .algorithm2 import (Alg2Config, Alg2Stage,
+                                         FixedBeamController)
+            beam = tuple((self._motion_params or {}).get(
+                "beam_position_px", (world.window[0] / 2.0,
+                                     world.window[1] / 2.0)))
+            world.set_beam_position(beam)
+            stage = Alg2Stage(
+                world, tid,
+                config=Alg2Config(beam_position_px=beam,
+                                  beam_calibration_confidence=1.0,
+                                  image_shift_sign=-1))
             stage.prepare_focus()
             rep.log("beam_target", task_id="sim01-oa", track_id=tid,
                     action="select", algorithm="Alg2")
@@ -307,7 +318,9 @@ class WorkerThread(QtCore.QThread):
         planner = GridPlanner()
         pipeline = VisionPipeline(
             detector, tracker=ParticleTracker(max_jump_px=220.0))
-        ctl = ObstacleAvoidController(stage, pipeline, planner, cfg, rep)
+        ctl = (FixedBeamController(stage, pipeline, planner, cfg, rep)
+               if is_alg2 else
+               ObstacleAvoidController(stage, pipeline, planner, cfg, rep))
         self._controller_ref["controller"] = ctl
         self._controller_ref["controller"] = ctl
         return ctl.run(snap, tid, goal, task_id="sim01-oa",
@@ -444,6 +457,11 @@ class WorkerThread(QtCore.QThread):
                                       sim_layout=layout,
                                       origin_um=self._origin_um)
                 world.alg2_mode = (getattr(self, "_algorithm", "Alg1") == "Alg2")
+                if world.alg2_mode:
+                    beam = tuple((self._motion_params or {}).get(
+                        "beam_position_px", (world.window[0] / 2.0,
+                                             world.window[1] / 2.0)))
+                    world.set_beam_position(beam)
                 # 圆球移动参数：X/Y 轴速度/加速度（步长在控制器里生效）
                 mp = self._motion_params or {}
                 if mp:
@@ -507,6 +525,13 @@ class WorkerThread(QtCore.QThread):
                         elif et == "beam_target":
                             self.log_ready.emit(
                                 f"beam target track={ev.get('track_id')}")
+                        elif et == "beam_lock":
+                            pos = ev.get("position_px") or ("?", "?")
+                            self.log_ready.emit(
+                                f"Alg2 球{ev.get('track_id')} 已锁定固定光斑 "
+                                f"({pos[0]:.1f},{pos[1]:.1f})，样品/镜头移动"
+                                if isinstance(pos[0], (int, float)) else
+                                "Alg2 目标球已锁定固定光斑，样品/镜头移动")
                         elif et in ("estop", "pause", "detection"):
                             self.log_ready.emit(
                                 f"{et}: {ev.get('action', ev.get('reason', ''))}")
@@ -733,6 +758,68 @@ class LiveDetectThread(QtCore.QThread):
             except Exception:  # noqa: BLE001 - 单帧失败不中断实时流
                 continue
             self.dets_ready.emit(dets)
+
+
+class AutoRecognizeThread(QtCore.QThread):
+    """Latest-frame Alg2 workspace recognition without blocking the Qt UI."""
+
+    result_ready = Signal(object)
+    recognition_failed = Signal(str)
+
+    def __init__(self, detector_fn, min_confidence: float,
+                 parent=None, manual_substrate_polygon=None) -> None:
+        super().__init__(parent)
+        self._detector_fn = detector_fn
+        self._min_confidence = float(min_confidence)
+        self._lock = threading.Lock()
+        self._frame = None
+        self._has_new = False
+        self._running = True
+        self._frame_id = 0
+        self._manual_substrate_polygon = manual_substrate_polygon
+
+    def submit(self, frame: np.ndarray) -> None:
+        with self._lock:
+            self._frame = frame.copy()
+            self._has_new = True
+
+    def stop(self) -> None:
+        self._running = False
+
+    def run(self) -> None:  # noqa: D102
+        detector = self._detector_fn()
+        if detector is None:
+            self.recognition_failed.emit("YOLO 模型尚未加载完成")
+            return
+        try:
+            if __package__ in (None, ""):
+                from obstacle_avoidance.auto_recognition import (
+                    Alg2AutoRecognizer, AutoRecognitionConfig)
+            else:
+                from .auto_recognition import (Alg2AutoRecognizer,
+                                               AutoRecognitionConfig)
+            recognizer = Alg2AutoRecognizer(
+                particle_detector=detector,
+                manual_substrate_polygon=self._manual_substrate_polygon,
+                config=AutoRecognitionConfig(
+                    minimum_overall_confidence=self._min_confidence,
+                    auto_substrate=False))
+        except Exception as exc:  # noqa: BLE001
+            self.recognition_failed.emit(str(exc))
+            return
+        while self._running:
+            with self._lock:
+                frame, new = self._frame, self._has_new
+                self._has_new = False
+            if not new:
+                self.msleep(15)
+                continue
+            try:
+                result = recognizer.process(frame, self._frame_id, time.time())
+                self._frame_id += 1
+                self.result_ready.emit(result)
+            except Exception as exc:  # noqa: BLE001 - keep live preview alive
+                self.recognition_failed.emit(str(exc))
 
 
 class PreviewThread(QtCore.QThread):
@@ -1215,6 +1302,55 @@ class _ReplayCanvas(QtWidgets.QWidget):
                     f"  最终状态: {t.get('final_state') or '?'}")
 
 
+class _HeightDragHandle(QtWidgets.QFrame):
+    """水平拖拽条：上下拖动可连续调整 target 控件的高度。
+
+    target 按“固定高度”方式调整（同时设置 min/max），因此外层
+    QScrollArea 的内容高度随之增长，纵向滚动条的滑块自动适配。
+    """
+
+    def __init__(self, target: QtWidgets.QWidget, min_h: int = 60,
+                 max_h: int = 2000, parent=None) -> None:
+        super().__init__(parent)
+        self._target = target
+        self._min_h = min_h
+        self._max_h = max_h
+        self._drag_y = 0
+        self._drag_h = 0
+        self.setFixedHeight(7)
+        self.setCursor(QtCore.Qt.SizeVerCursor)
+        self.setToolTip("按住并上下拖动，可调整上方内容框高度")
+        self.setStyleSheet(
+            "background-color: #2a333d; border-radius: 3px;")
+        self._resized = False
+
+    def mousePressEvent(self, event) -> None:
+        if event.button() == QtCore.Qt.LeftButton:
+            self._drag_y = event.globalPos().y()
+            self._drag_h = self._target.height()
+            event.accept()
+            return
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event) -> None:
+        if not (event.buttons() & QtCore.Qt.LeftButton):
+            super().mouseMoveEvent(event)
+            return
+        new_h = self._drag_h + (event.globalPos().y() - self._drag_y)
+        new_h = max(self._min_h, min(self._max_h, int(new_h)))
+        self.set_target_height(new_h)
+        event.accept()
+
+    def set_target_height(self, height: int) -> None:
+        """将目标控件高度固定为 height（首次调用后进入手动尺寸模式）。"""
+        self._resized = True
+        self._target.setMinimumHeight(height)
+        self._target.setMaximumHeight(height)
+
+    def is_user_sized(self) -> bool:
+        return self._resized
+
+
 class _MetricsCanvas(QtWidgets.QWidget):
     """Compact comparison chart for accumulated Alg1/Alg2 experiments."""
 
@@ -1684,6 +1820,66 @@ class MainWindow(QtWidgets.QMainWindow):
         self.live_btn.toggled.connect(self.on_live_toggled)
         self._p_roi.addWidget(self.live_btn)
 
+        self.auto_recognition_box = QtWidgets.QGroupBox("Alg2 自动识别")
+        auto_layout = QtWidgets.QVBoxLayout(self.auto_recognition_box)
+        self.substrate_mode_label = QtWidgets.QLabel(
+            "衬底：使用手动 ROI，运行中跟随样品位移")
+        self.substrate_mode_label.setStyleSheet("color:#555;")
+        auto_layout.addWidget(self.substrate_mode_label)
+        self.auto_recognition_chk = QtWidgets.QCheckBox(
+            "自动识别圆球 / 衬底 / 光斑 / 障碍候选")
+        self.auto_recognition_chk.setToolTip(
+            "选择 Alg2 后默认启用；点击“开始实时检测”处理相机或屏幕帧。")
+        self.auto_recognition_chk.toggled.connect(
+            self.on_auto_recognition_toggled)
+        auto_layout.addWidget(self.auto_recognition_chk)
+        auto_conf_row = QtWidgets.QHBoxLayout()
+        auto_conf_row.addWidget(QtWidgets.QLabel("最低置信度"))
+        self.auto_confidence_spin = QtWidgets.QDoubleSpinBox()
+        self.auto_confidence_spin.setRange(0.10, 0.99)
+        self.auto_confidence_spin.setSingleStep(0.05)
+        self.auto_confidence_spin.setDecimals(2)
+        self.auto_confidence_spin.setValue(0.35)
+        self.auto_confidence_spin.valueChanged.connect(
+            self.on_auto_confidence_changed)
+        auto_conf_row.addWidget(self.auto_confidence_spin)
+        self.auto_confirm_btn = QtWidgets.QPushButton("确认识别结果")
+        self.auto_confirm_btn.setEnabled(False)
+        self.auto_confirm_btn.clicked.connect(self.on_confirm_auto_recognition)
+        auto_conf_row.addWidget(self.auto_confirm_btn)
+        auto_layout.addLayout(auto_conf_row)
+        beam_row = QtWidgets.QHBoxLayout()
+        beam_row.addWidget(QtWidgets.QLabel("激光位置"))
+        self.beam_x_spin = QtWidgets.QDoubleSpinBox()
+        self.beam_y_spin = QtWidgets.QDoubleSpinBox()
+        for spin in (self.beam_x_spin, self.beam_y_spin):
+            spin.setRange(0.0, 10000.0)
+            spin.setDecimals(1)
+            spin.setSuffix(" px")
+        self.beam_x_spin.setPrefix("X ")
+        self.beam_y_spin.setPrefix("Y ")
+        self.beam_x_spin.setValue(400.0)
+        self.beam_y_spin.setValue(300.0)
+        beam_row.addWidget(self.beam_x_spin)
+        beam_row.addWidget(self.beam_y_spin)
+        self.beam_center_btn = QtWidgets.QPushButton("设为画面中心")
+        self.beam_center_btn.clicked.connect(self.on_calibrate_beam_center)
+        beam_row.addWidget(self.beam_center_btn)
+        self.beam_pick_btn = QtWidgets.QPushButton("点击画面标定")
+        self.beam_pick_btn.setCheckable(True)
+        self.beam_pick_btn.setToolTip("在当前帧点击固定光斑中心，保存为 Alg2 光斑坐标")
+        self.beam_pick_btn.toggled.connect(self._on_beam_pick_toggled)
+        beam_row.addWidget(self.beam_pick_btn)
+        auto_layout.addLayout(beam_row)
+        self.beam_status_label = QtWidgets.QLabel("激光位置未标定")
+        self.beam_status_label.setStyleSheet("color:#b36b00;")
+        auto_layout.addWidget(self.beam_status_label)
+        self.auto_status_label = QtWidgets.QLabel("选择 Alg2 后开始实时检测")
+        self.auto_status_label.setWordWrap(True)
+        self.auto_status_label.setStyleSheet("color:#888;")
+        auto_layout.addWidget(self.auto_status_label)
+        self._p_run.addWidget(self.auto_recognition_box)
+
         row = QtWidgets.QHBoxLayout()
         row.addWidget(QtWidgets.QLabel("画框模式"))
         self.mode_combo = QtWidgets.QComboBox()
@@ -1796,10 +1992,21 @@ class MainWindow(QtWidgets.QMainWindow):
         self.log_out.setFont(QtGui.QFont("Consolas", 8))
         self.log_out.setLineWrapMode(QtWidgets.QPlainTextEdit.NoWrap)
         self.log_out.setMinimumHeight(90)
-        self.log_out.setMaximumHeight(220)
+        # 不设最大高度：由下方拖拽条手动拉长，框内滚动条自适应
         self.log_out.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
-                                   QtWidgets.QSizePolicy.Preferred)
+                                   QtWidgets.QSizePolicy.Expanding)
         log_layout.addWidget(self.log_out)
+        # 拖拽条：上下拖动调整日志框高度；外层滚动区域随之增长
+        self.log_resize_handle = _HeightDragHandle(
+            self.log_out, min_h=90, max_h=2000)
+        log_layout.addWidget(self.log_resize_handle)
+        log_ctl = QtWidgets.QHBoxLayout()
+        log_ctl.addStretch(1)
+        self.clear_log_btn = QtWidgets.QPushButton("清空日志")
+        self.clear_log_btn.setToolTip("清除操作日志的全部内容（不影响报告回放）")
+        self.clear_log_btn.clicked.connect(self.on_clear_log)
+        log_ctl.addWidget(self.clear_log_btn)
+        log_layout.addLayout(log_ctl)
 
         self._replay_group, replay_layout = _report_group("报告回放（JSONL）")
         rp_row = QtWidgets.QHBoxLayout()
@@ -1904,6 +2111,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self._sim_uid = 0                # 全局单调计数器，ID 永不复用
         self._roi_cfg = None             # 提前初始化（_load_sim_config 会刷新属性面板）
         self._live_dets = []             # 提前初始化（同上）
+        self._auto_result = None         # 提前初始化（属性面板会读取）
+        self._auto_confirmed_result = None
+        self._auto_good_streak = 0
+        self._auto_recognition_confirmed = False
+        self._beam_calibrated = False
+        self._beam_calibration_armed = False
+        self._selected_auto_track_id: Optional[int] = None
         self._rp_traj = None             # 回放数据（extract_trajectory 结果）
         self._rp_timer = None            # 回放动画定时器
         self._sim_order: list = []       # 画框顺序栈（undo 后画先撤）
@@ -1922,7 +2136,15 @@ class MainWindow(QtWidgets.QMainWindow):
         self._live_timer.timeout.connect(self._live_tick)
         self._live_world = None
         self._live_detect: Optional[LiveDetectThread] = None
+        self._auto_detect: Optional[AutoRecognizeThread] = None
         self._live_dets = []
+        self._auto_result = None
+        self._auto_confirmed_result = None
+        self._auto_good_streak = 0
+        self._auto_recognition_confirmed = False
+        self._beam_calibrated = False
+        self._beam_calibration_armed = False
+        self._selected_auto_track_id = None
         self._tick_n = 0
         self._roi_cfg = None       # RoiConfig（zones 用视频绝对坐标）
         self._view_map = None      # (scale, ox, oy) 帧->画布映射
@@ -1949,6 +2171,8 @@ class MainWindow(QtWidgets.QMainWindow):
             lambda n: self.pico_count_label.setText(f"USB 设备: {n}"))
         self.controller_scan_ready.connect(self._on_controller_scan)
         self.kinesis_scan_ready.connect(self._on_kinesis_scan)
+        self.alg_combo.currentTextChanged.connect(self.on_algorithm_changed)
+        self.on_algorithm_changed(self.alg_combo.currentText())
 
     def closeEvent(self, ev) -> None:  # noqa: N802 - 退出时回收线程
         self._ui_closing = True
@@ -1957,6 +2181,9 @@ class MainWindow(QtWidgets.QMainWindow):
         if self._live_detect is not None:
             self._live_detect.stop()
             self._live_detect.wait(2000)
+        if self._auto_detect is not None:
+            self._auto_detect.stop()
+            self._auto_detect.wait(3000)
         if self._preview_worker is not None:
             self._preview_worker.wait(2000)
         if self._sim_live is not None:   # sim01 仿真镜头资源
@@ -2308,6 +2535,10 @@ class MainWindow(QtWidgets.QMainWindow):
                     self._live_detect.stop()
                     self._live_detect.wait(2000)
                     self._live_detect = None
+                if self._auto_detect is not None:
+                    self._auto_detect.stop()
+                    self._auto_detect.wait(3000)
+                    self._auto_detect = None
                 self._live_dets = []
                 self.live_btn.setText("开始实时检测")
                 if self.state_label.text() == "LIVE":
@@ -2413,6 +2644,12 @@ class MainWindow(QtWidgets.QMainWindow):
             cv2.putText(out, f"spot-ball {d:.0f}px",
                         (int((cx + gx) / 2) + 4, int((cy + gy) / 2)),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.42, (255, 0, 255), 1)
+        if self._auto_recognition_active() and self._auto_result is not None:
+            if __package__ in (None, ""):
+                from obstacle_avoidance.auto_recognition import Alg2AutoRecognizer
+            else:
+                from .auto_recognition import Alg2AutoRecognizer
+            out = Alg2AutoRecognizer.draw_overlay(out, self._auto_result)
         return out
 
     @Slot()
@@ -2438,6 +2675,28 @@ class MainWindow(QtWidgets.QMainWindow):
             self._show_frame(out)
             return
         det = try_shared_detector(video_sim.WEIGHTS)
+        if self._auto_recognition_active():
+            if det is not None:
+                if self._auto_detect is None:
+                    manual_polygon = None
+                    if self._roi_cfg is not None:
+                        rx, ry, rw, rh = self._roi_cfg.roi
+                        manual_polygon = [(0.0, 0.0), (float(rw - 1), 0.0),
+                                          (float(rw - 1), float(rh - 1)),
+                                          (0.0, float(rh - 1))]
+                    self._auto_detect = AutoRecognizeThread(
+                        lambda: det, self.auto_confidence_spin.value(), self,
+                        manual_substrate_polygon=manual_polygon)
+                    self._auto_detect.result_ready.connect(
+                        self._on_auto_recognition_result)
+                    self._auto_detect.recognition_failed.connect(
+                        self._on_auto_recognition_failed)
+                    self._auto_detect.start()
+                self._auto_detect.submit(frame)
+            elif self._tick_n % 25 == 1:
+                self.auto_status_label.setText("YOLO 模型加载中...")
+            self._show_frame(self._annotate_live(frame))
+            return
         if det is not None:
             # 推理在后台线程（丢帧策略）；结果经 dets_ready 回流
             if self._live_detect is None:
@@ -2597,6 +2856,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self._refresh_sim_preview()
 
     # ---------------- 日志 / ID / 属性面板（需求 3/4/5）
+    @Slot()
+    def on_clear_log(self) -> None:
+        """清空操作日志（仅清显示，不影响已保存的报告文件）。"""
+        self.log_out.clear()
+
     def _simlog(self, msg: str) -> None:
         """操作日志：时间戳 + 消息，追加到日志框（自动裁剪到 500 行）。"""
         ts = QtCore.QTime.currentTime().toString("HH:mm:ss.zzz")
@@ -2656,12 +2920,58 @@ class MainWindow(QtWidgets.QMainWindow):
                     continue
                 lines.append(f"LIVE{i:<4}{'ball':<8} pos=({cx:.0f},{cy:.0f}) "
                              f"r={r:.0f} conf={conf:.2f}")
+        if self._auto_result is not None:
+            result = self._auto_result
+            lines.append(
+                f"AUTO    substrate conf={result.substrate_confidence:.2f} "
+                f"registration={result.registration_confidence:.2f} "
+                "source=manual-roi")
+            lines.append(
+                f"AUTO    workspace shift=({result.registration_shift_px[0]:.1f},"
+                f"{result.registration_shift_px[1]:.1f}) "
+                f"instant=({result.instant_shift_px[0]:.1f},"
+                f"{result.instant_shift_px[1]:.1f}) method={result.motion_method}")
+            if result.track_events:
+                lines.append("AUTO    tracks " + ", ".join(result.track_events))
+            if result.beam_spot_px is not None:
+                bx, by = result.beam_spot_px
+                lines.append(
+                    f"AUTO    beam     pos=({bx:.0f},{by:.0f}) "
+                    f"conf={result.beam_confidence:.2f}")
+            lines.append(
+                f"AUTO    forbidden candidates={len(result.candidates)} "
+                f"overall={result.overall_confidence:.2f}")
         self.props_out.setPlainText("\n".join(lines) or "(无对象)")
 
     @Slot(int, int)
     def _on_target_clicked(self, x: int, y: int) -> None:
         """点击选择目标球：点击坐标为窗口坐标，球存样本绝对坐标，
         须按当前视窗原点换算后再匹配（否则永远选不中）。"""
+        if self._beam_calibration_armed:
+            self.beam_x_spin.setValue(float(x))
+            self.beam_y_spin.setValue(float(y))
+            self._beam_calibrated = True
+            self._beam_calibration_armed = False
+            self.beam_pick_btn.setChecked(False)
+            self.beam_status_label.setText(
+                f"已标定固定激光位置 ({x:.1f}, {y:.1f}) px")
+            self.beam_status_label.setStyleSheet(
+                "color:#087f23;font-weight:bold;")
+            self._simlog(f"Alg2 激光位置标定: ({x:.1f},{y:.1f}) px")
+            return
+        if (self._is_motor_mode() and self._auto_result is not None and
+                self._auto_recognition_active()):
+            candidates = sorted(
+                (math.dist(p.position_px, (x, y)), p)
+                for p in self._auto_result.particles)
+            if candidates and candidates[0][0] <= max(
+                    12.0, candidates[0][1].radius_px * 1.8):
+                self._selected_auto_track_id = candidates[0][1].track_id
+                self.detail_label.setText(
+                    f"已选择自动识别圆球 track={self._selected_auto_track_id}，"
+                    "启动时将先对准固定光斑")
+                self._update_props_panel()
+            return
         if self.worker is not None and self.worker.isRunning():
             return
         ox, oy = self._sim_origin()
@@ -2755,13 +3065,22 @@ class MainWindow(QtWidgets.QMainWindow):
     def _refresh_sim_preview(self) -> None:
         if self._sim_live is not None:
             try:
-                self._show_frame(self._overlay_sim_cfg(self._sim_live.render()))
+                frame = self._sim_live.render()
+                # During an active run the simulator already renders the
+                # physical object shapes.  The config overlay is an editing
+                # aid and would turn those objects back into rectangles.
+                if not (self.worker is not None and self.worker.isRunning()):
+                    frame = self._overlay_sim_cfg(frame)
+                self._show_frame(frame)
                 self._update_xyz_view(self._sim_live.motion_stage)
                 return
             except Exception as exc:  # pragma: no cover - display fallback
                 _log_exception("sim preview refresh failed", exc)
         if self._sim_preview_frame is not None:
-            self._show_frame(self._overlay_sim_cfg(self._sim_preview_frame))
+            frame = self._sim_preview_frame
+            if not (self.worker is not None and self.worker.isRunning()):
+                frame = self._overlay_sim_cfg(frame)
+            self._show_frame(frame)
 
     SIM_ROI_CONFIG = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
@@ -2871,6 +3190,142 @@ class MainWindow(QtWidgets.QMainWindow):
     def _on_live_dets(self, dets: list) -> None:
         self._live_dets = dets
         self._update_props_panel()   # 需求3：实时检测位置进入属性面板
+
+    def _auto_recognition_active(self) -> bool:
+        return (self.alg_combo.currentText() == "Alg2" and
+                self._is_motor_mode() and
+                self.auto_recognition_chk.isChecked())
+
+    @Slot()
+    def on_calibrate_beam_center(self) -> None:
+        """Calibrate the stationary beam to the active cropped frame center."""
+
+        if self._last_frame is None:
+            self.detail_label.setText("请先开始实时检测并获取一帧图像")
+            return
+        h, w = self._last_frame.shape[:2]
+        self.beam_x_spin.setValue(w / 2.0)
+        self.beam_y_spin.setValue(h / 2.0)
+        self._beam_calibrated = True
+        self.beam_status_label.setText(
+            f"已标定固定激光位置 ({w / 2.0:.1f}, {h / 2.0:.1f}) px")
+        self.beam_status_label.setStyleSheet("color:#087f23;font-weight:bold;")
+        self._simlog(
+            f"Alg2 激光位置标定: ({w / 2.0:.1f},{h / 2.0:.1f}) px")
+
+    @Slot(bool)
+    def _on_beam_pick_toggled(self, armed: bool) -> None:
+        self._beam_calibration_armed = bool(armed)
+        if armed:
+            self.beam_status_label.setText("请在画面中点击固定激光光斑中心")
+            self.beam_status_label.setStyleSheet("color:#b36b00;font-weight:bold;")
+        elif not self._beam_calibrated:
+            self.beam_status_label.setText("激光位置未标定")
+            self.beam_status_label.setStyleSheet("color:#b36b00;")
+
+    @Slot(str)
+    def on_algorithm_changed(self, algorithm: str) -> None:
+        is_alg2 = algorithm == "Alg2"
+        self.auto_recognition_box.setVisible(is_alg2)
+        # Beam calibration is shared by virtual and motor Alg2. Automatic
+        # recognition itself is still activated only by the motor live path.
+        self.auto_recognition_box.setEnabled(is_alg2)
+        if is_alg2:
+            self.auto_recognition_chk.setChecked(True)
+        else:
+            self.auto_recognition_chk.setChecked(False)
+        self._reset_auto_recognition(
+            "请切换到电机模式并开始实时检测" if not self._is_motor_mode()
+            else "开始实时检测后自动识别")
+
+    @Slot(bool)
+    def on_auto_recognition_toggled(self, enabled: bool) -> None:
+        self._reset_auto_recognition(
+            "开始实时检测后自动识别" if enabled else "自动识别已关闭")
+        if self.live_btn.isChecked():
+            if self._live_detect is not None:
+                self._live_detect.stop()
+                self._live_detect.wait(2000)
+                self._live_detect = None
+            if self._auto_detect is not None:
+                self._auto_detect.stop()
+                self._auto_detect.wait(3000)
+                self._auto_detect = None
+
+    @Slot(float)
+    def on_auto_confidence_changed(self, _value: float) -> None:
+        self._reset_auto_recognition("置信度阈值已变化，请重新检测并确认")
+        if self._auto_detect is not None:
+            self._auto_detect.stop()
+            self._auto_detect.wait(3000)
+            self._auto_detect = None
+
+    def _reset_auto_recognition(self, message: str) -> None:
+        self._auto_result = None
+        self._auto_confirmed_result = None
+        self._selected_auto_track_id = None
+        self._auto_good_streak = 0
+        self._auto_recognition_confirmed = False
+        self.auto_confirm_btn.setEnabled(False)
+        self.auto_status_label.setText(message)
+        self.auto_status_label.setStyleSheet("color:#888;")
+
+    @Slot(object)
+    def _on_auto_recognition_result(self, result) -> None:
+        self._auto_result = result
+        self._live_dets = [(p.position_px, p.radius_px, p.confidence)
+                           for p in result.particles
+                           if p.frame_id == result.frame_id]
+        threshold = self.auto_confidence_spin.value()
+        acceptable = (not result.uncertain and
+                      result.overall_confidence >= threshold and
+                      bool(result.particles) and
+                      bool(result.substrate_polygon))
+        self._auto_good_streak = self._auto_good_streak + 1 if acceptable else 0
+        if not acceptable:
+            self._auto_recognition_confirmed = False
+            self._auto_confirmed_result = None
+        self.auto_confirm_btn.setEnabled(self._auto_good_streak >= 3)
+        inside = sum(result.particles_inside_substrate)
+        total = len(result.particles)
+        candidate_count = len(result.candidates)
+        if acceptable:
+            message = (f"识别稳定 {self._auto_good_streak}/3 | 球 {total} "
+                       f"(衬底内 {inside}) | 障碍候选 {candidate_count} | "
+                       f"置信度 {result.overall_confidence:.2f}")
+            color = "#087f23" if self._auto_good_streak >= 3 else "#b36b00"
+        else:
+            reason = result.uncertain_reason or "低于置信度阈值"
+            message = (f"识别未通过: {reason} | 球 {total} | "
+                       f"置信度 {result.overall_confidence:.2f}")
+            color = "#c00"
+        self.auto_status_label.setText(message)
+        self.auto_status_label.setStyleSheet(f"color:{color};")
+        self._update_props_panel()
+
+    @Slot(str)
+    def _on_auto_recognition_failed(self, message: str) -> None:
+        self._auto_good_streak = 0
+        self._auto_recognition_confirmed = False
+        self.auto_confirm_btn.setEnabled(False)
+        self.auto_status_label.setText(f"自动识别失败: {message}")
+        self.auto_status_label.setStyleSheet("color:#c00;")
+
+    @Slot()
+    def on_confirm_auto_recognition(self) -> None:
+        if self._auto_result is None or self._auto_good_streak < 3:
+            self.detail_label.setText("自动识别尚未连续稳定 3 帧")
+            return
+        self._auto_confirmed_result = self._auto_result
+        self._auto_recognition_confirmed = True
+        self.auto_status_label.setText(
+            f"已确认 frame={self._auto_result.frame_id}，可启动 Alg2")
+        self.auto_status_label.setStyleSheet("color:#087f23;font-weight:bold;")
+        self._simlog(
+            f"Alg2 自动识别已确认: frame={self._auto_result.frame_id} "
+            f"球={len(self._auto_result.particles)} "
+            f"障碍候选={len(self._auto_result.candidates)} "
+            f"confidence={self._auto_result.overall_confidence:.3f}")
 
     def _apply_draw_shape(self, x: int, y: int, w: int, h: int):
         """按『框定形状』归一化拖拽矩形，返回 (x, y, w, h, shape)。
@@ -3158,12 +3613,36 @@ class MainWindow(QtWidgets.QMainWindow):
 
     @Slot()
     def on_load_config(self) -> None:
+        roi_defaulted = False
         try:
             cfg = RoiConfig.load(video_sim.DEFAULT_ROI_CONFIG)
-            cfg.validate(self._config_frame_size())
+            frame_size = self._config_frame_size()
+            try:
+                cfg.validate(frame_size)
+            except ValueError:
+                # An empty configuration has no coordinates whose meaning
+                # could be lost. If the camera/screen capture size changed
+                # since it was saved, adopt the current full frame instead of
+                # rejecting a stale ROI. Configurations containing zones stay
+                # strict so their absolute annotations are never shifted
+                # silently.
+                if not cfg.zones and frame_size:
+                    fw, fh = (int(frame_size[0]), int(frame_size[1]))
+                    cfg = RoiConfig(
+                        roi=(0, 0, fw, fh), zones=[], video=cfg.video,
+                        px_per_mm=cfg.px_per_mm,
+                        edge_clearance_px=cfg.edge_clearance_px)
+                    cfg.validate(frame_size)
+                    roi_defaulted = True
+                    self.detail_label.setText(
+                        f"空配置已按当前帧源重置为全画幅 ({fw}x{fh})")
+                else:
+                    raise
         except Exception as exc:  # noqa: BLE001
             self.detail_label.setText(f"载入失败: {exc}")
             return
+        # Do not retain a previous fallback marker after a normal load.
+        self._roi_defaulted = roi_defaulted
         self._roi_cfg = cfg
         self.zones_label.setText(f"zones: {len(cfg.zones)}")
         self.edge_spin.blockSignals(True)
@@ -3171,7 +3650,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.edge_spin.blockSignals(False)
         if self._live_world is not None:
             self._apply_roi(tuple(cfg.roi))
-        self.detail_label.setText("配置已载入")
+        if roi_defaulted:
+            fw, fh = int(cfg.roi[2]), int(cfg.roi[3])
+            self.detail_label.setText(
+                f"空配置已载入，ROI按当前帧源重置为全画幅 ({fw}x{fh})")
+        else:
+            self.detail_label.setText("配置已载入")
 
 
     # ---------------- preview
@@ -3285,6 +3769,7 @@ class MainWindow(QtWidgets.QMainWindow):
         return None
 
     def _show_frame(self, bgr: np.ndarray) -> None:
+        self._last_frame = bgr.copy()
         if (getattr(self, "xyz_ruler_chk", None) is not None
                 and self.xyz_ruler_chk.isChecked()):
             bgr = self._draw_rulers(bgr, self._ruler_um_per_px())
@@ -3311,6 +3796,11 @@ class MainWindow(QtWidgets.QMainWindow):
             self.live_btn.setChecked(False)
         self._live_world = None
         self._live_dets = []
+        self.auto_recognition_box.setEnabled(
+            self.alg_combo.currentText() == "Alg2")
+        self._reset_auto_recognition(
+            "开始实时检测后自动识别" if motor else
+            "请切换到电机模式并开始实时检测")
         if not motor:
             self._close_motor_xyz_stage()
         self._switch_draw_modes(motor)
@@ -3331,6 +3821,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.live_btn.setChecked(False)
         self._live_world = None
         self._live_dets = []
+        self._reset_auto_recognition("帧源已变化，请重新开始实时检测")
 
     @Slot(int)
     def on_frame_source_changed(self, idx: int) -> None:
@@ -3518,10 +4009,40 @@ class MainWindow(QtWidgets.QMainWindow):
                                "先在实时检测里画 ROI/目标区并保存")
         if not self.confirm_chk.isChecked():
             raise RuntimeError("安全门控：请勾选'我确认已连接真实电机'后再运行")
+        auto_recognition = self._auto_recognition_active()
+        if auto_recognition:
+            if not self._auto_recognition_confirmed or self._auto_confirmed_result is None:
+                raise RuntimeError(
+                    "Alg2 自动识别尚未确认：请开始实时检测，等待连续稳定 3 帧，"
+                    "再点击“确认识别结果”")
+            result = self._auto_confirmed_result
+            if (result.uncertain or
+                    result.overall_confidence < self.auto_confidence_spin.value()):
+                raise RuntimeError("Alg2 自动识别结果已失效，请重新检测并确认")
+        if self.alg_combo.currentText() == "Alg2" and not self._beam_calibrated:
+            raise RuntimeError(
+                "Alg2 固定激光位置尚未标定：请开始实时检测后点击“设为画面中心”")
         shift_sign = 1 if self.shift_sign_combo.currentIndex() == 0 else -1
         common = {"ball_shift_sign": shift_sign, "confirmed": True,
                   "algorithm": self.alg_combo.currentText(),
-                  "max_step_mm": float(self.step_mm_spin.value())}
+                  "max_step_mm": float(self.step_mm_spin.value()),
+                  "auto_recognition": auto_recognition,
+                  "recognition_min_confidence":
+                      float(self.auto_confidence_spin.value())}
+        if self.alg_combo.currentText() == "Alg2":
+            common.update({
+                "beam_position_px": (self.beam_x_spin.value(),
+                                     self.beam_y_spin.value()),
+                "beam_confidence": 1.0,
+                "beam_source": "ui_manual",
+            })
+            if (self._selected_auto_track_id is not None and
+                    self._auto_confirmed_result is not None):
+                selected = next(
+                    (p for p in self._auto_confirmed_result.particles
+                     if p.track_id == self._selected_auto_track_id), None)
+                if selected is not None:
+                    common["target_hint_px"] = tuple(selected.position_px)
         if self._using_screen_source():
             if self._screen_region is None:
                 raise RuntimeError("屏幕区域帧源：请先点击'框选屏幕区域'")
@@ -3604,6 +4125,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 builder = lambda: video_sim.build_video_scenario(
                     "video03", config=roi_cfg, motor=motor_cfg,
                     task_mode=mode, controller_sink=self._controller_ref,
+                    auto_recognition=bool(
+                        motor_cfg.get("auto_recognition", False)),
                     cfg_overrides={
                         "max_step_mm": self.step_mm_spin.value(),
                         "max_iterations": self.iters_spin.value()})
@@ -3626,6 +4149,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.detail_label.setText(
                 f"驱动: {driver_desc} | 帧源: {self._frame_source_desc()} | "
                 f"轴映射 {axis_desc} | "
+                f"自动识别 {'ON' if motor_cfg.get('auto_recognition') else 'OFF'} | "
                 f"单步 {self.step_mm_spin.value():.3f}mm | "
                 f"最大步数 {self.iters_spin.value()}")
             self._simlog(self.detail_label.text())
@@ -3729,7 +4253,9 @@ class MainWindow(QtWidgets.QMainWindow):
             "step_mm": self.ball_step_spin.value(),
             "speed_ums": self.ball_speed_spin.value(),
             "accel_ums2": self.ball_accel_spin.value(),
-            "steps_per_mm": self.spm_spin.value()}
+            "steps_per_mm": self.spm_spin.value(),
+            "beam_position_px": (self.beam_x_spin.value(),
+                                 self.beam_y_spin.value())}
         self.worker._origin_um = origin_um     # 运行视窗原点（WYSIWYG）
         self.worker.layout_updated.connect(self.on_layout_updated)
         self.worker.frame_ready.connect(self.on_frame)
@@ -3765,7 +4291,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
     @Slot(np.ndarray)
     def on_frame(self, bgr: np.ndarray) -> None:
-        if not self._is_motor_mode():
+        if (not self._is_motor_mode() and
+                not (self.worker is not None and self.worker.isRunning())):
             bgr = self._overlay_sim_cfg(bgr)
         self._show_frame(bgr)
 

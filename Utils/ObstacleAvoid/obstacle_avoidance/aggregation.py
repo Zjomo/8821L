@@ -181,9 +181,29 @@ class AggregationPlanner:
                         stage = world.make_stage(tid)
                 except TypeError:
                     stage = world.make_stage()
-            controller = ObstacleAvoidController(
-                stage=stage, vision=self.vision, planner=self.grid,
-                config=cfg.controller, reporter=self.reporter)
+            # Alg2 uses a stationary camera beam. Every ball therefore gets
+            # its own fixed-beam controller: laser-off alignment first, then
+            # laser-on transport while the substrate and obstacles drift with
+            # the stage. Keep Alg1 on the original controller contract.
+            if getattr(world, "alg2_mode", False):
+                from .algorithm2 import (Alg2Config, Alg2Stage,
+                                         FixedBeamController)
+                if not isinstance(stage, Alg2Stage):
+                    beam = getattr(world, "beam_position_px", None)
+                    stage = Alg2Stage(
+                        world, tid,
+                        config=Alg2Config(
+                            beam_position_px=beam,
+                            beam_calibration_confidence=1.0,
+                            image_shift_sign=-1),
+                        xy_stage=stage)
+                controller = FixedBeamController(
+                    stage=stage, vision=self.vision, planner=self.grid,
+                    config=cfg.controller, reporter=self.reporter)
+            else:
+                controller = ObstacleAvoidController(
+                    stage=stage, vision=self.vision, planner=self.grid,
+                    config=cfg.controller, reporter=self.reporter)
             if self.controller_sink is not None:
                 self.controller_sink["controller"] = controller
             try:
@@ -205,7 +225,33 @@ class AggregationPlanner:
                         pass
             result.per_ball[tid] = run
             if run.final_state == RunState.COMPLETE:
-                pos = world.particle_position(tid)
+                # The completed ball is released before selecting the next
+                # one. Capture one fresh frame after laser-off so all
+                # sample-bound objects (including the placed ball) reflect
+                # the released stage coordinate, avoiding a false overlap at
+                # the fixed beam in the next task.
+                off = getattr(stage, "set_laser_enabled", None)
+                if callable(off):
+                    off(False)
+                try:
+                    frame = world.render()
+                    self.vision.process(frame, int(getattr(world, "frame_counter", 0)))
+                except Exception:  # noqa: BLE001 - preserve completed result
+                    pass
+                resolved_tid = int(getattr(stage, "track_id", tid))
+                try:
+                    pos = world.particle_position(resolved_tid)
+                except KeyError:
+                    # A detector may reassign a contour ID while the target
+                    # remains physically locked. Use the controller's final
+                    # resolved ID when available, otherwise fail safely.
+                    result.final_state = RunState.ABORTED
+                    result.failure_reason = FailureReason.TARGET_LOST
+                    result.detail = f"ball {tid}: final target position unavailable"
+                    self.reporter.log("run_end", task_id=task_id,
+                                      final_state=result.final_state.value,
+                                      metrics=result.to_dict())
+                    return result
                 placed.append(Obstacle(kind="circle", center=pos,
                                        radius=self._ball_radius(snap, tid),
                                        obstacle_id=f"placed-{tid}"))

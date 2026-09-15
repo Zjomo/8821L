@@ -1,6 +1,7 @@
 numpy>=1.24
 opencv-python>=4.8
 scipy>=1.10
+ultralytics>=8.3
 Pyro4>=4.82
 pyserial>=3.5
 # Qt 绑定（本机已装 PyQt5；如需可取消注释）

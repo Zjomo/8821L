@@ -91,6 +91,94 @@ def test_ui01_offscreen_launch(qapp, tmp_path):
     win.close()
 
 
+def test_ui_alg2_auto_recognition_controls_and_confirmation(qapp):
+    """Alg2 exposes automatic recognition and requires stable confirmation."""
+    from obstacle_avoidance.app import MainWindow
+    from obstacle_avoidance.auto_recognition import AutoRecognitionResult
+    from obstacle_avoidance.models import Particle
+    import numpy as np
+
+    win = MainWindow()
+    win.show()
+    try:
+        win.alg_combo.setCurrentText("Alg2")
+        win.mode_sel.setCurrentIndex(1)
+        qapp.processEvents()
+        assert win.auto_recognition_box.isVisible()
+        assert win.auto_recognition_box.isEnabled()
+        assert win.auto_recognition_chk.isChecked()
+        result = AutoRecognitionResult(
+            frame_id=4, timestamp_s=0.1,
+            substrate_polygon=[(0, 0), (200, 0), (200, 160), (0, 160)],
+            substrate_mask=np.full((160, 200), 255, np.uint8),
+            substrate_confidence=0.9, registration_confidence=0.9,
+            particles=[Particle(1, (80, 80), 12, 0.95, 4)],
+            particles_inside_substrate=[True], overall_confidence=0.9)
+        for _ in range(3):
+            win._on_auto_recognition_result(result)
+        assert win.auto_confirm_btn.isEnabled()
+        win.on_confirm_auto_recognition()
+        assert win._auto_recognition_confirmed
+        assert "已确认" in win.auto_status_label.text()
+    finally:
+        win.close()
+
+
+def test_ui_alg2_motor_run_blocks_unconfirmed_recognition(qapp):
+    from obstacle_avoidance.app import MainWindow
+    from obstacle_avoidance.roi_zones import RoiConfig, Zone
+
+    win = MainWindow()
+    try:
+        win.alg_combo.setCurrentText("Alg2")
+        win.mode_sel.setCurrentIndex(1)
+        win._roi_cfg = RoiConfig(
+            roi=(0, 0, 320, 240),
+            zones=[Zone("goal", "goal", (220, 80, 40, 40))])
+        win.confirm_chk.setChecked(True)
+        qapp.processEvents()
+        with pytest.raises(RuntimeError, match="自动识别尚未确认"):
+            win._motor_params()
+    finally:
+        win.close()
+
+
+def test_ui_alg2_motor_run_requires_beam_calibration_after_recognition(qapp):
+    from obstacle_avoidance.app import MainWindow
+    from obstacle_avoidance.auto_recognition import AutoRecognitionResult
+    from obstacle_avoidance.models import Particle
+    from obstacle_avoidance.roi_zones import RoiConfig, Zone
+    import numpy as np
+
+    win = MainWindow()
+    try:
+        win.alg_combo.setCurrentText("Alg2")
+        win.mode_sel.setCurrentIndex(1)
+        win._roi_cfg = RoiConfig(
+            roi=(0, 0, 320, 240),
+            zones=[Zone("goal", "goal", (220, 80, 40, 40))])
+        win.confirm_chk.setChecked(True)
+        result = AutoRecognitionResult(
+            frame_id=4, timestamp_s=0.1,
+            substrate_polygon=[(0, 0), (319, 0), (319, 239), (0, 239)],
+            substrate_mask=np.full((240, 320), 255, np.uint8),
+            substrate_confidence=0.9, registration_confidence=0.9,
+            particles=[Particle(1, (80, 80), 12, 0.95, 4)],
+            particles_inside_substrate=[True], overall_confidence=0.9)
+        for _ in range(3):
+            win._on_auto_recognition_result(result)
+        win.on_confirm_auto_recognition()
+        with pytest.raises(RuntimeError, match="激光位置尚未标定"):
+            win._motor_params()
+
+        win._last_frame = np.zeros((240, 320, 3), np.uint8)
+        win.on_calibrate_beam_center()
+        _cfg, motor = win._motor_params()
+        assert motor["beam_position_px"] == (160.0, 120.0)
+    finally:
+        win.close()
+
+
 def test_ui02_report_replay(qapp, tmp_path):
     """UI-02: 加载 JSONL 报告 -> 指标/状态/命令可复现。"""
     from obstacle_avoidance.cli import main

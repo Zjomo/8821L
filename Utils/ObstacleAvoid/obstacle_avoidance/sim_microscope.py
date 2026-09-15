@@ -164,6 +164,11 @@ class SimMicroscopeWorld:
         )
         self.pipeline: Optional[VisionPipeline] = None
         self.target_track_id: int = -1
+        self.alg2_mode = False
+        self.beam_position_px: Point = (self.window[0] / 2.0,
+                                        self.window[1] / 2.0)
+        self.laser_enabled = False
+        self.workspace_shift_px: Point = (0.0, 0.0)
         self.frame_counter = 0
         self._last_frame: Optional[np.ndarray] = None
         self._closed = False
@@ -238,7 +243,7 @@ class SimMicroscopeWorld:
             cv2.fillPoly(frame, [pts], (30, 30, 30))
         # Draw the optical spot before the particle so its green ring cannot
         # cut the white particle contour used by the vision detector.
-        if getattr(self, "alg2_mode", False):
+        if getattr(self, "alg2_mode", False) and self.laser_enabled:
             spot = self.alg2_spot_position()
             if spot is not None:
                 sx, sy = int(round(spot[0])), int(round(spot[1]))
@@ -301,46 +306,62 @@ class SimMicroscopeWorld:
     def make_alg2_stage(self, track_id: Optional[int] = None) -> DryRunStage:
         """Return a fixed-beam stage adapter for Alg2.
 
-        Unlike Alg1's direct particle callback, Alg2 moves the microscope XYZ
-        stage.  The camera view therefore shifts while sample objects remain in
-        sample coordinates; the controller uses ``ball_shift_sign=-1`` for
-        this physical convention.
+        Stage motion moves every sample-bound object in the image.  While the
+        laser is enabled, the selected ball is compensated in sample
+        coordinates so it stays at the fixed beam point as the sample moves.
         """
         self.target_track_id = int(track_id) if track_id is not None else -1
 
         def _move(dx_mm: float, dy_mm: float) -> None:
-            # Record a real XYZ-stage move, but keep the camera/beam fixed in
-            # this virtual experiment.  The selected particle is displaced by
-            # the commanded amount, representing optical-thermal trapping;
-            # non-selected particles remain static in the image.
-            before = dict(self.micro_stage.position)
+            # Resolve the currently locked track on every command. During
+            # alignment the detector may renumber contours; Alg2 updates
+            # ``target_track_id`` after nearest-neighbour recovery.
+            idx = self._ball_index_for_track(self.target_track_id)
+            before = self._view_origin()
             try:
                 self.motion_stage.move_by(
-                    {"x": -dx_mm * 1000.0, "y": -dy_mm * 1000.0},
+                    {"x": dx_mm * 1000.0, "y": dy_mm * 1000.0},
                     source="alg2-controller")
             except MotionConfigError as exc:
                 raise StageError(str(exc)) from exc
-            self.micro_stage.move_to({"x": before["x"], "y": before["y"]})
-            idx = self._ball_index_for_track(track_id)
-            if idx is not None:
+            after = self._view_origin()
+            image_shift = (before[0] - after[0], before[1] - after[1])
+            self.workspace_shift_px = (
+                self.workspace_shift_px[0] + image_shift[0],
+                self.workspace_shift_px[1] + image_shift[1])
+            self.substrate = SubstrateRegion(
+                polygon=[(x + image_shift[0], y + image_shift[1])
+                         for x, y in self.substrate.polygon],
+                safety_margin_px=self.substrate.safety_margin_px)
+            if self.laser_enabled and idx is not None:
+                # Follow the view origin in sample coordinates, cancelling the
+                # image motion only for the optically trapped target ball.
                 x, y, r = self._balls[idx]
                 self._balls[idx] = (
-                    x + dx_mm * self.transform.px_per_mm,
-                    y + dy_mm * self.transform.px_per_mm, r)
+                    x + after[0] - before[0],
+                    y + after[1] - before[1], r)
 
         return DryRunStage(_move)
 
     def set_alg2_target(self, track_id: Optional[int]) -> None:
         self.target_track_id = int(track_id) if track_id is not None else -1
 
-    def alg2_spot_position(self) -> Optional[Point]:
-        tid = int(getattr(self, "target_track_id", -1))
-        if tid < 0 or self.pipeline is None:
-            return None
-        for p in self.pipeline.tracker.active_particles():
-            if p.track_id == tid:
-                return p.position_px
+    def set_laser_enabled(self, enabled: bool) -> None:
+        self.laser_enabled = bool(enabled)
+
+    def set_beam_position(self, position_px: Point) -> None:
+        x, y = map(float, position_px)
+        if not (0 <= x < self.window[0] and 0 <= y < self.window[1]):
+            raise StageError("beam position is outside the microscope frame")
+        self.beam_position_px = (x, y)
+
+    def register_workspace_shift(self, dx_px: float, dy_px: float) -> None:
+        # make_alg2_stage already derives the actual image shift from the
+        # virtual microscope position, so no second application is needed.
         return None
+
+    def alg2_spot_position(self) -> Optional[Point]:
+        return self.beam_position_px
 
     # ---------------- snapshot（滞后一帧：由上一视觉结果构造）
     def bind_pipeline(self, pipeline: VisionPipeline) -> None:
@@ -384,6 +405,7 @@ class SimMicroscopeWorld:
     def close(self) -> None:
         if self._closed:
             return
+        self.laser_enabled = False
         try:
             self.cam.disable()
         except Exception:  # noqa: BLE001

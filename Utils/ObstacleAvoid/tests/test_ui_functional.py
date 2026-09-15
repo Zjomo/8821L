@@ -488,6 +488,57 @@ class TestConfigSaveLoad:
         assert win._roi_cfg is not None
         assert win._roi_cfg.roi == (0, 0, 640, 480)
 
+    def test_empty_config_resets_stale_roi_to_current_frame(self, win, qapp,
+                                                              tmp_path,
+                                                              monkeypatch):
+        """撤销全部区域后，帧源尺寸变化不应阻止空配置载入。"""
+        from obstacle_avoidance.roi_zones import RoiConfig
+        from obstacle_avoidance import video_sim
+
+        win.mode_sel.setCurrentIndex(1)  # motor mode uses _cam_frame_size
+        qapp.processEvents()
+        path = str(tmp_path / "stale_empty_roi.json")
+        monkeypatch.setattr(video_sim, "DEFAULT_ROI_CONFIG", path)
+
+        # This is the stale ROI from the reported error; all zones were undone.
+        RoiConfig(roi=(0, 0, 1345, 1073), zones=[], video="screen").save(path)
+        win._cam_frame_size = (1112, 888)
+        win._roi_cfg = None
+
+        win.on_load_config()
+        qapp.processEvents()
+
+        assert win._roi_cfg is not None
+        assert win._roi_cfg.roi == (0, 0, 1112, 888)
+        assert win._roi_cfg.zones == []
+        assert win._roi_defaulted is True
+        assert "载入失败" not in win.detail_label.text()
+
+    def test_nonempty_out_of_range_config_remains_rejected(self, win, qapp,
+                                                            tmp_path,
+                                                            monkeypatch):
+        """含标注区域的越界配置必须继续报错，不能静默平移坐标。"""
+        from obstacle_avoidance.roi_zones import RoiConfig, Zone
+        from obstacle_avoidance import video_sim
+
+        win.mode_sel.setCurrentIndex(1)
+        qapp.processEvents()
+        path = str(tmp_path / "stale_zoned_roi.json")
+        monkeypatch.setattr(video_sim, "DEFAULT_ROI_CONFIG", path)
+        cfg = RoiConfig(
+            roi=(0, 0, 1345, 1073),
+            zones=[Zone(name="ball", kind="ball", rect=(1000, 900, 50, 50))],
+            video="screen")
+        cfg.save(path)
+        win._cam_frame_size = (1112, 888)
+        win._roi_cfg = None
+
+        win.on_load_config()
+        qapp.processEvents()
+
+        assert win._roi_cfg is None
+        assert "载入失败" in win.detail_label.text()
+
 
 # ================================================================
 # 12. 边界间隙
@@ -571,6 +622,26 @@ class TestTargetClick:
         out = win._overlay_sim_cfg(frame)
         assert out.shape == frame.shape
 
+    def test_running_virtual_frame_skips_edit_overlay(self, win, qapp,
+                                                       monkeypatch):
+        """仿真运行帧不应重新叠加编辑用矩形框。"""
+        class RunningWorker:
+            def isRunning(self):
+                return True
+
+        frame = np.zeros((32, 32, 3), dtype=np.uint8)
+        captured = []
+        win.worker = RunningWorker()
+        monkeypatch.setattr(win, "_overlay_sim_cfg",
+                            lambda _frame: (_ for _ in ()).throw(
+                                AssertionError("overlay must be skipped")))
+        monkeypatch.setattr(win, "_show_frame", captured.append)
+
+        win.on_frame(frame)
+        qapp.processEvents()
+        assert captured and np.array_equal(captured[0], frame)
+        win.worker = None
+
 
 # ================================================================
 # 15. 驱动切换（电机模式）
@@ -640,3 +711,121 @@ class TestLogging:
         qapp.processEvents()
         assert "logScrollArea" in [
             win._tab_scrolls[k].objectName() for k in win._tab_scrolls]
+
+    def test_clear_log_empties_output(self, win, qapp):
+        """点击『清空日志』应清除操作日志内容。"""
+        win._simlog("待清除的内容")
+        qapp.processEvents()
+        assert "待清除的内容" in win.log_out.toPlainText()
+
+        win.clear_log_btn.click()
+        qapp.processEvents()
+        assert win.log_out.toPlainText() == ""
+
+    def test_clear_log_keeps_report_path(self, win, qapp, tmp_path):
+        """清空日志不应影响报告路径/回放数据。"""
+        win.report_path.setText(str(tmp_path / "run.jsonl"))
+        win._simlog("temp")
+        win.clear_log_btn.click()
+        qapp.processEvents()
+        assert win.report_path.text() == str(tmp_path / "run.jsonl")
+
+
+# ================================================================
+# 18. 操作日志框可手动拉长（拖拽条）
+# ================================================================
+class TestLogResizable:
+    def test_handle_exists(self, win, qapp):
+        win.tabs.setCurrentIndex(3)
+        qapp.processEvents()
+        h = win.log_resize_handle
+        assert h is not None
+        assert h.parent() is not None
+        # 尚未手动调整
+        assert not h.is_user_sized()
+
+    def test_log_box_has_no_height_cap(self, win, qapp):
+        win.tabs.setCurrentIndex(3)
+        qapp.processEvents()
+        # 不再是固定 220px 上限
+        assert win.log_out.maximumHeight() > 1000
+
+    def test_drag_handle_grows_log_box(self, win, qapp):
+        """按住拖拽条向下拖动：日志框变高。"""
+        from obstacle_avoidance.qt_compat import QtCore, QtGui
+        win.tabs.setCurrentIndex(3)
+        qapp.processEvents()
+        before = win.log_out.height()
+
+        press = QtGui.QMouseEvent(
+            QtCore.QEvent.MouseButtonPress, QtCore.QPointF(5, 3),
+            QtCore.QPointF(100, 300), QtCore.Qt.LeftButton,
+            QtCore.Qt.LeftButton, QtCore.Qt.NoModifier)
+        move = QtGui.QMouseEvent(
+            QtCore.QEvent.MouseMove, QtCore.QPointF(5, 3),
+            QtCore.QPointF(100, 460), QtCore.Qt.NoButton,
+            QtCore.Qt.LeftButton, QtCore.Qt.NoModifier)
+        win.log_resize_handle.mousePressEvent(press)
+        win.log_resize_handle.mouseMoveEvent(move)
+        qapp.processEvents()
+
+        assert win.log_resize_handle.is_user_sized()
+        assert win.log_out.height() == pytest.approx(before + 160, abs=2)
+
+    def test_drag_up_clamps_to_minimum(self, win, qapp):
+        from obstacle_avoidance.qt_compat import QtCore, QtGui
+        win.tabs.setCurrentIndex(3)
+        qapp.processEvents()
+        press = QtGui.QMouseEvent(
+            QtCore.QEvent.MouseButtonPress, QtCore.QPointF(5, 3),
+            QtCore.QPointF(100, 500), QtCore.Qt.LeftButton,
+            QtCore.Qt.LeftButton, QtCore.Qt.NoModifier)
+        move = QtGui.QMouseEvent(
+            QtCore.QEvent.MouseMove, QtCore.QPointF(5, 3),
+            QtCore.QPointF(100, 100), QtCore.Qt.NoButton,
+            QtCore.Qt.LeftButton, QtCore.Qt.NoModifier)
+        win.log_resize_handle.mousePressEvent(press)
+        win.log_resize_handle.mouseMoveEvent(move)
+        qapp.processEvents()
+        assert win.log_out.height() == 90
+
+    def test_outer_scrollbar_adapts(self, win, qapp):
+        """拉长日志框后，页面内容随之增高，外层滚动条范围自适应扩大。"""
+        win.tabs.setCurrentIndex(3)
+        qapp.processEvents()
+        area = win._tab_scrolls["log"]
+        before_content = area.widget().height()
+        before_outer = area.verticalScrollBar().maximum()
+
+        win.log_resize_handle.set_target_height(300)
+        for _ in range(6):
+            qapp.processEvents()
+
+        assert win.log_out.height() == 300
+        assert area.widget().height() > before_content
+        assert area.verticalScrollBar().maximum() > before_outer
+
+    def test_inner_scrollbar_adapts(self, win, qapp):
+        """日志框变高后，可视行数增多，框内滚动条需要滚动的量减少。"""
+        win.tabs.setCurrentIndex(3)
+        qapp.processEvents()
+        for i in range(120):
+            win._simlog(f"line {i}")
+        qapp.processEvents()
+        bar = win.log_out.verticalScrollBar()
+        before_max = bar.maximum()
+        assert before_max > 0
+
+        win.log_resize_handle.set_target_height(win.log_out.height() + 200)
+        qapp.processEvents()
+        assert bar.maximum() < before_max
+
+    def test_resized_height_persists(self, win, qapp):
+        """手动调整后固定为该高度，不被布局重新拉伸。"""
+        win.tabs.setCurrentIndex(3)
+        qapp.processEvents()
+        win.log_resize_handle.set_target_height(260)
+        qapp.processEvents()
+        assert win.log_out.height() == 260
+        assert win.log_out.minimumHeight() == 260
+        assert win.log_out.maximumHeight() == 260

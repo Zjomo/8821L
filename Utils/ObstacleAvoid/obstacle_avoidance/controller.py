@@ -46,6 +46,8 @@ class ControllerConfig:
     slip_threshold_px: float = 25.0    # 实际位移偏离预期超过该值记一次滑移事件
     slip_abort_px: float = 60.0        # 单次滑移超过该值立即安全停止
     slip_max_events: int = 3           # 累计滑移事件上限，超过则停止
+    beam_alignment_tolerance_px: float = 6.0
+    beam_alignment_max_steps: int = 80
 
 
 @dataclass
@@ -264,6 +266,37 @@ class ObstacleAvoidController:
 
             particle = (self.target_lock.update(vis.particles)
                         if self.target_lock else None)
+            # A freshly created detector can enumerate contours in a
+            # different order than the initial snapshot, temporarily
+            # assigning another track id to the same physical ball. In the
+            # non-strict mode recover by an unambiguous nearest-neighbour
+            # match to the last locked position. ``prefer_track_id`` keeps
+            # strict identity semantics available for safety-critical runs.
+            if (particle is None and self.target_lock and
+                    self.target_lock.state == TargetLockState.AMBIGUOUS and
+                    not cfg.prefer_track_id):
+                reference = self.target_lock.last_particle
+                if reference is None:
+                    reference = particle or snap.particle(track_id)
+                if reference is not None:
+                    ranked = sorted(
+                        ((math.dist(p.position_px, reference.position_px), p)
+                         for p in vis.particles), key=lambda item: item[0])
+                    if ranked:
+                        nearest_d, nearest = ranked[0]
+                        margin = (ranked[1][0] - nearest_d
+                                  if len(ranked) > 1 else float("inf"))
+                        min_margin = max(4.0, float(nearest.radius_px) * 0.5)
+                        if (nearest_d <= cfg.max_track_jump_px and
+                                margin >= min_margin):
+                            self.target_lock.selection = TargetSelection.from_particle(
+                                nearest, selection_method="nearest_recovery")
+                            self.target_lock.last_particle = nearest
+                            self.target_lock.lost_frames = 0
+                            self.target_lock.stable_frames = max(
+                                1, self.target_lock.stable_frames)
+                            self.target_lock.state = TargetLockState.LOCKED
+                            particle = nearest
             if particle is None:
                 if self.target_lock and self.target_lock.state == TargetLockState.AMBIGUOUS:
                     result.final_state = RunState.ABORTED

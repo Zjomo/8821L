@@ -264,7 +264,13 @@ class ParticleTracker:
         for tid, pp in preds.items():
             for i, (pos, _r, _c) in enumerate(detections):
                 d = math.hypot(pos[0] - pp[0], pos[1] - pp[1])
-                if d <= self.max_jump_px:
+                # Offline/video sources may deliver frames with a larger
+                # frame-id gap than the live camera. Scale the gate by the
+                # elapsed frame count while keeping it bounded.
+                last_frame = self._tracks[tid].last_frame
+                dt = max(1, frame_id - last_frame)
+                gate = self.max_jump_px * min(4.0, math.sqrt(float(dt)))
+                if d <= gate:
                     cand.append((d, tid, i))
         cand.sort()
         used_t, used_d, matches = set(), set(), {}

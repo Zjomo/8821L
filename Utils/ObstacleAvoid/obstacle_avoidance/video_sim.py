@@ -247,10 +247,50 @@ class CameraWorld:
             safety_margin_px=4.0)
         self.pipeline = None
         self.target_track_id: Optional[int] = None
+        self.beam_position_px: Point = (self.window[0] / 2.0,
+                                        self.window[1] / 2.0)
+        self.laser_enabled = False
+        self.workspace_shift_px: Point = (0.0, 0.0)
         self._frame_counter = 0
 
     def bind_pipeline(self, pipeline: VisionPipeline) -> None:
         self.pipeline = pipeline
+
+    def set_beam_position(self, position_px: Point) -> None:
+        x, y = map(float, position_px)
+        if not (0 <= x < self.window[0] and 0 <= y < self.window[1]):
+            raise ValueError("beam position is outside the camera ROI")
+        self.beam_position_px = (x, y)
+
+    def set_laser_enabled(self, enabled: bool) -> None:
+        # Real laser control must be supplied separately.  This state is still
+        # tracked so Alg2 can enforce and report the required gate sequence.
+        self.laser_enabled = bool(enabled)
+
+    def register_workspace_shift(self, dx_px: float, dy_px: float) -> None:
+        self.workspace_shift_px = (
+            self.workspace_shift_px[0] + float(dx_px),
+            self.workspace_shift_px[1] + float(dy_px))
+        self.substrate = SubstrateRegion(
+            polygon=[(x + float(dx_px), y + float(dy_px))
+                     for x, y in self.substrate.polygon],
+            safety_margin_px=self.substrate.safety_margin_px)
+        shifted = []
+        for obstacle in self.static_obstacles:
+            if obstacle.kind == "circle":
+                shifted.append(Obstacle(
+                    kind="circle",
+                    center=(obstacle.center[0] + float(dx_px),
+                            obstacle.center[1] + float(dy_px)),
+                    radius=obstacle.radius,
+                    obstacle_id=obstacle.obstacle_id))
+            else:
+                shifted.append(Obstacle(
+                    kind="polygon",
+                    polygon=[(x + float(dx_px), y + float(dy_px))
+                             for x, y in obstacle.polygon],
+                    obstacle_id=obstacle.obstacle_id))
+        self.static_obstacles = shifted
 
     def close(self) -> None:
         """释放底层相机资源（frame_source 需附带 close 属性）。"""
@@ -298,7 +338,25 @@ class CameraWorld:
         self._frame_counter += 1
         particles = (self.pipeline.tracker.active_particles()
                      if self.pipeline is not None else [])
+        latest = getattr(self.pipeline, "latest_result", None)
+        substrate = self.substrate
         obstacles: List[Obstacle] = list(self.static_obstacles)
+        overall_confidence = 1.0
+        uncertain = False
+        uncertain_reason = ""
+        if latest is not None:
+            if latest.substrate_polygon:
+                recognizer = getattr(self.pipeline, "recognizer", None)
+                safety_margin = getattr(
+                    getattr(recognizer, "config", None),
+                    "substrate_safety_margin_px", 5.0)
+                substrate = SubstrateRegion(
+                    latest.substrate_polygon, safety_margin)
+            obstacles.extend(candidate.to_obstacle(index + 1)
+                             for index, candidate in enumerate(latest.candidates))
+            overall_confidence = latest.overall_confidence
+            uncertain = latest.uncertain
+            uncertain_reason = latest.uncertain_reason
         for p in particles:
             if p.track_id == self.target_track_id:
                 continue
@@ -307,9 +365,11 @@ class CameraWorld:
                                       obstacle_id=f"ball-{p.track_id}"))
         return WorkspaceSnapshot(
             frame_id=self._frame_counter, timestamp=time.time(),
-            substrate=self.substrate, obstacles=obstacles,
+            substrate=substrate, obstacles=obstacles,
             particles=particles, transform=self.transform,
-            frame_size=self.window)
+            frame_size=self.window,
+            overall_confidence=overall_confidence,
+            uncertain=uncertain, uncertain_reason=uncertain_reason)
 
 
 def _initial_detect(world: VideoWorld, detector: YoloDetector,
@@ -326,6 +386,11 @@ def _initial_detect(world: VideoWorld, detector: YoloDetector,
     pipeline = pipeline or VisionPipeline(detector)
     world.bind_pipeline(pipeline)
     vis = pipeline.process(frame, 1)
+    if vis.uncertain and hasattr(pipeline, "latest_result"):
+        raise RuntimeError(
+            "首帧自动识别未通过安全门控: "
+            f"{vis.uncertain_reason or 'low_confidence'} "
+            f"(confidence={vis.confidence:.2f})")
     if not vis.particles:
         raise RuntimeError(
             f"首帧未检测到球（视野 {world.window[0]}x{world.window[1]}）："
@@ -358,7 +423,8 @@ def build_video_scenario(task: str = "video01", weights: str = WEIGHTS,
                          motor: Optional[dict] = None,
                          cfg_overrides: Optional[dict] = None,
                          task_mode: str = "oa",
-                         controller_sink: Optional[dict] = None):
+                         controller_sink: Optional[dict] = None,
+                         auto_recognition: bool = False):
     """返回 (world, run_fn)，与 cli.build_scenario 契约一致。
 
     task=video03：从 RoiConfig 构建——ROI=固定视野，goal 区=终点，
@@ -421,6 +487,11 @@ def build_video_scenario(task: str = "video01", weights: str = WEIGHTS,
                       for z in config.obstacle_zones()]
         px_per_mm = config.px_per_mm
         hint = None
+        if motor is not None and motor.get("target_hint_px") is not None:
+            try:
+                hint = tuple(float(v) for v in motor["target_hint_px"])
+            except (TypeError, ValueError):
+                raise RuntimeError("target_hint_px must contain two numeric values")
         world = VideoWorld(video_path=video, window=window, offset=offset,
                            px_per_mm=px_per_mm, static_obstacles=static_obs)
     else:
@@ -434,6 +505,20 @@ def build_video_scenario(task: str = "video01", weights: str = WEIGHTS,
         hint = TARGET_HINT
 
     detector = get_shared_detector(weights)   # 进程级单例，避免重复加载权重
+    perception_pipeline = None
+    if auto_recognition:
+        from .auto_recognition import (AutoRecognitionConfig,
+                                       AutoRecognitionPipeline)
+        perception_pipeline = AutoRecognitionPipeline(
+            particle_detector=detector,
+            config=AutoRecognitionConfig(
+                minimum_overall_confidence=float(
+                    (motor or {}).get("recognition_min_confidence", 0.35))))
+    if motor is not None and motor.get("algorithm") == "Alg2":
+        beam_position = motor.get("beam_position_px")
+        if beam_position is None:
+            beam_position = (window[0] / 2.0, window[1] / 2.0)
+        world.set_beam_position(tuple(map(float, beam_position)))
     model = CollisionModel(ball_radius_px=25.0)   # 实测球半径 ~25px
     edge = getattr(config, "edge_clearance_px", None) if task == "video03" else None
     planner = GridPlanner(PlanConfig(model=model, edge_clearance_px=edge))
@@ -510,6 +595,25 @@ def build_video_scenario(task: str = "video01", weights: str = WEIGHTS,
         # locked when the first per-ball stage is created.
         stage = (None if task_mode == "ag" and factory is not None
                  else (factory() if factory is not None else world.make_stage()))
+        if (stage is not None and motor is not None and
+                motor.get("algorithm") == "Alg2"):
+            from .algorithm2 import (Alg2Config, Alg2Stage,
+                                     BeamCalibration, FixedBeamController,
+                                     LaserGate)
+            raw_stage = stage
+            laser_callback = motor.get("laser_set_enabled")
+            gate = LaserGate(laser_callback,
+                             hardware_controlled=callable(laser_callback))
+            beam = BeamCalibration(
+                world.beam_position_px,
+                confidence=float(motor.get("beam_confidence", 1.0)),
+                source=str(motor.get("beam_source", "manual")))
+            stage = Alg2Stage(
+                world, config=Alg2Config(
+                    beam_position_px=beam.position_px,
+                    beam_calibration_confidence=beam.confidence,
+                    image_shift_sign=int(motor.get("ball_shift_sign", -1))),
+                xy_stage=raw_stage, laser_gate=gate)
         if stage is not None and stage_sink is not None:
             stage_sink.append(stage)
         try:
@@ -520,7 +624,8 @@ def build_video_scenario(task: str = "video01", weights: str = WEIGHTS,
                 stage.prepare_focus(
                     z_safe_um=float(motor.get("z_safe_um", 5.0)),
                     z_focus_um=float(motor.get("z_focus_um", 0.0)))
-            snap, tid = _initial_detect(world, detector, hint)
+            snap, tid = _initial_detect(world, detector, hint,
+                                        pipeline=perception_pipeline)
             # goal 自动微调：目标区中心 clearance 不足但仍在衬底内时，
             # 就近挪到第一个可行点（安全层拒绝之前最后一道用户体验防线）
             reason = planner.check_point(snap, goal.center)
@@ -535,6 +640,28 @@ def build_video_scenario(task: str = "video01", weights: str = WEIGHTS,
                 from .aggregation import AggregationConfig, AggregationPlanner
                 def aggregation_stage_factory():
                     next_stage = factory() if factory is not None else world.make_stage()
+                    if motor is not None and motor.get("algorithm") == "Alg2":
+                        # Assembly opens a fresh physical stage for each ball,
+                        # but all balls share the same calibrated camera beam.
+                        # Wrap each raw controller so laser gating and image
+                        # direction are identical to OA mode.
+                        from .algorithm2 import (Alg2Config, Alg2Stage,
+                                                 BeamCalibration, LaserGate)
+                        gate = LaserGate(
+                            motor.get("laser_set_enabled"),
+                            hardware_controlled=callable(
+                                motor.get("laser_set_enabled")))
+                        beam = BeamCalibration(
+                            world.beam_position_px,
+                            confidence=float(motor.get("beam_confidence", 1.0)),
+                            source=str(motor.get("beam_source", "manual")))
+                        next_stage = Alg2Stage(
+                            world, config=Alg2Config(
+                                beam_position_px=beam.position_px,
+                                beam_calibration_confidence=beam.confidence,
+                                image_shift_sign=int(
+                                    motor.get("ball_shift_sign", -1))),
+                            xy_stage=next_stage, laser_gate=gate)
                     if stage_sink is not None:
                         stage_sink.append(next_stage)
                     if (motor is not None and motor.get("algorithm") == "Alg2"
@@ -551,8 +678,12 @@ def build_video_scenario(task: str = "video01", weights: str = WEIGHTS,
                     stage_factory=(aggregation_stage_factory
                                    if motor is not None else None))
                 return ag.run(world, snap, goal, task_id=task)
-            ctl = ObstacleAvoidController(stage, world.pipeline,
+            if motor is not None and motor.get("algorithm") == "Alg2":
+                ctl = FixedBeamController(stage, world.pipeline,
                                           planner, cfg, rep)
+            else:
+                ctl = ObstacleAvoidController(stage, world.pipeline,
+                                              planner, cfg, rep)
             if controller_sink is not None:
                 controller_sink["controller"] = ctl
             return ctl.run(snap, tid, goal, task_id=task,

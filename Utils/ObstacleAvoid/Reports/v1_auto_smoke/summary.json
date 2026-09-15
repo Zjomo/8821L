@@ -1,0 +1,31 @@
+{
+  "video": "E:\\jupyter file\\2_Optics\\8821L\\Utils\\ObstacleAvoid\\Dataset\\v1.mp4",
+  "weights": "E:\\jupyter file\\2_Optics\\8821L\\Utils\\ObstacleAvoid\\weight\\Duan_best.pt",
+  "source": {
+    "width": 1112,
+    "height": 888,
+    "fps": 50.00209283830731,
+    "total_frames": 23892
+  },
+  "stride": 30,
+  "analyzed_frames": 120,
+  "unique_track_ids": [
+    1,
+    2,
+    3
+  ],
+  "inside_substrate_observations": 240,
+  "uncertain_frames": 0,
+  "mean_overall_confidence": 0.8816362798449726,
+  "elapsed_s": 35.000805377960205,
+  "outputs": {
+    "jsonl": "Reports\\v1_auto_smoke\\recognition.jsonl",
+    "overlay_video": "Reports\\v1_auto_smoke\\recognition_overlay.mp4",
+    "summary": "Reports\\v1_auto_smoke\\summary.json"
+  },
+  "limitations": [
+    "damage and obstacle are conservative traditional-vision candidates",
+    "semantic separation requires a substrate/damage/obstacle segmentation model",
+    "results must be reviewed before enabling real Alg2 motor control"
+  ]
+}
