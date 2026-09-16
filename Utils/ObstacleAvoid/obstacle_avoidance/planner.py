@@ -133,15 +133,86 @@ class GridPlanner:
         return c
 
     # -------------------------------------------------- plan
+    def direct_plan(self, snap: WorkspaceSnapshot, start: Point, goal: Point
+                    ) -> Optional[PlanResult]:
+        """需求2：起点/目标点/衬底离开画面范围时的直行兜底计划。
+
+        栅格规划以画面为栅格边界，元素离屏后 ``_nearest_free`` 找不到落点会
+        判 ``NO_SAFE_PATH``。此时不再中止，而是返回"当前点 -> 目标点"的直行
+        计划，让定位运动继续（离屏区域无法避障，属已知取舍）。
+        """
+        w, h = snap.frame_size
+
+        def outside(p: Point) -> bool:
+            return not (0.0 <= p[0] < w and 0.0 <= p[1] < h)
+
+        roles = [name for name, p in (("start", start), ("goal", goal))
+                 if outside(p)]
+        if not roles and not snap.substrate.contains(start):
+            # 运动球滑出样本可行域（越过衬底边界/画面下边界）：不再中止，
+            # 直行把它拉回目标点继续定位运动。
+            roles = ["start_offsample"]
+        if not roles:
+            # 衬底（可行域/工作域）整体移出画面：栅格边界随之失效，
+            # 可行域检查必然失败 -> 直行兜底（画面内的衬底不受影响）。
+            poly = list(getattr(snap.substrate, "polygon", ()) or ())
+            if poly:
+                cx = sum(p[0] for p in poly) / len(poly)
+                cy = sum(p[1] for p in poly) / len(poly)
+                if outside((cx, cy)):
+                    roles = ["substrate"]
+        if not roles:
+            return None
+        return PlanResult(success=True, waypoints_px=[tuple(start), tuple(goal)],
+                          length_px=math.dist(start, goal),
+                          min_clearance_px=float("inf"),
+                          plan_version=self.version,
+                          detail="offscreen direct step: " + ",".join(roles))
+
+    def nearest_feasible(self, snap: WorkspaceSnapshot, p: Point,
+                         extra_obstacles: Sequence[Obstacle] = (),
+                         max_r_px: float = 8.0,
+                         step_px: float = 1.0) -> Optional[Point]:
+        """在 p 附近搜索最近可行点（环形逐圈搜索，只用于起点微调）。
+
+        球心是实测值（检测半径存在 ±1px 抖动），而膨胀模型又随实测半径自适应，
+        因此球容易停在"恰好贴着膨胀边界"的临界状态。此处只做几像素内的微调，
+        让规划得以继续；附近确实无可行点（球深陷障碍内部）时返回 None。
+        """
+        r = step_px
+        while r <= max_r_px:
+            n = max(8, int(2 * math.pi * r / step_px))
+            best: Optional[Point] = None
+            for i in range(n):
+                a = 2 * math.pi * i / n
+                cand = (p[0] + r * math.cos(a), p[1] + r * math.sin(a))
+                if self.check_point(snap, cand, extra_obstacles) is None:
+                    if best is None or math.dist(cand, p) < math.dist(best, p):
+                        best = cand
+            if best is not None:
+                return best
+            r += step_px
+        return None
+
     def plan(self, snap: WorkspaceSnapshot, start: Point, goal: Point,
              extra_obstacles: Sequence[Obstacle] = ()) -> PlanResult:
         self.version += 1
-        for name, p in (("start", start), ("goal", goal)):
-            reason = self.check_point(snap, p, extra_obstacles)
-            if reason is not None:
+        reason = self.check_point(snap, start, extra_obstacles)
+        if reason is not None:
+            # 起点（球实测位置）仅因临界膨胀越界时，就近挪到可行点继续规划，
+            # 而不是直接 ABORTED；找不到可行点才按原逻辑拒绝。
+            nudged = (self.nearest_feasible(snap, start, extra_obstacles)
+                      if reason is FailureReason.LOW_CLEARANCE else None)
+            if nudged is None:
                 return PlanResult(success=False, plan_version=self.version,
                                   failure_reason=reason,
-                                  detail=f"{name} point rejected: {reason.value}")
+                                  detail=f"start point rejected: {reason.value}")
+            start = nudged
+        reason = self.check_point(snap, goal, extra_obstacles)
+        if reason is not None:
+            return PlanResult(success=False, plan_version=self.version,
+                              failure_reason=reason,
+                              detail=f"goal point rejected: {reason.value}")
         blocked, cs = self.build_occupancy(snap, extra_obstacles)
         ny, nx = blocked.shape
         s = self._nearest_free(blocked, *self._to_cell(start, cs))

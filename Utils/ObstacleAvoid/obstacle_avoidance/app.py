@@ -133,6 +133,7 @@ class WorkerThread(QtCore.QThread):
     log_ready = Signal(str)                  # 需求5：运行期事件 -> UI 操作日志
     motion_ready = Signal(dict)              # XYZ 运动遥测
     report_ready = Signal(str)               # 本轮 JSONL 报告路径（回放用）
+    stage_ready = Signal(dict)               # 需求3：运行结束时的最终台位（µm）
 
     def __init__(self, scenario: str, controller_ref: dict, parent=None,
                  builder=None, sample_spec: Optional[dict] = None) -> None:
@@ -177,6 +178,22 @@ class WorkerThread(QtCore.QThread):
                     stop()
                 except Exception as exc:  # noqa: BLE001
                     _log_exception("worker estop failed", exc)
+
+    def _emit_final_stage(self, world) -> None:
+        """需求3：把运行结束时的最终台位回传 UI（虚拟模式）。
+
+        电机模式（真实台位/相机世界）不移动、不回传。
+        """
+        if self._execution_mode != "virtual":
+            return
+        stage = getattr(world, "motion_stage", None)
+        pos = getattr(stage, "position", None)
+        if not isinstance(pos, dict):
+            return
+        try:
+            self.stage_ready.emit({k: float(v) for k, v in pos.items()})
+        except Exception as exc:  # noqa: BLE001 - 回传失败不影响结束流程
+            _log_exception("emit final stage failed", exc)
 
     @property
     def stages(self) -> list:
@@ -515,6 +532,16 @@ class WorkerThread(QtCore.QThread):
                                 f"状态 {ev.get('from')} -> {ev.get('to')}")
                         elif et == "error":
                             self.log_ready.emit(f"错误: {ev.get('reason')}")
+                        elif et == "element_offscreen":
+                            # 需求2：元素离屏不中止，用外推位置继续定位
+                            pos = ev.get("position_px")
+                            where = (f"({pos[0]:.0f},{pos[1]:.0f})"
+                                     if isinstance(pos, (list, tuple))
+                                     and len(pos) == 2 else "")
+                            self.log_ready.emit(
+                                f"元素离屏外推: {ev.get('role', '?')} "
+                                f"track={ev.get('track_id', '-')} {where} "
+                                f"{ev.get('detail', '')}".rstrip())
                         elif et == "run_end":
                             self.log_ready.emit(
                                 f"运行结束: {ev.get('final_state')}")
@@ -636,6 +663,9 @@ class WorkerThread(QtCore.QThread):
                             _set_ball_at)
                     if run_failed:
                         break
+                # 需求3：运行结束不回起点——把最终台位回传 UI，
+                # 由 UI 把实时世界的视窗（台位）同步到运行终点。
+                self._emit_final_stage(world)
                 world.close()
                 self.layout_updated.emit(list(final_balls))
                 self.state_ready.emit(
@@ -679,6 +709,8 @@ class WorkerThread(QtCore.QThread):
             # 先推送一帧初始场景
             self.frame_ready.emit(self._draw_overlay(orig_render(), []))
             result = run_fn(rep=rep, stage_sink=self._stage_sink)
+            # 需求3：虚拟模式运行结束回传最终台位（电机模式不动真实台位）
+            self._emit_final_stage(world)
         except Exception as exc:  # noqa: BLE001 - UI 层兜底
             _log_exception("run failed", exc)
             msg = f"{type(exc).__name__}: {exc}"
@@ -1768,7 +1800,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.xyz_ruler_chk.toggled.connect(lambda _on: self._refresh_sim_preview())
         # 锁定视角：禁用鼠标拖拽控制位移台（防止移动过程中误触视角）
         self.view_lock_chk = QtWidgets.QCheckBox("锁定视角")
-        self.view_lock_chk.setChecked(False)
+        self.view_lock_chk.setChecked(True)   # 默认锁定，防止误触视角
         self.view_lock_chk.setToolTip(
             "锁定后禁用鼠标拖拽控制位移台，防止移动/运行过程中误触视角。")
         self.view_lock_chk.toggled.connect(self.on_view_lock_toggled)
@@ -1860,6 +1892,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.beam_y_spin.setPrefix("Y ")
         self.beam_x_spin.setValue(400.0)
         self.beam_y_spin.setValue(300.0)
+        # 手动改光斑坐标后立即重绘当前帧（标定后光斑跟随输入移动）
+        self.beam_x_spin.valueChanged.connect(self._refresh_beam_spot)
+        self.beam_y_spin.valueChanged.connect(self._refresh_beam_spot)
         beam_row.addWidget(self.beam_x_spin)
         beam_row.addWidget(self.beam_y_spin)
         self.beam_center_btn = QtWidgets.QPushButton("设为画面中心")
@@ -1885,17 +1920,17 @@ class MainWindow(QtWidgets.QMainWindow):
         self.mode_combo = QtWidgets.QComboBox()
         self._switch_draw_modes(False)   # 默认虚拟模式：sim 对象绘制选项
         row.addWidget(self.mode_combo, 1)
-        # 画框闸门：默认锁定，防止移动过程中误触画框
-        self.draw_gate_btn = QtWidgets.QPushButton("画框:关")
+        # 画框闸门：默认开启，拖拽画框立即生效
+        self.draw_gate_btn = QtWidgets.QPushButton("画框:开")
         self.draw_gate_btn.setCheckable(True)
-        self.draw_gate_btn.setChecked(False)
+        self.draw_gate_btn.setChecked(True)
         self.draw_gate_btn.setFixedWidth(76)
         self.draw_gate_btn.setToolTip(
-            "画框开关：开启后拖拽画框才生效。默认关闭，"
-            "防止移动/运行过程中误触画框。")
+            "画框开关：开启后拖拽画框才生效。默认开启，"
+            "移动/运行过程中可点击锁定以防误触画框。")
         self.draw_gate_btn.toggled.connect(self.on_draw_gate_toggled)
         row.addWidget(self.draw_gate_btn)
-        self.canvas.drawing_enabled = False   # 初始锁定
+        self.canvas.drawing_enabled = True   # 初始开启
         self._p_roi.addLayout(row)
 
         # 框定形状：拖拽框按所选形状归一化（圆/正方形取中心+短边）
@@ -2123,6 +2158,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self._sim_order: list = []       # 画框顺序栈（undo 后画先撤）
         self._sim_preview_frame = None   # sim01 预览原始帧（叠加 ROI 用）
         self._sim_live = None            # sim01 实时检测世界（SimMicroscopeWorld）
+        self._pending_view_center = None  # 需求1：待对齐的视窗中心（样本坐标）
+        self._final_stage_position = None  # 需求3：本轮运行最终台位（µm）
         self._load_sim_config()
         self._simlog("UI 就绪")
 
@@ -2194,6 +2231,9 @@ class MainWindow(QtWidgets.QMainWindow):
                     dict(self._sim_live.motion_stage.position))
             except Exception:  # noqa: BLE001 - 退出时保存失败不阻断关闭
                 pass
+            # 需求1：退出前把框定元素与当前视窗一并落盘，避免下次启动
+            # 出现"元素位置/对象丢失"（视窗落盘需在 close 之前）。
+            self._save_sim_config()
             self._sim_live.close()
             self._sim_live = None
         if isinstance(self._live_world, video_sim.CameraWorld):
@@ -2464,6 +2504,12 @@ class MainWindow(QtWidgets.QMainWindow):
                 # recenter=False：恢复上次会话的台位位置（worker 世界保持居中）
                 self._sim_live = sim_microscope.SimMicroscopeWorld(
                     recenter=False)
+                # 需求1：启动时若框定元素不在视窗内（上次运行把台位带到别处），
+                # 把视窗对齐到元素包围盒中心，避免"重启后元素丢失"。
+                pending = getattr(self, "_pending_view_center", None)
+                if pending is not None:
+                    self._pending_view_center = None
+                    self._apply_view_center(pending)
             self._live_world = self._sim_live   # 统一入口（tick 判空/停止复用）
             self._xyz_stage = self._sim_live.motion_stage
             self._update_xyz_view(self._xyz_stage)
@@ -2958,6 +3004,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.beam_status_label.setStyleSheet(
                 "color:#087f23;font-weight:bold;")
             self._simlog(f"Alg2 激光位置标定: ({x:.1f},{y:.1f}) px")
+            self._refresh_beam_spot()
             return
         if (self._is_motor_mode() and self._auto_result is not None and
                 self._auto_recognition_active()):
@@ -3094,6 +3141,14 @@ class MainWindow(QtWidgets.QMainWindow):
             os.makedirs(os.path.dirname(self.SIM_ROI_CONFIG), exist_ok=True)
             data = dict(self._sim_cfg)
             data["coords"] = "sample"   # 坐标系标记（样本绝对坐标）
+            # 需求1：连同当前视窗一起落盘（origin=样本->窗口平移量），
+            # 便于复盘以及元素不在视窗内时自动对齐。
+            ox, oy = self._sim_origin()
+            view: dict = {"origin": [int(ox), int(oy)]}
+            if self._sim_live is not None:
+                pos = self._sim_live.micro_stage.position
+                view["stage_um"] = [float(pos["x"]), float(pos["y"])]
+            data["view"] = view
             with open(self.SIM_ROI_CONFIG, "w", encoding="utf-8") as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
         except Exception as exc:  # noqa: BLE001
@@ -3159,6 +3214,78 @@ class MainWindow(QtWidgets.QMainWindow):
                          f"(衬底{len(self._sim_cfg.get('grounds', []))} "
                          f"球{len(self._sim_cfg.get('balls', []))} "
                          f"障碍{len(self._sim_cfg.get('obstacles', []))})")
+        # 需求1：载入后确保元素落在视窗内（不丢对象/不丢位置）
+        self._sync_view_to_elements()
+
+    # ---- 需求1：视窗与框定元素对齐（对象固定在样本上，视窗须跟上）
+    def _element_bbox_center(self) -> Optional[tuple]:
+        """所有框定元素（衬底/球/障碍/目标点/目标范围）样本坐标包围盒中心。"""
+        xs0, ys0 = float("inf"), float("inf")
+        xs1, ys1 = float("-inf"), float("-inf")
+
+        def add_rect(rect) -> None:
+            nonlocal xs0, ys0, xs1, ys1
+            if not rect:
+                return
+            xs0, ys0 = min(xs0, rect[0]), min(ys0, rect[1])
+            xs1 = max(xs1, rect[0] + rect[2])
+            ys1 = max(ys1, rect[1] + rect[3])
+
+        def add_pt(pt) -> None:
+            nonlocal xs0, ys0, xs1, ys1
+            if not pt:
+                return
+            xs0, ys0 = min(xs0, pt[0]), min(ys0, pt[1])
+            xs1, ys1 = max(xs1, pt[0]), max(ys1, pt[1])
+
+        c = self._sim_cfg
+        for g in c.get("grounds", []):
+            if not isinstance(g, dict):
+                continue
+            add_rect(g.get("rect"))
+            add_rect(g.get("goal_range"))
+            add_pt(g.get("goal"))
+            for p in (g.get("poly") or []):
+                add_pt(p)
+        for b in c.get("balls", []):
+            add_rect(b)
+        for ob in c.get("obstacles", []):
+            add_rect(ob)
+        for poly in (c.get("obstacle_polys") or []):
+            for p in (poly or []):
+                add_pt(p)
+        if xs0 > xs1 or ys0 > ys1:
+            return None
+        return ((xs0 + xs1) / 2.0, (ys0 + ys1) / 2.0)
+
+    def _sync_view_to_elements(self) -> None:
+        """元素不在当前视窗内 -> 对齐视窗（无实时世界时暂存，创建后应用）。"""
+        center = self._element_bbox_center()
+        if center is None:
+            return
+        self._apply_view_center(center)
+
+    def _apply_view_center(self, center) -> None:
+        """把视窗中心移到 center（样本坐标）；已在视窗内则保持用户位置。"""
+        world = self._sim_live
+        if world is None:
+            self._pending_view_center = center
+            return
+        w, h = sim_microscope.WINDOW
+        ox, oy = world._view_origin()
+        wx, wy = center[0] - ox, center[1] - oy
+        if 0 <= wx < w and 0 <= wy < h:
+            return
+        try:
+            px_um = world.pixel_size_um
+            world.motion_stage.move_to({"x": center[0] * px_um,
+                                        "y": center[1] * px_um},
+                                       source="restore-element-view")
+        except Exception as exc:  # noqa: BLE001 - 对齐失败不阻断启动
+            self._simlog(f"视窗对齐失败: {exc}")
+            return
+        self._simlog(f"视窗已对齐到框定元素中心 "
+                     f"({center[0]:.0f},{center[1]:.0f})px（元素保持可见）")
 
     def _load_sample_spec(self) -> Optional[dict]:
         """读取仿真镜头图层配置（不存在/损坏返回 None -> 用相机当前配置）。"""
@@ -3212,6 +3339,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.beam_status_label.setStyleSheet("color:#087f23;font-weight:bold;")
         self._simlog(
             f"Alg2 激光位置标定: ({w / 2.0:.1f},{h / 2.0:.1f}) px")
+        self._refresh_beam_spot()
 
     @Slot(bool)
     def _on_beam_pick_toggled(self, armed: bool) -> None:
@@ -3768,8 +3896,34 @@ class MainWindow(QtWidgets.QMainWindow):
             return 1000.0 / float(ppm)
         return None
 
+    def _draw_beam_spot(self, bgr: np.ndarray) -> np.ndarray:
+        """标定后叠加固定激光光斑（5px 绿色实心点，Alg2）。
+
+        位置即「激光位置」标定值（点击画面标定 / 设为画面中心）。只有光斑
+        打在圆球上时控制器才会吸住该球并驱动其移动（FixedBeamController
+        的光镊捕获判据），脱靶时先动态再捕获把球心拉回光斑中心。
+        """
+        combo = getattr(self, "alg_combo", None)
+        if (combo is None or combo.currentText() != "Alg2"
+                or not getattr(self, "_beam_calibrated", False)):
+            return bgr
+        x = int(round(self.beam_x_spin.value()))
+        y = int(round(self.beam_y_spin.value()))
+        h, w = bgr.shape[:2]
+        if not (0 <= x < w and 0 <= y < h):
+            return bgr
+        cv2.circle(bgr, (x, y), 5, (0, 255, 0), -1)
+        return bgr
+
+    def _refresh_beam_spot(self, *_args) -> None:
+        """激光位置标定/变更后立即重绘当前帧，让光斑马上出现。"""
+        frame = getattr(self, "_last_frame", None)
+        if frame is not None:
+            self._show_frame(frame)
+
     def _show_frame(self, bgr: np.ndarray) -> None:
         self._last_frame = bgr.copy()
+        bgr = self._draw_beam_spot(bgr)
         if (getattr(self, "xyz_ruler_chk", None) is not None
                 and self.xyz_ruler_chk.isChecked()):
             bgr = self._draw_rulers(bgr, self._ruler_um_per_px())
@@ -4200,6 +4354,13 @@ class MainWindow(QtWidgets.QMainWindow):
         # _sim_cfg 存样本绝对坐标；worker 世界按用户当前视野定位
         # （WYSIWYG：运行窗口 = 所见窗口），因此转回当前视窗窗口坐标。
         # 无实时世界（未进入虚拟模式）时退回初始原点（样本中心）。
+        # 需求1：启动后若还挂着"元素不在视窗内"的待对齐请求，先建立实时世界
+        # 并对齐视窗，再取运行原点（保证运行窗口 = 所见窗口）。
+        if self._sim_live is None and self._pending_view_center is not None:
+            try:
+                self._ensure_live()
+            except Exception as exc:  # noqa: BLE001 - 建世界失败沿用初始原点
+                _log_exception("sim live init failed", exc)
         if self._sim_live is not None:
             pos = self._sim_live.micro_stage.position
             origin_um = (float(pos["x"]), float(pos["y"]))
@@ -4266,6 +4427,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.worker.error_occurred.connect(self.on_error_dialog)
         self.worker.log_ready.connect(self.on_log_line)   # 需求5
         self.worker.report_ready.connect(self.on_report_ready)  # 回放用
+        self.worker.stage_ready.connect(self.on_stage_ready)    # 需求3
         self.worker.start()
 
     @Slot(str)
@@ -4287,6 +4449,8 @@ class MainWindow(QtWidgets.QMainWindow):
                     self._sim_cfg["balls"][i] = new_rect
                     changed += 1
         if changed:
+            # 需求1：运行结果立即落盘，避免"关闭程序后球位回退到运行前"
+            self._save_sim_config()
             self._refresh_sim_preview()
 
     @Slot(np.ndarray)
@@ -4349,12 +4513,35 @@ class MainWindow(QtWidgets.QMainWindow):
         if motion and motion.get("last_telemetry"):
             self.on_motion(motion["last_telemetry"])
 
+    @Slot(dict)
+    def on_stage_ready(self, position: dict) -> None:
+        """需求3：暂存本轮运行最终台位，on_done 时同步到实时世界视窗。"""
+        self._final_stage_position = dict(position)
+
     @Slot(int)
     def on_done(self, code: int) -> None:
         self.pause_btn.setText("暂停")
         self.state_label.setText(self.state_label.text() +
                                  (" [OK]" if code == 0 else " [FAIL]"))
         self._simlog(f"运行完成 exit={code}")
+        # 需求3：画面停在最终达到的窗口状态（不回运行起点）——虚拟模式下把
+        # 实时世界的台位同步到 worker 的最终台位并刷新预览。
+        pos = getattr(self, "_final_stage_position", None)
+        self._final_stage_position = None
+        if not pos or self._is_motor_mode():
+            return
+        world = self._sim_live
+        if world is None:
+            return
+        try:
+            world.motion_stage.move_to(pos, source="run-final")
+        except Exception as exc:  # noqa: BLE001 - 同步失败不影响结束
+            self._simlog(f"最终窗口同步失败: {exc}")
+            return
+        self._simlog("运行结束：视窗停在最终窗口 "
+                     f"({pos.get('x', 0):.0f},{pos.get('y', 0):.0f})µm")
+        self._save_sim_config()    # 需求1：最终视窗与球位一并落盘
+        self._refresh_sim_preview()
 
     @Slot()
     def on_replay(self) -> None:

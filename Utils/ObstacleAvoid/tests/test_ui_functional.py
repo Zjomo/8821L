@@ -75,10 +75,10 @@ class TestWindowInit:
         assert win.alg_combo.itemText(0) == "Alg1"
         assert win.alg_combo.itemText(1) == "Alg2"
 
-    def test_draw_gate_default_locked(self, win):
-        assert not win.draw_gate_btn.isChecked()
-        assert win.draw_gate_btn.text() == "画框:关"
-        assert not win.canvas.drawing_enabled
+    def test_draw_gate_default_open(self, win):
+        assert win.draw_gate_btn.isChecked()
+        assert win.draw_gate_btn.text() == "画框:开"
+        assert win.canvas.drawing_enabled
 
     def test_shape_combo_items(self, win):
         items = [win.shape_combo.itemText(i) for i in range(win.shape_combo.count())]

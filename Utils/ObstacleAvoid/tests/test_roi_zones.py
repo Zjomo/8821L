@@ -261,16 +261,16 @@ def test_ui_draw_gate_defaults_locked(tmp_path):
     win.SIM_ROI_CONFIG = str(tmp_path / "sim_roi_config.json")
     win._sim_cfg = {"balls": [], "grounds": [], "obstacles": []}
     win._sim_order = []
-    # 默认锁定：按钮未勾选、画布闸门关闭
-    assert win.draw_gate_btn.isChecked() is False
-    assert win.canvas.drawing_enabled is False
-    assert win.draw_gate_btn.text() == "画框:关"
-    # 开启 -> 画布可画；关闭 -> 重新锁定
-    win.draw_gate_btn.setChecked(True)
+    # 默认开启：按钮已勾选、画布闸门打开
+    assert win.draw_gate_btn.isChecked() is True
     assert win.canvas.drawing_enabled is True
     assert win.draw_gate_btn.text() == "画框:开"
+    # 锁定 -> 画布不可画；重新开启 -> 恢复
     win.draw_gate_btn.setChecked(False)
     assert win.canvas.drawing_enabled is False
+    assert win.draw_gate_btn.text() == "画框:关"
+    win.draw_gate_btn.setChecked(True)
+    assert win.canvas.drawing_enabled is True
     # 程序化调用（on_rect_drawn 直调）不受闸门影响（保持兼容）
     win._ensure_live()
     win.on_live_toggled(True)
@@ -279,13 +279,12 @@ def test_ui_draw_gate_defaults_locked(tmp_path):
     win.mode_combo.setCurrentText("衬底(ground)")
     win.on_rect_drawn(40, 40, 500, 400)
     assert len(win._sim_cfg["grounds"]) == 1
-    # 锁定视角：勾选后禁用鼠标拖拽移动台
-    assert win.view_lock_chk.isChecked() is False
+    # 锁定视角：默认锁定，禁用鼠标拖拽移动台
+    assert win.view_lock_chk.isChecked() is True
     pos0 = (win._sim_live.micro_stage.position["x"],
             win._sim_live.micro_stage.position["y"])
-    win.view_lock_chk.setChecked(True)
     win._on_sim_drag_start(100, 100)
-    win._on_sim_drag_move(50, 30)          # 锁定 -> 台位不动
+    win._on_sim_drag_move(50, 30)          # 默认锁定 -> 台位不动
     assert (win._sim_live.micro_stage.position["x"],
             win._sim_live.micro_stage.position["y"]) == pos0
     win.view_lock_chk.setChecked(False)

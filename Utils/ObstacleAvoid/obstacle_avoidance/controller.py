@@ -48,6 +48,17 @@ class ControllerConfig:
     slip_max_events: int = 3           # 累计滑移事件上限，超过则停止
     beam_alignment_tolerance_px: float = 6.0
     beam_alignment_max_steps: int = 80
+    # ---- Alg2 光镊捕获物理（固定光斑）
+    # 只有光斑打在圆球上（光斑中心落在球内且留裕量：dist <= 半径*系数）
+    # 才能控制该球移动；脱靶时先动态再捕获把球心拉回光斑中心，不做硬性
+    # 中止，连续再捕获超限或偏离过远（slip_abort_px）才安全停止。
+    beam_capture_fraction: float = 0.8
+    beam_recapture_max: int = 60
+    # ---- 需求2：元素离屏不中止
+    # 目标球/终点等元素离开画面范围时，用视觉台账的外推位置继续定位运动，
+    # 只在台账也无记录（从未见过）或超出样本可行域太远时才回到中止路径。
+    allow_offscreen_elements: bool = True
+    offscreen_retry_limit: int = 120   # 离屏外推最多连续控制步数（超限才中止）
 
 
 @dataclass
@@ -190,6 +201,8 @@ class ObstacleAvoidController:
             reason = self.planner.check_point(snap, goal.center, extra)
             kind = "goal"
         if reason is not None:
+            # 注意：任务下发时的越界（如 OA-04 终点在衬底外）仍按配置错误
+            # 拒绝——需求2 的"离屏不中止"针对运行过程中元素离开画面范围。
             pt = start if kind == "start" else goal.center
             c = self.planner.clearance_at(snap, pt, extra)
             need = self.planner.config.edge_clearance
@@ -240,7 +253,9 @@ class ObstacleAvoidController:
                 vis = None
             else:
                 self._last_frame = frame
-                vis = self.vision.process(frame, snap.frame_id)
+                vis = self.vision.process(
+                    frame, snap.frame_id,
+                    allow_offscreen=cfg.allow_offscreen_elements)
             if vis is None or vis.uncertain:
                 uncertain_streak += 1
                 self._set_state(RunState.DETECTION_UNCERTAIN, task_id)
@@ -297,6 +312,18 @@ class ObstacleAvoidController:
                                 1, self.target_lock.stable_frames)
                             self.target_lock.state = TargetLockState.LOCKED
                             particle = nearest
+            if particle is None and cfg.allow_offscreen_elements:
+                # 需求2：球已离开画面范围（跟踪器/台账外推位置）-> 用外推
+                # 位置继续定位运动，不再直接 TARGET_LOST 中止。
+                particle = self._offscreen_particle(vis.particles, track_id,
+                                                    last_pos)
+                if particle is not None:
+                    track_id = particle.track_id
+                    self.reporter.log(
+                        "element_offscreen", task_id=task_id,
+                        track_id=track_id, role="target_ball",
+                        source="tracker_ledger_extrapolation",
+                        position_px=[round(v, 1) for v in particle.position_px])
             if particle is None:
                 if self.target_lock and self.target_lock.state == TargetLockState.AMBIGUOUS:
                     result.final_state = RunState.ABORTED
@@ -384,6 +411,20 @@ class ObstacleAvoidController:
                 self._last_plan = plan
                 result.replan_count += 1
                 wp_index = 0
+                if not plan.success and cfg.allow_offscreen_elements:
+                    # 需求2：终点离开画面范围导致规划失败（越界/无可行栅格）
+                    # -> 直行兜底，继续定位运动；封闭目标的 NO_SAFE_PATH
+                    # 仍按原逻辑中止。
+                    fb = self.planner.direct_plan(snap, pos, goal.center)
+                    if fb is not None and fb.success:
+                        self.reporter.log(
+                            "element_offscreen", task_id=task_id,
+                            stage="planning", role="goal",
+                            reason=(plan.failure_reason.value
+                                    if plan.failure_reason else ""),
+                            detail=fb.detail)
+                        plan = fb
+                        self._last_plan = plan
                 self.reporter.log("plan", task_id=task_id, **plan.to_dict())
                 if not plan.success:
                     # 拒绝下发任何电机命令
@@ -475,6 +516,10 @@ class ObstacleAvoidController:
             cmd_dict.pop("task_id", None)  # 避免与 log 参数冲突
             self.reporter.log("stage_command", task_id=task_id, **cmd_dict)
             ppm = snap.transform.px_per_mm
+            # 需求2：把本帧台位命令位移告知视觉层——元素（圆球/衬底/障碍）
+            # 离开画面范围或丢检时按"随载物台运动"外推位置，继续定位运动。
+            self.vision.apply_stage_shift(cfg.ball_shift_sign * dx_mm * ppm,
+                                          cfg.ball_shift_sign * dy_mm * ppm)
             pending_check = (pos, (dx_mm * ppm, dy_mm * ppm))
             result.min_clearance_observed_px = min(
                 result.min_clearance_observed_px, plan.min_clearance_px)
@@ -504,6 +549,20 @@ class ObstacleAvoidController:
             model.ball_radius_px = r
             return True
         return False
+
+    @staticmethod
+    def _offscreen_particle(particles, track_id: int, reference: Point):
+        """需求2：本帧唯一可用的离屏元素（外推位置，``in_frame=False``）。
+
+        优先同 track_id；否则取离参考位置最近者。没有离屏元素返回 None。
+        """
+        off = [p for p in particles if not getattr(p, "in_frame", True)]
+        if not off:
+            return None
+        by_id = next((p for p in off if p.track_id == track_id), None)
+        if by_id is not None:
+            return by_id
+        return min(off, key=lambda p: math.dist(p.position_px, reference))
 
     def _match_particle(self, particles, last_pos: Point,
                         preferred_track_id: Optional[int] = None):

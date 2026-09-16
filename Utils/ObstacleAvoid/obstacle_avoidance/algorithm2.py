@@ -271,7 +271,30 @@ class FixedBeamController:
         if frame is None or snap is None:
             return snap, None
         self._last_frame = frame
-        return snap, self.vision.process(frame, snap.frame_id)
+        return snap, self.vision.process(
+            frame, snap.frame_id,
+            allow_offscreen=bool(getattr(self.config,
+                                         "allow_offscreen_elements", True)))
+
+    def _offscreen_particle(self, particles, track_id: int, reference: Point):
+        """需求2：元素（球/衬底外参考点）离开画面范围时的外推位置。"""
+        off = [p for p in particles if not getattr(p, "in_frame", True)]
+        if not off:
+            return None
+        by_id = next((p for p in off if p.track_id == track_id), None)
+        if by_id is not None:
+            return by_id
+        return min(off, key=lambda p: math.dist(p.position_px, reference))
+
+    def _offscreen_goal_plan(self, snap: WorkspaceSnapshot, start: Point,
+                             goal: Point, task_id: str, role: str = "goal"):
+        """需求2：终点离开画面范围 -> 直行兜底计划（否则返回 None）。"""
+        fb = self.planner.direct_plan(snap, start, goal)
+        if fb is None or not fb.success:
+            return None
+        self.reporter.log("element_offscreen", task_id=task_id,
+                          stage="planning", role=role, detail=fb.detail)
+        return fb
 
     def _target_particle(self, particles, track_id: int, reference: Point,
                          preferred: Optional[Point] = None):
@@ -302,6 +325,18 @@ class FixedBeamController:
                                 3.0, nearest.radius_px * 0.35):
             return nearest
         return None
+
+    @staticmethod
+    def _capture_limit_px(ball, cfg, fallback: float) -> float:
+        """光镊捕获判据：光斑中心落在球内且留裕量（dist <= 半径 * 系数）。
+
+        半径不可用（检测异常）时退回中心容差 ``fallback``。
+        """
+        radius = float(getattr(ball, "radius_px", 0.0) or 0.0)
+        limit = radius * float(getattr(cfg, "beam_capture_fraction", 0.8))
+        if limit <= 0.0:
+            limit = float(fallback)
+        return max(limit, 0.5)
 
     def _move_workspace(self, shift: Point, snap: WorkspaceSnapshot,
                         result, task_id: str, track_id: int,
@@ -391,7 +426,16 @@ class FixedBeamController:
                 ball = self._target_particle(vis.particles, track_id,
                                              predicted)
                 if ball is None:
-                    continue
+                    # 需求2：球已离开画面范围 -> 用外推位置把它拉回视野，
+                    # 不直接放弃对齐（否则会误报 SPOT_SLIP 中止）。
+                    ball = self._offscreen_particle(vis.particles, track_id,
+                                                    predicted)
+                    if ball is None:
+                        continue
+                    self.reporter.log(
+                        "element_offscreen", task_id=task_id, stage="alignment",
+                        track_id=track_id, role="target_ball",
+                        position_px=[round(v, 1) for v in ball.position_px])
                 track_id = ball.track_id
                 self.stage.track_id = track_id
                 set_target = getattr(self.stage.world, "set_alg2_target", None)
@@ -400,7 +444,10 @@ class FixedBeamController:
                 error = (beam[0] - ball.position_px[0],
                          beam[1] - ball.position_px[1])
                 distance = math.hypot(*error)
-                if distance <= align_tolerance:
+                # 光镊物理：只有光斑打在球上（光斑中心落在球内且留裕量）
+                # 才允许开光并控制该球移动，故对齐判据用捕获判据而非中心容差。
+                if distance <= self._capture_limit_px(ball, cfg,
+                                                      align_tolerance):
                     aligned = True
                     break
                 max_px = cfg.max_step_mm * current.transform.px_per_mm
@@ -434,6 +481,8 @@ class FixedBeamController:
                               **{"from": "CALIBRATING", "to": "TRACKING"})
             stable = 0
             uncertain = 0
+            recapture = 0
+            offscreen_moves = 0      # 需求2：连续离屏外推控制步数
             for iteration in range(1, cfg.max_iterations + 1):
                 result.iterations = iteration
                 if self._estop.is_set():
@@ -455,22 +504,89 @@ class FixedBeamController:
                 uncertain = 0
                 ball = self._target_particle(vis.particles, track_id,
                                              beam, preferred=beam)
+                offscreen_ball = False
                 if ball is None:
-                    result.final_state = RunState.ABORTED
-                    result.failure_reason = FailureReason.TARGET_LOST
-                    result.detail = "selected ball lost after laser capture"
-                    return result
+                    # 需求2：目标球离开画面范围 -> 用台账/跟踪器外推位置
+                    # 继续定位运动（把球拉回光斑），不再直接 ABORTED。
+                    ball = self._offscreen_particle(vis.particles, track_id,
+                                                    beam)
+                    if ball is None:
+                        result.final_state = RunState.ABORTED
+                        result.failure_reason = FailureReason.TARGET_LOST
+                        result.detail = "selected ball lost after laser capture"
+                        return result
+                    offscreen_ball = True
+                    self.reporter.log(
+                        "element_offscreen", task_id=task_id, stage="tracking",
+                        track_id=track_id, role="target_ball",
+                        position_px=[round(v, 1) for v in ball.position_px])
                 track_id = ball.track_id
                 self.stage.track_id = track_id
                 set_target = getattr(self.stage.world, "set_alg2_target", None)
                 if callable(set_target):
                     set_target(track_id)
-                slip = math.dist(ball.position_px, beam)
-                if slip > cfg.slip_abort_px:
-                    result.final_state = RunState.ABORTED
-                    result.failure_reason = FailureReason.SPOT_SLIP
-                    result.detail = f"beam-ball slip {slip:.1f}px"
-                    return result
+                # 光镊物理：只有光斑打在球上才能控制该球移动。脱靶时不做
+                # 硬性中止，而是动态再捕获——把球心推回光斑中心（光斑稳定
+                # 在球心）；偏离过远或连续再捕获超限才安全停止。
+                offset = (ball.position_px[0] - beam[0],
+                          ball.position_px[1] - beam[1])
+                slip = math.hypot(*offset)
+                if offscreen_ball:
+                    # 需求2：元素离屏（外推位置）不做失位中止——直接把样品
+                    # 朝外推位置移动把球拉回视野；连续外推超限才安全停止。
+                    offscreen_moves += 1
+                    if offscreen_moves > max(1, int(getattr(
+                            cfg, "offscreen_retry_limit", 120))):
+                        result.final_state = RunState.ABORTED
+                        result.failure_reason = FailureReason.TARGET_LOST
+                        result.detail = ("offscreen target not recovered "
+                                         f"(moves={offscreen_moves})")
+                        return result
+                    max_px = cfg.max_step_mm * current.transform.px_per_mm
+                    scale = min(1.0, max_px / max(slip, 1e-9))
+                    if not self._move_workspace(
+                            (-offset[0] * scale, -offset[1] * scale), current,
+                            result, task_id, track_id, 1, 0):
+                        result.final_state = RunState.FAULT
+                        result.failure_reason = FailureReason.COMM_TIMEOUT
+                        result.detail = "stage refused offscreen recovery command"
+                        return result
+                    continue
+                if slip > self._capture_limit_px(
+                        ball, cfg, cfg.beam_alignment_tolerance_px):
+                    if slip > cfg.slip_abort_px:
+                        result.final_state = RunState.ABORTED
+                        result.failure_reason = FailureReason.SPOT_SLIP
+                        result.detail = (f"beam far off ball {slip:.1f}px "
+                                         f"(abort={cfg.slip_abort_px:.0f}px)")
+                        return result
+                    recapture += 1
+                    if recapture > max(1, int(getattr(
+                            cfg, "beam_recapture_max", 60))):
+                        result.final_state = RunState.ABORTED
+                        result.failure_reason = FailureReason.SPOT_SLIP
+                        result.detail = (
+                            f"beam off ball {slip:.1f}px > r*"
+                            f"{cfg.beam_capture_fraction:.2f} "
+                            f"(recapture attempts={recapture - 1})")
+                        return result
+                    self.reporter.log(
+                        "beam_recapture", task_id=task_id, track_id=track_id,
+                        offset_px=[round(offset[0], 1), round(offset[1], 1)],
+                        radius_px=round(float(ball.radius_px), 1),
+                        attempt=recapture)
+                    max_px = cfg.max_step_mm * current.transform.px_per_mm
+                    scale = min(1.0, max_px / max(slip, 1e-9))
+                    if not self._move_workspace(
+                            (-offset[0] * scale, -offset[1] * scale), current,
+                            result, task_id, track_id, 1, 0):
+                        result.final_state = RunState.FAULT
+                        result.failure_reason = FailureReason.COMM_TIMEOUT
+                        result.detail = "stage refused beam re-capture command"
+                        return result
+                    continue
+                recapture = 0
+                offscreen_moves = 0
 
                 current_substrate_center = self._substrate_center(current)
                 substrate_shift = (
@@ -491,6 +607,14 @@ class FixedBeamController:
 
                 plan = self.planner.plan(current, beam, moving_goal,
                                          shifted_extra())
+                if (not plan.success or len(plan.waypoints_px) < 2) and \
+                        getattr(cfg, "allow_offscreen_elements", True):
+                    # 需求2：终点（随样品移动）离开画面范围导致规划失败 ->
+                    # 直行兜底，继续定位运动，不直接 ABORTED。
+                    fb = self._offscreen_goal_plan(current, beam, moving_goal,
+                                                   task_id)
+                    if fb is not None:
+                        plan = fb
                 self._last_plan = plan
                 result.plan = plan
                 result.replan_count += 1

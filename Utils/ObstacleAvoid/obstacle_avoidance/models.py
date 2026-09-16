@@ -224,6 +224,8 @@ class Particle:
     frame_id: int = -1
     velocity_px_s: Point = (0.0, 0.0)
     history_px: List[Point] = field(default_factory=list)
+    # 需求2：False = 位置来自台账/速度外推（元素已离开画面范围）
+    in_frame: bool = True
 
     def to_dict(self) -> dict:
         return {"track_id": self.track_id, "position_px": list(self.position_px),

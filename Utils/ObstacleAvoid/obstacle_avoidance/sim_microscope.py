@@ -50,6 +50,11 @@ SAMPLE_CENTER = (1500.0, 1000.0)   # 合成样本 3000x2000 的中心（样本 p
 # shape 可选：ellipse / blob / rect / triangle / star / custom（任意多边形）。
 SAMPLE_CATEGORIES = ("ground", "mask", "obstacle")
 
+# Alg2 光镊捕获判据：只有光斑打在球上（光斑中心落在球内且留裕量：
+# 光斑-球心距离 <= 半径 * 该系数）才吸住球，捕获后把球心稳定在光斑中心。
+# 与 controller.ControllerConfig.beam_capture_fraction 保持一致。
+BEAM_CAPTURE_FRACTION = 0.8
+
 # 默认场景布局：球为样本 px（初始台位在样本中心 -> win = sample - (1100, 700)），
 # 静态障碍为窗口 px（相机固定）。
 #   ball0 (320,450) -> 静态盘 (480,435) 正挡直线 -> goal (620,450)，强制绕行；
@@ -248,7 +253,7 @@ class SimMicroscopeWorld:
             if spot is not None:
                 sx, sy = int(round(spot[0])), int(round(spot[1]))
                 cv2.circle(frame, (sx, sy), 18, (0, 220, 0), 2)
-                cv2.circle(frame, (sx, sy), 4, (0, 255, 0), -1)
+                cv2.circle(frame, (sx, sy), 5, (0, 255, 0), -1)   # 5px 激光光斑
         for i, (x, y, r) in enumerate(self._balls):
             wx, wy = self._to_window((x, y))
             if -r < wx < self.window[0] + r and -r < wy < self.window[1] + r:
@@ -307,8 +312,10 @@ class SimMicroscopeWorld:
         """Return a fixed-beam stage adapter for Alg2.
 
         Stage motion moves every sample-bound object in the image.  While the
-        laser is enabled, the selected ball is compensated in sample
-        coordinates so it stays at the fixed beam point as the sample moves.
+        laser is enabled the target ball is only trapped when the spot actually
+        hits it (spot centre inside the ball with margin); a trapped ball is
+        pulled to the spot centre, an off-spot ball simply drifts with the
+        sample (the trap is lost).
         """
         self.target_track_id = int(track_id) if track_id is not None else -1
 
@@ -334,12 +341,17 @@ class SimMicroscopeWorld:
                          for x, y in self.substrate.polygon],
                 safety_margin_px=self.substrate.safety_margin_px)
             if self.laser_enabled and idx is not None:
-                # Follow the view origin in sample coordinates, cancelling the
-                # image motion only for the optically trapped target ball.
+                # 光物理：只有光斑打在球上才捕获。判据取"命令前"的相对
+                # 位置（球此刻在光斑内 -> 陷阱已抓住球），所以台位移动只带动
+                # 样品，被捕获的球被钉在焦点（动态平衡）；命令前未命中则不
+                # 补偿——球随样品一起漂移，即"脱靶就失控"。
                 x, y, r = self._balls[idx]
-                self._balls[idx] = (
-                    x + after[0] - before[0],
-                    y + after[1] - before[1], r)
+                wx, wy = x - before[0], y - before[1]
+                spot = self.beam_position_px
+                if math.hypot(wx - spot[0], wy - spot[1]) <= \
+                        max(0.5, r * BEAM_CAPTURE_FRACTION):
+                    self._balls[idx] = (spot[0] + after[0],
+                                        spot[1] + after[1], r)
 
         return DryRunStage(_move)
 

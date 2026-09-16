@@ -8,3 +8,7 @@
 2026-09-09 15:16:18,533:TestCamera (microscope.device_server):INFO:PID 34540: Serving PYRO:TestCamera@127.0.0.1:8001
 2026-09-12 19:00:15,157:TestCamera (microscope.device_server):INFO:PID 8828: Device initialized; starting daemon.
 2026-09-12 19:00:15,179:TestCamera (microscope.device_server):INFO:PID 8828: Serving PYRO:TestCamera@127.0.0.1:8001
+2026-09-15 20:29:52,704:TestCamera (microscope.device_server):INFO:PID 21856: Device initialized; starting daemon.
+2026-09-15 20:29:52,705:TestCamera (microscope.device_server):INFO:PID 21856: Serving PYRO:TestCamera@127.0.0.1:8001
+2026-09-15 20:29:53,641:TestCamera (microscope.device_server):INFO:PID 3036: Device initialized; starting daemon.
+2026-09-15 20:29:53,642:TestCamera (microscope.device_server):INFO:PID 3036: Serving PYRO:TestCamera@127.0.0.1:8001

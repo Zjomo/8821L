@@ -8,3 +8,7 @@
 2026-09-09 15:16:18,534:SimulatedFilterWheel (microscope.device_server):INFO:PID 35580: Serving PYRO:SimulatedFilterWheel@127.0.0.1:8003
 2026-09-12 19:00:15,173:SimulatedFilterWheel (microscope.device_server):INFO:PID 30544: Device initialized; starting daemon.
 2026-09-12 19:00:15,200:SimulatedFilterWheel (microscope.device_server):INFO:PID 30544: Serving PYRO:SimulatedFilterWheel@127.0.0.1:8003
+2026-09-15 20:29:52,727:SimulatedFilterWheel (microscope.device_server):INFO:PID 25532: Device initialized; starting daemon.
+2026-09-15 20:29:52,728:SimulatedFilterWheel (microscope.device_server):INFO:PID 25532: Serving PYRO:SimulatedFilterWheel@127.0.0.1:8003
+2026-09-15 20:29:53,660:SimulatedFilterWheel (microscope.device_server):INFO:PID 3916: Device initialized; starting daemon.
+2026-09-15 20:29:53,661:SimulatedFilterWheel (microscope.device_server):INFO:PID 3916: Serving PYRO:SimulatedFilterWheel@127.0.0.1:8003

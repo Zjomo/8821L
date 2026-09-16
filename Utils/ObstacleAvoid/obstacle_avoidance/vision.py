@@ -38,6 +38,7 @@ class VisionResult:
     uncertain_reason: str = ""
     confidence: float = 0.0
     frame: Optional[np.ndarray] = None  # 叠加调试用
+    offscreen_ids: List[int] = field(default_factory=list)  # 需求2：外推元素
 
 
 # ---------------------------------------------------------------- classic
@@ -244,18 +245,39 @@ class ParticleTracker:
     """最近邻多球跟踪：速度预测 + 贪心匹配；重叠时 coast 保 ID（AG-03）。"""
 
     def __init__(self, max_jump_px: float = 40.0, max_lost_frames: int = 3,
-                 velocity_damp: float = 0.5) -> None:
+                 velocity_damp: float = 0.5,
+                 keep_lost_frames: Optional[int] = None) -> None:
         self.max_jump_px = max_jump_px
         self.max_lost_frames = max_lost_frames
+        # 需求2：丢检后仍保留 track 的帧数上限（离屏/遮挡不立刻丢 ID）。
+        # None = 沿用旧行为（max_lost_frames）。
+        self.keep_lost_frames = (
+            int(max_lost_frames) if keep_lost_frames is None
+            else max(int(max_lost_frames), int(keep_lost_frames)))
         self.velocity_damp = velocity_damp
         self._tracks: Dict[int, _Track] = {}
         self._next_id = 1
+        self._shift: Point = (0.0, 0.0)   # 需求2：本帧台位命令位移（像素）
+
+    def add_shift(self, dx_px: float, dy_px: float) -> None:
+        """登记一次台位命令位移（图像像素，已含方向符号）。
+
+        需求2：离屏/丢检期间球随载物台运动，按命令位移外推比开环速度外推
+        更贴近真实位置（控制器据此继续定位运动）。
+        """
+        self._shift = (self._shift[0] + dx_px, self._shift[1] + dy_px)
 
     def update(self, detections: Sequence[Tuple[Point, float, float]],
                frame_id: int) -> List[Particle]:
-        # 预测位置（速度阻尼外推）
+        shift, self._shift = self._shift, (0.0, 0.0)
+        has_shift = abs(shift[0]) > 1e-9 or abs(shift[1]) > 1e-9
+        # 预测位置（有台位命令 -> 按命令位移；否则速度阻尼外推）
         preds: Dict[int, Point] = {}
         for tid, t in self._tracks.items():
+            if has_shift:
+                preds[tid] = (t.position[0] + shift[0],
+                              t.position[1] + shift[1])
+                continue
             dt = max(1, frame_id - t.last_frame)
             preds[tid] = (t.position[0] + t.velocity[0] * dt * self.velocity_damp,
                           t.position[1] + t.velocity[1] * dt * self.velocity_damp)
@@ -297,8 +319,14 @@ class ParticleTracker:
                 t.lost_count += 1
                 pframe = t.last_seen_frame   # coast：保留最后真实观测帧
                 t.last_frame = frame_id
+                # 需求2：位置继续外推（有台位命令时按命令位移 = 球随载物台
+                # 运动；否则按速度），否则丢检期间位置冻结，控制器会误判
+                # "已到位"；外推位置让定位运动继续。
+                t.position = preds[tid]
+                if has_shift:
+                    t.velocity = shift
             t.history.append(t.position)
-            if t.lost_count > self.max_lost_frames:
+            if t.lost_count > self.keep_lost_frames:
                 dropped.append(tid)
                 continue
             alive.append(Particle(track_id=tid, position_px=t.position,
@@ -326,6 +354,7 @@ class ParticleTracker:
     def reset(self) -> None:
         self._tracks.clear()
         self._next_id = 1
+        self._shift = (0.0, 0.0)
 
     def active_particles(self) -> List[Particle]:
         """当前所有 track 的快照（供快照层读取，不推进跟踪状态）。"""
@@ -340,19 +369,155 @@ class ParticleTracker:
         return out
 
 
+# ---------------------------------------------------------------- ledger
+@dataclass
+class LedgerEntry:
+    """台账条目：元素最后已知位置/速度（窗口像素）。"""
+    track_id: int
+    position: Point
+    radius: float
+    frame_id: int
+    velocity: Point = (0.0, 0.0)
+    in_frame: bool = True
+    shift: Point = (0.0, 0.0)   # 自上次真实观测以来的台位命令位移（像素）
+
+
+class PositionLedger:
+    """元素位置台账（需求2）：始终记录各元素（圆球/障碍）的位置。
+
+    跟踪器丢检、元素离开画面范围后，台账仍按速度外推给出位置，控制器据此
+    继续定位运动，而不是直接 ABORTED【FAIL】。仅当台账也无记录（从未见过该
+    元素）或外推超过 ``max_age_frames`` 时才允许回到旧的中止路径。
+    """
+
+    def __init__(self, max_age_frames: int = 90) -> None:
+        self.max_age_frames = max(1, int(max_age_frames))
+        self._entries: Dict[int, LedgerEntry] = {}
+        self._last_frame: int = -1
+
+    @staticmethod
+    def _in_frame(pos: Point, frame_size: Optional[Tuple[int, int]]) -> bool:
+        if frame_size is None:
+            return True
+        w, h = frame_size
+        return 0.0 <= pos[0] < w and 0.0 <= pos[1] < h
+
+    def add_shift(self, dx_px: float, dy_px: float) -> None:
+        """登记一次台位命令位移（图像像素，已含方向符号）。
+
+        需求2：元素离屏/丢检期间仍随载物台运动，记录命令位移后可按
+        "最后已知位置 + 命令位移"给出位置（死推算），持续定位运动。
+        """
+        if abs(dx_px) <= 1e-9 and abs(dy_px) <= 1e-9:
+            return
+        for e in self._entries.values():
+            e.shift = (e.shift[0] + dx_px, e.shift[1] + dy_px)
+
+    def record(self, particles: Sequence[Particle], frame_id: int,
+               frame_size: Optional[Tuple[int, int]] = None) -> None:
+        """记录本帧可信检测（通常只记新鲜检测）。"""
+        self._last_frame = max(self._last_frame, int(frame_id))
+        for p in particles:
+            self._entries[p.track_id] = LedgerEntry(
+                track_id=p.track_id, position=p.position_px,
+                radius=float(p.radius_px), frame_id=int(frame_id),
+                velocity=tuple(p.velocity_px_s or (0.0, 0.0)),
+                in_frame=self._in_frame(p.position_px, frame_size))
+
+    def predict(self, frame_id: int, known_ids: Sequence[int] = (),
+                frame_size: Optional[Tuple[int, int]] = None) -> List[Particle]:
+        """台账中"本帧未跟踪到"的元素外推位置。"""
+        known = set(known_ids)
+        out: List[Particle] = []
+        for tid, e in self._entries.items():
+            if tid in known:
+                continue
+            age = int(frame_id) - e.frame_id
+            if age <= 0 or age > self.max_age_frames:
+                continue
+            out.append(self._extrapolated(e, age, frame_id, frame_size))
+        return out
+
+    def extrapolate(self, track_id: int, frame_id: Optional[int] = None,
+                    frame_size: Optional[Tuple[int, int]] = None
+                    ) -> Optional[Particle]:
+        """该元素当前位置（含本帧已跟踪的）；台账无记录/超时返回 None。
+
+        需求2：控制器在跟踪器丢检（元素离屏）时用它继续定位，
+        而不是直接中止。
+        """
+        e = self._entries.get(int(track_id))
+        if e is None:
+            return None
+        age = 0 if frame_id is None else max(0, int(frame_id) - e.frame_id)
+        if age > self.max_age_frames:
+            return None
+        return self._extrapolated(e, age, e.frame_id + age, frame_size)
+
+    def _extrapolated(self, e: "LedgerEntry", age: int, frame_id: int,
+                      frame_size: Optional[Tuple[int, int]]) -> Particle:
+        if abs(e.shift[0]) > 1e-9 or abs(e.shift[1]) > 1e-9:
+            # 需求2：期间有台位命令 -> 死推算（元素随载物台运动），
+            # 比开环速度外推更接近真实位置。
+            pos = (e.position[0] + e.shift[0], e.position[1] + e.shift[1])
+        else:
+            pos = (e.position[0] + e.velocity[0] * age,
+                   e.position[1] + e.velocity[1] * age)
+        return Particle(track_id=e.track_id, position_px=pos,
+                        radius_px=e.radius,
+                        confidence=max(0.05, 0.5 ** min(age, 4)),
+                        frame_id=int(frame_id), velocity_px_s=e.velocity,
+                        in_frame=self._in_frame(pos, frame_size))
+
+    def entry(self, track_id: int) -> Optional[LedgerEntry]:
+        return self._entries.get(int(track_id))
+
+    def elements(self) -> List[LedgerEntry]:
+        return list(self._entries.values())
+
+    def prune(self, frame_id: int) -> None:
+        stale = [tid for tid, e in self._entries.items()
+                 if int(frame_id) - e.frame_id > self.max_age_frames]
+        for tid in stale:
+            del self._entries[tid]
+
+    def clear(self) -> None:
+        self._entries.clear()
+        self._last_frame = -1
+
+
 # ---------------------------------------------------------------- pipeline
 class VisionPipeline:
     """检测 + 跟踪 + 不确定性判定。"""
 
     def __init__(self, detector: Optional[ClassicDetector] = None,
                  tracker: Optional[ParticleTracker] = None,
-                 expected_radius_px: Optional[float] = None) -> None:
+                 expected_radius_px: Optional[float] = None,
+                 ledger: Optional[PositionLedger] = None) -> None:
         self.detector = detector or ClassicDetector()
         self.tracker = tracker or ParticleTracker()
         self.expected_radius_px = expected_radius_px
+        self.ledger = ledger if ledger is not None else PositionLedger()
+
+    def apply_stage_shift(self, dx_px: float, dy_px: float) -> None:
+        """告知跟踪器/台账本帧台位命令位移（图像像素，已含方向符号）。
+
+        需求2：元素离屏/丢检时按"元素随载物台运动"外推位置，控制器据此
+        继续定位运动，而不是直接 ABORTED。
+        """
+        self.ledger.add_shift(dx_px, dy_px)
+        self.tracker.add_shift(dx_px, dy_px)
 
     def process(self, frame: np.ndarray, frame_id: int,
-                expect_particle: bool = True) -> VisionResult:
+                expect_particle: bool = True,
+                allow_offscreen: bool = False) -> VisionResult:
+        """检测一帧。
+
+        ``allow_offscreen=True``（需求2）：元素已离开画面范围（位置在外）时，
+        用跟踪器/台账的外推位置补齐元素列表，且不判 ``uncertain``——离屏不是
+        检测失败，控制器据外推位置继续定位运动。画内遮挡/丢检仍按检测不确定
+        处理（不盲动），保证原有安全语义。
+        """
         res = VisionResult(frame_id=frame_id, frame=frame)
         res.substrate = self.detector.detect_substrate(frame)
         if res.substrate is None:
@@ -364,14 +529,35 @@ class VisionPipeline:
             frame, expected_radius_px=self.expected_radius_px)
         res.particles = self.tracker.update(dets, frame_id)
         fresh = [p for p in res.particles if p.frame_id == frame_id]
+        frame_size = (int(frame.shape[1]), int(frame.shape[0]))
+        for p in res.particles:
+            p.in_frame = PositionLedger._in_frame(p.position_px, frame_size)
+        self.ledger.record(fresh, frame_id, frame_size)
+        self.ledger.prune(frame_id)
+        extrapolated = False
+        if allow_offscreen:
+            extra = self.ledger.predict(
+                frame_id, [p.track_id for p in res.particles], frame_size)
+            if extra:
+                res.particles = list(res.particles) + extra
+                extrapolated = True
+        # 需求2：元素位置已在画面外 -> 台账记录继续有效，用于定位运动
+        offscreen = [p for p in res.particles if not p.in_frame]
+        if allow_offscreen and offscreen:
+            res.offscreen_ids = [p.track_id for p in offscreen]
         if ambiguous:
             res.uncertain = True
             res.uncertain_reason = "merged_particle_blob"
         elif expect_particle and not fresh:
-            # 无任何本帧新鲜检测（全部 coast / 完全丢失）-> 显式不确定
-            res.uncertain = True
-            res.uncertain_reason = ("no_particle_detected" if not dets
-                                    else "low_confidence")
+            if res.offscreen_ids:
+                # 元素离屏（外推位置）：继续定位，不算检测失败
+                res.uncertain_reason = ("offscreen_extrapolated"
+                                        if extrapolated else "offscreen_coasted")
+            else:
+                # 画内无新鲜检测（遮挡/完全丢失）-> 显式不确定，不盲动
+                res.uncertain = True
+                res.uncertain_reason = ("no_particle_detected" if not dets
+                                        else "low_confidence")
         else:
             worst = min((p.confidence for p in fresh), default=1.0)
             if worst < self.detector.min_confidence:
