@@ -1,0 +1,5 @@
+{"seq": 1, "run_id": "1b827e0bc95c", "ts": 1789558835.0068352, "event": "run_start", "task_id": "", "scenario": "video03", "algorithm": "Alg2", "task_mode": "oa", "mode": "motor", "controller": "real-stage"}
+{"seq": 2, "run_id": "1b827e0bc95c", "ts": 1789558838.724903, "event": "beam_calibration", "task_id": "video03", "position_px": [741.0, 119.0], "confidence": 1.0, "source": "configured"}
+{"seq": 3, "run_id": "1b827e0bc95c", "ts": 1789558838.725903, "event": "laser_state", "task_id": "video03", "enabled": false, "reason": "safe_alignment", "hardware_controlled": false}
+{"seq": 4, "run_id": "1b827e0bc95c", "ts": 1789558838.725903, "event": "state_change", "task_id": "video03", "from": "IDLE", "to": "CALIBRATING"}
+{"seq": 5, "run_id": "1b827e0bc95c", "ts": 1789558838.7399247, "event": "laser_state", "task_id": "video03", "enabled": false, "reason": "task_end", "hardware_controlled": false}

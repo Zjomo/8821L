@@ -1,8 +1,8 @@
 """ROI 与区域划分配置（固定镜头视野 + 桌面分区）。
 
 用途：在固定镜头（视频源）上选定 ROI 作为工作视野，并在视野内划分
-目标区（组装终点）/ 障碍区（静态禁区），持久化为 JSON，供闭环场景
-（video03）与 UI 实时检测使用。
+目标区（组装终点）/ 障碍区（静态禁区）/ 衬底区域（手动可行域），持久化为
+JSON，供闭环场景（video03）与 UI 实时检测使用。
 
 坐标约定：ROI 与区域均使用视频绝对像素坐标；区域必须完全位于 ROI 内。
 """
@@ -15,7 +15,7 @@ from typing import List, Optional, Tuple
 
 Rect = Tuple[int, int, int, int]  # (x, y, w, h)
 
-ZONE_KINDS = ("goal", "obstacle", "free")
+ZONE_KINDS = ("goal", "obstacle", "free", "substrate")
 
 
 class LayoutValidationError(ValueError):
@@ -104,10 +104,20 @@ class Zone:
     """
 
     name: str
-    kind: str                     # "goal" | "obstacle" | "free"
+    kind: str          # "goal" | "obstacle" | "free" | "substrate"
     rect: Rect                    # 视频绝对坐标 (x, y, w, h)；free=外接矩形
     shape: str = "rect"           # "rect" | "circle" | "free"
     points: Optional[List[Tuple[float, float]]] = None  # free 多边形顶点
+
+    def polygon(self) -> List[Tuple[float, float]]:
+        """区域轮廓顶点（视频绝对坐标）：free 用真实顶点，其余用矩形四角。
+
+        衬底区域的可行域必须为多边形，故不支持圆形（由 validate 拒绝）。
+        """
+        if self.shape == "free" and self.points:
+            return list(self.points)
+        x, y, w, h = self.rect
+        return [(x, y), (x + w, y), (x + w, y + h), (x, y + h)]
 
     def center(self) -> Tuple[float, float]:
         return (self.rect[0] + self.rect[2] / 2, self.rect[1] + self.rect[3] / 2)
@@ -176,9 +186,19 @@ class RoiConfig:
                     f"区域 {z.name} 超出 ROI {self.roi}: {z.rect}")
         if sum(1 for z in self.zones if z.kind == "goal") > 1:
             raise ValueError("目标区最多一个")
+        substrate = [z for z in self.zones if z.kind == "substrate"]
+        if len(substrate) > 1:
+            raise ValueError("衬底区域最多一个")
+        if substrate and substrate[0].shape == "circle":
+            raise ValueError(
+                "衬底区域不支持圆形：请用长方形/正方形或 Free 多边形框定衬底边界")
 
     def goal_zone(self) -> Optional[Zone]:
         return next((z for z in self.zones if z.kind == "goal"), None)
+
+    def substrate_zone(self) -> Optional[Zone]:
+        """手动框定的衬底区域（可行域）；未标注返回 None。"""
+        return next((z for z in self.zones if z.kind == "substrate"), None)
 
     def obstacle_zones(self) -> List[Zone]:
         return [z for z in self.zones if z.kind == "obstacle"]

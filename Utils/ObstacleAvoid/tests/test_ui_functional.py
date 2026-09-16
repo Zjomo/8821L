@@ -7,6 +7,7 @@
 import json
 import os
 import sys
+import time
 
 import numpy as np
 import pytest
@@ -105,7 +106,7 @@ class TestModeSwitch:
         assert win.run_ag_btn.text() == "组装运行 (电机)"
         # 画框模式切换为电机选项
         items = [win.mode_combo.itemText(i) for i in range(win.mode_combo.count())]
-        assert items == ["ROI 视野", "目标区", "障碍区", "自由区"]
+        assert items == ["ROI 视野", "目标区", "障碍区", "自由区", "衬底区域"]
         # 仿真图层按钮隐藏（电机模式不可用）
         assert win.sim_spec_btn.isHidden()
 
@@ -676,6 +677,37 @@ class TestDriverSwitch:
         assert not win.port_edit.isVisible()
         assert not win.kinesis_serial_edit.isVisible()
 
+    def test_motion_widgets_follow_driver(self, win, qapp):
+        """单步位移/速度/加速度对 Kinesis 与 8742 可见，串口驱动下隐藏。"""
+        win.mode_sel.setCurrentIndex(1)
+        qapp.processEvents()
+        for idx in (0, 2):
+            win.driver_combo.setCurrentIndex(idx)
+            qapp.processEvents()
+            assert win.spm_spin.isVisible()
+            assert win.step_steps_spin.isVisible()
+            assert win.speed_spin.isVisible()
+            assert win.accel_steps_spin.isVisible()
+            assert not win.step_mm_spin.isVisible()
+        win.driver_combo.setCurrentIndex(1)  # 串口：只有 mm 版本
+        qapp.processEvents()
+        assert win.step_mm_spin.isVisible()
+        assert not win.step_steps_spin.isVisible()
+        assert not win.speed_spin.isVisible()
+
+    def test_step_steps_converts_to_mm(self, win, qapp):
+        """单步位移用 step 输入：mm 值 = step / steps/mm。"""
+        win.mode_sel.setCurrentIndex(1)
+        qapp.processEvents()
+        win.spm_spin.setValue(1000.0)
+        win.step_steps_spin.setValue(300)
+        qapp.processEvents()
+        assert win._step_mm() == pytest.approx(0.30)
+        assert "0.3000 mm" in win.step_mm_hint.text()
+        win.spm_spin.setValue(3000.0)
+        qapp.processEvents()
+        assert win._step_mm() == pytest.approx(0.10)
+
 
 # ================================================================
 # 16. 属性面板
@@ -829,3 +861,113 @@ class TestLogResizable:
         assert win.log_out.height() == 260
         assert win.log_out.minimumHeight() == 260
         assert win.log_out.maximumHeight() == 260
+
+
+# ================================================================
+# 19. 电机模式实时规划路径标注
+# ================================================================
+class TestMotorPlanOverlay:
+    def test_plan_ready_caches_waypoints(self, win, qapp):
+        win.on_plan_ready([(10, 20), (30.5, 40.5)])
+        qapp.processEvents()
+        assert win._run_plan_pts == [(10.0, 20.0), (30.5, 40.5)]
+
+    def test_annotate_live_draws_cached_path(self, win, qapp):
+        """实时检测画面应叠加运行期规划路径，且不修改原帧。"""
+        class LiveWorld:
+            offset = (0.0, 0.0)
+
+        win._live_world = LiveWorld()
+        win._roi_cfg = None
+        win._live_dets = []
+        win._auto_result = None
+        win.on_plan_ready([(20, 20), (60, 60)])
+        frame = np.zeros((120, 120, 3), dtype=np.uint8)
+        out = win._annotate_live(frame)
+        green = (out == np.array([0, 200, 0])).all(axis=2).sum()
+        assert green > 0                      # 规划路径为绿色
+        assert not frame.any()                # 原帧保持只读
+
+    def test_motor_target_segment_only_in_motor_mode(self, win, qapp):
+        """电机模式对准阶段无 plan 事件时也给出『球->光斑』目标段。"""
+        from obstacle_avoidance.app import WorkerThread
+
+        class P:
+            def __init__(self, tid, pos):
+                self.track_id, self.position_px = tid, pos
+
+        class Tracker:
+            def active_particles(self):
+                return [P(1, (100.0, 200.0))]
+
+        class Stage:
+            beam_position_px = (300.0, 100.0)
+            track_id = 1
+
+        class Controller:
+            stage = Stage()
+
+        class World:
+            class pipeline:      # noqa: N801 - 只需提供 tracker 属性
+                tracker = Tracker()
+
+        win._execution_mode = "motor"
+        win._controller_ref = {"controller": Controller()}
+        assert WorkerThread._motor_target_segment(win, World()) == \
+            ((100, 200), (300, 100))
+        win._execution_mode = "virtual"
+        assert WorkerThread._motor_target_segment(win, World()) is None
+
+
+# ================================================================
+# 20. 电机模式运行期显微镜画面实时刷新
+# ================================================================
+class TestMotorLivePreview:
+    def test_preview_pump_keeps_emitting_then_stops(self, win, qapp):
+        """预览线程按帧率持续抓帧；stop 后停止推送。"""
+        from obstacle_avoidance.app import WorkerThread
+        seen = []
+        thread, stop = WorkerThread._start_motor_preview(
+            lambda: seen.append(1), interval_s=0.01)
+        deadline = time.time() + 3.0
+        while len(seen) < 3 and time.time() < deadline:
+            time.sleep(0.01)
+        stop.set()
+        thread.join(timeout=2.0)
+        assert not thread.is_alive()
+        assert len(seen) >= 3
+        count = len(seen)
+        time.sleep(0.05)
+        assert len(seen) == count      # 已停止，不再推送
+
+    def test_preview_pump_survives_frame_errors(self, win, qapp):
+        """单帧抓取异常不应让预览线程退出（画面继续刷新）。"""
+        from obstacle_avoidance.app import WorkerThread
+        seen = []
+
+        def flaky():
+            seen.append(1)
+            if len(seen) == 1:
+                raise ValueError("camera glitch")
+
+        thread, stop = WorkerThread._start_motor_preview(flaky,
+                                                         interval_s=0.01)
+        deadline = time.time() + 3.0
+        while len(seen) < 3 and time.time() < deadline:
+            time.sleep(0.01)
+        stop.set()
+        thread.join(timeout=2.0)
+        assert len(seen) >= 3
+
+    def test_preview_pump_exits_when_object_gone(self, win, qapp):
+        """窗口销毁（RuntimeError）后预览线程自行退出。"""
+        from obstacle_avoidance.app import WorkerThread
+
+        def dead():
+            raise RuntimeError("wrapped C/C++ object of type MainWindow "
+                               "has been deleted")
+
+        thread, stop = WorkerThread._start_motor_preview(dead,
+                                                         interval_s=0.01)
+        thread.join(timeout=2.0)
+        assert not thread.is_alive()

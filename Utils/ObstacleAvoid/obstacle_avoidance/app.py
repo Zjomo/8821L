@@ -134,6 +134,7 @@ class WorkerThread(QtCore.QThread):
     motion_ready = Signal(dict)              # XYZ 运动遥测
     report_ready = Signal(str)               # 本轮 JSONL 报告路径（回放用）
     stage_ready = Signal(dict)               # 需求3：运行结束时的最终台位（µm）
+    plan_ready = Signal(list)                # 最新规划 waypoint（电机模式实时叠加）
 
     def __init__(self, scenario: str, controller_ref: dict, parent=None,
                  builder=None, sample_spec: Optional[dict] = None) -> None:
@@ -202,11 +203,33 @@ class WorkerThread(QtCore.QThread):
 
     # ---- 帧推送与路径叠加
     def _latest_plan_points(self, rep):
-        """从报告事件中取最近一次成功规划的 waypoint（倒序查找）。"""
-        for e in reversed(rep.events):
+        """从报告事件中取最近一次成功规划的 waypoint（倒序查找）。
+
+        list() 快照：运行期控制器（写）与实时预览线程（读）会并发访问。
+        """
+        for e in reversed(list(rep.events)):
             if e.get("event") == "plan" and e.get("success"):
                 return e.get("waypoints_px") or []
         return []
+
+    def _install_plan_push(self, rep) -> None:
+        """电机模式：把最新规划路径推给 UI 实时叠加（需求：同虚拟模式实时标注）。
+
+        电机模式下 UI 实时画面（实时检测/自动识别）不是运行世界的 render 帧，
+        故用报告事件驱动：每次成功规划即推送 waypoint，UI 画在实时帧上。
+        """
+        original = rep.log
+
+        def log_and_push(event_type, task_id="", **data):
+            record = original(event_type, task_id=task_id, **data)
+            if event_type == "plan" and data.get("success"):
+                pts = [(float(x), float(y))
+                       for x, y in (data.get("waypoints_px") or [])]
+                if len(pts) >= 2:
+                    self.plan_ready.emit(pts)
+            return record
+
+        rep.log = log_and_push
 
     def _install_virtual_motor_logging(self, world, rep, algorithm: str) -> None:
         """Instrument virtual moves as 8742/8743 channel step events."""
@@ -262,8 +285,12 @@ class WorkerThread(QtCore.QThread):
         world.make_stage = make_stage_logged
 
     @staticmethod
-    def _draw_overlay(img, plan_pts):
-        """BGR 帧上叠加规划路径（绿）与 waypoint（黄点）。返回副本。"""
+    def _draw_overlay(img, plan_pts, segment=None):
+        """BGR 帧上叠加规划路径（绿）、waypoint（黄点）、当前目标段（青）。
+
+        segment=(起点, 终点) 为窗口坐标；电机模式对准阶段没有 plan 事件时，
+        用它标出球当前正在走的这一段，使实时画面与虚拟模式一样有路径标注。
+        """
         import cv2
         out = img.copy()
         if plan_pts:
@@ -272,7 +299,63 @@ class WorkerThread(QtCore.QThread):
             cv2.polylines(out, [pts], False, (0, 200, 0), 2)
             for p in pts:
                 cv2.circle(out, (int(p[0]), int(p[1])), 3, (0, 220, 220), -1)
+        if segment is not None:
+            cv2.line(out, segment[0], segment[1], (255, 200, 0), 2)
+            cv2.circle(out, segment[1], 4, (255, 200, 0), -1)
         return out
+
+    @staticmethod
+    def _start_motor_preview(emit_frame, interval_s: float = 0.07):
+        """电机模式运行期：后台按固定帧率抓帧推送，画面持续动态更新。
+
+        控制器每轮控制前才取一帧，位移台移动/串口等待期间画面静止；该线程
+        与控制器共享同一 frame_source（CameraWorld 内部加锁串行取帧），
+        返回 (thread, stop_event)，运行结束由调用方 set() 停止。
+        """
+        stop = threading.Event()
+
+        def pump():
+            while not stop.wait(interval_s):
+                try:
+                    emit_frame()
+                except RuntimeError:
+                    return    # 窗口/对象已销毁：静默退出
+                except Exception as exc:  # noqa: BLE001 - 预览失败不中断运行
+                    _log_exception("motor preview frame failed", exc)
+
+        thread = threading.Thread(target=pump, daemon=True,
+                                  name="motor-preview")
+        thread.start()
+        return thread, stop
+
+    def _motor_target_segment(self, world):
+        """电机模式『当前目标段』：目标球心 -> 当前目标点（窗口坐标）。
+
+        Alg2 固定光斑模式在对准阶段把球直线移向光斑，但该阶段不产生 plan
+        事件，画面里看不到任何路径——这里按当前目标补画一段。
+        """
+        if self._execution_mode != "motor" or not self._controller_ref:
+            return None
+        stage = getattr(self._controller_ref.get("controller"), "stage", None)
+        try:
+            beam = getattr(stage, "beam_position_px", None)
+        except Exception:  # noqa: BLE001 - 光斑未标定：不画目标段
+            return None
+        pipeline = getattr(world, "pipeline", None)
+        if beam is None or pipeline is None:
+            return None
+        particles = list(pipeline.tracker.active_particles())
+        if not particles:
+            return None
+        track_id = getattr(stage, "track_id", None)
+        ball = next((p for p in particles if p.track_id == track_id), None)
+        if ball is None:   # 目标尚未锁定：取离光斑最近的一球
+            ball = min(particles, key=lambda p: (
+                (p.position_px[0] - beam[0]) ** 2
+                + (p.position_px[1] - beam[1]) ** 2))
+        start = (int(round(ball.position_px[0])), int(round(ball.position_px[1])))
+        end = (int(round(beam[0])), int(round(beam[1])))
+        return (start, end) if start != end else None
 
     def _alg2_nearest_ball_idx(self, ball_idx, balls) -> int:
         """Alg2：返回离光斑标定点最近的球序号（需求2，不默认 0 号球）。
@@ -864,6 +947,8 @@ class WorkerThread(QtCore.QThread):
                                 else "real-stage"))
             if self._execution_mode == "virtual":
                 self._install_virtual_motor_logging(world, rep, self._algorithm)
+            else:
+                self._install_plan_push(rep)   # 电机模式：规划路径实时推给 UI
             orig_render = world.render
 
             def render_and_emit():
@@ -872,14 +957,35 @@ class WorkerThread(QtCore.QThread):
                                     "last_telemetry", None)
                 if telemetry is not None:
                     self.motion_ready.emit(telemetry.to_dict())
-                overlay = self._draw_overlay(img, self._latest_plan_points(rep))
+                overlay = self._draw_overlay(
+                    img, self._latest_plan_points(rep),
+                    self._motor_target_segment(world))
                 self.frame_ready.emit(overlay)
                 return img
 
             world.render = render_and_emit
             # 先推送一帧初始场景
             self.frame_ready.emit(self._draw_overlay(orig_render(), []))
-            result = run_fn(rep=rep, stage_sink=self._stage_sink)
+
+            def emit_preview_frame():
+                img = orig_render()
+                if img is None:
+                    return
+                self.frame_ready.emit(self._draw_overlay(
+                    img, self._latest_plan_points(rep),
+                    self._motor_target_segment(world)))
+
+            # 电机模式：控制器只在每轮控制前取一帧，位移台移动/等待期间画面
+            # 是静止的；这里按固定帧率后台抓帧推送，使显微镜画面实时更新。
+            preview = (self._start_motor_preview(emit_preview_frame)
+                       if self._execution_mode == "motor" else None)
+            try:
+                result = run_fn(rep=rep, stage_sink=self._stage_sink)
+            finally:
+                if preview is not None:
+                    thread, stop = preview
+                    stop.set()
+                    thread.join(timeout=1.0)
             # 需求3：虚拟模式运行结束回传最终台位（电机模式不动真实台位）
             self._emit_final_stage(world)
         except Exception as exc:  # noqa: BLE001 - UI 层兜底
@@ -1613,6 +1719,13 @@ class _MetricsCanvas(QtWidgets.QWidget):
         qp.drawText(6, top + chart_h, "0.0")
 
 
+# 电机模式『画框模式』-> 区域类型/命名前缀（衬底区域=手动可行域，单例）
+MOTOR_ZONE_KINDS = {"目标区": "goal", "障碍区": "obstacle",
+                    "自由区": "free", "衬底区域": "substrate"}
+MOTOR_ZONE_PREFIX = {"goal": "goal_", "obstacle": "obs_", "free": "free_",
+                     "substrate": "substrate_"}
+
+
 class MainWindow(QtWidgets.QMainWindow):
     usb_count_ready = Signal(int)   # Picomotor USB 设备数（后台检测回填）
     controller_scan_ready = Signal(object)  # 控制器 ID/可用轴扫描结果
@@ -1793,6 +1906,9 @@ class MainWindow(QtWidgets.QMainWindow):
         for _spin in (self.conn_spin, self.axis_x_spin, self.axis_y_spin,
                       self.axis_z_spin):
             _spin.valueChanged.connect(lambda _value: self._close_motor_xyz_stage())
+        # -- 步进类驱动（8742/8743 与 Kinesis）共用的运动参数
+        # 驱动本身按 step 计量，因此这里统一用 step + steps/mm 换算成 mm
+        self.motion_widgets = []
         self.spm_spin = QtWidgets.QDoubleSpinBox()
         self.spm_spin.setRange(1.0, 200000.0)
         self.spm_spin.setDecimals(1)
@@ -1800,21 +1916,54 @@ class MainWindow(QtWidgets.QMainWindow):
         self.spm_spin.setToolTip("每毫米步数：须按实际位移台标定\n"
                                  "(MTM 平台 ~30nm/步 ≈ 33333 steps/mm)")
         form.addRow("steps/mm", self.spm_spin)
-        self.pico_widgets.append(self.spm_spin)
+        self.motion_widgets.append(self.spm_spin)
+        self.step_steps_spin = QtWidgets.QSpinBox()
+        self.step_steps_spin.setRange(1, 500000)
+        self.step_steps_spin.setValue(300)
+        self.step_steps_spin.setToolTip(
+            "单步位移（step）：闭环每步向台位下发的最大步数，\n"
+            "同时作为驱动侧单步限位（按 steps/mm 换算成 mm 后下发）")
+        form.addRow("单步位移(step)", self.step_steps_spin)
+        self.motion_widgets.append(self.step_steps_spin)
+        self.step_mm_hint = QtWidgets.QLabel()
+        self.step_mm_hint.setStyleSheet("color:#888;")
+        form.addRow(self.step_mm_hint)
+        self.motion_widgets.append(self.step_mm_hint)
         self.speed_spin = QtWidgets.QSpinBox()
         self.speed_spin.setRange(0, 5000)
         self.speed_spin.setValue(0)
-        self.speed_spin.setToolTip("速度 steps/s；0=不修改控制器当前速度")
-        form.addRow("速度(steps/s)", self.speed_spin)
-        self.pico_widgets.append(self.speed_spin)
-        # -- 串口 G 代码参数
+        self.speed_spin.setToolTip(
+            "位移速度（step/s）：写入控制器步率\n"
+            "（KIM101 StepRate / 8742 velocity）；0 = 不修改控制器当前值")
+        form.addRow("位移速度(step/s)", self.speed_spin)
+        self.motion_widgets.append(self.speed_spin)
+        self.accel_steps_spin = QtWidgets.QSpinBox()
+        self.accel_steps_spin.setRange(0, 1000000)
+        self.accel_steps_spin.setValue(0)
+        self.accel_steps_spin.setToolTip(
+            "位移加速度（step/s²）：写入控制器步加速度\n"
+            "（KIM101 StepAcceleration / 8742 accel）；0 = 不修改")
+        form.addRow("位移加速度(step/s²)", self.accel_steps_spin)
+        self.motion_widgets.append(self.accel_steps_spin)
+        for _spin in (self.spm_spin, self.step_steps_spin):
+            _spin.valueChanged.connect(lambda _v: self._update_step_mm_hint())
+        self._update_step_mm_hint()
+        # -- 串口 G 代码参数（G 代码台位以 mm 计，故单步位移仍用 mm）
         self.port_edit = QtWidgets.QLineEdit("COM3")
         form.addRow("串口", self.port_edit)
         self.baud_spin = QtWidgets.QSpinBox()
         self.baud_spin.setRange(9600, 256000)
         self.baud_spin.setValue(115200)
         form.addRow("波特率", self.baud_spin)
-        self.serial_widgets = [self.port_edit, self.baud_spin]
+        self.step_mm_spin = QtWidgets.QDoubleSpinBox()
+        self.step_mm_spin.setRange(0.0001, 5.0)
+        self.step_mm_spin.setDecimals(4)
+        self.step_mm_spin.setValue(0.30)
+        self.step_mm_spin.setToolTip(
+            "单步最大位移 (mm)：G 代码台位每步走这一距离，同时作为单步限位")
+        form.addRow("单步位移(mm)", self.step_mm_spin)
+        self.serial_widgets = [self.port_edit, self.baud_spin,
+                               self.step_mm_spin]
         # -- Thorlabs Kinesis KIM101 参数：一个控制器只使用一个序列号
         self.kinesis_widgets = []
         self.kinesis_serial_edit = QtWidgets.QLineEdit()
@@ -1832,17 +1981,9 @@ class MainWindow(QtWidgets.QMainWindow):
         form.addRow(self.kinesis_id_label)
         self.kinesis_widgets.append(self.kinesis_id_label)
         # -- 公共参数
-        self.step_mm_spin = QtWidgets.QDoubleSpinBox()
-        self.step_mm_spin.setRange(0.005, 5.0)
-        self.step_mm_spin.setDecimals(3)
-        self.step_mm_spin.setValue(0.30)
-        self.step_mm_spin.setToolTip(
-            "单步最大位移 (mm)：控制器每步走这一距离，同时作为台位单步限位；\n"
-            "调小更精细、更慢，调大更快但可能丢跟踪")
-        form.addRow("单步位移(mm)", self.step_mm_spin)
         self.iters_spin = QtWidgets.QSpinBox()
         self.iters_spin.setRange(10, 20000)
-        self.iters_spin.setValue(300)
+        self.iters_spin.setValue(3000)
         self.iters_spin.setToolTip(
             "最大步数：从圆球到目标点的运动步数上限，超过即中止并报未完成")
         form.addRow("最大步数", self.iters_spin)
@@ -1874,10 +2015,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.confirm_chk.setStyleSheet("color:#c00;")
         form.addRow(self.confirm_chk)
         self.motor_box.setVisible(False)
-        for _w in self.serial_widgets + self.kinesis_widgets:
-            _w.setVisible(False)
         for _w in self.screen_widgets:   # 默认帧源=相机，屏幕区域控件隐藏
             _w.setVisible(False)
+        # 参数控件按当前驱动（默认 8742/8743）初始化可见性
+        self._apply_driver_visibility(self.driver_combo.currentIndex())
         self._p_run.addWidget(self.motor_box)
 
         self.pause_btn = QtWidgets.QPushButton("暂停")
@@ -2026,7 +2167,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.auto_recognition_box = QtWidgets.QGroupBox("Alg2 自动识别")
         auto_layout = QtWidgets.QVBoxLayout(self.auto_recognition_box)
         self.substrate_mode_label = QtWidgets.QLabel(
-            "衬底：使用手动 ROI，运行中跟随样品位移")
+            "衬底：用『衬底区域』手动框定（长方形/Free，优先于自动识别），"
+            "未标注时用 ROI 内缩")
         self.substrate_mode_label.setStyleSheet("color:#555;")
         auto_layout.addWidget(self.substrate_mode_label)
         self.auto_recognition_chk = QtWidgets.QCheckBox(
@@ -2353,6 +2495,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._auto_confirmed_result = None
         self._auto_good_streak = 0
         self._auto_recognition_confirmed = False
+        self._run_plan_pts: list = []   # 电机模式运行期最新规划路径（实时叠加）
         self._beam_calibrated = False
         self._beam_calibration_armed = False
         self._selected_auto_track_id = None
@@ -2456,6 +2599,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     steps_per_mm=self.spm_spin.value(),
                     profiles=profiles,
                     speed_steps=(self.speed_spin.value() or None),
+                    accel_steps=(self.accel_steps_spin.value() or None),
                     confirmed=True)
             else:
                 stage = PicoMotorXYZStage(
@@ -2466,7 +2610,8 @@ class MainWindow(QtWidgets.QMainWindow):
                     steps_per_mm=self.spm_spin.value(),
                     profiles=profiles,
                     speed_steps=(self.speed_spin.value() or None),
-                    max_step_mm=self.step_mm_spin.value(),
+                    accel_steps=(self.accel_steps_spin.value() or None),
+                    max_step_mm=self._step_mm(),
                     confirmed=True)
         except Exception as exc:  # noqa: BLE001 - surface driver errors in UI
             raise MotionStateError(f"XYZ 控制器连接失败: {exc}") from exc
@@ -2474,8 +2619,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self._xyz_stage = stage
         self._update_xyz_view(stage)
         if self.driver_combo.currentIndex() == 2:
-            self._simlog("XYZ Kinesis 控制器已连接: {} (Channel1)".format(
-                self._kinesis_serial()))
+            mapping = getattr(stage, "channel_map_desc", lambda: "自动")()
+            self._simlog("XYZ Kinesis 控制器已连接: {} 通道映射 {}".format(
+                self._kinesis_serial(), mapping))
         else:
             self._simlog(
                 "XYZ 控制器已连接: USB={} axes=X{} Y{} Z{}".format(
@@ -2736,6 +2882,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._live_world = video_sim.CameraWorld(
             frame_source=src, window=win, offset=off,
             px_per_mm=self._roi_cfg.px_per_mm)
+        self._sync_substrate_zone()   # 沿用/载入配置中的『衬底区域』标注
         msg = f"帧源: {self._frame_source_desc()}（{w}x{h}）"
         self.detail_label.setText(msg)
         self._simlog(msg)   # 明确记录本次检测使用的帧源
@@ -2810,7 +2957,7 @@ class MainWindow(QtWidgets.QMainWindow):
                           (int(rx - ox + rw), int(ry - oy + rh)),
                           (0, 220, 220), 2)
             colors = {"goal": (0, 180, 0), "obstacle": (0, 0, 180),
-                      "free": (180, 120, 0)}
+                      "free": (180, 120, 0), "substrate": (255, 0, 255)}
             for z in cfg.zones:
                 x, y, w, h = (int(z.rect[0] - ox), int(z.rect[1] - oy),
                               int(z.rect[2]), int(z.rect[3]))
@@ -2870,6 +3017,9 @@ class MainWindow(QtWidgets.QMainWindow):
             else:
                 from .auto_recognition import Alg2AutoRecognizer
             out = Alg2AutoRecognizer.draw_overlay(out, self._auto_result)
+        # 运行期规划路径（电机模式：与虚拟模式一致地实时标注）
+        if self._run_plan_pts:
+            out = WorkerThread._draw_overlay(out, self._run_plan_pts)
         return out
 
     @Slot()
@@ -2898,8 +3048,9 @@ class MainWindow(QtWidgets.QMainWindow):
         if self._auto_recognition_active():
             if det is not None:
                 if self._auto_detect is None:
-                    manual_polygon = None
-                    if self._roi_cfg is not None:
+                    # 衬底：优先手动『衬底区域』标注，未标注时用 ROI 视野
+                    manual_polygon = self._substrate_window_polygon()
+                    if manual_polygon is None and self._roi_cfg is not None:
                         rx, ry, rw, rh = self._roi_cfg.roi
                         manual_polygon = [(0.0, 0.0), (float(rw - 1), 0.0),
                                           (float(rw - 1), float(rh - 1)),
@@ -3732,6 +3883,7 @@ class MainWindow(QtWidgets.QMainWindow):
         ox, oy = self._live_world.offset
         vx, vy = int(x + ox), int(y + oy)          # 视频绝对坐标
         mode = self.mode_combo.currentText()
+        kind = None
         try:
             if mode == "ROI 视野":
                 self._apply_roi((vx, vy, w, h))
@@ -3744,8 +3896,12 @@ class MainWindow(QtWidgets.QMainWindow):
                         "（拖拽不适用）")
                     return
                 vx, vy = int(x + ox), int(y + oy)
-                kind = {"目标区": "goal", "障碍区": "obstacle",
-                        "自由区": "free"}[mode]
+                kind = MOTOR_ZONE_KINDS[mode]
+                if kind == "substrate" and shp == "circle":
+                    self.detail_label.setText(
+                        "衬底区域不支持圆形：请用长方形/正方形拖拽，"
+                        "或选『Free』逐点框定衬底边界")
+                    return
                 # 裁剪进 ROI
                 rx, ry, rw, rh = self._roi_cfg.roi
                 x2, y2 = (min(vx + w, rx + rw), min(vy + h, ry + rh))
@@ -3755,19 +3911,16 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.detail_label.setText(
                         f"提示：{mode} 区域太小或不在 ROI 内，未生效")
                     return
-                n = sum(1 for z in self._roi_cfg.zones if z.kind == kind) + 1
-                name = {"goal": f"goal_{n}", "obstacle": f"obs_{n}",
-                        "free": f"free_{n}"}[kind]
-                self._roi_cfg.zones.append(Zone(name=name, kind=kind,
-                                                rect=(vx, vy, w, h),
-                                                shape=shp))
-                self._roi_cfg.validate()
+                name = self._append_zone(kind, (vx, vy, w, h), shp)
                 self.detail_label.setText(
                     f"已添加 {mode} {name} ({vx},{vy}) {w}x{h}"
-                    + ("（圆）" if shp == "circle" else ""))
+                    + ("（圆）" if shp == "circle" else "")
+                    + ("：衬底可行域已更新" if kind == "substrate" else ""))
         except ValueError as exc:
             self.detail_label.setText(f"区域非法: {exc}")
             return
+        if kind == "substrate":
+            self._sync_substrate_zone()
         self.zones_label.setText(f"zones: {len(self._roi_cfg.zones)}")
 
     @Slot(list)
@@ -3800,8 +3953,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.detail_label.setText("ROI 视野需矩形拖拽（Free 不适用）")
             return
         ox, oy = self._live_world.offset
-        kind = {"目标区": "goal", "障碍区": "obstacle",
-                "自由区": "free"}[mode]
+        kind = MOTOR_ZONE_KINDS[mode]
         # 顶点转视频绝对坐标并裁剪进 ROI
         rx, ry, rw, rh = self._roi_cfg.roi
         vpts = [(min(max(px + ox, rx), rx + rw),
@@ -3817,20 +3969,54 @@ class MainWindow(QtWidgets.QMainWindow):
                 f"提示：{mode} 多边形太小或不在 ROI 内，未生效")
             return
         try:
-            n = sum(1 for z in self._roi_cfg.zones if z.kind == kind) + 1
-            name = {"goal": f"goal_{n}", "obstacle": f"obs_{n}",
-                    "free": f"free_{n}"}[kind]
-            self._roi_cfg.zones.append(Zone(
-                name=name, kind=kind, rect=(bx, by, bw, bh), shape="free",
-                points=[(round(px, 1), round(py, 1)) for px, py in vpts]))
-            self._roi_cfg.validate()
+            name = self._append_zone(
+                kind, (bx, by, bw, bh), "free",
+                points=[(round(px, 1), round(py, 1)) for px, py in vpts])
             self.detail_label.setText(
                 f"已添加 {mode}(Free) {name}：{len(vpts)} 顶点，"
                 f"外接 ({int(bx)},{int(by)}) {int(bw)}x{int(bh)}")
         except ValueError as exc:
             self.detail_label.setText(f"区域非法: {exc}")
             return
+        if kind == "substrate":
+            self._sync_substrate_zone()
         self.zones_label.setText(f"zones: {len(self._roi_cfg.zones)}")
+
+    def _append_zone(self, kind: str, rect, shape: str,
+                     points=None) -> str:
+        """区域落库并返回名称：衬底区域为单例（重画即替换），其余累加编号。
+
+        校验失败时回滚本次新增，保证配置始终合法。
+        """
+        zones = self._roi_cfg.zones
+        if kind == "substrate":
+            # 可行域只有一块：重画即替换（否则"最多一个"校验会拒绝新框定）
+            zones[:] = [z for z in zones if z.kind != "substrate"]
+        n = sum(1 for z in zones if z.kind == kind) + 1
+        name = f"{MOTOR_ZONE_PREFIX[kind]}{n}"
+        zones.append(Zone(name=name, kind=kind, rect=rect, shape=shape,
+                          points=points))
+        try:
+            self._roi_cfg.validate()
+        except ValueError:
+            zones.pop()
+            raise
+        return name
+
+    def _substrate_window_polygon(self):
+        """手动『衬底区域』（窗口坐标多边形）；未标注返回 None。"""
+        cfg = self._roi_cfg
+        zone = cfg.substrate_zone() if cfg is not None else None
+        if zone is None:
+            return None
+        ox, oy = getattr(self._live_world, "offset", (0.0, 0.0))
+        return [(px - ox, py - oy) for px, py in zone.polygon()]
+
+    def _sync_substrate_zone(self) -> None:
+        """把『衬底区域』标注同步到实时世界（手动标注优先于自动识别衬底）。"""
+        setter = getattr(self._live_world, "set_substrate_polygon", None)
+        if callable(setter):
+            setter(self._substrate_window_polygon())
 
     def _config_frame_size(self):
         """ROI 几何校验用的全画幅尺寸：电机=相机帧，虚拟=视频帧。"""
@@ -3857,9 +4043,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self._live_world.set_window((int(rect[2]), int(rect[3])),
                                     (float(rect[0]), float(rect[1])))
         self._roi_defaulted = False
+        self._sync_substrate_zone()   # ROI 变更后衬底标注按新视野重新映射
         self.detail_label.setText(
             f"ROI 视野已更新 ({rect[0]},{rect[1]}) {rect[2]}x{rect[3]}："
-            "用『目标区/障碍区』继续标注，或保存配置")
+            "用『目标区/障碍区/衬底区域』继续标注，或保存配置")
 
     @Slot(int)
     def on_edge_changed(self, v: int) -> None:
@@ -3917,6 +4104,8 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         if self._roi_cfg and self._roi_cfg.zones:
             z = self._roi_cfg.zones.pop()
+            if z.kind == "substrate":
+                self._sync_substrate_zone()   # 撤销衬底标注：恢复默认可行域
             self.zones_label.setText(f"zones: {len(self._roi_cfg.zones)}")
 
     def _undo_kinds_for_mode(self) -> set:
@@ -4293,7 +4482,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def _switch_draw_modes(self, motor: bool) -> None:
         """画框模式选项按模式过滤：电机=ROI/区域，虚拟=sim 对象绘制。"""
-        items = (["ROI 视野", "目标区", "障碍区", "自由区"] if motor else
+        items = (["ROI 视野", "目标区", "障碍区", "自由区",
+                  "衬底区域"] if motor else
                  ["圆球(mask)", "衬底(ground)", "障碍物(obstacle)",
                   "目标点(避障)", "目标范围(组装)"])
         self.mode_combo.blockSignals(True)
@@ -4316,18 +4506,25 @@ class MainWindow(QtWidgets.QMainWindow):
     @Slot(int)
     def on_driver_changed(self, idx: int) -> None:
         self._close_motor_xyz_stage()
+        self._apply_driver_visibility(idx)
+        if idx == 0:
+            self._refresh_usb_count()
+        elif idx == 2:
+            self._refresh_kinesis_devices()
+
+    def _apply_driver_visibility(self, idx: int) -> None:
+        """按驱动显示/隐藏参数控件（0=8742/8743，1=串口，2=Kinesis）。"""
         pico = idx == 0
         kinesis = idx == 2
         for w in self.pico_widgets:
             w.setVisible(pico)
         for w in self.serial_widgets:
             w.setVisible(idx == 1)
+        # 步进类驱动（step 计量的 8742/8743 与 KIM101）共用运动参数
+        for w in self.motion_widgets:
+            w.setVisible(pico or kinesis)
         for w in self.kinesis_widgets:
             w.setVisible(kinesis)
-        if pico:
-            self._refresh_usb_count()
-        elif kinesis:
-            self._refresh_kinesis_devices()
 
     def _refresh_usb_count(self) -> None:
         """后台枚举 Picomotor 控制器、ID 和可用轴（扫描可能耗时）。"""
@@ -4431,7 +4628,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.kinesis_serial_edit.setText(serial)
         desc = ", ".join(str(r.get("serial")) for r in good)
         self.kinesis_id_label.setText(
-            f"Kinesis: KIM101 {serial} (Channel1)" +
+            f"Kinesis: KIM101 {serial} 通道自动映射 X/Y/Z→Ch1/2/3" +
             (f"；另有 {len(good) - 1} 台" if len(good) > 1 else ""))
         self.kinesis_id_label.setStyleSheet("color:#080;")
         self._simlog(f"Kinesis 检测: {desc} -> 选用控制器 {serial}")
@@ -4448,6 +4645,25 @@ class MainWindow(QtWidgets.QMainWindow):
     def _kinesis_serial(self) -> str:
         """Return the single KIM101 controller serial configured in the UI."""
         return self.kinesis_serial_edit.text().strip()
+
+    def _step_mm(self) -> float:
+        """「单步位移(step)」× steps/mm → mm（下发与单步限位统一用 mm）。"""
+        spm = float(self.spm_spin.value())
+        if spm <= 0:
+            raise RuntimeError("steps/mm 必须大于 0")
+        return float(self.step_steps_spin.value()) / spm
+
+    def _update_step_mm_hint(self) -> None:
+        spm = float(self.spm_spin.value())
+        mm = float(self.step_steps_spin.value()) / spm if spm > 0 else 0.0
+        self.step_mm_hint.setText(f"→ {mm:.4f} mm @ {spm:.1f} steps/mm")
+
+    def _step_desc(self, motor_cfg: dict) -> str:
+        """运行提示里的单步位移（step 驱动附 step↔mm 换算）。"""
+        mm = float(motor_cfg.get("max_step_mm", 0.0))
+        if motor_cfg.get("driver") == "serial":
+            return f"{mm:.4f}mm"
+        return f"{self.step_steps_spin.value()} step ≈ {mm:.4f}mm"
 
     def _motor_params(self):
         """电机模式参数预检：配置完整性 + 硬件确认门控。"""
@@ -4471,9 +4687,14 @@ class MainWindow(QtWidgets.QMainWindow):
             raise RuntimeError(
                 "Alg2 固定激光位置尚未标定：请开始实时检测后点击“设为画面中心”")
         shift_sign = 1 if self.shift_sign_combo.currentIndex() == 0 else -1
+        # 单步位移：step 驱动（8742/8743、Kinesis）按 step→mm 换算；
+        # 串口 G 代码台位本身以 mm 计，直接用 mm 框。
+        serial_driver = self.driver_combo.currentIndex() == 1
+        step_mm = (float(self.step_mm_spin.value()) if serial_driver
+                   else self._step_mm())
         common = {"ball_shift_sign": shift_sign, "confirmed": True,
                   "algorithm": self.alg_combo.currentText(),
-                  "max_step_mm": float(self.step_mm_spin.value()),
+                  "max_step_mm": step_mm,
                   "auto_recognition": auto_recognition,
                   "recognition_min_confidence":
                       float(self.auto_confidence_spin.value())}
@@ -4524,6 +4745,7 @@ class MainWindow(QtWidgets.QMainWindow):
                      "steps_per_mm": self.spm_spin.value(),
                      "steps_per_mm_by_axis": axis_steps,
                      "speed_steps": (self.speed_spin.value() or None),
+                     "accel_steps": (self.accel_steps_spin.value() or None),
                      **common}
         elif self.driver_combo.currentIndex() == 2:  # Thorlabs Kinesis KIM101
             serial = self._kinesis_serial()
@@ -4534,15 +4756,17 @@ class MainWindow(QtWidgets.QMainWindow):
             if detected and serial not in detected:
                 raise RuntimeError(
                     f"Kinesis 序列号未在检测列表中: {serial}")
+            # 通道不做手工配置：驱动连接该序列号的控制器后，按可用通道
+            # 自动完成 X/Y/Z 映射（详见 KinesisKIM101Stage._detect_channels）。
             motor = {"driver": "kinesis",
                      "serial_no": serial,
-                     "channel": 1,
                      "steps_per_mm": self.spm_spin.value(),
                      "steps_per_mm_by_axis": {
                          axis: float(self._xyz_axis_profiles.get(axis, {}).get(
                              "steps_per_unit", self.spm_spin.value() / 1000.0)) * 1000.0
                          for axis in ("x", "y", "z")},
                      "speed_steps": (self.speed_spin.value() or None),
+                     "accel_steps": (self.accel_steps_spin.value() or None),
                      **common}
         else:                                        # 串口 G 代码
             motor = {"driver": "serial",
@@ -4561,6 +4785,7 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         if self.live_btn.isChecked():
             self.live_btn.setChecked(False)   # 停实时检测，独占推理资源
+        self._run_plan_pts = []               # 新一轮运行：清空上轮残余路径
         scenario = self.scenario_combo.currentText()
         motor = self.mode_sel.currentIndex() == 1
         if motor:
@@ -4576,7 +4801,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     auto_recognition=bool(
                         motor_cfg.get("auto_recognition", False)),
                     cfg_overrides={
-                        "max_step_mm": self.step_mm_spin.value(),
+                        "max_step_mm": motor_cfg["max_step_mm"],
                         "max_iterations": self.iters_spin.value()})
             except Exception as exc:  # noqa: BLE001
                 self.detail_label.setText(str(exc))
@@ -4587,7 +4812,7 @@ class MainWindow(QtWidgets.QMainWindow):
                                  else "串口"))
             if motor_cfg.get("driver") == "kinesis":
                 axis_desc = (f"KIM101 {motor_cfg.get('serial_no', '')} "
-                             "Channel1（单控制器）")
+                             "通道自动映射(X/Y/Z→Ch1/2/3)")
             elif motor_cfg.get("driver") == "picomotor":
                 axis_desc = (f"X{motor_cfg.get('x_axis', '相机')} "
                              f"Y{motor_cfg.get('y_axis', '相机')} "
@@ -4598,7 +4823,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 f"驱动: {driver_desc} | 帧源: {self._frame_source_desc()} | "
                 f"轴映射 {axis_desc} | "
                 f"自动识别 {'ON' if motor_cfg.get('auto_recognition') else 'OFF'} | "
-                f"单步 {self.step_mm_spin.value():.3f}mm | "
+                f"单步 {self._step_desc(motor_cfg)} | "
+                f"速度 {motor_cfg.get('speed_steps') or '不改'} step/s | "
+                f"加速度 {motor_cfg.get('accel_steps') or '不改'} step/s² | "
                 f"最大步数 {self.iters_spin.value()}")
             self._simlog(self.detail_label.text())
             self.worker = WorkerThread("video03", self._controller_ref,
@@ -4613,6 +4840,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.worker.error_occurred.connect(self.on_error_dialog)
             self.worker.log_ready.connect(self.on_log_line)
             self.worker.report_ready.connect(self.on_report_ready)
+            self.worker.plan_ready.connect(self.on_plan_ready)   # 实时路径标注
             self.worker.start()
             return
         c = self._sim_cfg
@@ -4729,6 +4957,12 @@ class MainWindow(QtWidgets.QMainWindow):
         """运行结束：自动填入本轮报告路径，回放一键可用。"""
         self.report_path.setText(path)
         self._simlog(f"报告已保存: {path}")
+
+    @Slot(list)
+    def on_plan_ready(self, pts: list) -> None:
+        """运行期收到最新规划路径：缓存，供实时画面叠加（与虚拟模式一致）。"""
+        if pts:
+            self._run_plan_pts = [(float(x), float(y)) for x, y in pts]
 
     @Slot(list)
     def on_layout_updated(self, balls_w: list) -> None:

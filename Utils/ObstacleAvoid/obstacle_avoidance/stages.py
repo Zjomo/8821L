@@ -15,7 +15,7 @@ import math
 import os
 import threading
 import time
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from .models import StageCommand
 from .motion import (AxisMotionConfig, MotionConfig, MotionTelemetry,
@@ -154,6 +154,7 @@ class PicoMotorStage(XYStageProtocol):
                  workspace_mm: Tuple[float, float] = (100.0, 100.0),
                  max_step_mm: float = 1.0,
                  speed_steps: Optional[float] = None,
+                 accel_steps: Optional[float] = None,
                  settle_s: float = 0.05,
                  confirmed: bool = False,
                  timeout: float = 5.0) -> None:
@@ -185,6 +186,8 @@ class PicoMotorStage(XYStageProtocol):
         self.workspace_mm = workspace_mm
         self.max_step_mm = max_step_mm
         self.settle_s = settle_s
+        self.speed_steps = speed_steps
+        self.accel_steps = accel_steps
         self.commands: List[StageCommand] = []
         self.position_mm = [0.0, 0.0]     # 累计位移估计（软限位用）
         self._last: Optional[StageCommand] = None
@@ -193,9 +196,13 @@ class PicoMotorStage(XYStageProtocol):
         self.dev = self._open(conn, timeout)
         if speed_steps is not None and speed_steps > 0:
             # X/Y/Z 同速：速度指令失败不致命（部分固件轴号未配置）
+            # 单位契约：speed=steps/s，accel=steps/s²（见 API/8743控制器代码.txt）
+            velocity = {"speed": speed_steps}
+            if accel_steps is not None and accel_steps > 0:
+                velocity["accel"] = accel_steps
             for ax in sorted(set(self.axis_map.values())):
                 try:
-                    self.dev.setup_velocity(axis=ax, speed=speed_steps)
+                    self.dev.setup_velocity(axis=ax, **velocity)
                 except Exception:  # noqa: BLE001
                     pass
 
@@ -382,12 +389,14 @@ class PicoMotorXYZStage:
                  z_axis: int = 3, steps_per_mm: float = 1000.0,
                  profiles: Optional[dict] = None,
                  confirmed: bool = False, max_step_mm: float = 1.0,
-                 speed_steps: Optional[float] = None) -> None:
+                 speed_steps: Optional[float] = None,
+                 accel_steps: Optional[float] = None) -> None:
         if steps_per_mm <= 0:
             raise StageError("steps_per_mm must be > 0")
         self.driver = PicoMotorStage(
             conn=conn, x_axis=x_axis, y_axis=y_axis, z_axis=z_axis,
             steps_per_mm=steps_per_mm, speed_steps=speed_steps,
+            accel_steps=accel_steps,
             confirmed=confirmed, max_step_mm=max_step_mm)
         config = default_motion_config()
         axes = dict(config.axes)
@@ -485,21 +494,30 @@ class PicoMotorXYZStage:
 class KinesisKIM101Stage(XYStageProtocol):
     """Thorlabs Kinesis KIM101/KCube inertial-motor stage.
 
-    A KIM101 is one controller and is identified by one serial number.  The
-    logical X/Y(/Z) moves used by the application are dispatched sequentially
-    through that controller's ``Channel1``; the controller is never created
-    once per logical axis.  ``serial_by_axis`` remains accepted as a backwards
-    compatible input, but only its first non-empty value is used.
+    A KIM101 is one controller and is identified by one serial number.  After
+    connecting, the controller's channels are probed and the logical X/Y/Z axes
+    are mapped automatically onto the responding channels (Channel1/Channel2/
+    Channel3 on a three-channel setup), so 2D/3D moves hit distinct physical
+    motors.  The controller is never created once per logical axis.  When only
+    one channel responds the stage degrades to a single physical axis and every
+    logical axis shares it (``single_axis`` is then ``True``).
+    ``serial_by_axis`` remains accepted as a backwards compatible input, but
+    only its first non-empty value is used; an explicit ``channel`` keeps the
+    legacy behaviour of pinning all axes to that one channel.
 
     The API follows the reference code in ``Kinesis控制器代码.txt``:
     ``BuildDeviceList`` -> ``CreateKCubeInertialMotor`` -> ``Connect`` ->
-    polling/enable, followed by ``MoveTo`` and ``SetPositionAs`` on
-    ``Channel1``.
+    polling/enable, followed by ``MoveTo`` and ``SetPositionAs`` on the
+    per-axis channel.
 
     pythonnet and the Kinesis DLLs are imported lazily.  This keeps virtual
     mode usable on machines without Kinesis installed and makes detection
     return a readable error instead of failing during application import.
     """
+
+    _AXES = ("x", "y", "z")
+    #: KIM101 软件枚举固定为 4 通道；实际接了几台电机由连接后探测决定。
+    _CHANNEL_NAMES = ("Channel1", "Channel2", "Channel3", "Channel4")
 
     _DLL_DIR = r"C:\Program Files\Thorlabs\Kinesis"
     _DLLS = (
@@ -513,6 +531,7 @@ class KinesisKIM101Stage(XYStageProtocol):
                  serial_by_axis: Optional[dict] = None,
                  channel=None, confirmed: bool = False,
                  max_step_mm: float = 1.0, speed_steps: Optional[float] = None,
+                 accel_steps: Optional[float] = None,
                  timeout_ms: int = 60000) -> None:
         if not confirmed:
             raise StageError(
@@ -546,8 +565,14 @@ class KinesisKIM101Stage(XYStageProtocol):
                 self.steps_per_mm_by_axis[key] = float(value)
         self.max_step_mm = float(max_step_mm)
         self.timeout_ms = int(timeout_ms)
+        # 显式 channel = 旧的单轴模式（所有逻辑轴共用该通道）；
+        # None = 连接后按序列号所在控制器的可用通道自动映射 X/Y/Z。
         self.channel = channel
+        self.channels_by_axis: Dict[str, object] = {axis: None
+                                                    for axis in self._AXES}
+        self.single_axis = False
         self.speed_steps = speed_steps
+        self.accel_steps = accel_steps
         self.device = None
         self._api = self._load_api()
         self._connect_all()
@@ -645,11 +670,93 @@ class KinesisKIM101Stage(XYStageProtocol):
             return channel
         return getattr(channels, "Channel1")
 
+    @classmethod
+    def _channel_label(cls, channel) -> str:
+        """通道的可读名（``Channel2``）。"""
+        if channel is None:
+            return "未映射"
+        for value in (channel, getattr(channel, "value__", None)):
+            try:
+                return f"Channel{int(value)}"
+            except (TypeError, ValueError):
+                continue
+        text = str(channel)
+        digits = "".join(c for c in text if c.isdigit())
+        if digits:
+            return f"Channel{digits}"
+        return text if text.startswith("Channel") else f"Channel{text}"
+
+    def _channel_candidates(self) -> list:
+        """该控制器软件提供的候选通道（KIM101 恒为 Channel1..4）。"""
+        channels = self._api.get("channels")
+        values = []
+        for name in self._CHANNEL_NAMES:
+            value = getattr(channels, name, None)
+            if value is not None:
+                values.append(value)
+        return values
+
+    def _probe_channel(self, channel) -> bool:
+        """探测通道是否接了电机：能读到位置即视为可用。
+
+        空通道（未接电机的通道）读位置会抛异常，据此把 X/Y/Z 分配到来实际
+        响应的通道上；探测本身失败不影响后续显式 channel 模式。
+        """
+        try:
+            self.device.GetPosition(channel)
+        except Exception:  # noqa: BLE001 - 空通道/未初始化
+            return False
+        return True
+
+    def _detect_channels(self) -> None:
+        """连接成功后按控制器的可用通道自动完成 X/Y/Z 映射。
+
+        - 显式传入 ``channel``：沿用旧的单轴模式（所有轴共用该通道）。
+        - 探测到的可用通道 >= 3：按顺序映射 x/y/z，二维绕障才有两个自由度。
+        - 可用通道不足 3：退化为单轴（``single_axis=True``），不报错，避免
+          只有一台电机的现场完全用不了。
+        """
+        candidates = self._channel_candidates()
+        if not candidates:
+            raise StageError("Kinesis KIM101 未提供任何可用通道")
+        if self.channel is not None:
+            channel = self._channel_value(self._api["channels"], self.channel)
+            self.channel = channel
+            self.channels_by_axis = {axis: channel for axis in self._AXES}
+            self.single_axis = True
+            return
+        available = [ch for ch in candidates if self._probe_channel(ch)]
+        if len(available) >= len(self._AXES):
+            self.channels_by_axis = {axis: available[index]
+                                     for index, axis in enumerate(self._AXES)}
+            self.single_axis = False
+        else:
+            primary = available[0] if available else candidates[0]
+            self.channels_by_axis = {axis: primary for axis in self._AXES}
+            self.single_axis = True
+        self.channel = self.channels_by_axis["x"]
+
+    def _channel_for(self, axis: str):
+        channel = self.channels_by_axis.get(str(axis).lower())
+        if channel is None:
+            raise StageError(f"Kinesis 未映射 {axis.upper()} 轴通道")
+        return channel
+
+    def axis_channels(self) -> Dict[str, object]:
+        """X/Y/Z 通道号（报告/日志用）。"""
+        return {axis: self._channel_for(axis) for axis in self._AXES}
+
+    def channel_map_desc(self) -> str:
+        """通道映射的可读描述：``X=Channel1 Y=Channel2 Z=Channel3``。"""
+        labels = " ".join(f"{axis.upper()}={self._channel_label(ch)}"
+                          for axis, ch in self.channels_by_axis.items())
+        if self.single_axis:
+            return f"{self._channel_label(self.channels_by_axis['x'])}（单轴）"
+        return labels
+
     def _connect_all(self) -> None:
         manager = self._api["manager"]
         manager.BuildDeviceList()
-        channel = self._channel_value(self._api["channels"], self.channel)
-        self.channel = channel
         try:
             serial = self.serial_no
             device = self._api["motor"].CreateKCubeInertialMotor(serial)
@@ -660,17 +767,53 @@ class KinesisKIM101Stage(XYStageProtocol):
             time.sleep(0.05)
             device.EnableDevice()
             time.sleep(0.05)
-            if self.speed_steps and self.speed_steps > 0:
-                config = device.GetInertialMotorConfiguration(serial)
-                settings = self._api["settings"].GetSettings(config)
-                settings.Drive.Channel(channel).StepRate = int(self.speed_steps)
-                settings.Drive.Channel(channel).StepAcceleration = int(
-                    max(1, self.speed_steps * 10))
-                device.SetSettings(settings, True, True)
             self.device = device
+            self._detect_channels()
+            self.apply_motion_profile()
         except Exception as exc:  # noqa: BLE001 - close partial connections
             self.close()
             raise StageError(f"连接 Kinesis 控制器失败: {exc}") from exc
+
+    def apply_motion_profile(self, speed_steps: Optional[float] = None,
+                             accel_steps: Optional[float] = None) -> bool:
+        """下发步率 / 步加速度到 KIM101（单位：step/s、step/s²）。
+
+        ``None``/0 表示该项保持控制器当前值；两项都未指定时不写设置。
+        连接成功后会自动调用一次，之后也可随时再次调用（运行期改速度）。
+        返回 True 表示确实写入了设置。
+        """
+        if speed_steps is not None:
+            self.speed_steps = float(speed_steps) or None
+        if accel_steps is not None:
+            self.accel_steps = float(accel_steps) or None
+        if self.device is None:
+            raise StageError("Kinesis KIM101 控制器未连接")
+        if not self.speed_steps and not self.accel_steps:
+            return False
+        try:
+            config = self.device.GetInertialMotorConfiguration(self.serial_no)
+            settings = self._api["settings"].GetSettings(config)
+            # 逐通道下发：X/Y/Z 可能落在不同通道上，只写 Channel1 会让其它轴
+            # 沿用出厂步率（现场表现为「速度/加速度改了没用」）。
+            for channel in self._distinct_channels():
+                drive = settings.Drive.Channel(channel)
+                if self.speed_steps:
+                    drive.StepRate = int(self.speed_steps)
+                if self.accel_steps:
+                    drive.StepAcceleration = int(self.accel_steps)
+            self.device.SetSettings(settings, True, True)
+        except Exception as exc:  # noqa: BLE001
+            raise StageError(f"Kinesis 速度/加速度下发失败: {exc}") from exc
+        return True
+
+    def _distinct_channels(self) -> list:
+        """映射中用到的通道（去重、保持 x→y→z 顺序）。"""
+        channels = []
+        for axis in self._AXES:
+            channel = self.channels_by_axis.get(axis)
+            if channel is not None and not any(channel == c for c in channels):
+                channels.append(channel)
+        return channels
 
     @property
     def last_command(self) -> Optional[StageCommand]:
@@ -685,9 +828,10 @@ class KinesisKIM101Stage(XYStageProtocol):
         if not steps:
             return
         device = self._device(axis)
+        channel = self._channel_for(axis)
         try:
-            current = int(device.GetPosition(self.channel))
-            device.MoveTo(self.channel, current + int(steps), self.timeout_ms)
+            current = int(device.GetPosition(channel))
+            device.MoveTo(channel, current + int(steps), self.timeout_ms)
         except Exception as exc:  # noqa: BLE001
             raise StageError(f"Kinesis {axis.upper()} 移动失败: {exc}") from exc
 
@@ -723,12 +867,14 @@ class KinesisKIM101Stage(XYStageProtocol):
         self.move_axis_steps("z", int(round((z_focus_um - z_safe_um) * scale)))
 
     def set_zero(self, axis: str) -> None:
-        self._device(axis).SetPositionAs(self.channel, 0)
+        self._device(axis).SetPositionAs(self._channel_for(axis), 0)
 
     def stop_all(self) -> None:
-        if self.device is not None:
+        if self.device is None:
+            return
+        for channel in self._distinct_channels():
             try:
-                self.device.Stop(self.channel)
+                self.device.Stop(channel)
             except Exception:  # noqa: BLE001
                 pass
 
@@ -753,7 +899,8 @@ class KinesisXYZStage:
                  steps_per_mm_by_axis: Optional[dict] = None,
                  serial_by_axis: Optional[dict] = None,
                  profiles: Optional[dict] = None, confirmed: bool = False,
-                 speed_steps: Optional[float] = None):
+                 speed_steps: Optional[float] = None,
+                 accel_steps: Optional[float] = None):
         if isinstance(serial_no, dict) and serial_by_axis is None:
             serial_by_axis = serial_no
             serial_no = ""
@@ -761,7 +908,8 @@ class KinesisXYZStage:
             serial_no=serial_no, serial_by_axis=serial_by_axis,
             steps_per_mm=steps_per_mm,
             steps_per_mm_by_axis=steps_per_mm_by_axis,
-            confirmed=confirmed, speed_steps=speed_steps)
+            confirmed=confirmed, speed_steps=speed_steps,
+            accel_steps=accel_steps)
         config = default_motion_config()
         axes = dict(config.axes)
         for name, changes in (profiles or {}).items():
@@ -793,6 +941,10 @@ class KinesisXYZStage:
     @property
     def last_telemetry(self) -> Optional[MotionTelemetry]:
         return self._stage.last_telemetry
+
+    def channel_map_desc(self) -> str:
+        """KIM101 自动通道映射描述（XYZ 页 / 运行日志显示用）。"""
+        return self.driver.channel_map_desc()
 
     def _apply_target(self, target: dict) -> None:
         before = self._stage.position

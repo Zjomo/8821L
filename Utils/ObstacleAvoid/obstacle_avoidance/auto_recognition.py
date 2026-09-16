@@ -20,7 +20,7 @@ import numpy as np
 
 from .models import (CoordinateTransform, Obstacle, Particle, Point,
                      SubstrateRegion, WorkspaceSnapshot)
-from .vision import ParticleTracker, VisionResult, YoloDetector
+from .vision import ParticleTracker, PositionLedger, VisionResult, YoloDetector
 
 
 @dataclass
@@ -814,21 +814,44 @@ class AutoRecognitionPipeline:
 
     def __init__(self, weights: Optional[str] = None,
                  config: Optional[AutoRecognitionConfig] = None,
-                 particle_detector=None) -> None:
+                 particle_detector=None,
+                 manual_substrate_polygon: Optional[Sequence[Point]] = None
+                 ) -> None:
         self.recognizer = Alg2AutoRecognizer(
-            weights=weights, config=config, particle_detector=particle_detector)
+            weights=weights, config=config, particle_detector=particle_detector,
+            manual_substrate_polygon=manual_substrate_polygon)
         self.tracker = self.recognizer.tracker
         self.latest_result: Optional[AutoRecognitionResult] = None
 
     def process(self, frame: np.ndarray, frame_id: int,
-                expect_particle: bool = True) -> VisionResult:
+                expect_particle: bool = True,
+                allow_offscreen: bool = False) -> VisionResult:
+        """与 ``VisionPipeline.process`` 保持同一调用契约。
+
+        ``allow_offscreen=True``（需求2）：元素已离开画面范围（位置在画面外）
+        时不算检测失败——跟踪位置仍可用，控制器据此继续定位运动；画内遮挡/
+        丢检仍按不确定处理（不盲动），保留原有安全语义。
+        """
         result = self.recognizer.process(frame, frame_id, time.time())
-        if not expect_particle and result.uncertain_reason:
-            reasons = [reason for reason in result.uncertain_reason.split(";")
+        reasons = [reason for reason in (result.uncertain_reason or "").split(";")
+                   if reason]
+        if not expect_particle:
+            reasons = [reason for reason in reasons
                        if reason != "no_fresh_particle_detection"]
-            result.uncertain_reason = ";".join(reasons)
-            result.uncertain = bool(reasons)
         self.latest_result = result
+        particles = list(result.particles)
+        frame_size = (int(frame.shape[1]), int(frame.shape[0]))
+        for particle in particles:
+            particle.in_frame = PositionLedger._in_frame(particle.position_px,
+                                                         frame_size)
+        offscreen_ids = ([particle.track_id for particle in particles
+                          if not particle.in_frame] if allow_offscreen else [])
+        if allow_offscreen and offscreen_ids:
+            reasons = [reason for reason in reasons
+                       if reason != "no_fresh_particle_detection"]
+            if not reasons:
+                # 只有"无新鲜检测"且元素仍在跟踪（位置在画外）-> 不算失败
+                reasons = ["offscreen_coasted"]
         substrate = (SubstrateRegion(result.substrate_polygon,
                                      self.recognizer.config.substrate_safety_margin_px)
                      if result.substrate_polygon else None)
@@ -837,11 +860,12 @@ class AutoRecognitionPipeline:
             substrate=substrate,
             obstacles=[candidate.to_obstacle(index + 1)
                        for index, candidate in enumerate(result.candidates)],
-            particles=result.particles,
-            uncertain=result.uncertain,
-            uncertain_reason=result.uncertain_reason,
+            particles=particles,
+            uncertain=any(reason != "offscreen_coasted" for reason in reasons),
+            uncertain_reason=";".join(reasons),
             confidence=result.overall_confidence,
             frame=frame,
+            offscreen_ids=offscreen_ids,
         )
 
 

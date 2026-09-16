@@ -174,6 +174,49 @@ def test_controller_no_false_slip_in_normal_run():
     assert slips == []
 
 
+# ---------------- 『衬底区域』接入电机场景/识别
+def test_motor_scenario_uses_manual_substrate_zone(monkeypatch):
+    """电机模式：手动『衬底区域』= 可行域，并作为识别的衬底（停用自动衬底）。"""
+    cfg = RoiConfig(
+        roi=(0, 0, 320, 240),
+        zones=[Zone(name="goal_1", kind="goal", rect=(240, 180, 40, 40)),
+               Zone(name="substrate_1", kind="substrate",
+                    rect=(20, 20, 240, 180))])
+    monkeypatch.setattr(video_sim, "get_shared_detector", lambda w: object())
+    frame = np.zeros((240, 320, 3), dtype=np.uint8)
+    world, _run = video_sim.build_video_scenario(
+        "video03", config=cfg,
+        motor={"frame_source": lambda: frame, "driver": "picomotor",
+               "confirmed": True},
+        task_mode="oa")
+    assert world.substrate_manual
+    assert [tuple(p) for p in world.substrate.polygon] == \
+        [(20.0, 20.0), (260.0, 20.0), (260.0, 200.0), (20.0, 200.0)]
+    snap = world.snapshot()
+    assert snap.substrate.contains((100.0, 100.0))
+    assert not snap.substrate.contains((300.0, 230.0))
+    # 未标注衬底时保持默认（ROI 内缩 10px）
+    cfg.zones = [z for z in cfg.zones if z.kind != "substrate"]
+    plain, _run = video_sim.build_video_scenario(
+        "video03", config=cfg,
+        motor={"frame_source": lambda: frame, "driver": "picomotor",
+               "confirmed": True},
+        task_mode="oa")
+    assert not plain.substrate_manual
+    assert plain.substrate.contains((12.0, 12.0))
+
+
+def test_auto_recognition_pipeline_passes_manual_substrate():
+    from obstacle_avoidance.auto_recognition import (AutoRecognitionConfig,
+                                                     AutoRecognitionPipeline)
+    polygon = [(0.0, 0.0), (10.0, 0.0), (10.0, 10.0)]
+    pipe = AutoRecognitionPipeline(
+        particle_detector=object(), manual_substrate_polygon=polygon,
+        config=AutoRecognitionConfig(auto_substrate=False))
+    assert pipe.recognizer.manual_substrate_polygon == polygon
+    assert pipe.recognizer.config.auto_substrate is False
+
+
 # ---------------- CameraWorld（frame_source 可注入）
 def test_camera_world_crop_and_snapshot():
     from obstacle_avoidance.vision import ClassicDetector, VisionPipeline
@@ -342,3 +385,225 @@ def test_kinesis_uses_one_controller_serial(monkeypatch):
         profiles={"x": {"steps_per_unit": 2.0}}, confirmed=True)
     stage.move_by({"x": 3.0}, source="test")
     assert devices["K1"].moves == [6]
+
+
+class _FakeKinesisSettings:
+    """Kinesis 设置树替身：记录 StepRate / StepAcceleration 写入。"""
+
+    def __init__(self):
+        class Channel:
+            def __init__(self):
+                self.StepRate = 0
+                self.StepAcceleration = 0
+
+        class Drive:
+            def __init__(self):
+                self._channel = Channel()
+
+            def Channel(self, _channel):
+                return self._channel
+
+        self.Drive = Drive()
+
+    def snapshot(self):
+        channel = self.Drive.Channel(1)
+        return (channel.StepRate, channel.StepAcceleration)
+
+
+def _fake_kinesis(monkeypatch):
+    """搭一个假 KIM101：返回 (设备, 设置树, 工厂)。"""
+    from obstacle_avoidance.stages import KinesisKIM101Stage
+
+    settings = _FakeKinesisSettings()
+    device = SimpleNamespace(
+        moves=[],
+        applied=[],
+        Connect=lambda serial: None,
+        Disconnect=lambda: None,
+        IsSettingsInitialized=lambda: True,
+        WaitForSettingsInitialized=lambda timeout: None,
+        StartPolling=lambda period: None,
+        StopPolling=lambda: None,
+        EnableDevice=lambda: None,
+        GetPosition=lambda channel: 0,
+        MoveTo=lambda channel, position, timeout: device.moves.append(
+            (channel, position)),
+        SetPositionAs=lambda channel, position: None,
+        Stop=lambda channel: None,
+        GetInertialMotorConfiguration=lambda serial: object())
+
+    def _set_settings(tree, persist, reload_):
+        device.applied.append(settings.snapshot())
+        assert (persist, reload_) == (True, True)
+
+    device.SetSettings = _set_settings
+    api = {
+        "manager": SimpleNamespace(BuildDeviceList=lambda: None,
+                                   GetDeviceList=lambda: []),
+        "motor": SimpleNamespace(
+            CreateKCubeInertialMotor=lambda serial: device),
+        "channels": SimpleNamespace(Channel1=1),
+        "settings": SimpleNamespace(
+            GetSettings=lambda config: settings),
+    }
+    monkeypatch.setattr(KinesisKIM101Stage, "_load_api",
+                        classmethod(lambda cls: api))
+    return device, settings
+
+
+def test_kinesis_downlinks_step_rate_and_acceleration(monkeypatch):
+    """「位移速度/位移加速度」必须真正写进 KIM101（StepRate/StepAcceleration）。"""
+    from obstacle_avoidance.stages import KinesisKIM101Stage
+
+    device, settings = _fake_kinesis(monkeypatch)
+    stage = KinesisKIM101Stage(serial_no="K1", confirmed=True,
+                               steps_per_mm=1000.0, max_step_mm=0.30,
+                               speed_steps=200, accel_steps=2000)
+    assert device.applied == [(200, 2000)]
+    # 运行期改速度/加速度：None 表示保持当前值
+    assert stage.apply_motion_profile(speed_steps=500) is True
+    assert device.applied[-1] == (500, 2000)
+    assert settings.Drive.Channel(1).StepRate == 500
+
+
+def test_kinesis_motion_profile_untouched_by_default(monkeypatch):
+    """两项都留 0（不改）时不得写设置——避免覆盖控制器出厂参数。"""
+    from obstacle_avoidance.stages import KinesisKIM101Stage
+
+    device, _ = _fake_kinesis(monkeypatch)
+    stage = KinesisKIM101Stage(serial_no="K1", confirmed=True,
+                               steps_per_mm=1000.0)
+    assert device.applied == []
+    assert stage.apply_motion_profile() is False
+
+
+def test_kinesis_single_step_limit_matches_max_step_mm(monkeypatch):
+    """单步位移(step)→mm 的限位由驱动兜底：超限直接拒绝，不静默走大步。"""
+    from obstacle_avoidance.stages import KinesisKIM101Stage
+
+    device, _ = _fake_kinesis(monkeypatch)
+    stage = KinesisKIM101Stage(serial_no="K1", confirmed=True,
+                               steps_per_mm=1000.0, max_step_mm=0.005)
+    stage.move_by(0.005, 0.0)          # 5 step，正好到限
+    assert device.moves == [(1, 5)]
+    with pytest.raises(StageError, match="max_step_mm"):
+        stage.move_by(0.006, 0.0)      # 6 step，超限
+
+
+# ---------------- KIM101 通道自动映射（按序列号连接后探测）
+class _FakeChannelSettings:
+    def __init__(self):
+        self.StepRate = 0
+        self.StepAcceleration = 0
+
+
+class _FakeMultiChannelSettings:
+    """多通道设置树替身：按通道号记录 StepRate / StepAcceleration。"""
+
+    def __init__(self):
+        self.channels = {}
+
+        class _Drive:
+            def __init__(self, outer):
+                self._outer = outer
+
+            def Channel(self, number):
+                return self._outer.channel(int(number))
+
+        self.Drive = _Drive(self)
+
+    def channel(self, number):
+        return self.channels.setdefault(int(number), _FakeChannelSettings())
+
+
+def _fake_multichannel_kinesis(monkeypatch, available=(1, 2, 3)):
+    """假 4 通道 KIM101：只有 ``available`` 里的通道能读到位置。"""
+    from obstacle_avoidance.stages import KinesisKIM101Stage
+
+    settings = _FakeMultiChannelSettings()
+    device = SimpleNamespace(
+        moves=[], zeroed=[], stopped=[], applied=[],
+        Connect=lambda serial: None,
+        Disconnect=lambda: None,
+        IsSettingsInitialized=lambda: True,
+        WaitForSettingsInitialized=lambda timeout: None,
+        StartPolling=lambda period: None,
+        StopPolling=lambda: None,
+        EnableDevice=lambda: None,
+        MoveTo=lambda channel, position, timeout: device.moves.append(
+            (int(channel), int(position))),
+        SetPositionAs=lambda channel, position: device.zeroed.append(
+            int(channel)),
+        Stop=lambda channel: device.stopped.append(int(channel)),
+        GetInertialMotorConfiguration=lambda serial: object())
+
+    def _position(channel):
+        if int(channel) not in available:
+            raise RuntimeError(f"channel {int(channel)} has no motor")
+        return 0
+
+    device.GetPosition = _position
+
+    def _set_settings(tree, persist, reload_):
+        device.applied.append((persist, reload_))
+
+    device.SetSettings = _set_settings
+    api = {
+        "manager": SimpleNamespace(BuildDeviceList=lambda: None,
+                                   GetDeviceList=lambda: []),
+        "motor": SimpleNamespace(
+            CreateKCubeInertialMotor=lambda serial: device),
+        "channels": SimpleNamespace(Channel1=1, Channel2=2,
+                                    Channel3=3, Channel4=4),
+        "settings": SimpleNamespace(GetSettings=lambda config: settings),
+    }
+    monkeypatch.setattr(KinesisKIM101Stage, "_load_api",
+                        classmethod(lambda cls: api))
+    return device, settings
+
+
+def test_kinesis_auto_maps_xyz_to_controller_channels(monkeypatch):
+    """按序列号连接后自动把 X/Y/Z 映射到控制器的 3 个可用通道。"""
+    from obstacle_avoidance.stages import KinesisKIM101Stage
+
+    device, _ = _fake_multichannel_kinesis(monkeypatch)
+    stage = KinesisKIM101Stage(serial_no="K1", confirmed=True,
+                               steps_per_mm=1000.0, max_step_mm=0.30)
+    assert stage.single_axis is False
+    assert stage.axis_channels() == {"x": 1, "y": 2, "z": 3}
+    assert stage.channel_map_desc() == "X=Channel1 Y=Channel2 Z=Channel3"
+    stage.move_by(0.01, 0.02)                      # 10 step / 20 step
+    assert device.moves == [(1, 10), (2, 20)]      # 两个轴打到不同通道
+    stage.set_zero("y")
+    assert device.zeroed == [2]
+    stage.stop_all()
+    assert device.stopped == [1, 2, 3]
+
+
+def test_kinesis_motion_profile_written_to_every_mapped_channel(monkeypatch):
+    """速度/加速度必须写进映射到的每个通道，而不是只写 Channel1。"""
+    from obstacle_avoidance.stages import KinesisKIM101Stage
+
+    device, settings = _fake_multichannel_kinesis(monkeypatch)
+    KinesisKIM101Stage(serial_no="K1", confirmed=True, steps_per_mm=1000.0,
+                       speed_steps=200, accel_steps=2000)
+    assert [(settings.channel(n).StepRate, settings.channel(n).StepAcceleration)
+            for n in (1, 2, 3)] == [(200, 2000)] * 3
+    assert settings.channel(4).StepRate == 0        # 未映射的通道不动
+    assert device.applied == [(True, True)]         # 只下发一次设置
+
+
+def test_kinesis_degrades_to_single_axis_when_one_channel(monkeypatch):
+    """只探测到一个通道时退化为单轴，而不是报错或映射到空通道。"""
+    from obstacle_avoidance.stages import KinesisKIM101Stage
+
+    device, _ = _fake_multichannel_kinesis(monkeypatch, available=(1,))
+    stage = KinesisKIM101Stage(serial_no="K1", confirmed=True,
+                               steps_per_mm=1000.0)
+    assert stage.single_axis is True
+    assert stage.axis_channels() == {"x": 1, "y": 1, "z": 1}
+    assert stage.channel_map_desc() == "Channel1（单轴）"
+    stage.move_by(0.01, 0.02)
+    assert device.moves == [(1, 10), (1, 20)]
+    stage.stop_all()
+    assert device.stopped == [1]

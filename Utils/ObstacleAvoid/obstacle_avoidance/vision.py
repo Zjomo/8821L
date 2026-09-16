@@ -372,7 +372,9 @@ class ParticleTracker:
     def active_particles(self) -> List[Particle]:
         """当前所有 track 的快照（供快照层读取，不推进跟踪状态）。"""
         out = []
-        for t in self._tracks.values():
+        # list() 快照：检测线程写 track 的同时，UI 预览线程会读该快照，
+        # 直接迭代 dict.values() 可能抛 "dictionary changed size"。
+        for t in list(self._tracks.values()):
             out.append(Particle(track_id=t.track_id, position_px=t.position,
                                 radius_px=t.radius,
                                 confidence=t.confidence * (0.5 ** t.lost_count),

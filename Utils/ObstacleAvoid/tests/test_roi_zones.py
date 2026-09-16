@@ -25,6 +25,39 @@ def test_roi_config_roundtrip(tmp_path):
     assert back.goal_zone().center() == (370.0, 660.0)
 
 
+def test_substrate_zone_roundtrip_and_polygon(tmp_path):
+    """衬底区域（电机模式手动可行域）：长方形/Free 持久化与轮廓。"""
+    cfg = RoiConfig(roi=(60, 300, 480, 420))
+    cfg.zones = [Zone(name="substrate_1", kind="substrate",
+                      rect=(100, 340, 200, 160))]
+    assert cfg.substrate_zone().name == "substrate_1"
+    assert cfg.substrate_zone().polygon() == [(100, 340), (300, 340),
+                                              (300, 500), (100, 500)]
+    p = str(tmp_path / "roi.json")
+    cfg.save(p)
+    assert RoiConfig.load(p).substrate_zone().rect == (100, 340, 200, 160)
+    # Free 多边形：轮廓取真实顶点
+    free = Zone(name="substrate_1", kind="substrate",
+                rect=(120, 350, 160, 100), shape="free",
+                points=[(120.0, 350.0), (280.0, 360.0), (260.0, 450.0)])
+    cfg.zones = [free]
+    cfg.validate()
+    assert cfg.substrate_zone().polygon() == free.points
+
+
+def test_substrate_zone_validation():
+    cfg = RoiConfig(roi=(0, 0, 480, 420))
+    cfg.zones = [Zone(name="s1", kind="substrate", rect=(10, 10, 50, 50)),
+                 Zone(name="s2", kind="substrate", rect=(100, 100, 50, 50))]
+    with pytest.raises(ValueError, match="衬底区域最多一个"):
+        cfg.validate()
+    # 可行域必须为多边形 -> 圆形无意义，明确拒绝
+    cfg.zones = [Zone(name="s1", kind="substrate", rect=(10, 10, 60, 60),
+                      shape="circle")]
+    with pytest.raises(ValueError, match="不支持圆形"):
+        cfg.validate()
+
+
 def test_roi_config_validation():
     cfg = RoiConfig(roi=(0, 0, 480, 420))
     with pytest.raises(ValueError):          # 区域超出 ROI
@@ -170,6 +203,60 @@ def test_video03_goal_low_clearance_nudged():
     rep.close()
     assert result.final_state.value == "COMPLETE"
     assert adj and adj[0]["from_px"] != adj[0]["to_px"]
+
+
+# ---------------- 电机模式『衬底区域』画框
+def test_ui_motor_substrate_zone_draw(monkeypatch):
+    """电机模式画『衬底区域』：长方形/Free 落库并同步世界可行域（单例）。"""
+    import numpy as np
+    qt = pytest.importorskip("PyQt5.QtWidgets")
+    from obstacle_avoidance.app import MainWindow
+
+    frame = np.zeros((240, 320, 3), np.uint8)
+    src = lambda: frame                     # noqa: E731
+    src.close = lambda: None
+    monkeypatch.setattr(video_sim, "screen_source",
+                        lambda region=None: src)
+
+    app = qt.QApplication.instance() or qt.QApplication([])
+    win = MainWindow()
+    win.mode_sel.setCurrentIndex(1)        # 电机模式
+    win.src_combo.setCurrentIndex(1)       # 帧源=屏幕区域
+    win._screen_region = (0, 0, 320, 240)
+    win._live_src_region = None
+    win._live_world = None
+    world = win._ensure_live()
+    try:
+        win.mode_combo.setCurrentText("衬底区域")
+        assert "衬底区域" in [win.mode_combo.itemText(i)
+                          for i in range(win.mode_combo.count())]
+        win.shape_combo.setCurrentText("长方形")
+        win.on_rect_drawn(20, 30, 200, 160)
+        zone = win._roi_cfg.substrate_zone()
+        assert zone.kind == "substrate" and zone.shape == "rect"
+        assert world.substrate_manual           # 世界可行域已按标注更新
+        assert world.substrate.contains((50.0, 50.0))
+        assert not world.substrate.contains((10.0, 10.0))
+        # Free 多边形：重画即替换（单例，不会因"最多一个"被拒）
+        win.shape_combo.setCurrentText("Free")
+        win.on_points_drawn([(40, 40), (280, 40), (280, 200), (40, 200)])
+        zones = [z for z in win._roi_cfg.zones if z.kind == "substrate"]
+        assert len(zones) == 1 and zones[0].shape == "free"
+        assert zones[0].points[0] == (40.0, 40.0)
+        assert world.substrate.contains((60.0, 60.0))
+        # 圆形：拒绝（可行域必须为多边形），原标注保留
+        win.shape_combo.setCurrentText("圆形")
+        win.on_rect_drawn(20, 30, 100, 100)
+        assert win._roi_cfg.substrate_zone().shape == "free"
+        # 撤销后恢复默认可行域（ROI 内缩 10px）
+        win.mode_combo.setCurrentText("衬底区域")
+        win.on_undo_zone()
+        assert win._roi_cfg.substrate_zone() is None
+        assert not world.substrate_manual
+        assert world.substrate.contains((12.0, 12.0))
+    finally:
+        world.close()
+        win.close()
 
 
 # ---------------- UI 实时检测冒烟（需 PyQt5+视频）

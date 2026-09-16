@@ -29,6 +29,14 @@ class Alg2Config:
     beam_position_px: Optional[Point] = None
     beam_calibration_confidence: float = 0.0
     image_shift_sign: int = -1
+    # 对准前用探针实测『图像位移/样品位移』增益（px/mm），自动修正符号与比例。
+    # 这里给的是探针步长的**上限**（mm）；实际步长按"图像位移≈一个球半径"
+    # 由 px_per_mm 反推（见 FixedBeamController._probe_step_mm），避免固定
+    # mm 步长在 px_per_mm 大的机型上把球一步推出画面。0 表示不标定，退回
+    # image_shift_sign * px_per_mm。
+    shift_probe_mm: float = 0.2
+    # 实测位移小于该增益判为无效（检测抖动量级），该轴退回配置值。
+    min_shift_gain_px_per_mm: float = 5.0
 
 
 @dataclass(frozen=True)
@@ -126,6 +134,8 @@ class Alg2Stage(XYStageProtocol):
         self.workspace_shift_px: Point = tuple(
             getattr(world, "workspace_shift_px", (0.0, 0.0)))
         self.fixed_beam_mode = True
+        # 实测增益 (px/mm, px/mm)；None 项表示该轴退回 image_shift_sign*px_per_mm
+        self.shift_gain: tuple[Optional[float], Optional[float]] = (None, None)
 
     @classmethod
     def from_particle(cls, world, particle: Particle, config: Optional[Alg2Config] = None) -> 'Alg2Stage':
@@ -143,7 +153,22 @@ class Alg2Stage(XYStageProtocol):
     def target_state(self) -> Optional[str]:
         return self.target_lock.state.value if self.target_lock else None
 
-    def prepare_focus(self) -> None:
+    def prepare_focus(self, z_safe_um: Optional[float] = None,
+                      z_focus_um: Optional[float] = None) -> None:
+        """Z 安全高度/聚焦序列（可选按调用方覆盖高度）。
+
+        电机模式由调用方传入 motor["z_safe_um"]/["z_focus_um"]；缺省时沿用
+        config。真实 XYZ 台（PicoMotorStage/KinesisXYZStage）自带 prepare_focus，
+        优先委派；仿真世界无该接口，回退到 world.motion_stage 显式走 Z。
+        """
+        if z_safe_um is None:
+            z_safe_um = self.config.z_safe_um
+        if z_focus_um is None:
+            z_focus_um = self.config.z_focus_um
+        delegate = getattr(self._xy, "prepare_focus", None)
+        if callable(delegate):
+            delegate(z_safe_um=float(z_safe_um), z_focus_um=float(z_focus_um))
+            return
         stage = getattr(self.world, "motion_stage", None)
         if stage is None:
             return
@@ -151,13 +176,24 @@ class Alg2Stage(XYStageProtocol):
         # deterministic even when the stage starts already at focus.
         stage.enable()
         current = float(stage.position.get("z", 0.0))
-        if abs(current - self.config.z_safe_um) > 1e-9:
-            stage.move_to({"z": self.config.z_safe_um}, source="alg2-z-safe")
-        if abs(self.config.z_focus_um - self.config.z_safe_um) > 1e-9:
-            stage.move_to({"z": self.config.z_focus_um}, source="alg2-z-focus")
+        if abs(current - float(z_safe_um)) > 1e-9:
+            stage.move_to({"z": float(z_safe_um)}, source="alg2-z-safe")
+        if abs(float(z_focus_um) - float(z_safe_um)) > 1e-9:
+            stage.move_to({"z": float(z_focus_um)}, source="alg2-z-focus")
 
     def set_laser_enabled(self, enabled: bool) -> None:
         self.laser_gate.set_enabled(enabled)
+
+    def set_shift_gain(self, gain_px_per_mm) -> None:
+        """写入探针实测的图像位移增益 (px/mm)；None/0 表示该轴沿用配置值。"""
+        self.shift_gain = tuple(
+            (float(g) if g is not None and abs(float(g)) >= 1e-9 else None)
+            for g in (gain_px_per_mm[0], gain_px_per_mm[1]))
+
+    @property
+    def max_step_mm(self) -> Optional[float]:
+        """底层台位的单步限位（UI「单步位移(mm)」）；无该属性的台位返回 None。"""
+        return getattr(self._xy, "max_step_mm", None)
 
     def shift_workspace_by(self, dx_px: float, dy_px: float,
                            px_per_mm: float, **kwargs) -> bool:
@@ -166,25 +202,42 @@ class Alg2Stage(XYStageProtocol):
         sign = int(self.config.image_shift_sign)
         if sign not in (-1, 1):
             raise StageError("Alg2 image_shift_sign must be +1 or -1")
-        raw_dx = float(dx_px) / (sign * float(px_per_mm))
-        raw_dy = float(dy_px) / (sign * float(px_per_mm))
-        ok = self._xy.move_by(raw_dx, raw_dy, **kwargs)
+        raw: list[float] = []
+        for value, gain in zip((dx_px, dy_px), self.shift_gain):
+            # 实测增益优先：现场 image_shift_sign 配反会让球越走越远
+            # （对准永远到不了位、电机一路朝同一方向走）。
+            raw.append(float(value) / (gain if gain else sign * float(px_per_mm)))
+        ok = self._xy.move_by(raw[0], raw[1], **kwargs)
         if ok:
-            self._seq += 1
-            self._last = StageCommand(
-                seq=self._seq, timestamp=time.time(), dx_mm=raw_dx,
-                dy_mm=raw_dy, task_id=str(kwargs.get("task_id", "")),
-                track_id=int(kwargs.get("track_id", -1)),
-                waypoint_index=int(kwargs.get("waypoint_index", -1)),
-                frame_id=int(kwargs.get("frame_id", -1)),
-                source_plan_version=int(kwargs.get("plan_version", -1)))
-            register = getattr(self.world, "register_workspace_shift", None)
-            if callable(register):
-                register(float(dx_px), float(dy_px))
-            self.workspace_shift_px = (
-                self.workspace_shift_px[0] + float(dx_px),
-                self.workspace_shift_px[1] + float(dy_px))
+            self._record_command(raw[0], raw[1], kwargs)
+            self.note_image_shift(dx_px, dy_px)
         return bool(ok)
+
+    def sample_move_mm(self, dx_mm: float, dy_mm: float, **kwargs) -> bool:
+        """探针标定用：按 mm 直接移动样品，不做符号/增益换算。"""
+        ok = self._xy.move_by(float(dx_mm), float(dy_mm), **kwargs)
+        if ok:
+            self._record_command(float(dx_mm), float(dy_mm), kwargs)
+        return bool(ok)
+
+    def note_image_shift(self, dx_px: float, dy_px: float) -> None:
+        """同步一次『图像位移』台账（指令值或探针实测值）与世界。"""
+        register = getattr(self.world, "register_workspace_shift", None)
+        if callable(register):
+            register(float(dx_px), float(dy_px))
+        self.workspace_shift_px = (
+            self.workspace_shift_px[0] + float(dx_px),
+            self.workspace_shift_px[1] + float(dy_px))
+
+    def _record_command(self, raw_dx: float, raw_dy: float, kwargs) -> None:
+        self._seq += 1
+        self._last = StageCommand(
+            seq=self._seq, timestamp=time.time(), dx_mm=raw_dx,
+            dy_mm=raw_dy, task_id=str(kwargs.get("task_id", "")),
+            track_id=int(kwargs.get("track_id", -1)),
+            waypoint_index=int(kwargs.get("waypoint_index", -1)),
+            frame_id=int(kwargs.get("frame_id", -1)),
+            source_plan_version=int(kwargs.get("plan_version", -1)))
 
     @property
     def beam_position_px(self) -> Point:
@@ -370,6 +423,117 @@ class FixedBeamController:
             self.reporter.log("stage_command", task_id=task_id, **data)
         return bool(ok)
 
+    def _probe_ball(self, vis, track_id: int, initial, frame_id: int):
+        """探针取帧：只认本帧的真实检测。
+
+        台账外推位置（frame_id 落后一帧）在探针里是致命的——球其实被台位
+        带走了，外推值却停在原处，会测出 0 位移、标定直接失效。
+        """
+        if vis is None or vis.uncertain:
+            return None
+        fresh = [p for p in vis.particles
+                 if int(getattr(p, "frame_id", -1)) == int(frame_id)
+                 and getattr(p, "in_frame", True)]
+        if not fresh:
+            return None
+        predicted = (initial.position_px[0] + self.stage.workspace_shift_px[0],
+                     initial.position_px[1] + self.stage.workspace_shift_px[1])
+        return self._target_particle(fresh, track_id, predicted)
+
+    def _probe_step_mm(self, px_per_mm: float, radius_px: float) -> float:
+        """探针步长：让图像位移约等于一个球半径，再折算回 mm。
+
+        固定 mm 步长在不同 px_per_mm 下差异巨大（2000px/mm 的仿真里 0.2mm
+        就是 400px，球直接出画），所以按目标图像位移反推，并受
+        ``shift_probe_mm`` 上限约束。
+        """
+        limit_mm = float(getattr(self.stage.config, "shift_probe_mm", 0.0))
+        if limit_mm <= 0.0 or px_per_mm <= 0.0:
+            return 0.0
+        target_px = min(60.0, max(3.0, float(radius_px or 0.0)))
+        step = min(limit_mm, target_px / float(px_per_mm))
+        # 探针同样是发往真实台位的一步：不得越过台位单步限位（UI「单步位移」
+        # mm），否则驱动直接拒绝，标定被整段跳过。
+        stage_limit = getattr(self.stage, "max_step_mm", None)
+        if stage_limit:
+            step = min(step, float(stage_limit))
+        return step
+
+    def _calibrate_shift_gain(self, initial, track_id: int, get_frame,
+                              get_snapshot, result, task_id: str):
+        """探针实测『图像位移 / 样品位移』增益（px/mm），修正符号与比例。
+
+        现场最常见的问题是 image_shift_sign 配反：对准时球越走越远，一圈
+        下来到不了光斑（SPOT_SLIP 中止），表现为电机一路朝同一个方向走。
+        这里在开光前各发一次 +x/+y 小步，用实测球心位移直接标定增益；
+        测不准的轴返回 None，由调用方回退到配置的 sign * px_per_mm。
+        """
+        # 探针参数属于 Alg2Stage 的 Alg2Config（对准步数等策略参数才在
+        # ControllerConfig 里），不能从 self.config 取。
+        cfg = self.stage.config
+        if float(getattr(cfg, "shift_probe_mm", 0.0)) <= 0.0:
+            return (None, None)
+        min_gain = float(getattr(cfg, "min_shift_gain_px_per_mm", 5.0))
+        retry = max(1, int(getattr(cfg, "shift_probe_retry", 8)))
+        gains: list[Optional[float]] = [None, None]
+        for axis in range(2):
+            current, vis = self._capture(get_frame, get_snapshot)
+            if current is None:
+                return tuple(gains)
+            before = self._probe_ball(vis, track_id, initial, current.frame_id)
+            if before is None:
+                return tuple(gains)
+            ppm = float(current.transform.px_per_mm)
+            probe_mm = self._probe_step_mm(ppm, before.radius_px)
+            if probe_mm <= 0.0:
+                return tuple(gains)
+            # 有效响应线：明显大于检测抖动才算"球真的动了"（真机取帧有滞后，
+            # 命令后头几帧可能还是旧画面，所以要重试到响应出现为止）。
+            min_response_px = max(1.0, 0.2 * probe_mm * ppm)
+            step = (probe_mm, 0.0) if axis == 0 else (0.0, probe_mm)
+            try:
+                ok = self.stage.sample_move_mm(
+                    step[0], step[1], task_id=task_id, track_id=track_id,
+                    waypoint_index=-2, frame_id=current.frame_id,
+                    plan_version=0)
+            except (StageError, TimeoutError, OSError) as exc:
+                self.reporter.log("shift_calibration_abort", task_id=task_id,
+                                  axis=axis, detail=str(exc))
+                return tuple(gains)
+            if not ok:
+                return tuple(gains)
+            command = self.stage.last_command
+            if command is not None:
+                result.stage_commands.append(command)
+                data = command.to_dict()
+                data.pop("task_id", None)
+                self.reporter.log("stage_command", task_id=task_id, **data)
+            measured = None
+            for _ in range(retry):
+                current, vis = self._capture(get_frame, get_snapshot)
+                if current is None:
+                    continue
+                after = self._probe_ball(vis, track_id, initial,
+                                         current.frame_id)
+                if after is None:
+                    continue
+                measured = (after.position_px[0] - before.position_px[0],
+                            after.position_px[1] - before.position_px[1])
+                if abs(measured[axis]) >= min_response_px:
+                    break
+            if measured is None:
+                return tuple(gains)
+            # 探针是原始 mm 指令，图像位移只能用实测值入账。
+            self.stage.note_image_shift(*measured)
+            gain = measured[axis] / probe_mm
+            if abs(gain) >= min_gain and abs(measured[axis]) >= min_response_px:
+                gains[axis] = gain
+            else:
+                self.reporter.log("shift_calibration_weak", task_id=task_id,
+                                  axis=axis, probe_mm=round(probe_mm, 6),
+                                  measured_px=[round(v, 1) for v in measured])
+        return tuple(gains)
+
     def run(self, snap: WorkspaceSnapshot, track_id: int, goal: GoalRegion,
             task_id: str = "oa", extra_obstacles=(), get_frame=None,
             get_snapshot=None):
@@ -423,11 +587,30 @@ class FixedBeamController:
         try:
             aligned = False
             ball_seen = False        # W1.4：对齐阶段是否至少成功解析到目标球
+            gains = self._calibrate_shift_gain(
+                initial, track_id, get_frame, get_snapshot, result, task_id)
+            self.stage.set_shift_gain(gains)
+            self.reporter.log(
+                "shift_calibration", task_id=task_id,
+                probe_mm=float(getattr(self.stage.config, "shift_probe_mm", 0.0)),
+                gain_px_per_mm=[None if g is None else round(float(g), 3)
+                                for g in gains],
+                source="probe" if any(g is not None for g in gains)
+                else "configured")
             align_limit = max(1, int(getattr(
                 cfg, "beam_alignment_max_steps", 80)))
             align_tolerance = float(getattr(
                 cfg, "beam_alignment_tolerance_px", cfg.tolerance_px))
-            for index in range(align_limit):
+            # 对准预算按『有效步进』计：检测丢帧/低置信度的帧不再吃掉步数，
+            # 否则现场抖动几帧就把 80 步耗光（球还没走到光斑就 SPOT_SLIP 中止）。
+            align_moves = 0
+            align_frames = 0
+            last_distance: Optional[float] = None
+            last_radius = 0.0
+            align_frame_cap = align_limit * max(
+                1, int(getattr(cfg, "beam_alignment_frame_factor", 4)))
+            while align_moves < align_limit and align_frames < align_frame_cap:
+                align_frames += 1
                 if self._estop.is_set():
                     result.final_state = RunState.ABORTED
                     result.failure_reason = FailureReason.ESTOP
@@ -462,41 +645,82 @@ class FixedBeamController:
                 error = (beam[0] - ball.position_px[0],
                          beam[1] - ball.position_px[1])
                 distance = math.hypot(*error)
+                last_distance = distance
+                last_radius = float(getattr(ball, "radius_px", 0.0) or 0.0)
                 # 光镊物理：只有光斑打在球上（光斑中心落在球内且留裕量）
                 # 才允许开光并控制该球移动，故对齐判据用捕获判据而非中心容差。
                 if distance <= self._capture_limit_px(ball, cfg,
                                                       align_tolerance):
                     aligned = True
                     break
+                # 对准也交给规划器：球到光斑走绕障路径，而不是直线撞过去
+                # （直线会把球顶进 peer/禁区，也可能一路擦着边界走）。
+                # 规划不可用时退回直线步进，保证对准总能继续。
+                vector = error
+                approach = self.planner.plan(current, ball.position_px, beam,
+                                             list(shifted_extra()))
+                if approach.success and len(approach.waypoints_px) >= 2:
+                    ref = approach.waypoints_px[0]
+                    nxt = next((p for p in approach.waypoints_px[1:]
+                                if math.dist(p, ref) > 1e-6), beam)
+                    vector = (nxt[0] - ref[0], nxt[1] - ref[1])
+                    self._last_plan = approach
+                    result.plan = approach
+                    result.replan_count += 1
+                    self.reporter.log("plan", task_id=task_id,
+                                      stage="alignment", **approach.to_dict())
+                length = math.hypot(*vector)
+                if length <= 1e-9:
+                    continue
                 max_px = cfg.max_step_mm * current.transform.px_per_mm
-                scale = min(1.0, max_px / max(distance, 1e-9))
-                shift = (error[0] * scale, error[1] * scale)
+                step_px = min(length, max_px)
+                shift = (vector[0] * step_px / length,
+                         vector[1] * step_px / length)
                 if not self._move_workspace(
                         shift, current, result, task_id, track_id, -1, 0):
                     result.final_state = RunState.FAULT
                     result.failure_reason = FailureReason.COMM_TIMEOUT
                     result.detail = "stage refused beam-alignment command"
                     return result
+                align_moves += 1
             if not aligned:
                 # W1.4：区分"全程检测不到球"（检测问题）与"球已解析但未对齐"
                 #（光斑/收敛问题），避免误报 SPOT_SLIP 掩盖真正的检测失效。
-                if not ball_seen:
+                enter_limit = max(
+                    1.0, float(getattr(cfg, "beam_enter_fraction", 1.5))
+                    * float(last_radius or 0.0))
+                # "尽量对准"即可：球已解析且离光斑不远时不再中止，开光后由
+                # tracking 的再捕获（方向已修正）把球心收进光斑；否则才按
+                # TARGET_LOST / SPOT_SLIP 安全停止。
+                if ball_seen and last_distance is not None and \
+                        last_distance <= enter_limit:
+                    self.reporter.log(
+                        "beam_alignment_relaxed", task_id=task_id,
+                        distance_px=round(last_distance, 1),
+                        radius_px=round(float(last_radius or 0.0), 1),
+                        enter_limit_px=round(enter_limit, 1),
+                        detail="entering tracking with ball near beam")
+                elif not ball_seen:
                     result.final_state = RunState.ABORTED
                     result.failure_reason = FailureReason.TARGET_LOST
                     result.detail = ("target ball never resolved during "
                                      "beam alignment (track {0}); no ball "
                                      "detected near predicted position".format(track_id))
+                    return result
                 else:
                     result.final_state = RunState.ABORTED
                     result.failure_reason = FailureReason.SPOT_SLIP
                     result.detail = ("selected ball could not align to "
                                      "calibrated beam within "
-                                     f"{align_limit} alignment steps")
-                return result
+                                     f"{align_limit} alignment steps "
+                                     f"(moves={align_moves}, "
+                                     f"frames={align_frames}, "
+                                     f"dist={last_distance:.1f}px)")
+                    return result
 
             self.stage.set_laser_enabled(True)
             self.reporter.log("laser_state", task_id=task_id, enabled=True,
-                              reason="ball_aligned",
+                              reason="ball_aligned" if aligned else "near_beam",
                               hardware_controlled=self.stage.laser_gate.hardware_controlled)
             # In a fixed-beam microscope the trapped ball is stationary in
             # camera coordinates while its sample-coordinate position changes
@@ -589,6 +813,9 @@ class FixedBeamController:
                         return result
                     max_px = cfg.max_step_mm * current.transform.px_per_mm
                     scale = min(1.0, max_px / max(slip, 1e-9))
+                    # 未捕获的球随样品一起漂移（与对准阶段同一物理），要让球心
+                    # 回到光斑就必须按 beam - ball = -offset 让图像位移；用
+                    # +offset 会把球越推越远，电机一路同向走到 SPOT_SLIP。
                     if not self._move_workspace(
                             (-offset[0] * scale, -offset[1] * scale), current,
                             result, task_id, track_id, 1, 0):
@@ -622,6 +849,9 @@ class FixedBeamController:
                         attempt=recapture)
                     max_px = cfg.max_step_mm * current.transform.px_per_mm
                     scale = min(1.0, max_px / max(slip, 1e-9))
+                    # 光斑脱靶 = 球没被抓住，此刻球随样品漂移；要让球心回到
+                    # 光斑中心必须按 beam - ball = -offset 让图像位移（与对准
+                    # 阶段同向），用 +offset 会越修越偏。
                     if not self._move_workspace(
                             (-offset[0] * scale, -offset[1] * scale), current,
                             result, task_id, track_id, 1, 0):

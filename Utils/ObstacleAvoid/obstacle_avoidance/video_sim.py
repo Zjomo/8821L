@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import math
 import os
+import threading
 import time
 from typing import List, Optional, Sequence, Tuple
 
@@ -235,16 +236,16 @@ class CameraWorld:
                  static_obstacles: Sequence[Obstacle] = (),
                  px_per_mm: float = 100.0) -> None:
         self._source = frame_source
+        # 取帧串行化：运行期 UI 实时预览线程与控制器会同时取帧，而
+        # cv2.VideoCapture/mss 的抓帧不是线程安全的。
+        self._frame_lock = threading.Lock()
         self.window = (int(window[0]), int(window[1]))
         self.offset = [float(offset[0]), float(offset[1])]
         self.static_obstacles = list(static_obstacles)
         self.transform = CoordinateTransform(px_per_mm=px_per_mm)
-        self.substrate = SubstrateRegion(
-            polygon=[(10.0, 10.0),
-                     (self.window[0] - 10.0, 10.0),
-                     (self.window[0] - 10.0, self.window[1] - 10.0),
-                     (10.0, self.window[1] - 10.0)],
-            safety_margin_px=4.0)
+        # 手动『衬底区域』标注（窗口坐标多边形）：None=未标注，按 ROI 内缩
+        self.substrate_manual = False
+        self._reset_default_substrate()
         self.pipeline = None
         self.target_track_id: Optional[int] = None
         self.beam_position_px: Point = (self.window[0] / 2.0,
@@ -298,11 +299,8 @@ class CameraWorld:
         if callable(close):
             close()
 
-    def set_window(self, window: Tuple[int, int],
-                   offset: Tuple[float, float]) -> None:
-        """重设固定视野（UI 划定 ROI 后调用），并同步衬底可行域。"""
-        self.window = (int(window[0]), int(window[1]))
-        self.offset = [float(offset[0]), float(offset[1])]
+    def _reset_default_substrate(self) -> None:
+        """默认可行域：ROI 内缩 10px 的矩形（未手动标注衬底时使用）。"""
         self.substrate = SubstrateRegion(
             polygon=[(10.0, 10.0),
                      (self.window[0] - 10.0, 10.0),
@@ -310,8 +308,32 @@ class CameraWorld:
                      (10.0, self.window[1] - 10.0)],
             safety_margin_px=4.0)
 
+    def set_substrate_polygon(self, polygon: Optional[Sequence[Point]]) -> None:
+        """设置/清除手动『衬底区域』可行域（窗口坐标多边形）。
+
+        手动标注优先于自动识别的衬底（用户显式划定），传 None 恢复默认。
+        多边形随位移台位移一同平移（与自动识别衬底一致）。
+        """
+        if polygon is None or len(polygon) < 3:
+            self.substrate_manual = False
+            self._reset_default_substrate()
+            return
+        self.substrate_manual = True
+        self.substrate = SubstrateRegion(
+            polygon=[(float(x), float(y)) for x, y in polygon],
+            safety_margin_px=4.0)
+
+    def set_window(self, window: Tuple[int, int],
+                   offset: Tuple[float, float]) -> None:
+        """重设固定视野（UI 划定 ROI 后调用），并同步衬底可行域。"""
+        self.window = (int(window[0]), int(window[1]))
+        self.offset = [float(offset[0]), float(offset[1])]
+        if not self.substrate_manual:
+            self._reset_default_substrate()
+
     def render(self) -> Optional[np.ndarray]:
-        frame = self._source()
+        with self._frame_lock:
+            frame = self._source()
         if frame is None:
             return None
         x, y = int(self.offset[0]), int(self.offset[1])
@@ -345,7 +367,9 @@ class CameraWorld:
         uncertain = False
         uncertain_reason = ""
         if latest is not None:
-            if latest.substrate_polygon:
+            if latest.substrate_polygon and not self.substrate_manual:
+                # 手动『衬底区域』标注优先：用户显式划定可行域时不再被
+                # 自动识别的衬底轮廓覆盖
                 recognizer = getattr(self.pipeline, "recognizer", None)
                 safety_margin = getattr(
                     getattr(recognizer, "config", None),
@@ -439,6 +463,9 @@ def build_video_scenario(task: str = "video01", weights: str = WEIGHTS,
     if motor is None and not os.path.isfile(video):
         raise SystemExit(f"video not found: {video}")
 
+    # 手动『衬底区域』标注（窗口坐标多边形）：既作可行域，也作识别衬底
+    substrate_win: Optional[List[Point]] = None
+
     if task == "video03":
         cfg_path = None
         if config is None:
@@ -456,6 +483,10 @@ def build_video_scenario(task: str = "video01", weights: str = WEIGHTS,
                 "请在 UI 用'目标区'模式画框后保存配置，再运行 video03")
         window = (int(config.roi[2]), int(config.roi[3]))
         offset = (float(config.roi[0]), float(config.roi[1]))
+        substrate_zone = config.substrate_zone()
+        if substrate_zone is not None:
+            substrate_win = [(px - offset[0], py - offset[1])
+                             for px, py in substrate_zone.polygon()]
         goal_pt = gz.center()
         goal = GoalRegion(center=(goal_pt[0] - offset[0], goal_pt[1] - offset[1]),
                           radius_px=max(12.0, min(gz.rect[2:4]) * 0.3))
@@ -511,14 +542,12 @@ def build_video_scenario(task: str = "video01", weights: str = WEIGHTS,
                                        AutoRecognitionPipeline)
         perception_pipeline = AutoRecognitionPipeline(
             particle_detector=detector,
+            manual_substrate_polygon=substrate_win,
             config=AutoRecognitionConfig(
                 minimum_overall_confidence=float(
-                    (motor or {}).get("recognition_min_confidence", 0.35))))
-    if motor is not None and motor.get("algorithm") == "Alg2":
-        beam_position = motor.get("beam_position_px")
-        if beam_position is None:
-            beam_position = (window[0] / 2.0, window[1] / 2.0)
-        world.set_beam_position(tuple(map(float, beam_position)))
+                    (motor or {}).get("recognition_min_confidence", 0.35)),
+                # 手动『衬底区域』标注时停用自动衬底识别（标注即事实）
+                auto_substrate=substrate_win is None))
     model = CollisionModel(ball_radius_px=25.0)   # 实测球半径 ~25px
     edge = getattr(config, "edge_clearance_px", None) if task == "video03" else None
     planner = GridPlanner(PlanConfig(model=model, edge_clearance_px=edge))
@@ -549,6 +578,8 @@ def build_video_scenario(task: str = "video01", weights: str = WEIGHTS,
             frame_source=src,
             window=window, offset=offset,
             static_obstacles=static_obs, px_per_mm=px_per_mm)
+        if substrate_win is not None:
+            world.set_substrate_polygon(substrate_win)
         if motor.get("driver", "picomotor") == "serial":
             default_stage_factory = lambda: SerialXYStage(   # noqa: E731
                 port=motor["port"], baudrate=int(motor.get("baudrate", 115200)),
@@ -565,6 +596,7 @@ def build_video_scenario(task: str = "video01", weights: str = WEIGHTS,
                 steps_per_mm=float(motor.get("steps_per_mm", 1000.0)),
                 steps_per_mm_by_axis=motor.get("steps_per_mm_by_axis"),
                 speed_steps=motor.get("speed_steps"),
+                accel_steps=motor.get("accel_steps"),
                 max_step_mm=float(motor.get("max_step_mm", 0.30)),
                 confirmed=bool(motor.get("confirmed", False)))
         else:   # 8742/8743 Picomotor（默认驱动）
@@ -577,6 +609,7 @@ def build_video_scenario(task: str = "video01", weights: str = WEIGHTS,
                 steps_per_mm=float(motor.get("steps_per_mm", 1000.0)),
                 steps_per_mm_by_axis=motor.get("steps_per_mm_by_axis"),
                 speed_steps=motor.get("speed_steps"),
+                accel_steps=motor.get("accel_steps"),
                 axes_sign=tuple(motor.get("axes_sign", (1.0, 1.0))),
                 max_step_mm=float(motor.get("max_step_mm", 0.30)),
                 confirmed=bool(motor.get("confirmed", False)))
@@ -584,6 +617,14 @@ def build_video_scenario(task: str = "video01", weights: str = WEIGHTS,
         # 校准方法：下发已知小步，观测目标球图像位移方向，反号则设 -1
         if "ball_shift_sign" in motor:
             cfg.ball_shift_sign = int(motor["ball_shift_sign"])
+
+    # Alg2 光束标定：必须在世界定型后设置——电机模式下上面的 VideoWorld 已被
+    # CameraWorld 取代，只有后者具备 set_beam_position（ROI 内边界校验）。
+    if motor is not None and motor.get("algorithm") == "Alg2":
+        beam_position = motor.get("beam_position_px")
+        if beam_position is None:
+            beam_position = (window[0] / 2.0, window[1] / 2.0)
+        world.set_beam_position(tuple(map(float, beam_position)))
 
     def run(world=world, detector=detector, goal=goal, planner=planner,
             cfg=cfg, hint=hint, rep=None, stage_factory=None,
