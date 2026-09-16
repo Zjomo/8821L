@@ -281,10 +281,23 @@ class ParticleTracker:
             dt = max(1, frame_id - t.last_frame)
             preds[tid] = (t.position[0] + t.velocity[0] * dt * self.velocity_damp,
                           t.position[1] + t.velocity[1] * dt * self.velocity_damp)
-        # 候选对（track id 与检测索引分开放置，避免命名空间冲突）
+        # 候选对（track id 与检测索引分开放置，避免命名空间冲突）。
+        # 粘连保护：两球贴近时 blob 合并成一个半径 ~1.41x 的大检测，
+        # 若照常匹配会把 track 位置污染到两球中点、另一 track 因持续
+        # 丢检被丢弃。半径明显超过 track 既有半径的检测视为疑似粘连，
+        # 不参与匹配（相关 track 全部 coast 保位，blob 分离后自然复配）。
+        MERGED_RADIUS_RATIO = 1.3
+        merged_det = set()
+        for i, (_pos, r, _c) in enumerate(detections):
+            if self._tracks and all(
+                    r > t.radius * MERGED_RADIUS_RATIO
+                    for t in self._tracks.values()):
+                merged_det.add(i)
         cand: List[Tuple[float, int, int]] = []
         for tid, pp in preds.items():
             for i, (pos, _r, _c) in enumerate(detections):
+                if i in merged_det:
+                    continue
                 d = math.hypot(pos[0] - pp[0], pos[1] - pp[1])
                 # Offline/video sources may deliver frames with a larger
                 # frame-id gap than the live camera. Scale the gate by the
@@ -337,9 +350,9 @@ class ParticleTracker:
                                   history_px=list(t.history)))
         for tid in dropped:
             del self._tracks[tid]
-        # 未匹配检测 -> 新 track
+        # 未匹配检测 -> 新 track（疑似粘连的大检测不新建，避免重复污染）
         for i, (pos, r, conf) in enumerate(detections):
-            if i in used_d:
+            if i in used_d or i in merged_det:
                 continue
             t = _Track(self._next_id, pos, r, conf, last_frame=frame_id,
                        history=[pos])

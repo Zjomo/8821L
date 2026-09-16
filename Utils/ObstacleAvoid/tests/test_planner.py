@@ -78,3 +78,26 @@ def test_plan_version_increments():
     r1 = planner.plan(_snap(), (100, 100), (200, 100))
     r2 = planner.plan(_snap(), (100, 100), (200, 100))
     assert r2.plan_version == r1.plan_version + 1
+
+
+def test_start_at_substrate_edge_nudged_even_beyond_small_radius():
+    """Alg2 边界起点：被激光捕获的球起点(光束)停在衬底边缘内 <edge_clearance。
+
+    起点位于衬底边界内 5px（< edge_clearance=22 膨胀），最近可行点在
+    边界内 22px 之外（需右移 ~17px）。旧的起点微调仅搜索 8px -> 判
+    LOW_CLEARANCE 中止（报告"start point rejected: low_clearance"）。
+    修复后起点微调半径覆盖 edge_clearance，应就近挪到可行点并规划成功。
+    """
+    # 衬底左边缘 x=410；start 在 x=415（边界内 5px，< 膨胀 22）
+    sub = SubstrateRegion(polygon=[(410, 40), (790, 40), (790, 460), (410, 460)],
+                          safety_margin_px=6.0)
+    snap = WorkspaceSnapshot(frame_id=1, timestamp=0.0, substrate=sub,
+                             obstacles=[], particles=[],
+                             transform=CoordinateTransform(px_per_mm=100.0),
+                             frame_size=(800, 600))
+    start = (415.0, 250.0)
+    goal = (700.0, 250.0)
+    p = GridPlanner(PlanConfig(grid_res_px=2.0)).plan(snap, start, goal)
+    assert p.success, f"{p.failure_reason} | {p.detail}"
+    # 起点被就近微调到边界外侧（x >= 410+22），路径长度近似直达
+    assert p.waypoints_px[0][0] >= 410.0 + INFL - 0.5

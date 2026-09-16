@@ -13,8 +13,8 @@ import time
 from dataclasses import dataclass, field
 from typing import Callable, Optional, Sequence
 
-from .models import (FailureReason, GoalRegion, Particle, Point, RunState,
-                     StageCommand, TargetLock, TargetSelection,
+from .models import (FailureReason, GoalRegion, Obstacle, Particle, Point,
+                     RunState, StageCommand, TargetLock, TargetSelection,
                      WorkspaceSnapshot)
 from .simulator import StageError, XYStageProtocol
 
@@ -515,6 +515,10 @@ class FixedBeamController:
             uncertain = 0
             recapture = 0
             offscreen_moves = 0      # 需求2：连续离屏外推控制步数
+            # 需求(防卡壳)：连续无进展帧数 / 软重规划剩余次数
+            stall_streak = 0
+            stall_last_error = float("inf")
+            soft_replan_left = max(0, int(getattr(cfg, "soft_replan_limit", 4)))
             for iteration in range(1, cfg.max_iterations + 1):
                 result.iterations = iteration
                 if self._estop.is_set():
@@ -646,8 +650,50 @@ class FixedBeamController:
                 else:
                     stable = 0
 
+                # ---- 需求(防卡壳)：连续无进展 -> 软重规划 + 卡缝临时禁区
+                # 卡壳 = 光斑到目标的距离连续多帧几乎不缩短（球被 peer/障碍
+                # 挤在缝里）。先用放宽碰撞模型（去掉 safety margin）+ 把当前
+                # 卡住位置列为临时禁区重搜路径；软重规划耗尽仍无进展则明确
+                # 中止，不再无限重规划同一条路径（视频复盘：卡缝死循环 9s）。
+                stall_frames_eff = max(1, int(getattr(cfg, "stall_frames", 6)))
+                progress = stall_last_error - error_px
+                stall_last_error = min(stall_last_error, error_px)
+                if error_px <= cfg.tolerance_px or progress > max(
+                        1.0, float(getattr(cfg, "stall_progress_px", 1.0))):
+                    stall_streak = 0
+                else:
+                    stall_streak += 1
+                soft_extra: list = []
+                if soft_replan_left <= 0 and \
+                        stall_streak >= 2 * stall_frames_eff:
+                    result.final_state = RunState.ABORTED
+                    result.failure_reason = FailureReason.NO_SAFE_PATH
+                    result.detail = (
+                        f"stalled {stall_streak} frames without progress "
+                        f"(error {error_px:.1f}px); soft replans exhausted")
+                    return result
+                if stall_streak >= stall_frames_eff and soft_replan_left > 0:
+                    soft_replan_left -= 1
+                    stall_streak = 0
+                    # 卡缝临时禁区：目标还贴得很近时不加（否则堵死终点），
+                    # 只有离目标尚远才把光斑处列为软禁区强迫绕行。
+                    if error_px > self.planner.config.model.inflation_px + \
+                            self.planner.config.model.ball_radius_px:
+                        soft_extra = [Obstacle(
+                            kind="circle", center=beam,
+                            radius=self.planner.config.model.ball_radius_px,
+                            obstacle_id="stall-marker")]
+                    self.reporter.log(
+                        "soft_replan", task_id=task_id, track_id=track_id,
+                        detail="stall recovery: soft replan with seam marker",
+                        soft_replan_left=soft_replan_left,
+                        error_px=round(error_px, 1))
+                relax = self.planner.config.model.safety_margin_px
+                if soft_extra:
+                    self.planner.config.model.safety_margin_px = 0.0
                 plan = self.planner.plan(current, beam, moving_goal,
-                                         shifted_extra())
+                                         list(shifted_extra()) + soft_extra)
+                self.planner.config.model.safety_margin_px = relax
                 if (not plan.success or len(plan.waypoints_px) < 2) and \
                         getattr(cfg, "allow_offscreen_elements", True):
                     # 需求2：终点（随样品移动）离开画面范围导致规划失败 ->
@@ -666,10 +712,14 @@ class FixedBeamController:
                                              FailureReason.NO_SAFE_PATH)
                     result.detail = plan.detail or "Alg2 found no safe path"
                     return result
+                # 向量参考取路径自身起点而非光斑：起点常被 nearest_feasible
+                # 就近挪出膨胀区（球贴着 peer/边界时），若仍以 beam 为参考，
+                # 首段方向会指向禁区边缘而非沿路径前进，造成来回振荡卡壳。
+                ref = plan.waypoints_px[0] if plan.waypoints_px else beam
                 waypoint = next(
                     (p for p in plan.waypoints_px[1:]
-                     if math.dist(p, beam) > 1e-6), moving_goal)
-                vector = (waypoint[0] - beam[0], waypoint[1] - beam[1])
+                     if math.dist(p, ref) > 1e-6), moving_goal)
+                vector = (waypoint[0] - ref[0], waypoint[1] - ref[1])
                 length = math.hypot(*vector)
                 step_px = min(length,
                               cfg.max_step_mm * current.transform.px_per_mm)

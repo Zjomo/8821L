@@ -274,8 +274,62 @@ class WorkerThread(QtCore.QThread):
                 cv2.circle(out, (int(p[0]), int(p[1])), 3, (0, 220, 220), -1)
         return out
 
-    def _run_single_oa(self, world, rep, ball_rect, goal_pt):
-        """单球避障：把 ball_rect 对应的球移动到 goal_pt。"""
+    def _alg2_nearest_ball_idx(self, ball_idx, balls) -> int:
+        """Alg2：返回离光斑标定点最近的球序号（需求2，不默认 0 号球）。
+
+        标定激光控制下，用"离标定点最近"的球作为优先移动目标；其余球由
+        planner 视为动态障碍。标定点未配置时退化为 ball_idx[0]。
+        """
+        beam = tuple((self._motion_params or {}).get(
+            "beam_position_px", (None, None)))
+        best, best_d = None, 1e18
+        for bi in ball_idx:
+            bcx = balls[bi][0] + balls[bi][2] / 2.0
+            bcy = balls[bi][1] + balls[bi][3] / 2.0
+            d = (math.dist((bcx, bcy), beam) if beam[0] is not None else 0.0)
+            if best is None or d < best_d:
+                best, best_d = bi, d
+        return best if best is not None else ball_idx[0]
+
+    def _alg2_ring_seat(self, group_idx, balls, goal_pt):
+        """Alg2 交互逐个搬运：目标点已有球时，新球绕已就位球环形紧贴就位。
+
+        座位：座位0=目标点中心；座位 m>=1 处于第 (m-1)//6 环、第 (m-1)%6
+        方位，环半径 = 2r*(1+环)，球心距保持 2r（相切紧贴）。从中心座位起
+        逐个扫描，返回第一个未被本组任何球占用的驻点，天然保证不重叠。
+        """
+        gx, gy = float(goal_pt[0]), float(goal_pt[1])
+        rs = [(balls[i][2] + balls[i][3]) / 4.0 for i in group_idx]
+        ball_r = max(rs) if rs else 12.0
+        # 现有球心集合（坐标 -> 中心），用于判占位
+        centers = [
+            (balls[i][0] + balls[i][2] / 2.0,
+             balls[i][1] + balls[i][3] / 2.0) for i in group_idx]
+
+        def occupied(x, y, tol=1.5 * ball_r):
+            return any(math.dist((x, y), c) <= tol for c in centers)
+
+        if not occupied(gx, gy, tol=ball_r):
+            return (gx, gy)
+        m = 1
+        while True:
+            ring = (m - 1) // 6
+            slot = (m - 1) % 6
+            ang = 2 * math.pi * slot / 6.0
+            rr = 2.0 * ball_r * (1 + ring)
+            x, y = gx + rr * math.cos(ang), gy + rr * math.sin(ang)
+            if not occupied(x, y):
+                return (x, y)
+            m += 1
+
+    def _run_single_oa(self, world, rep, ball_rect, goal_pt,
+                       peer_balls=()):
+        """单球避障：把 ball_rect 对应的球移动到 goal_pt。
+
+        需求(接触体积/防误触)：peer_balls 为"本回合其他圆球"（(cx,cy,半径)），
+        运行期以真实半径+缓冲转为圆形障碍一并交给规划/控制，使运动中圆球
+        主动避让其他球、障碍，并按接触体积（重叠深度）防误触。
+        """
         if __package__ in (None, ""):
             from obstacle_avoidance.controller import ControllerConfig, ObstacleAvoidController
             from obstacle_avoidance.planner import GridPlanner
@@ -288,6 +342,23 @@ class WorkerThread(QtCore.QThread):
             from .vision import VisionPipeline, ParticleTracker
             from .sim_microscope import _initial_detect
             from .models import GoalRegion
+        # 其他圆球 -> 圆形障碍（避免与目标球自身重复）。
+        # 注意：peer 是"另一颗球"而非静态障碍，planner 会对其再叠加 infl
+        # （ball_radius + spot_radius + safety_margin）。若直接传物理半径，
+        # 最终阻塞半径 = peer_r + (ball_r + spot_r + safety)，对"球-球"避让
+        # 过度膨胀（球与球本应只按 peer_r + ball_r 相切即可），会误吞运动球
+        # 的光斑起点/目标驻点导致 low_clearance。因此把传入半径扣掉光斑与
+        # 安全余量，使实际阻塞半径回到物理合理的 ball_r + peer_r。
+        from obstacle_avoidance.planner import CollisionModel
+        _cm = CollisionModel()
+        _peer_credit = _cm.spot_radius_px + _cm.safety_margin_px
+        from obstacle_avoidance.models import Obstacle
+        extra = []
+        for bcx, bcy, br in peer_balls or ():
+            # 保底：只需非负（避免网格里出现负半径）；小 peer 球自然更贴。
+            r_eff = max(0.0, br - _peer_credit)
+            extra.append(Obstacle(kind="circle", center=(bcx, bcy),
+                                  radius=r_eff))
         detector = world.make_detector()
         cx = ball_rect[0] + ball_rect[2] / 2
         cy = ball_rect[1] + ball_rect[3] / 2
@@ -302,7 +373,7 @@ class WorkerThread(QtCore.QThread):
         mp = self._motion_params or {}
         is_alg2 = getattr(self, "_algorithm", "Alg1") == "Alg2"
         cfg = ControllerConfig(
-            max_step_mm=float(mp.get("step_mm", 0.001)),
+            max_step_mm=float(mp.get("step_mm", 0.01)),
             tolerance_px=8.0, stable_frames=3,
             max_iterations=400, max_track_jump_px=250.0,
             # SimMicroscopeWorld translates the stage by the inverse camera
@@ -317,6 +388,10 @@ class WorkerThread(QtCore.QThread):
             else:
                 from .algorithm2 import (Alg2Config, Alg2Stage,
                                          FixedBeamController)
+            # 需求(交互逐球)：光束沿用真实标定点（UI 旋钮 beam_position_px），
+            # 由 Alg2 先在 CALIBRATING 阶段把光斑对准目标球（标定），随后
+            # beam_lock 锁定，TRACKING 阶段由固定光斑带动该球移动（通过反向
+            # 移动样品实现），而非让球自己直接飞向目标点。
             beam = tuple((self._motion_params or {}).get(
                 "beam_position_px", (world.window[0] / 2.0,
                                      world.window[1] / 2.0)))
@@ -341,6 +416,7 @@ class WorkerThread(QtCore.QThread):
         self._controller_ref["controller"] = ctl
         self._controller_ref["controller"] = ctl
         return ctl.run(snap, tid, goal, task_id="sim01-oa",
+                       extra_obstacles=extra,
                        get_frame=world.render, get_snapshot=world.snapshot)
 
     def _run_sim_assembly(self, world, rep, gi, ball_idx, balls, center,
@@ -374,6 +450,27 @@ class WorkerThread(QtCore.QThread):
                 pipeline=VisionPipeline(
                     detector,
                     tracker=ParticleTracker(max_jump_px=220.0)))
+        # 组装序列里两球贴近会造成数帧轮廓粘连（blob 合并）：tracker 的
+        # 粘连保护会让相关 track coast 保位，但默认 3 帧就丢 ID，粘连稍久
+        # track 即被丢弃、blob 另建新 track 污染后续规划。放宽保留帧数，
+        # 粘连结束后按最近邻自然复配。
+        _tr = getattr(world.pipeline, "tracker", None)
+        if _tr is not None:
+            _tr.keep_lost_frames = max(
+                int(getattr(_tr, "keep_lost_frames", 0) or 0), 30)
+        # 需求(组装编号)：按球心到范围中心距离升序编号（0 = 最近），
+        # 0 号球先移到范围中心，其余按序号环形紧贴（驻点由
+        # AggregationPlanner.assign 生成：中心 + 2*r_eff 相切环）。
+        ball_idx = sorted(
+            ball_idx,
+            key=lambda bi: math.dist(
+                (balls[bi][0] + balls[bi][2] / 2.0,
+                 balls[bi][1] + balls[bi][3] / 2.0), center))
+        rep.log("ball_numbering", task_id=f"sim01-G{gi}-ag",
+                detail="assembly order: nearest ball first (No.0 -> center)",
+                ball_order=[int(bi) for bi in ball_idx],
+                center=[round(float(center[0]), 1),
+                        round(float(center[1]), 1)])
         # 本 ground 的球 -> 检测 track id（贪心最近匹配，不跨 ground 误聚）
         snap = world.snapshot()
         track_ids, used_t = [], set()
@@ -394,7 +491,7 @@ class WorkerThread(QtCore.QThread):
                 required_count=len(ball_idx),
                 controller=ControllerConfig(
                     max_step_mm=float(
-                        (self._motion_params or {}).get("step_mm", 0.001)),
+                        (self._motion_params or {}).get("step_mm", 0.01)),
                     tolerance_px=8.0,
                     stable_frames=3,
                     max_iterations=400,
@@ -531,7 +628,28 @@ class WorkerThread(QtCore.QThread):
                             self.log_ready.emit(
                                 f"状态 {ev.get('from')} -> {ev.get('to')}")
                         elif et == "error":
-                            self.log_ready.emit(f"错误: {ev.get('reason')}")
+                            # 需求(日志)：报错尽量带出可诊断上下文——任务、目标
+                            # 球、失败原因与关键指标，避免"光秃秃一条错误"。
+                            detail = str(ev.get("reason", ""))
+                            ctx = []
+                            for k, lbl in (("task_id", "task"),
+                                           ("track_id", "球"),
+                                           ("final_state", "状态"),
+                                           ("iterations", "迭代"),
+                                           ("final_error_px", "残余px")):
+                                v = ev.get(k)
+                                if v not in (None, ""):
+                                    ctx.append(f"{lbl}={v}")
+                            suffix = (" " + " ".join(ctx)) if ctx else ""
+                            self.log_ready.emit(f"错误: {detail}{suffix}")
+                        elif et == "stage_command":
+                            # 需求(日志)：逐条台位移动指令（µm 位移 / 航点 /
+                            # 规划版本），便于回放定位"哪一步动到哪"。
+                            self.log_ready.emit(
+                                f"台位移动 dx={ev.get('dx_mm', 0) * 1000:+.1f}µm "
+                                f"dy={ev.get('dy_mm', 0) * 1000:+.1f}µm "
+                                f"wp={ev.get('waypoint_index', '-')} "
+                                f"v={ev.get('source_plan_version', '-')}")
                         elif et == "element_offscreen":
                             # 需求2：元素离屏不中止，用外推位置继续定位
                             pos = ev.get("position_px")
@@ -543,8 +661,18 @@ class WorkerThread(QtCore.QThread):
                                 f"track={ev.get('track_id', '-')} {where} "
                                 f"{ev.get('detail', '')}".rstrip())
                         elif et == "run_end":
-                            self.log_ready.emit(
-                                f"运行结束: {ev.get('final_state')}")
+                            # 需求(日志)：结束不止报状态，附失败原因（若有）。
+                            fs = ev.get('final_state')
+                            if fs in ("COMPLETE", "IDLE"):
+                                self.log_ready.emit(f"运行结束: {fs}")
+                            else:
+                                detail = (ev.get("metrics") or {}).get(
+                                    "failure_reason") or \
+                                    (ev.get("metrics") or {}).get("detail") \
+                                    or ""
+                                self.log_ready.emit(
+                                    f"运行结束: {fs}"
+                                    + (f"（{detail}）" if detail else ""))
                         elif et == "motor_step":
                             self.log_ready.emit(
                                 f"8742/8743 {ev.get('axis')}"
@@ -622,21 +750,64 @@ class WorkerThread(QtCore.QThread):
                     if mode == "oa":
                         goal_pt = goals[gi]
                         if not goal_pt: continue
-                        if len(ball_idx) == 1:
-                            # 单球：直接避障移动到目标点
+                        is_alg2 = (getattr(self, "_algorithm", "Alg1")
+                                   == "Alg2")
+                        # 需求(多球 Alg2 交互逐球搬运)：标定激光下存在多球时，
+                        # 每回合只移动"被点选的一个球"（selected_ball_index，
+                        # 无点选则退化为离标定点/光斑最近的一球），其余球由
+                        # planner 作动态障碍；_run_single_oa 会先把标定激光
+                        # 移到目标球心、再带球避障到目标点，完成后把最终位置
+                        # 回写 UI。若目标点已有球，本轮球的驻点按环形紧贴计算
+                        # （第 0 球压中心，后续球环绕相切错开）。单球仍走原路径。
+                        if len(ball_idx) == 1 or is_alg2:
+                            _bi = (ball_idx[0]
+                                   if len(ball_idx) == 1
+                                   else self._alg2_nearest_ball_idx(
+                                       ball_idx, balls))
+                            # 目标驻点：Alg2 多球且在选球时，按本 ground 已就位球
+                            # 环形紧贴；否则（单品球 / 无点选）仍压目标点中心。
+                            tgt = (self._alg2_ring_seat(
+                                       ball_groups[gi], balls, goal_pt)
+                                   if is_alg2 else goal_pt)
+                            # 需求(防误触)：把本 ground 其他圆球作圆形障碍一并
+                            # 交给规划/控制，使运动中圆球主动避让、不误触他球。
+                            peer_balls = []
+                            for _pb in ball_groups[gi]:
+                                if _pb == _bi:
+                                    continue
+                                pbr = ((balls[_pb][2] + balls[_pb][3]) /
+                                       4.0)
+                                peer_balls.append(
+                                    (balls[_pb][0] + balls[_pb][2] / 2.0,
+                                     balls[_pb][1] + balls[_pb][3] / 2.0,
+                                     pbr))
                             result = self._run_single_oa(
-                                world, rep, balls[ball_idx[0]], goal_pt)
-                            if result is None or result.final_state != RunState.COMPLETE:
-                                final_state = getattr(result, "final_state",
-                                                      RunState.ABORTED)
+                                world, rep, balls[_bi], tgt, peer_balls)
+                            if result is None or \
+                                    result.final_state != RunState.COMPLETE:
+                                final_state = getattr(
+                                    result, "final_state", RunState.ABORTED)
                                 run_failed = True
+                                # 需求(日志)：移动失败出具可诊断原因——目标球、
+                                # 具体故障码与残余误差，取代"就一句失败"。
+                                if result is not None:
+                                    md = result.to_dict()
+                                    fr = md.get("failure_reason") \
+                                        or md.get("detail") or ""
+                                    self.log_ready.emit(
+                                        f"球{_bi} 移动失败: "
+                                        f"status={md.get('final_state')}"
+                                        + (f" 原因={fr}" if fr else "")
+                                        + (f" 残余={md.get('final_error_px'):.0f}px"
+                                           if md.get("final_error_px") is not None
+                                           else "")
+                                        + f" 迭代={md.get('iterations')}")
                             else:
-                                # 移动完成：更新球位置到目标点并回传 UI
-                                _set_ball_at(ball_idx[0], goal_pt[0],
-                                             goal_pt[1])
+                                # 移动完成：更新球位置到目标驻点并回传 UI
+                                _set_ball_at(_bi, tgt[0], tgt[1])
                                 self.log_ready.emit(
-                                    f"球{ball_idx[0]} 移动完成 -> 目标点 "
-                                    f"({goal_pt[0]:.0f},{goal_pt[1]:.0f})")
+                                    f"球{_bi} 移动完成 -> 目标驻点 "
+                                    f"({tgt[0]:.0f},{tgt[1]:.0f})")
                                 self.layout_updated.emit(list(final_balls))
                                 pump_events()   # run_end 补泵
                         else:
@@ -1812,9 +1983,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ball_step_spin = QtWidgets.QDoubleSpinBox()
         self.ball_step_spin.setRange(0.0001, 5.0)
         self.ball_step_spin.setDecimals(4)
-        self.ball_step_spin.setValue(0.001)   # 1 um
+        self.ball_step_spin.setValue(0.01)   # 10 um（默认球步长）
         self.ball_step_spin.setSuffix(" mm")
-        self.ball_step_spin.setToolTip("圆球每次移动的步长（单步位移）；0.001mm = 1um")
+        self.ball_step_spin.setToolTip("圆球每次移动的步长（单步位移）；0.01mm = 10um")
         self.ball_speed_spin = QtWidgets.QDoubleSpinBox()
         self.ball_speed_spin.setRange(0.01, 1000000.0)
         self.ball_speed_spin.setDecimals(2)
@@ -2124,9 +2295,12 @@ class MainWindow(QtWidgets.QMainWindow):
         comparison_layout.addWidget(self.experiment_canvas)
         self._p_log.addStretch(1)
 
-        # 仿真镜头图层配置入口（mask/ground/obstacle 数量/标签/形状）
-        self.sim_spec_btn = QtWidgets.QPushButton("仿真镜头图层...")
-        self.sim_spec_btn.clicked.connect(self.on_edit_sim_spec)
+        # 仿真镜头图层配置（mask/ground/obstacle 数量/标签/形状）——直接内嵌
+        # 在"检测 / ROI"界面下方，替代原来的弹窗入口，无需打开对话框即可查看。
+        # 赋值给 sim_spec_btn（现为 QGroupBox）以沿用模式切换的可见性控制。
+        self.sim_spec_btn = self._build_sim_spec_panel()
+        self.sim_spec_btn.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
+                                        QtWidgets.QSizePolicy.Maximum)
         self._p_roi.addWidget(self.sim_spec_btn)
 
         # 各选项卡内容顶部对齐（日志页由 replay_out 撑满，无需 stretch）
@@ -3296,6 +3470,77 @@ class MainWindow(QtWidgets.QMainWindow):
         except Exception:  # noqa: BLE001
             return None
 
+    def _build_sim_spec_panel(self) -> QtWidgets.QGroupBox:
+        """仿真镜头图层配置面板（内嵌于"检测 / ROI"界面下方）。
+
+        与 SimSpecDialog 同构：衬底/掩码/障碍物三类的
+        数量/形状/标签/尺寸/顶点，直接显示并可在面板内保存，无需打开弹窗。
+        """
+        spec = self._load_sample_spec() or {}
+        box = QtWidgets.QGroupBox("仿真镜头图层（衬底 / 掩码 / 障碍物）")
+        outer = QtWidgets.QVBoxLayout(box)
+        outer.setContentsMargins(6, 6, 6, 6)
+        self._sim_spec_fields: dict = {}
+        for cat, zh in SimSpecDialog.CATS:
+            cfg = spec.get(cat) or {}
+            count = QtWidgets.QSpinBox()
+            count.setRange(0, 50)
+            count.setValue(int(cfg.get("count", 0) or 0))
+            shape = QtWidgets.QComboBox()
+            shape.addItems(SimSpecDialog.SHAPES)
+            shape.setCurrentText(str(cfg.get("shape", "ellipse")))
+            label = QtWidgets.QLineEdit(str(cfg.get("label", "")))
+            size = QtWidgets.QDoubleSpinBox()
+            size.setRange(2.0, 500.0)
+            size.setValue(float(cfg.get("size", 40.0) or 40.0))
+            custom = QtWidgets.QLineEdit(str(cfg.get("custom", "")))
+            custom.setToolTip(
+                '自定义多边形顶点："x,y x,y ..."（shape=custom）')
+            sub = QtWidgets.QGridLayout()
+            for col, (name, w) in enumerate((
+                    ("数量", count), ("形状", shape), ("标签", label),
+                    ("尺寸", size), ("顶点", custom))):
+                sub.addWidget(QtWidgets.QLabel(name), 0, col)
+                sub.addWidget(w, 1, col)
+            group = QtWidgets.QGroupBox(zh)
+            group.setLayout(sub)
+            outer.addWidget(group)
+            self._sim_spec_fields[cat] = (count, shape, label, size, custom)
+        save_btn = QtWidgets.QPushButton("保存图层配置")
+        save_btn.setSizePolicy(QtWidgets.QSizePolicy.Maximum,
+                               QtWidgets.QSizePolicy.Fixed)
+        save_btn.clicked.connect(self._save_inline_sim_spec)
+        outer.addWidget(save_btn)
+        return box
+
+    def _collect_sim_spec(self) -> dict:
+        """收集内嵌面板字段 -> sample_spec（空标签沿用内置默认前缀）。"""
+        out = {}
+        for cat, (count, shape, label, size, custom) in \
+                self._sim_spec_fields.items():
+            cfg = {"count": count.value(), "shape": shape.currentText(),
+                   "size": size.value()}
+            if label.text().strip():
+                cfg["label"] = label.text().strip()
+            if shape.currentText() == "custom" and custom.text().strip():
+                cfg["custom"] = custom.text().strip()
+            out[cat] = cfg
+        return out
+
+    @Slot()
+    def _save_inline_sim_spec(self) -> None:
+        """保存内嵌面板的仿真镜头图层配置到磁盘。"""
+        new_spec = self._collect_sim_spec()
+        try:
+            os.makedirs(os.path.dirname(self.SIM_SAMPLE_SPEC), exist_ok=True)
+            with open(self.SIM_SAMPLE_SPEC, "w", encoding="utf-8") as f:
+                json.dump(new_spec, f, ensure_ascii=False, indent=2)
+        except Exception as exc:  # noqa: BLE001
+            self.detail_label.setText(f"图层配置保存失败: {exc}")
+            return
+        self.detail_label.setText(
+            "图层配置已保存，重新运行 sim01 后生效")
+
     @Slot()
     def on_edit_sim_spec(self) -> None:
         """仿真镜头图层配置对话框：掩码/衬底/障碍物的数量/标签/形状。"""
@@ -3645,80 +3890,27 @@ class MainWindow(QtWidgets.QMainWindow):
 
     @Slot()
     def on_undo_zone(self) -> None:
+        """撤销区域：按当前画框模式过滤，只撤销该类型最新创建的一个对象。
+
+        需求：与"画框模式"指定的对象一致——例如模式为"目标点(避障)"时，
+        仅从画框顺序栈中撤销最新建的一个目标点，而非无条件撤销栈顶对象。
+        """
         if not self._is_motor_mode():
             c = self._sim_cfg
-            if self._sim_order:          # 后画先撤
-                entry = self._sim_order.pop()
-                kind = entry[0]
-                if kind == "ground_add" and c["grounds"]:
-                    g = c["grounds"].pop()
-                    self._sim_ids.setdefault("grounds", [])
-                    if self._sim_ids.get("grounds"):
-                        self._sim_ids["grounds"].pop()
-                    self._simlog(f"撤销衬底 {g.get('id','?')}: "
-                                 f"pos={tuple(g['rect'][:2])} "
-                                 f"size={g['rect'][2]}x{g['rect'][3]}")
-                elif kind == "ball_add" and c["balls"]:
-                    b = c["balls"].pop()
-                    bid = (self._sim_ids["balls"].pop()
-                           if self._sim_ids["balls"] else "?")
-                    self._simlog(f"撤销圆球 {bid}: pos={tuple(b[:2])} "
-                                 f"size={b[2]}x{b[3]}")
-                elif kind == "obstacle_add" and c["obstacles"]:
-                    # 先同步弹出平行多边形列表，保持与 obstacles 对齐
-                    polys = c.setdefault("obstacle_polys", [])
-                    poly = (polys.pop() if len(polys) == len(c["obstacles"])
-                            else None)
-                    o = c["obstacles"].pop()
-                    oid_ = (self._sim_ids["obstacles"].pop()
-                            if self._sim_ids["obstacles"] else "?")
-                    self._simlog(f"撤销障碍物 {oid_}: pos={tuple(o[:2])} "
-                                 f"size={o[2]}x{o[3]}"
-                                 + (f" poly={len(poly)}边形" if poly else ""))
-                elif kind == "ground_goal":
-                    gi = entry[1]
-                    if 0 <= gi < len(c["grounds"]):
-                        gp = c["grounds"][gi].get("goal")
-                        c["grounds"][gi]["goal"] = None
-                        self._simlog(f"撤销目标点 "
-                                     f"{c['grounds'][gi].get('id','?')}"
-                                     f": {tuple(gp) if gp else '?'}")
-                elif kind == "ground_range":
-                    gi = entry[1]
-                    if 0 <= gi < len(c["grounds"]):
-                        gr = c["grounds"][gi].get("goal_range")
-                        c["grounds"][gi]["goal_range"] = None
-                        self._simlog(f"撤销目标范围 "
-                                     f"{c['grounds'][gi].get('id','?')}"
-                                     f": {tuple(gr[:2]) if gr else '?'}")
-            else:   # 载入配置无顺序信息 -> 固定优先级
-                for gi in range(len(c["grounds"]) - 1, -1, -1):
-                    if c["grounds"][gi].get("goal_range"):
-                        c["grounds"][gi]["goal_range"] = None; break
-                    if c["grounds"][gi].get("goal"):
-                        c["grounds"][gi]["goal"] = None; break
-                else:
-                    if c["balls"]:
-                        b = c["balls"].pop()
-                        bid = (self._sim_ids["balls"].pop()
-                               if self._sim_ids["balls"] else "?")
-                        self._simlog(f"撤销圆球 {bid}: pos={tuple(b[:2])} "
-                                     f"size={b[2]}x{b[3]}")
-                    elif c["obstacles"]:
-                        polys = c.setdefault("obstacle_polys", [])
-                        poly = (polys.pop() if len(polys) ==
-                                len(c["obstacles"]) else None)
-                        o = c["obstacles"].pop()
-                        oid_ = (self._sim_ids["obstacles"].pop()
-                                if self._sim_ids["obstacles"] else "?")
-                        self._simlog(f"撤销障碍物 {oid_}: pos={tuple(o[:2])} "
-                                     f"size={o[2]}x{o[3]}"
-                                     + (f" poly={len(poly)}边形" if poly else ""))
-                    elif c["grounds"]:
-                        g = c["grounds"].pop()
-                        self._simlog(f"撤销衬底 {g.get('id','?')}: "
-                                     f"pos={tuple(g['rect'][:2])} "
-                                     f"size={g['rect'][2]}x{g['rect'][3]}")
+            # 当前模式 -> 允许撤销的对象类型集合
+            wanted = self._undo_kinds_for_mode()
+            if self._sim_order:          # 有顺序信息：后画先撤（按类型过滤）
+                idx = next(
+                    (i for i in range(len(self._sim_order) - 1, -1, -1)
+                     if self._sim_order[i][0] in wanted), None)
+                if idx is None:
+                    self._simlog(
+                        f"无可撤销的[{self.mode_combo.currentText()}]对象")
+                    return
+                entry = self._sim_order.pop(idx)
+                self._undo_sim_entry(entry)
+            else:   # 载入配置无顺序信息 -> 按当前模式固定优先级删对应类型
+                self._undo_sim_loaded(wanted)
             self._save_sim_config()
             self._update_sim_zones_label()
             self._refresh_sim_preview()
@@ -3726,6 +3918,108 @@ class MainWindow(QtWidgets.QMainWindow):
         if self._roi_cfg and self._roi_cfg.zones:
             z = self._roi_cfg.zones.pop()
             self.zones_label.setText(f"zones: {len(self._roi_cfg.zones)}")
+
+    def _undo_kinds_for_mode(self) -> set:
+        """当前画框模式 -> 可撤销对象类型集合。"""
+        mode = self.mode_combo.currentText()
+        return {
+            "衬底(ground)": {"ground_add"},
+            "圆球(mask)": {"ball_add"},
+            "障碍物(obstacle)": {"obstacle_add"},
+            "目标点(避障)": {"ground_goal"},
+            "目标范围(组装)": {"ground_range"},
+        }.get(mode, {"ground_add", "ball_add", "obstacle_add",
+                     "ground_goal", "ground_range"})
+
+    def _undo_sim_entry(self, entry: tuple) -> None:
+        """撤销一条画框记录（按类型回退 _sim_cfg 中的对应对象）。"""
+        c = self._sim_cfg
+        kind = entry[0]
+        if kind == "ground_add" and c["grounds"]:
+            g = c["grounds"].pop()
+            self._sim_ids.setdefault("grounds", [])
+            if self._sim_ids.get("grounds"):
+                self._sim_ids["grounds"].pop()
+            self._simlog(f"撤销衬底 {g.get('id','?')}: "
+                         f"pos={tuple(g['rect'][:2])} "
+                         f"size={g['rect'][2]}x{g['rect'][3]}")
+        elif kind == "ball_add" and c["balls"]:
+            b = c["balls"].pop()
+            bid = (self._sim_ids["balls"].pop()
+                   if self._sim_ids["balls"] else "?")
+            self._simlog(f"撤销圆球 {bid}: pos={tuple(b[:2])} "
+                         f"size={b[2]}x{b[3]}")
+        elif kind == "obstacle_add" and c["obstacles"]:
+            # 先同步弹出平行多边形列表，保持与 obstacles 对齐
+            polys = c.setdefault("obstacle_polys", [])
+            poly = (polys.pop() if len(polys) == len(c["obstacles"])
+                    else None)
+            o = c["obstacles"].pop()
+            oid_ = (self._sim_ids["obstacles"].pop()
+                    if self._sim_ids["obstacles"] else "?")
+            self._simlog(f"撤销障碍物 {oid_}: pos={tuple(o[:2])} "
+                         f"size={o[2]}x{o[3]}"
+                         + (f" poly={len(poly)}边形" if poly else ""))
+        elif kind == "ground_goal":
+            gi = entry[1]
+            if 0 <= gi < len(c["grounds"]):
+                gp = c["grounds"][gi].get("goal")
+                c["grounds"][gi]["goal"] = None
+                self._simlog(f"撤销目标点 "
+                             f"{c['grounds'][gi].get('id','?')}"
+                             f": {tuple(gp) if gp else '?'}")
+        elif kind == "ground_range":
+            gi = entry[1]
+            if 0 <= gi < len(c["grounds"]):
+                gr = c["grounds"][gi].get("goal_range")
+                c["grounds"][gi]["goal_range"] = None
+                self._simlog(f"撤销目标范围 "
+                             f"{c['grounds'][gi].get('id','?')}"
+                             f": {tuple(gr[:2]) if gr else '?'}")
+
+    def _undo_sim_loaded(self, wanted: set) -> None:
+        """无顺序信息时：按当前模式想要的类型，从后往前删除第一个匹配对象。"""
+        c = self._sim_cfg
+        for gi in range(len(c["grounds"]) - 1, -1, -1):
+            if "ground_goal" in wanted and c["grounds"][gi].get("goal"):
+                gp = c["grounds"][gi]["goal"]
+                c["grounds"][gi]["goal"] = None
+                self._simlog(f"撤销目标点 "
+                             f"{c['grounds'][gi].get('id','?')}: "
+                             f"{tuple(gp) if gp else '?'}")
+                return
+            if "ground_range" in wanted and c["grounds"][gi].get("goal_range"):
+                gr = c["grounds"][gi]["goal_range"]
+                c["grounds"][gi]["goal_range"] = None
+                self._simlog(f"撤销目标范围 "
+                             f"{c['grounds'][gi].get('id','?')}: "
+                             f"{tuple(gr[:2]) if gr else '?'}")
+                return
+        if "ball_add" in wanted and c["balls"]:
+            b = c["balls"].pop()
+            bid = (self._sim_ids["balls"].pop()
+                   if self._sim_ids["balls"] else "?")
+            self._simlog(f"撤销圆球 {bid}: pos={tuple(b[:2])} "
+                         f"size={b[2]}x{b[3]}")
+            return
+        if "obstacle_add" in wanted and c["obstacles"]:
+            polys = c.setdefault("obstacle_polys", [])
+            poly = (polys.pop() if len(polys) ==
+                    len(c["obstacles"]) else None)
+            o = c["obstacles"].pop()
+            oid_ = (self._sim_ids["obstacles"].pop()
+                    if self._sim_ids["obstacles"] else "?")
+            self._simlog(f"撤销障碍物 {oid_}: pos={tuple(o[:2])} "
+                         f"size={o[2]}x{o[3]}"
+                         + (f" poly={len(poly)}边形" if poly else ""))
+            return
+        if "ground_add" in wanted and c["grounds"]:
+            g = c["grounds"].pop()
+            self._simlog(f"撤销衬底 {g.get('id','?')}: "
+                         f"pos={tuple(g['rect'][:2])} "
+                         f"size={g['rect'][2]}x{g['rect'][3]}")
+            return
+        self._simlog(f"无可撤销的[{self.mode_combo.currentText()}]对象")
 
     @Slot()
     def on_save_config(self) -> None:

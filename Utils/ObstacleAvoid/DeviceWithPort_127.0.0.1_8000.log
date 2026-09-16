@@ -6,3 +6,5 @@
 2026-09-12 19:00:18,633:DeviceWithPort (microscope.device_server):INFO:PID 27580: Serving PYRO:DeviceWithPort@127.0.0.1:8000
 2026-09-15 20:29:55,918:DeviceWithPort (microscope.device_server):INFO:PID 25556: Device initialized; starting daemon.
 2026-09-15 20:29:55,932:DeviceWithPort (microscope.device_server):INFO:PID 25556: Serving PYRO:DeviceWithPort@127.0.0.1:8000
+2026-09-16 16:38:29,688:DeviceWithPort (microscope.device_server):INFO:PID 21416: Device initialized; starting daemon.
+2026-09-16 16:38:29,688:DeviceWithPort (microscope.device_server):INFO:PID 21416: Serving PYRO:DeviceWithPort@127.0.0.1:8000

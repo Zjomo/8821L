@@ -30,16 +30,20 @@ def _synthetic_snap(radius_px: float, n: int = 4):
 
 
 def test_assign_spacing_uses_actual_radius():
-    """驻点间距按实际球半径计算：大球（>模型默认）驻点互不重叠。"""
+    """紧贴环驻点按实际球半径计算：大球（>模型默认）球心距 = 2*r 相切。"""
     ag = AggregationPlanner(GridPlanner())
     snap = _synthetic_snap(radius_px=30.0)
     region = GoalRegion(center=(200, 200), radius_px=120)
     mapping = ag.assign(snap, region, [1, 2, 3, 4])
     targets = list(mapping.values())
-    # 实际半径 30 > 模型 12：间距必须 >= 2*30*1.2 = 72
+    # 0 号球压中心，其余在紧贴环上（半径 2r+9px 防粘连余量=69）
+    assert any(math.dist(t, (200.0, 200.0)) < 1e-6 for t in targets)
+    ring = [t for t in targets if math.dist(t, (200.0, 200.0)) > 1e-6]
+    assert all(abs(math.dist(t, (200.0, 200.0)) - 69.0) < 1e-6
+               for t in ring)
     min_d = min(math.dist(a, b) for i, a in enumerate(targets)
                 for b in targets[i + 1:])
-    assert min_d >= 2 * 30.0 * 1.2 - 1e-6
+    assert min_d >= 2 * 30.0 - 1e-6
 
 
 def test_validate_region_capacity_uses_actual_radius():
@@ -54,14 +58,23 @@ def test_validate_region_capacity_uses_actual_radius():
 
 
 def test_controller_adapts_ball_radius_only_grows():
-    """运动球实际半径并入碰撞模型：只增不减，增大返回 True。"""
+    """运动球实际半径并入碰撞模型：起点允许并入；运行中跳变>25% 拒绝。"""
     from obstacle_avoidance.controller import ObstacleAvoidController
     from obstacle_avoidance.models import Particle
     ctl = ObstacleAvoidController(stage=None)
     p = Particle(track_id=1, position_px=(0.0, 0.0), radius_px=30.0)
-    assert ctl._adapt_ball_radius(p) is True
+    # 任务起点：球独立、检测已校验，大跳变一次性并入
+    assert ctl._adapt_ball_radius(p, allow_jump=True) is True
     assert ctl.planner.config.model.ball_radius_px == 30.0
     assert ctl._adapt_ball_radius(p) is False   # 已并入，不重复触发重规划
+    # 运行中：粘连 blob 给出的虚假大半径（>25% 跳变）不得并入
+    p2 = Particle(track_id=1, position_px=(0.0, 0.0), radius_px=45.0)
+    assert ctl._adapt_ball_radius(p2) is False
+    assert ctl.planner.config.model.ball_radius_px == 30.0
+    # 运行中：小幅增长（<=25%）仍允许（只增不减）
+    p3 = Particle(track_id=1, position_px=(0.0, 0.0), radius_px=36.0)
+    assert ctl._adapt_ball_radius(p3) is True
+    assert ctl.planner.config.model.ball_radius_px == 36.0
 
 
 def test_ag01_single_ball_aggregation():

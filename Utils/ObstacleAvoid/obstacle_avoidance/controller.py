@@ -59,6 +59,15 @@ class ControllerConfig:
     # 只在台账也无记录（从未见过）或超出样本可行域太远时才回到中止路径。
     allow_offscreen_elements: bool = True
     offscreen_retry_limit: int = 120   # 离屏外推最多连续控制步数（超限才中止）
+    # ---- 需求(防卡壳)：软障碍重规划
+    # 当球距冗余目标距离在连续多帧内几乎无进展（实际位移≈0，阈值通常比
+    # 光斑-球失位更紧、且未达 slip 停止线）时，判为"卡壳"：此时不再直接
+    # ABORT，而是用放宽后的碰撞模型（暂时只用球+光斑半径、去掉 safety
+    # margin）重新搜索路径，让路径"绕开/挣脱"障碍继续运动。软重规划限次
+    # 内仍无进展才回到原中止逻辑。
+    stall_frames: int = 6          # 连续无明显进展帧数阈值
+    stall_progress_px: float = 1.0 # 单帧内距目标进展不足该值视为"卡壳"
+    soft_replan_limit: int = 4     # 软重规划最多尝试次数
 
 
 @dataclass
@@ -193,8 +202,9 @@ class ObstacleAvoidController:
         self._set_state(RunState.TARGET_LOCKED, task_id)
         start = particle.position_px
         # 碰撞体积适配：运动球自身实际检测半径并入模型（模型值偏小时
-        # 防止低估碰撞体积；只增不减，序列控制的后续球保持保守膨胀）
-        self._adapt_ball_radius(particle)
+        # 防止低估碰撞体积；只增不减，序列控制的后续球保持保守膨胀）。
+        # 起点处球独立、检测已校验，允许一次跳变并入真实半径。
+        self._adapt_ball_radius(particle, allow_jump=True)
         reason = self.planner.check_point(snap, start, extra)
         kind = "start"
         if reason is None:
@@ -229,6 +239,10 @@ class ObstacleAvoidController:
         error_px = math.dist(start, goal.center)
         pending_check = None      # (移动前球位置, 预期像素位移)：滑移校验
         slip_events = 0           # 累计滑移事件数
+        stall_streak = 0          # 卡壳连续帧数（需求：防卡壳）
+        stall_last_error = float("inf")
+        soft_replan_left = max(0, int(cfg.soft_replan_limit))
+        last_soft_replan_at = -1  # 最近一次软重规划所在迭代号
 
         for it in range(1, cfg.max_iterations + 1):
             result.iterations = it
@@ -386,6 +400,67 @@ class ObstacleAvoidController:
                     force_replan = True
             error_px = math.dist(pos, goal.center)
 
+            # ---- 需求(防卡壳)：连续无进展 -> 软障碍重规划
+            # 卡壳 = 距目标距离在连续多帧几乎没有缩短（实际位移≈0），但尚未
+            # 触发光斑-球滑移停止线。此时不必直接 ABORT：用放宽的碰撞模型
+            # （去掉 safety margin）重搜路径，让球"绕开/挣脱"障碍继续运动。
+            progress = stall_last_error - error_px
+            stall_last_error = min(stall_last_error, error_px)
+            if plan is not None and it != last_soft_replan_at:
+                if error_px <= cfg.tolerance_px:
+                    stall_streak = 0
+                elif progress > cfg.stall_progress_px:
+                    stall_streak = 0          # 有实质进展，非卡壳
+                else:
+                    stall_streak += 1
+                    if (stall_streak >= cfg.stall_frames
+                            and soft_replan_left > 0):
+                        # 尝试一次软重规划（去掉 safety margin），并把当前
+                        # 卡住的位置列为临时禁区（stall-marker），强迫路径
+                        # 绕开卡缝，而不是在原缝上反复重试。
+                        soft_replan_left -= 1
+                        stall_streak = 0
+                        last_soft_replan_at = it
+                        relax = self.planner.config.model.safety_margin_px
+                        self.planner.config.model.safety_margin_px = 0.0
+                        extra_soft = list(extra)
+                        # 卡缝临时禁区：目标还贴得很近时不加（否则堵死终点）
+                        if error_px > self.planner.config.model.inflation_px \
+                                + self.planner.config.model.ball_radius_px:
+                            extra_soft.append(Obstacle(
+                                kind="circle", center=pos,
+                                radius=self.planner.config.model.ball_radius_px,
+                                obstacle_id="stall-marker"))
+                        soft_plan = self.planner.plan(snap, pos, goal.center,
+                                                      extra_soft)
+                        self.planner.config.model.safety_margin_px = relax
+                        if soft_plan is not None and soft_plan.success:
+                            plan = soft_plan
+                            self._last_plan = plan
+                            result.replan_count += 1
+                            wp_index = 0
+                            last_obstacle_sig = snap.obstacle_signature(
+                                obstacle_sig_q)
+                            self.reporter.log(
+                                "soft_replan", task_id=task_id,
+                                detail="stall recovery: soft obstacle replan",
+                                soft_replan_left=soft_replan_left)
+                            # 软重规划后本帧继续沿用 plan，跳到下一轮感知
+                            continue
+                    elif (stall_streak >= cfg.stall_frames * 2
+                          and soft_replan_left <= 0):
+                        # 需求(防卡壳)：软重规划耗尽后仍持续无进展 -> 明确
+                        # 中止，不再无限重规划同一条路径（卡缝死循环）。
+                        result.final_state = RunState.ABORTED
+                        result.failure_reason = FailureReason.NO_SAFE_PATH
+                        result.detail = (
+                            f"stalled {stall_streak} frames without progress "
+                            f"(error {error_px:.1f}px); soft replans exhausted")
+                        self.reporter.log("run_end", final_state="ABORTED",
+                                          metrics=result.to_dict())
+                        self._set_state(RunState.ABORTED, task_id)
+                        return result
+
             # ---- VERIFYING：完成判定（先于移动，支持零位移场景）
             if error_px <= cfg.tolerance_px:
                 stable += 1
@@ -535,19 +610,29 @@ class ObstacleAvoidController:
                           metrics=result.to_dict())
         return result
 
-    def _adapt_ball_radius(self, particle) -> bool:
+    def _adapt_ball_radius(self, particle, allow_jump: bool = False) -> bool:
         """把运动球实际检测半径并入碰撞模型（只增不减）。
 
         返回 True 表示模型半径被上调，调用方应强制重规划。
+        运行中单帧跳变 > 25% 视为粘连/检测异常（两球贴近时 blob 合并
+        会给出 ~1.4x 的虚假半径），不并入模型——否则共享模型的膨胀被
+        永久撑大，后续球的紧贴驻点必被临界拒绝。任务起点（球独立、
+        检测已校验）允许一次性并入真实半径。
         """
         model = self.planner.config.model
         r = float(getattr(particle, "radius_px", 0.0) or 0.0)
-        if r > model.ball_radius_px:
+        if r > model.ball_radius_px and (
+                allow_jump or r <= model.ball_radius_px * 1.25):
             self.reporter.log("collision_model_update",
                               ball_radius_px=round(model.ball_radius_px, 1),
                               effective_radius_px=round(r, 1))
             model.ball_radius_px = r
             return True
+        if r > model.ball_radius_px:
+            self.reporter.log("collision_model_reject",
+                              radius_px=round(r, 1),
+                              model_radius_px=round(model.ball_radius_px, 1),
+                              detail="radius jump >25%: merged blob suspected")
         return False
 
     @staticmethod

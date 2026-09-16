@@ -8,7 +8,7 @@
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
 from .controller import ControllerConfig, ObstacleAvoidController, RunResult
@@ -101,30 +101,67 @@ class AggregationPlanner:
     # ---------------- assignment
     def assign(self, snap: WorkspaceSnapshot, region: GoalRegion,
                track_ids: Sequence[int]) -> Dict[int, Point]:
-        """Hungarian 分配：区域内按环形排布驻点，间距 >= 2*r_eff。"""
-        n = len(track_ids)
-        # 环形间距按实际球半径（含模型下限）计算，驻点上球互不重叠
+        """组装驻点分配：按球到范围中心的距离编号（最近 = 0 号）。
+
+        0 号球驻点 = 范围中心；其余球在中心外围环形紧贴（球心距
+        2*r_eff，相切不重叠）。环上驻点与剩余球之间用 Hungarian
+        （无 scipy 时贪心）最小化总位移。
+        """
         r_eff = self._effective_radius(snap, track_ids)
-        targets = _ring_targets(region.center, region.radius_px * 0.5, n,
-                                spacing=2 * r_eff * 1.2)
-        cost = []
-        for tid in track_ids:
-            p = snap.particle(tid)
-            row = [math.dist(p.position_px, t) for t in targets]
-            cost.append(row)
-        try:
-            from scipy.optimize import linear_sum_assignment
-            rows, cols = linear_sum_assignment(cost)
-            mapping = {track_ids[r]: targets[c] for r, c in zip(rows, cols)}
-        except ImportError:  # pragma: no cover
-            mapping = {}
-            remaining = set(range(len(targets)))
-            for tid in track_ids:
-                p = snap.particle(tid)
-                c = min(remaining, key=lambda i: math.dist(p.position_px, targets[i]))
-                mapping[tid] = targets[c]
-                remaining.discard(c)
+        # 编号：按球心到范围中心距离升序（0 = 最近）
+        ordered = sorted(track_ids,
+                         key=lambda tid: math.dist(
+                             snap.particle(tid).position_px, region.center))
+        first, rest = ordered[0], ordered[1:]
+        targets = self._assembly_slots(region.center, len(rest), r_eff)
+        # 驻点可行性：紧贴环可能落进障碍/边界膨胀区，把不可行驻点就近
+        # 挪到可行点；实在挪不动则保留原值（由控制器给出明确拒绝原因）。
+        targets = [
+            (t if self.grid.check_point(snap, t) is None
+             else (self.grid.nearest_feasible(
+                 snap, t,
+                 max_r_px=self.grid.config.model.inflation_px + 4.0,
+                 step_px=2.0) or t))
+            for t in targets]
+        mapping = {first: region.center}
+        if rest:
+            cost = [[math.dist(snap.particle(tid).position_px, t)
+                     for t in targets] for tid in rest]
+            try:
+                from scipy.optimize import linear_sum_assignment
+                rows, cols = linear_sum_assignment(cost)
+                mapping.update({rest[r]: targets[c]
+                                for r, c in zip(rows, cols)})
+            except ImportError:  # pragma: no cover
+                remaining = set(range(len(targets)))
+                for tid in rest:
+                    p = snap.particle(tid)
+                    c = min(remaining,
+                            key=lambda i: math.dist(p.position_px,
+                                                    targets[i]))
+                    mapping[tid] = targets[c]
+                    remaining.discard(c)
         return mapping
+
+    @staticmethod
+    def _assembly_slots(center: Point, n_ring: int,
+                        r_eff: float) -> List[Point]:
+        """中心外的环形紧贴驻点：第 k 层半径 2*r_eff*k + 余量，容量 6k 槽。"""
+        # 紧贴驻点的外扩余量：余量同时决定转运时与已就位球的最近距离
+        # （见 placed 障碍的球-球信用扣减），余量过小会让轮廓在转运中
+        # 重叠粘连，破坏跟踪 ID。9px 保证轮廓分离，视觉上仍近似紧贴。
+        slack = 9.0
+        slots: List[Point] = []
+        k = 1
+        while len(slots) < n_ring:
+            n_here = min(6 * k, n_ring - len(slots))
+            r = 2.0 * r_eff * k + slack
+            for i in range(n_here):
+                a = 2 * math.pi * i / n_here
+                slots.append((center[0] + r * math.cos(a),
+                              center[1] + r * math.sin(a)))
+            k += 1
+        return slots
 
     # ---------------- execution
     def run(self, world: SimWorld, snap: WorkspaceSnapshot, region: GoalRegion,
@@ -147,17 +184,51 @@ class AggregationPlanner:
         result = AggregationResult(final_state=RunState.IDLE,
                                    assignment=dict(assignment))
 
-        # 就近优先执行（减少交叉与等待）
+        # 编号顺序执行（需求：按球到范围中心距离编号，0 号先到中心；
+        # 就近优先也减少交叉与等待）
         order = sorted(track_ids,
                        key=lambda tid: math.dist(
-                           snap.particle(tid).position_px, assignment[tid]))
+                           snap.particle(tid).position_px, region.center))
         placed: List[Obstacle] = []   # 已到达球的安全占位
         for tid in order:
             if self._controller_estopped(result):
                 break
             target = assignment[tid]
+            # 紧贴驻点可达性：已就位球的实际落位（容差 tolerance_px 内）
+            # 叠加检测抖动，可能把理想驻点压进膨胀区，导致后到球被
+            # "goal rejected: low_clearance" 中止。把驻点就近微调到当前
+            # 可行点（保持环上方位，球仍尽量贴近已就位球）。
+            cur = world.snapshot()
+            if self.grid.check_point(cur, target, list(placed)) is not None:
+                nudged = self.grid.nearest_feasible(
+                    cur, target, list(placed),
+                    max_r_px=self.grid.config.model.inflation_px + 12.0,
+                    step_px=1.0)
+                if nudged is not None:
+                    self.reporter.log(
+                        "seat_adjusted", task_id=task_id, track_id=tid,
+                        detail="assembly slot nudged to feasible point",
+                        original=[round(target[0], 1), round(target[1], 1)],
+                        adjusted=[round(nudged[0], 1), round(nudged[1], 1)])
+                    target = nudged
+                    assignment[tid] = nudged
             goal = GoalRegion(center=target,
                               radius_px=cfg.controller.tolerance_px + 1.0)
+            # 已就位球的位置以 placed（控制器回读的落位点）为准：粘连帧
+            # 会把 tracker 里已就位 track 的位置污染到两球中点，快照里的
+            # ball-N 障碍随之失真并挡住后到球的驻点。过滤掉这些已就位
+            # track 的快照障碍，避免用被污染的位置做碰撞判定。
+            placed_ids = {int(ob.obstacle_id.split("-", 1)[1])
+                          for ob in placed}
+
+            def _filtered_snapshot(_ids=tuple(placed_ids)):
+                s = world.snapshot()
+                if _ids:
+                    s = replace(s, obstacles=[
+                        o for o in s.obstacles
+                        if not (o.obstacle_id or "").startswith("ball-")
+                        or int(o.obstacle_id.split("-", 1)[1]) not in _ids])
+                return s
             # Worlds that render/track a designated target omit that ball from
             # the dynamic-obstacle list.  Rotate the designation for every
             # sequentially controlled ball; otherwise the previously selected
@@ -208,10 +279,11 @@ class AggregationPlanner:
                 self.controller_sink["controller"] = controller
             try:
                 run = controller.run(
-                    world.snapshot(), tid, goal, task_id=f"{task_id}/ball{tid}",
+                    _filtered_snapshot(), tid, goal,
+                    task_id=f"{task_id}/ball{tid}",
                     extra_obstacles=list(placed),
                     get_frame=world.render,
-                    get_snapshot=world.snapshot)
+                    get_snapshot=_filtered_snapshot)
             finally:
                 # Hardware assembly opens a controller per ball so that every
                 # task can select a new track.  Release the USB/serial handle
@@ -252,9 +324,14 @@ class AggregationPlanner:
                                       final_state=result.final_state.value,
                                       metrics=result.to_dict())
                     return result
-                placed.append(Obstacle(kind="circle", center=pos,
-                                       radius=self._ball_radius(snap, tid),
-                                       obstacle_id=f"placed-{tid}"))
+                placed.append(Obstacle(
+                    kind="circle", center=pos,
+                    # 已就位球是静态球，组装语义允许后续球靠近。全膨胀
+                    # （r + spot + safety）对"球-球"接触过度膨胀；只保留
+                    # 2px 信用：转运最近距离 = 2r + slack - 10 ≈ 轮廓刚好
+                    # 分离，既不粘连破坏跟踪，也尽量贴近。
+                    radius=max(0.0, self._ball_radius(snap, tid) - 2.0),
+                    obstacle_id=f"placed-{tid}"))
             else:
                 # 任一球失败 -> 任务中止（安全优先），原因透传
                 result.final_state = run.final_state

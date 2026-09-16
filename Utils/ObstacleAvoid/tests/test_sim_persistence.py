@@ -117,20 +117,25 @@ def test_run_result_survives_restart(qapp, tmp_path):
 
 
 def test_undo_then_restart_object_stays_removed(qapp, tmp_path):
-    """③ 撤销（后画先撤）后重启，被撤销对象不复活。"""
+    """③ 撤销（按当前画框模式）后重启，被撤销对象不复活。
+
+    新需求：撤销只作用于"当前画框模式"对应的对象类型，因此逐类切换到对应
+    模式后分别撤销：目标范围 -> 目标点 -> 障碍 -> 球 -> 衬底。
+    """
     cfg = str(tmp_path / "sim_roi_config.json")
     win = _new_window(qapp, cfg)
     try:
         _draw_layout(win)
-        # 依次撤销：目标范围 -> 目标点 -> 障碍 -> 球 -> 衬底
-        win.on_undo_zone()
-        win.on_undo_zone()
-        win.on_undo_zone()
-        win.on_undo_zone()
+        # 按画框模式逐类撤销（撤销仅生效于当前模式对应的对象）
+        win.mode_combo.setCurrentText("目标范围(组装)"); win.on_undo_zone()
+        win.mode_combo.setCurrentText("目标点(避障)"); win.on_undo_zone()
+        win.mode_combo.setCurrentText("障碍物(obstacle)"); win.on_undo_zone()
+        win.mode_combo.setCurrentText("圆球(mask)"); win.on_undo_zone()
+        win.mode_combo.setCurrentText("衬底(ground)"); win.on_undo_zone()
         assert win._sim_cfg["balls"] == []
         assert win._sim_cfg["obstacles"] == []
-        assert win._sim_cfg["grounds"][0]["goal"] is None
-        assert win._sim_cfg["grounds"][0]["goal_range"] is None
+        assert win._sim_cfg["grounds"] == []
+        assert win._sim_cfg["grounds"][:] == []
     finally:
         win.close()
 
@@ -138,7 +143,7 @@ def test_undo_then_restart_object_stays_removed(qapp, tmp_path):
     try:
         assert win2._sim_cfg["balls"] == []
         assert win2._sim_cfg["obstacles"] == []
-        assert win2._sim_cfg["grounds"][0]["goal"] is None
+        assert win2._sim_cfg["grounds"] == []
     finally:
         win2.close()
 

@@ -217,12 +217,12 @@ def test_ui_live_roi_zones(tmp_path):
     # 自动保存
     assert os.path.isfile(win.SIM_ROI_CONFIG)
 
-    # 撤销（后画先撤：目标点 -> 障碍 -> 球 -> 衬底）
-    win.on_undo_zone()
+    # 撤销（需求：按当前画框模式，仅撤销该类型最新对象）
+    win.mode_combo.setCurrentText("目标点(避障)"); win.on_undo_zone()
     assert win._sim_cfg["grounds"][0]["goal"] is None
-    win.on_undo_zone()
+    win.mode_combo.setCurrentText("障碍物(obstacle)"); win.on_undo_zone()
     assert win._sim_cfg["obstacles"] == []
-    win.on_undo_zone()
+    win.mode_combo.setCurrentText("圆球(mask)"); win.on_undo_zone()
     assert win._sim_cfg["balls"] == []
 
     # ROI 布局注入场景构建：球/衬底映射到样本坐标/可行域

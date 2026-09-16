@@ -404,10 +404,14 @@ class SimMicroscopeWorld:
         for p in particles:
             if p.track_id == self.target_track_id:
                 continue  # 目标球不是障碍
-            obstacles.append(Obstacle(kind="circle",
-                                      center=p.position_px,
-                                      radius=float(p.radius_px),
-                                      obstacle_id=f"ball-{p.track_id}"))
+            # 非目标球（静止/已就位）按"球-球接近"建模：全膨胀会多出
+            # spot+safety，使转运路径贴到两球轮廓重叠（检测粘连、跟踪
+            # 丢 ID）。保留 2px 信用，转运最近距离 ≈ 2r + slack，轮廓
+            # 恰好分离（与 aggregation 的 placed 障碍语义一致）。
+            obstacles.append(Obstacle(
+                kind="circle", center=p.position_px,
+                radius=max(0.0, float(p.radius_px) - 2.0),
+                obstacle_id=f"ball-{p.track_id}"))
         return WorkspaceSnapshot(
             frame_id=self.frame_counter, timestamp=time.time(),
             substrate=self.substrate, obstacles=obstacles,

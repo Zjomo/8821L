@@ -201,7 +201,13 @@ class GridPlanner:
         if reason is not None:
             # 起点（球实测位置）仅因临界膨胀越界时，就近挪到可行点继续规划，
             # 而不是直接 ABORTED；找不到可行点才按原逻辑拒绝。
-            nudged = (self.nearest_feasible(snap, start, extra_obstacles)
+            # 起点微调半径必须覆盖 edge_clearance（衬底边界膨胀）。否则球
+            # 若停在边界内 <膨胀 处（Alg2 被光束捕获的球常停在衬底边缘），
+            # 最近可行点恰在 8px 之外而判 LOW_CLEARENCE 中止
+            # （"start point rejected: low_clearance"）。
+            nudge_r = max(8.0, self.config.edge_clearance)
+            nudged = (self.nearest_feasible(snap, start, extra_obstacles,
+                                            max_r_px=nudge_r, step_px=2.0)
                       if reason is FailureReason.LOW_CLEARANCE else None)
             if nudged is None:
                 return PlanResult(success=False, plan_version=self.version,
@@ -234,6 +240,71 @@ class GridPlanner:
         min_cl = self._min_clearance(pts, snap, extra_obstacles)
         return PlanResult(success=True, waypoints_px=pts, length_px=length,
                           min_clearance_px=min_cl, plan_version=self.version)
+
+    # -------------------------------------------------- collision 体积
+    def contact_penetrations(self, snap: WorkspaceSnapshot, p: Point,
+                             extra_obstacles: Sequence[Obstacle] = ()
+                             ) -> List[Tuple[Obstacle, float]]:
+        """需求(接触体积)：量化运动中球心 p 与各障碍的重叠/侵入深度。
+
+        对每个障碍返回 (ob, penetration_px)。penetration 定义为球心深入障碍
+        表面的距离（`Obstacle.clearance(p)` 的负值，内部为正、外部为负），
+        若 p 未侵入该障碍则返回 0。多个圆球/多边形同时被侵入时一并返回，
+        供上层决定"硬碰撞中止"还是"软接触微调"，防止运动中圆球误触他对象。
+        """
+        out = []
+        for ob in list(snap.obstacles) + list(extra_obstacles):
+            pen = -ob.clearance(p)
+            if pen > 0.0:
+                out.append((ob, pen))
+        return out
+
+    def resolve_contact(self, snap: WorkspaceSnapshot, p: Point, radius_px: float,
+                        extra_obstacles: Sequence[Obstacle] = ()
+                        ) -> Point:
+        """需求(防误触)：若球心已侵入障碍内部，沿最小侵入方向推回表面。
+
+        对每个已侵入障碍计算分离向量（球心→障碍表面方向*侵入深度），取
+        加权和作为矫正位移，返回矫正后的目标点。仅用于"软接触"微调，避免
+        硬 ABORT 时也能消除误触。
+        """
+        ox, oy = float(p[0]), float(p[1])
+        weight = 0.0
+        for ob, pen in self.contact_penetrations(
+                snap, (ox, oy), extra_obstacles):
+            # 侵入方向 = 沿梯度离开障碍内部。用小块采样逼近分离方向，
+            # 对圆球直接用"球心-圆心"；多边形用"球心-最近边界点"。
+            dirx, diry = self._pushout_dir(ob, (ox, oy))
+            # 推到表面再留 1px 间隙（防临界贴边仍判撞）；单次封顶球半径防过冲
+            k = min(pen + 1.0, radius_px)
+            ox += dirx * k
+            oy += diry * k
+            weight += 1.0
+        if weight > 0.0:
+            return (ox, oy)
+        return p
+
+    @staticmethod
+    def _pushout_dir(ob: Obstacle, p: Point) -> Tuple[float, float]:
+        """返回远离障碍表面的单位方向；无法确定时回退 x 正向。"""
+        if ob.kind == "circle" and ob.center is not None:
+            cx, cy = ob.center
+            dx, dy = p[0] - cx, p[1] - cy
+        else:
+            pts = list(ob.polygon or ())
+            if not pts:
+                return (1.0, 0.0)
+            # 球心 -> 多边形最近顶点/边界法向（简化：最近顶点方向）
+            bx, by, best = p[0], p[1], float("inf")
+            for x, y in pts:
+                d = math.dist(p, (x, y))
+                if d < best:
+                    best, bx, by = d, x, y
+            dx, dy = p[0] - bx, p[1] - by
+        n = math.hypot(dx, dy)
+        if n < 1e-9:
+            return (1.0, 0.0)
+        return (dx / n, dy / n)
 
     # -------------------------------------------------- internals
     @staticmethod
