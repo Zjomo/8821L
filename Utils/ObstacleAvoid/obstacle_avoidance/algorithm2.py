@@ -245,6 +245,11 @@ class FixedBeamController:
         self._pause = threading.Event()
         self._last_frame = None
         self._last_plan = None
+        # W1：beam_lock 后钉住的目标球身份。多球场景下若每一帧都按
+        # "谁最靠近光斑"重新解析，邻居球偶发贴近光斑就会静默切换目标
+        # （真球被误判为障碍），造成多球报错。锁定后除非钉住球持续缺失，
+        # 否则不切换目标。
+        self._locked_track_id: Optional[int] = None
 
     @property
     def last_frame(self):
@@ -297,7 +302,8 @@ class FixedBeamController:
         return fb
 
     def _target_particle(self, particles, track_id: int, reference: Point,
-                         preferred: Optional[Point] = None):
+                         preferred: Optional[Point] = None,
+                         pinned: bool = False):
         """Resolve the trapped ball in camera coordinates.
 
         During laser-off alignment the whole sample moves and contour order
@@ -310,6 +316,16 @@ class FixedBeamController:
         if not particles:
             return None
         anchor = preferred if preferred is not None else reference
+        if pinned:
+            # W1：beam_lock 后目标身份已钉住。多球场景下邻居偶发贴近光斑时，
+            # 不得用"谁最靠近光斑"来重新解析，否则会静默切换目标（真球变障碍）。
+            # 只按钉住的 track_id 解析：在帧内命中直接返回（即使邻居更靠光斑）。
+            by_id = next((p for p in particles if p.track_id == track_id), None)
+            if by_id is not None:
+                return by_id
+            # 钉住球本帧未检出 —— 交由调用方用离屏/外推位置续追；这里不回落
+            # 到最近邻，避免邻居伪装成目标。
+            return None
         by_id = next((p for p in particles if p.track_id == track_id), None)
         if by_id is not None and math.dist(by_id.position_px, anchor) <= max(
                 self.config.max_track_jump_px, 3.0 * by_id.radius_px):
@@ -406,6 +422,7 @@ class FixedBeamController:
 
         try:
             aligned = False
+            ball_seen = False        # W1.4：对齐阶段是否至少成功解析到目标球
             align_limit = max(1, int(getattr(
                 cfg, "beam_alignment_max_steps", 80)))
             align_tolerance = float(getattr(
@@ -436,6 +453,7 @@ class FixedBeamController:
                         "element_offscreen", task_id=task_id, stage="alignment",
                         track_id=track_id, role="target_ball",
                         position_px=[round(v, 1) for v in ball.position_px])
+                ball_seen = True
                 track_id = ball.track_id
                 self.stage.track_id = track_id
                 set_target = getattr(self.stage.world, "set_alg2_target", None)
@@ -460,9 +478,20 @@ class FixedBeamController:
                     result.detail = "stage refused beam-alignment command"
                     return result
             if not aligned:
-                result.final_state = RunState.ABORTED
-                result.failure_reason = FailureReason.SPOT_SLIP
-                result.detail = "selected ball could not align to calibrated beam"
+                # W1.4：区分"全程检测不到球"（检测问题）与"球已解析但未对齐"
+                #（光斑/收敛问题），避免误报 SPOT_SLIP 掩盖真正的检测失效。
+                if not ball_seen:
+                    result.final_state = RunState.ABORTED
+                    result.failure_reason = FailureReason.TARGET_LOST
+                    result.detail = ("target ball never resolved during "
+                                     "beam alignment (track {0}); no ball "
+                                     "detected near predicted position".format(track_id))
+                else:
+                    result.final_state = RunState.ABORTED
+                    result.failure_reason = FailureReason.SPOT_SLIP
+                    result.detail = ("selected ball could not align to "
+                                     "calibrated beam within "
+                                     f"{align_limit} alignment steps")
                 return result
 
             self.stage.set_laser_enabled(True)
@@ -477,6 +506,9 @@ class FixedBeamController:
                               track_id=track_id,
                               position_px=list(beam),
                               camera_locked=True)
+            # W1：光斑锁定后钉住目标身份；后续多球判定一律以它为基准，
+            # 避免邻居贴近光斑时静默切换目标。
+            self._locked_track_id = track_id
             self.reporter.log("state_change", task_id=task_id,
                               **{"from": "CALIBRATING", "to": "TRACKING"})
             stable = 0
@@ -502,18 +534,27 @@ class FixedBeamController:
                         return result
                     continue
                 uncertain = 0
+                # W2：每帧记录全部球位置与当前目标，供多球场景复盘诊断。
+                self.reporter.log(
+                    "detection", task_id=task_id, frame_id=current.frame_id,
+                    uncertain=False, reason="",
+                    particles=[p.to_dict() for p in vis.particles],
+                    target_track_id=track_id)
                 ball = self._target_particle(vis.particles, track_id,
-                                             beam, preferred=beam)
+                                             beam, preferred=beam,
+                                             pinned=True)
                 offscreen_ball = False
                 if ball is None:
-                    # 需求2：目标球离开画面范围 -> 用台账/跟踪器外推位置
-                    # 继续定位运动（把球拉回光斑），不再直接 ABORTED。
+                    # 需求2：目标球离开画面范围/单帧未检出 -> 用台账/跟踪器
+                    # 外推位置继续定位运动（把球拉回光斑），不切目标、不直接
+                    # ABORTED。
                     ball = self._offscreen_particle(vis.particles, track_id,
                                                     beam)
                     if ball is None:
                         result.final_state = RunState.ABORTED
                         result.failure_reason = FailureReason.TARGET_LOST
-                        result.detail = "selected ball lost after laser capture"
+                        result.detail = ("selected ball lost after laser capture "
+                                         f"(track {track_id})")
                         return result
                     offscreen_ball = True
                     self.reporter.log(
