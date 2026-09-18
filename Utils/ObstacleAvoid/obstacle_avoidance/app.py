@@ -3865,11 +3865,23 @@ class MainWindow(QtWidgets.QMainWindow):
         self._zone_ref_shift[str(name)] = self._live_sample_shift()
 
     def _zone_draw_offset(self, name: str) -> tuple:
-        """区域框相对画框时刻的实测位移增量（无实测/无参考时为 0）。"""
+        """返回区域框相对其参考时刻的样品位移增量。
+
+        区域通常是在启动实时识别前绘制的，此时还没有
+        ``registration_shift_px``，参考值会被记录为 ``None``。这并不表示
+        该区域不需要跟随样品，而是表示它以识别器启动时的零位为基准；
+        一旦有有效配准结果，应直接应用累计位移。对于从旧配置载入、且
+        从未记录参考的区域（名称不在字典中），仍保持静止，避免误移动。
+        """
         current = self._live_sample_shift()
-        reference = self._zone_ref_shift.get(str(name))
-        if current is None or reference is None:
+        key = str(name)
+        if key not in self._zone_ref_shift or current is None:
             return (0.0, 0.0)
+        reference = self._zone_ref_shift[key]
+        # 画框时尚未有检测结果：识别器的累计位移从零开始，直接使用
+        # 当前累计值即可让衬底/障碍框与真实样品同步。
+        if reference is None:
+            return current
         return (current[0] - reference[0], current[1] - reference[1])
 
     @Slot(str)

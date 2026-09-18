@@ -163,6 +163,13 @@ class TestZoneSampleTracking:
         win._auto_result = self._result((50.0, 0.0))
         assert win._zone_draw_offset("obstacle_9") == (0.0, 0.0)
 
+    def test_zone_drawn_before_detection_uses_detection_zero(self, win):
+        """识别启动前画框：首个有效累计位移应直接用于同步。"""
+        win._auto_result = None
+        win._mark_zone_reference("substrate_1")
+        win._auto_result = self._result((12.0, -4.0))
+        assert win._zone_draw_offset("substrate_1") == (12.0, -4.0)
+
 
 # ================================================================
 # 3. 画框闸门
