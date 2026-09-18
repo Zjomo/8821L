@@ -20,7 +20,7 @@ from typing import Dict, List, Optional, Tuple
 from .models import StageCommand
 from .motion import (AxisMotionConfig, MotionConfig, MotionTelemetry,
                       VirtualXYZStage, default_motion_config)
-from .simulator import StageError
+from .simulator import StageError, StageStepLimitError
 from .simulator import XYStageProtocol  # noqa: F401  (再导出便于驱动接入)
 
 
@@ -76,7 +76,7 @@ class SerialXYStage(XYStageProtocol):
         dx_mm *= self.axes_sign[0]
         dy_mm *= self.axes_sign[1]
         if (dx_mm ** 2 + dy_mm ** 2) ** 0.5 > self.max_step_mm + 1e-9:
-            raise StageError(
+            raise StageStepLimitError(
                 f"step {math.hypot(dx_mm, dy_mm):.3f}mm > "
                 f"max_step_mm={self.max_step_mm}")
         nx = self.position_mm[0] + dx_mm
@@ -323,7 +323,7 @@ class PicoMotorStage(XYStageProtocol):
         dx_mm *= self.axes_sign[0]
         dy_mm *= self.axes_sign[1]
         if math.hypot(dx_mm, dy_mm) > self.max_step_mm + 1e-9:
-            raise StageError(
+            raise StageStepLimitError(
                 f"step {math.hypot(dx_mm, dy_mm):.3f}mm > "
                 f"max_step_mm={self.max_step_mm}")
         nx = self.position_mm[0] + dx_mm
@@ -839,7 +839,7 @@ class KinesisKIM101Stage(XYStageProtocol):
                 track_id: int = -1, waypoint_index: int = -1,
                 frame_id: int = -1, plan_version: int = -1) -> bool:
         if math.hypot(dx_mm, dy_mm) > self.max_step_mm + 1e-9:
-            raise StageError(f"step {math.hypot(dx_mm, dy_mm):.3f}mm > "
+            raise StageStepLimitError(f"step {math.hypot(dx_mm, dy_mm):.3f}mm > "
                              f"max_step_mm={self.max_step_mm}")
         sx = int(round(float(dx_mm) * self.steps_per_mm_by_axis["x"]))
         sy = int(round(float(dy_mm) * self.steps_per_mm_by_axis["y"]))

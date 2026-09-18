@@ -233,3 +233,21 @@ def test_alg2_every_command_respects_max_step_mm():
             f"单步位移超限: {worst:.6f}mm > {cfg.max_step_mm}mm")
     finally:
         world.close()
+
+
+def test_alg2_measured_gain_is_limited_in_physical_units():
+    """标定增益较低时，像素步长仍不得换算成超限 mm。"""
+    world, _ = build_sim_scenario(static_obstacles=[])
+    try:
+        world.alg2_mode = True
+        stage = Alg2Stage(
+            world, config=Alg2Config(image_shift_sign=-1),
+            xy_stage=world.make_alg2_stage())
+        stage._xy.max_step_mm = 0.2
+        stage.set_shift_gain((-55.113, None))
+        stage.shift_workspace_by(-19.9, 2.0, 100.0)
+        command = stage._xy.last_command
+        assert command is not None
+        assert (command.dx_mm ** 2 + command.dy_mm ** 2) ** 0.5 <= 0.2 + 1e-9
+    finally:
+        world.close()

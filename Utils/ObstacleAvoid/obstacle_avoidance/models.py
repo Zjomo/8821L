@@ -28,6 +28,7 @@ class FailureReason(str, Enum):
     NO_SAFE_PATH = "no_safe_path"            # 无可行路径
     DETECTION_UNCERTAIN = "detection_uncertain"
     COMM_TIMEOUT = "comm_timeout"
+    STAGE_STEP_LIMIT = "stage_step_limit"
     ESTOP = "estop"
     PAUSED = "paused"
     MAX_STEPS = "max_steps_exceeded"

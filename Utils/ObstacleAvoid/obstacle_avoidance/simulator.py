@@ -22,6 +22,10 @@ class StageError(RuntimeError):
     """通信/驱动故障（HW-02）。"""
 
 
+class StageStepLimitError(StageError):
+    """单步位移超过驱动安全限值。"""
+
+
 class XYStageProtocol:
     """位移台最小接口；真实驱动实现同签名即可接入。"""
 

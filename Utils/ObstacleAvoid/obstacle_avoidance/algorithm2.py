@@ -16,7 +16,7 @@ from typing import Callable, Optional, Sequence
 from .models import (FailureReason, GoalRegion, Obstacle, Particle, Point,
                      RunState, StageCommand, TargetLock, TargetSelection,
                      WorkspaceSnapshot)
-from .simulator import StageError, XYStageProtocol
+from .simulator import StageError, StageStepLimitError, XYStageProtocol
 
 
 @dataclass(frozen=True)
@@ -134,8 +134,44 @@ class Alg2Stage(XYStageProtocol):
         self.workspace_shift_px: Point = tuple(
             getattr(world, "workspace_shift_px", (0.0, 0.0)))
         self.fixed_beam_mode = True
-        # 实测增益 (px/mm, px/mm)；None 项表示该轴退回 image_shift_sign*px_per_mm
+        # 实测增益 (px/mm, px/mm)；pixel_per_step 同步由驱动步进参数派生。
+        # None 项表示该轴退回 image_shift_sign*px_per_mm。
         self.shift_gain: tuple[Optional[float], Optional[float]] = (None, None)
+
+    def _image_gain(self, px_per_mm: float) -> tuple[float, float]:
+        """Return current measured image gain for X/Y (pixels per mm)."""
+        sign = int(self.config.image_shift_sign)
+        if sign not in (-1, 1):
+            raise StageError("Alg2 image_shift_sign must be +1 or -1")
+        fallback = sign * float(px_per_mm)
+        return tuple(float(g) if g is not None else fallback
+                     for g in self.shift_gain)
+
+    @property
+    def pixel_per_step(self) -> tuple[Optional[float], Optional[float]]:
+        """Calibrated image displacement represented by one motor step."""
+        steps = getattr(self._xy, "steps_per_mm_by_axis", None)
+        if not isinstance(steps, dict):
+            return (None, None)
+        out = []
+        for axis, gain in zip(("x", "y"), self.shift_gain):
+            spm = float(steps.get(axis, 0.0) or 0.0)
+            out.append(None if gain is None or spm <= 0.0
+                       else float(gain) / spm)
+        return tuple(out)
+
+    def limit_image_shift(self, shift: Point, px_per_mm: float,
+                          max_step_mm: float) -> Point:
+        """Limit an image displacement using measured physical-axis gains."""
+        gx, gy = self._image_gain(px_per_mm)
+        raw_x, raw_y = float(shift[0]) / gx, float(shift[1]) / gy
+        distance = math.hypot(raw_x, raw_y)
+        limit = float(max_step_mm)
+        if limit > 0.0 and distance > limit:
+            scale = limit / distance
+            raw_x *= scale
+            raw_y *= scale
+        return (raw_x * gx, raw_y * gy)
 
     @classmethod
     def from_particle(cls, world, particle: Particle, config: Optional[Alg2Config] = None) -> 'Alg2Stage':
@@ -200,17 +236,24 @@ class Alg2Stage(XYStageProtocol):
         """Move all sample-bound objects by the requested image displacement."""
 
         sign = int(self.config.image_shift_sign)
-        if sign not in (-1, 1):
-            raise StageError("Alg2 image_shift_sign must be +1 or -1")
-        raw: list[float] = []
+        gx, gy = self._image_gain(px_per_mm)
+        raw_x, raw_y = float(dx_px) / gx, float(dy_px) / gy
+        max_step = getattr(self._xy, "max_step_mm", None)
+        distance = math.hypot(raw_x, raw_y)
+        if max_step is not None and float(max_step) > 0.0 and distance > float(max_step):
+            scale = float(max_step) / distance
+            raw_x *= scale
+            raw_y *= scale
+        raw: list[float] = [raw_x, raw_y]
         for value, gain in zip((dx_px, dy_px), self.shift_gain):
             # 实测增益优先：现场 image_shift_sign 配反会让球越走越远
             # （对准永远到不了位、电机一路朝同一方向走）。
             raw.append(float(value) / (gain if gain else sign * float(px_per_mm)))
+        raw = raw[:2]
         ok = self._xy.move_by(raw[0], raw[1], **kwargs)
         if ok:
             self._record_command(raw[0], raw[1], kwargs)
-            self.note_image_shift(dx_px, dy_px)
+            self.note_image_shift(raw[0] * gx, raw[1] * gy)
         return bool(ok)
 
     def sample_move_mm(self, dx_mm: float, dy_mm: float, **kwargs) -> bool:
@@ -595,6 +638,8 @@ class FixedBeamController:
                 probe_mm=float(getattr(self.stage.config, "shift_probe_mm", 0.0)),
                 gain_px_per_mm=[None if g is None else round(float(g), 3)
                                 for g in gains],
+                pixel_per_step=[None if g is None else round(float(g), 6)
+                                for g in self.stage.pixel_per_step],
                 source="probe" if any(g is not None for g in gains)
                 else "configured")
             align_limit = max(1, int(getattr(
@@ -672,8 +717,9 @@ class FixedBeamController:
                 length = math.hypot(*vector)
                 if length <= 1e-9:
                     continue
-                max_px = cfg.max_step_mm * current.transform.px_per_mm
-                step_px = min(length, max_px)
+                limited = self.stage.limit_image_shift(
+                    vector, current.transform.px_per_mm, cfg.max_step_mm)
+                step_px = min(length, math.hypot(*limited))
                 shift = (vector[0] * step_px / length,
                          vector[1] * step_px / length)
                 if not self._move_workspace(
@@ -811,8 +857,10 @@ class FixedBeamController:
                         result.detail = ("offscreen target not recovered "
                                          f"(moves={offscreen_moves})")
                         return result
-                    max_px = cfg.max_step_mm * current.transform.px_per_mm
-                    scale = min(1.0, max_px / max(slip, 1e-9))
+                    limited = self.stage.limit_image_shift(
+                        (-offset[0], -offset[1]), current.transform.px_per_mm,
+                        cfg.max_step_mm)
+                    scale = min(1.0, math.hypot(*limited) / max(slip, 1e-9))
                     # 未捕获的球随样品一起漂移（与对准阶段同一物理），要让球心
                     # 回到光斑就必须按 beam - ball = -offset 让图像位移；用
                     # +offset 会把球越推越远，电机一路同向走到 SPOT_SLIP。
@@ -847,8 +895,10 @@ class FixedBeamController:
                         offset_px=[round(offset[0], 1), round(offset[1], 1)],
                         radius_px=round(float(ball.radius_px), 1),
                         attempt=recapture)
-                    max_px = cfg.max_step_mm * current.transform.px_per_mm
-                    scale = min(1.0, max_px / max(slip, 1e-9))
+                    limited = self.stage.limit_image_shift(
+                        (-offset[0], -offset[1]), current.transform.px_per_mm,
+                        cfg.max_step_mm)
+                    scale = min(1.0, math.hypot(*limited) / max(slip, 1e-9))
                     # 光斑脱靶 = 球没被抓住，此刻球随样品漂移；要让球心回到
                     # 光斑中心必须按 beam - ball = -offset 让图像位移（与对准
                     # 阶段同向），用 +offset 会越修越偏。
@@ -951,8 +1001,9 @@ class FixedBeamController:
                      if math.dist(p, ref) > 1e-6), moving_goal)
                 vector = (waypoint[0] - ref[0], waypoint[1] - ref[1])
                 length = math.hypot(*vector)
-                step_px = min(length,
-                              cfg.max_step_mm * current.transform.px_per_mm)
+                limited = self.stage.limit_image_shift(
+                    vector, current.transform.px_per_mm, cfg.max_step_mm)
+                step_px = min(length, math.hypot(*limited))
                 world_shift = (-vector[0] * step_px / length,
                                -vector[1] * step_px / length)
                 if not self._move_workspace(
@@ -968,6 +1019,11 @@ class FixedBeamController:
             result.final_state = RunState.FAULT
             result.failure_reason = FailureReason.MAX_STEPS
             result.detail = f"max_iterations={cfg.max_iterations} reached"
+            return result
+        except StageStepLimitError as exc:
+            result.final_state = RunState.FAULT
+            result.failure_reason = FailureReason.STAGE_STEP_LIMIT
+            result.detail = str(exc)
             return result
         except (StageError, TimeoutError, OSError, ConnectionError) as exc:
             result.final_state = RunState.FAULT

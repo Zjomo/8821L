@@ -21,7 +21,7 @@ from .models import (FailureReason, GoalRegion, Obstacle, Point, RunState,
                      TargetSelection, WorkspaceSnapshot, now)
 from .planner import CollisionModel, GridPlanner, PlanResult
 from .reporter import RunReporter
-from .simulator import StageError, XYStageProtocol
+from .simulator import StageError, StageStepLimitError, XYStageProtocol
 from .vision import VisionPipeline
 
 
@@ -570,6 +570,15 @@ class ObstacleAvoidController:
             try:
                 ok = self._stage_move(dx_mm, dy_mm, task_id, track_id,
                                       wp_index, snap.frame_id, plan.plan_version)
+            except StageStepLimitError as exc:
+                result.final_state = RunState.FAULT
+                result.failure_reason = FailureReason.STAGE_STEP_LIMIT
+                result.detail = str(exc)
+                self.reporter.log("error", task_id=task_id, reason=result.detail)
+                self._set_state(RunState.FAULT, task_id)
+                self.reporter.log("run_end", final_state="FAULT",
+                                  metrics=result.to_dict())
+                return result
             except (StageError, TimeoutError, OSError, ConnectionError) as exc:
                 # 通信超时/驱动故障 -> FAULT，后续不再发命令（HW-02）
                 result.final_state = RunState.FAULT
