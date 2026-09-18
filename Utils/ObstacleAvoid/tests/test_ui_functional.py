@@ -138,6 +138,33 @@ class TestModeSwitch:
 
 
 # ================================================================
+# 2.5 区域框随样品实测位移同步（衬底/障碍框不脱离真实衬底）
+# ================================================================
+class TestZoneSampleTracking:
+    @staticmethod
+    def _result(shift):
+        from types import SimpleNamespace
+        return SimpleNamespace(registration_shift_px=shift,
+                               registration_confidence=1.0)
+
+    def test_zone_offset_follows_measured_shift(self, win):
+        win._auto_result = self._result((20.0, -5.0))
+        win._mark_zone_reference("substrate_1")
+        win._auto_result = self._result((32.0, -9.0))
+        assert win._zone_draw_offset("substrate_1") == (12.0, -4.0)
+
+    def test_zone_offset_zero_without_measurement_or_reference(self, win):
+        win._auto_result = self._result((20.0, -5.0))
+        win._mark_zone_reference("substrate_1")
+        # 识别关闭/低置信度：框不动
+        win._auto_result = None
+        assert win._zone_draw_offset("substrate_1") == (0.0, 0.0)
+        # 未记录画框参考（旧配置）的框不动
+        win._auto_result = self._result((50.0, 0.0))
+        assert win._zone_draw_offset("obstacle_9") == (0.0, 0.0)
+
+
+# ================================================================
 # 3. 画框闸门
 # ================================================================
 class TestDrawGate:

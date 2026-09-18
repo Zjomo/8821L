@@ -45,9 +45,13 @@ class AutoRecognitionConfig:
     ball_exclusion_scale: float = 1.35
     px_per_mm: float = 100.0
     minimum_overall_confidence: float = 0.35
-    # Kept enabled for backwards-compatible offline analysis; Alg2 UI passes
-    # ``auto_substrate=False`` and supplies the manual ROI instead.
+    # 衬底一律手动框定：UI/运行链路（.app / video_sim）恒传 False 并提供
+    # 手动多边形（『衬底区域』或 ROI 内缩）；此项 True 仅保留给离线视频
+    # 分析（analyze_video）使用。
     auto_substrate: bool = True
+    # 障碍同理：一律由『障碍区』手动标注提供，UI/运行链路恒传 False 不做
+    # 障碍候选自动识别；True 仅保留给离线视频分析（analyze_video）使用。
+    auto_obstacles: bool = True
 
 
 @dataclass
@@ -174,35 +178,85 @@ class GlobalMotionEstimator:
     def __init__(self, analysis_width: int = 480) -> None:
         self.analysis_width = analysis_width
         self._previous: Optional[np.ndarray] = None
+        self._previous_exclusion: Optional[np.ndarray] = None
         self._cumulative = np.zeros(2, dtype=np.float64)
         self.last_instant_shift: Point = (0.0, 0.0)
         self.last_method = "phase"
 
     def reset(self) -> None:
         self._previous = None
+        self._previous_exclusion = None
         self._cumulative[:] = 0.0
         self.last_instant_shift = (0.0, 0.0)
         self.last_method = "phase"
 
-    def update(self, frame: np.ndarray) -> Tuple[Point, float]:
+    @property
+    def cumulative(self) -> Point:
+        """累计（绝对）图像位移，用于把"当前帧"的标注折算回参考帧。"""
+        return (float(self._cumulative[0]), float(self._cumulative[1]))
+
+    def _mask_moving_objects(self, frame: np.ndarray, exclusion) -> np.ndarray:
+        """把运动物体（球/光斑）区域替换成模糊背景，避免配准被它们带偏。
+
+        光镊控制下球与光斑相对样品运动，相位相关会锁到球上，让衬底框
+        "跟着球跑"；抹掉这些区域后估计值才反映样品（衬底）的真实位移。
+        """
+        if exclusion is None:
+            return np.zeros(frame.shape[:2], np.uint8)
+        mask = np.asarray(exclusion)
+        if mask.shape[:2] != frame.shape[:2]:
+            mask = cv2.resize(mask, (frame.shape[1], frame.shape[0]),
+                              interpolation=cv2.INTER_NEAREST)
+        return np.where(mask > 0, 255, 0).astype(np.uint8)
+
+    @staticmethod
+    def _suppress(frame: np.ndarray, mask: np.ndarray) -> np.ndarray:
+        """羽化抹除运动物体区域。
+
+        硬边替换会在掩膜边缘留下"跟着物体走的强边"，相位相关反而更死锁
+        到物体上；这里用大核模糊填充 + 羽化 alpha，让残差只剩低频。
+        """
+        if mask is None or not mask.any():
+            return frame
+        blurred = cv2.GaussianBlur(frame, (0, 0), 12.0)
+        alpha = cv2.GaussianBlur(mask.astype(np.float32), (0, 0), 3.0)
+        alpha = np.clip(alpha / 255.0, 0.0, 1.0)
+        if frame.ndim == 3:
+            alpha = alpha[:, :, None]
+        return (frame * (1.0 - alpha) + blurred * alpha).astype(np.float32)
+
+    def update(self, frame: np.ndarray,
+               exclusion=None) -> Tuple[Point, float]:
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         scale = min(1.0, self.analysis_width / max(1, gray.shape[1]))
         small = cv2.resize(gray, None, fx=scale, fy=scale,
                            interpolation=cv2.INTER_AREA).astype(np.float32)
         small = cv2.GaussianBlur(small, (0, 0), 1.2)
+        mask = self._mask_moving_objects(frame, exclusion)
+        if mask.any():
+            mask = cv2.resize(mask, (small.shape[1], small.shape[0]),
+                              interpolation=cv2.INTER_NEAREST)
         if self._previous is None:
             self._previous = small
+            self._previous_exclusion = mask
             self.last_instant_shift = (0.0, 0.0)
             return (0.0, 0.0), 1.0
         if small.shape != self._previous.shape:
             self._previous = small
+            self._previous_exclusion = mask
             self._cumulative[:] = 0.0
             return (0.0, 0.0), 0.0
         window = cv2.createHanningWindow(
             (small.shape[1], small.shape[0]), cv2.CV_32F)
         previous = self._previous
-        shift, response = cv2.phaseCorrelate(previous, small, window)
+        previous_mask = self._previous_exclusion
+        if previous_mask is not None and previous_mask.any():
+            mask = cv2.bitwise_or(mask, previous_mask)
+        previous = self._suppress(previous, mask)
+        small_corr = self._suppress(small, mask)
+        shift, response = cv2.phaseCorrelate(previous, small_corr, window)
         self._previous = small
+        self._previous_exclusion = mask.copy() if mask.any() else mask
         dx, dy = float(shift[0] / scale), float(shift[1] / scale)
         self.last_instant_shift = (dx, dy)
         self.last_method = "phase"
@@ -215,7 +269,7 @@ class GlobalMotionEstimator:
             warp = np.eye(2, 3, dtype=np.float32)
             try:
                 ecc, warp = cv2.findTransformECC(
-                    previous, small, warp, cv2.MOTION_TRANSLATION,
+                    previous, small_corr, warp, cv2.MOTION_TRANSLATION,
                     (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 30, 1e-4),
                     None, 1)
                 ex, ey = float(warp[0, 2] / scale), float(warp[1, 2] / scale)
@@ -653,10 +707,24 @@ class Alg2AutoRecognizer:
         self._last_substrate_refresh = -1
         self._previous_track_ids = set()
 
+    def set_manual_substrate(self, polygon: Optional[Sequence[Point]]) -> None:
+        """换用新的手动『衬底区域』多边形（UI 画框后调用）。
+
+        多边形画在"当前帧"上，而衬底框是"参考帧多边形 + 累计实测位移"，
+        因此这里按当前累计位移反算回参考帧，保证下一帧框就落在用户画的
+        位置上（而不是带着画框前累计的位移整体偏移）。
+        """
+        polygon = [(float(x), float(y)) for x, y in (polygon or [])]
+        if polygon:
+            shift = self.motion.cumulative
+            polygon = [(x - shift[0], y - shift[1]) for x, y in polygon]
+        self.manual_substrate_polygon = polygon
+        self.substrate = SubstrateSegmenter(self.config)
+        self._last_substrate_refresh = -1
+
     def process(self, frame: np.ndarray, frame_id: int,
                 timestamp_s: float = 0.0) -> AutoRecognitionResult:
         clean_frame, overlay_mask = suppress_ui_overlays(frame)
-        shift, registration_confidence = self.motion.update(clean_frame)
         detections, _ambiguous = self.particle_detector.detect_particles(clean_frame)
         particles = self.tracker.update(detections, frame_id)
         beam_center, beam_confidence, beam_mask = self.beam.detect(
@@ -666,6 +734,9 @@ class Alg2AutoRecognizer:
             cv2.circle(exclusion,
                        tuple(round(v) for v in particle.position_px),
                        max(2, round(particle.radius_px * 1.2)), 255, -1)
+        # 配准必须在球/光斑解析之后：抹掉这些运动物体后再估计样品位移，
+        # 否则相位相关锁到球上，手动衬底框会"跟着圆球跑"（与真实衬底脱开）。
+        shift, registration_confidence = self.motion.update(clean_frame, exclusion)
         tracking_reason = ""
         if not self.config.auto_substrate:
             polygon_seed = self.manual_substrate_polygon or [
@@ -724,16 +795,18 @@ class Alg2AutoRecognizer:
                 inside.append(bool(distance[y, x] >= particle.radius_px * 0.65))
             else:
                 inside.append(False)
-        if self._reference_candidates is None:
-            self._reference_candidates = self.forbidden.detect(
-                clean_frame, substrate_mask, particles, beam_mask)
-        candidates = [RegionCandidate(
-            kind=candidate.kind,
-            polygon=[(x + shift[0], y + shift[1])
-                     for x, y in candidate.polygon],
-            confidence=candidate.confidence * max(0.4, registration_confidence),
-            area_px2=candidate.area_px2)
-            for candidate in self._reference_candidates]
+        candidates: List[RegionCandidate] = []
+        if self.config.auto_obstacles:
+            if self._reference_candidates is None:
+                self._reference_candidates = self.forbidden.detect(
+                    clean_frame, substrate_mask, particles, beam_mask)
+            candidates = [RegionCandidate(
+                kind=candidate.kind,
+                polygon=[(x + shift[0], y + shift[1])
+                         for x, y in candidate.polygon],
+                confidence=candidate.confidence * max(0.4, registration_confidence),
+                area_px2=candidate.area_px2)
+                for candidate in self._reference_candidates]
         fresh = [p for p in particles if p.frame_id == frame_id]
         current_ids = {p.track_id for p in fresh}
         track_events = ([f"track_acquired:{tid}" for tid in

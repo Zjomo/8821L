@@ -1086,11 +1086,20 @@ class AutoRecognizeThread(QtCore.QThread):
         self._running = True
         self._frame_id = 0
         self._manual_substrate_polygon = manual_substrate_polygon
+        self._substrate_dirty = False
 
     def submit(self, frame: np.ndarray) -> None:
         with self._lock:
             self._frame = frame.copy()
             self._has_new = True
+
+    def set_manual_substrate(self, polygon) -> None:
+        """『衬底区域』画框/撤销后换用手动多边形（下一帧生效）。"""
+        with self._lock:
+            self._manual_substrate_polygon = (
+                [(float(x), float(y)) for x, y in polygon]
+                if polygon else None)
+            self._substrate_dirty = True
 
     def stop(self) -> None:
         self._running = False
@@ -1112,7 +1121,9 @@ class AutoRecognizeThread(QtCore.QThread):
                 manual_substrate_polygon=self._manual_substrate_polygon,
                 config=AutoRecognitionConfig(
                     minimum_overall_confidence=self._min_confidence,
-                    auto_substrate=False))
+                    # 衬底/障碍一律手动框定（『衬底区域』/『障碍区』）
+                    auto_substrate=False,
+                    auto_obstacles=False))
         except Exception as exc:  # noqa: BLE001
             self.recognition_failed.emit(str(exc))
             return
@@ -1120,6 +1131,13 @@ class AutoRecognizeThread(QtCore.QThread):
             with self._lock:
                 frame, new = self._frame, self._has_new
                 self._has_new = False
+                polygon = self._manual_substrate_polygon
+                dirty = self._substrate_dirty
+                self._substrate_dirty = False
+            if dirty:
+                # 画框即"当前帧"的衬底：让识别器把位移参考挪到此刻，否则
+                # 衬底框会带着画框前累计的位移整体偏移。
+                recognizer.set_manual_substrate(polygon)
             if not new:
                 self.msleep(15)
                 continue
@@ -2167,12 +2185,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.auto_recognition_box = QtWidgets.QGroupBox("Alg2 自动识别")
         auto_layout = QtWidgets.QVBoxLayout(self.auto_recognition_box)
         self.substrate_mode_label = QtWidgets.QLabel(
-            "衬底：用『衬底区域』手动框定（长方形/Free，优先于自动识别），"
-            "未标注时用 ROI 内缩")
+            "衬底：仅由『衬底区域』手动框定（长方形/Free），未标注时用 ROI 内缩；"
+            "障碍：仅由『障碍区』手动框定")
         self.substrate_mode_label.setStyleSheet("color:#555;")
         auto_layout.addWidget(self.substrate_mode_label)
-        self.auto_recognition_chk = QtWidgets.QCheckBox(
-            "自动识别圆球 / 衬底 / 光斑 / 障碍候选")
+        self.auto_recognition_chk = QtWidgets.QCheckBox("自动识别圆球 / 光斑")
         self.auto_recognition_chk.setToolTip(
             "选择 Alg2 后默认启用；点击“开始实时检测”处理相机或屏幕帧。")
         self.auto_recognition_chk.toggled.connect(
@@ -2275,7 +2292,7 @@ class MainWindow(QtWidgets.QMainWindow):
         row4.addWidget(QtWidgets.QLabel("边界间隙(px)"))
         self.edge_spin = QtWidgets.QSpinBox()
         self.edge_spin.setRange(1, 200)
-        self.edge_spin.setValue(39)
+        self.edge_spin.setValue(1)
         self.edge_spin.setToolTip(
             "球心距视野边界的最小允许间隙(实际下限4px)；障碍碰撞不受影响。"
             "调小可让贴边球作为起点，红带随之变窄。")
@@ -2495,6 +2512,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self._auto_confirmed_result = None
         self._auto_good_streak = 0
         self._auto_recognition_confirmed = False
+        # 区域框是"样品绑定"的：记录画框时刻的实测位移，运行/移动期间按
+        # 实测位移增量平移，框才不会脱离真实衬底/障碍
+        self._zone_ref_shift: dict = {}
         self._run_plan_pts: list = []   # 电机模式运行期最新规划路径（实时叠加）
         self._beam_calibrated = False
         self._beam_calibration_armed = False
@@ -2959,12 +2979,15 @@ class MainWindow(QtWidgets.QMainWindow):
             colors = {"goal": (0, 180, 0), "obstacle": (0, 0, 180),
                       "free": (180, 120, 0), "substrate": (255, 0, 255)}
             for z in cfg.zones:
-                x, y, w, h = (int(z.rect[0] - ox), int(z.rect[1] - oy),
+                # 区域框随样品同步：按实测图像位移增量平移（ROI 框不参与）
+                sx, sy = self._zone_draw_offset(z.name)
+                x, y, w, h = (int(z.rect[0] - ox + sx),
+                              int(z.rect[1] - oy + sy),
                               int(z.rect[2]), int(z.rect[3]))
                 c = colors[z.kind]
                 if z.shape == "free" and z.points:
                     # 自由多边形：实心/警戒环/轮廓均按顶点绘制
-                    poly = [(int(px - ox), int(py - oy))
+                    poly = [(int(px - ox + sx), int(py - oy + sy))
                             for px, py in z.points]
                     pts = np.array(poly, np.int32).reshape(-1, 1, 2)
                     if z.kind == "obstacle":
@@ -3309,9 +3332,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 lines.append(
                     f"AUTO    beam     pos=({bx:.0f},{by:.0f}) "
                     f"conf={result.beam_confidence:.2f}")
-            lines.append(
-                f"AUTO    forbidden candidates={len(result.candidates)} "
-                f"overall={result.overall_confidence:.2f}")
+            lines.append(f"AUTO    overall={result.overall_confidence:.2f}")
         self.props_out.setPlainText("\n".join(lines) or "(无对象)")
 
     @Slot(int, int)
@@ -3786,6 +3807,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def _reset_auto_recognition(self, message: str) -> None:
         self._auto_result = None
+        # 识别器重开后累计位移从 0 重新计，旧的画框参考位移作废
+        self._zone_ref_shift.clear()
         self._auto_confirmed_result = None
         self._selected_auto_track_id = None
         self._auto_good_streak = 0
@@ -3812,10 +3835,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.auto_confirm_btn.setEnabled(self._auto_good_streak >= 3)
         inside = sum(result.particles_inside_substrate)
         total = len(result.particles)
-        candidate_count = len(result.candidates)
         if acceptable:
             message = (f"识别稳定 {self._auto_good_streak}/3 | 球 {total} "
-                       f"(衬底内 {inside}) | 障碍候选 {candidate_count} | "
+                       f"(衬底内 {inside}) | "
                        f"置信度 {result.overall_confidence:.2f}")
             color = "#087f23" if self._auto_good_streak >= 3 else "#b36b00"
         else:
@@ -3826,6 +3848,29 @@ class MainWindow(QtWidgets.QMainWindow):
         self.auto_status_label.setText(message)
         self.auto_status_label.setStyleSheet(f"color:{color};")
         self._update_props_panel()
+
+    def _live_sample_shift(self):
+        """实时识别实测的样品图像位移 (px)；无有效实测时返回 None。"""
+        result = self._auto_result
+        if result is None:
+            return None
+        shift = getattr(result, "registration_shift_px", None)
+        if shift is None or float(getattr(result, "registration_confidence",
+                                          0.0)) <= 0.0:
+            return None
+        return (float(shift[0]), float(shift[1]))
+
+    def _mark_zone_reference(self, name: str) -> None:
+        """记录区域框的画框时刻位移：之后按增量平移框。"""
+        self._zone_ref_shift[str(name)] = self._live_sample_shift()
+
+    def _zone_draw_offset(self, name: str) -> tuple:
+        """区域框相对画框时刻的实测位移增量（无实测/无参考时为 0）。"""
+        current = self._live_sample_shift()
+        reference = self._zone_ref_shift.get(str(name))
+        if current is None or reference is None:
+            return (0.0, 0.0)
+        return (current[0] - reference[0], current[1] - reference[1])
 
     @Slot(str)
     def _on_auto_recognition_failed(self, message: str) -> None:
@@ -3848,7 +3893,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self._simlog(
             f"Alg2 自动识别已确认: frame={self._auto_result.frame_id} "
             f"球={len(self._auto_result.particles)} "
-            f"障碍候选={len(self._auto_result.candidates)} "
             f"confidence={self._auto_result.overall_confidence:.3f}")
 
     def _apply_draw_shape(self, x: int, y: int, w: int, h: int):
@@ -4001,6 +4045,7 @@ class MainWindow(QtWidgets.QMainWindow):
         except ValueError:
             zones.pop()
             raise
+        self._mark_zone_reference(name)
         return name
 
     def _substrate_window_polygon(self):
@@ -4013,10 +4058,20 @@ class MainWindow(QtWidgets.QMainWindow):
         return [(px - ox, py - oy) for px, py in zone.polygon()]
 
     def _sync_substrate_zone(self) -> None:
-        """把『衬底区域』标注同步到实时世界（手动标注优先于自动识别衬底）。"""
+        """把『衬底区域』标注同步到实时世界与识别线程（手动标注优先）。"""
+        polygon = self._substrate_window_polygon()
         setter = getattr(self._live_world, "set_substrate_polygon", None)
         if callable(setter):
-            setter(self._substrate_window_polygon())
+            setter(polygon)
+        # 识别线程持有的是构造时的多边形；画框后必须换掉，否则衬底框仍是
+        # 旧多边形（或 ROI 兜底矩形），看起来就像"衬底框跟真实衬底脱开"。
+        updater = getattr(self._auto_detect, "set_manual_substrate", None)
+        if callable(updater):
+            zone = (self._roi_cfg.substrate_zone()
+                    if self._roi_cfg is not None else None)
+            if zone is not None:
+                self._mark_zone_reference(zone.name)
+            updater(self._substrate_window_polygon())
 
     def _config_frame_size(self):
         """ROI 几何校验用的全画幅尺寸：电机=相机帧，虚拟=视频帧。"""
@@ -4032,7 +4087,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._roi_cfg = RoiConfig(roi=tuple(rect), video="camera",
                                   px_per_mm=old.px_per_mm if old else 100.0,
                                   edge_clearance_px=(old.edge_clearance_px
-                                                     if old else 39.0),
+                                                     if old else 1.0),
                                   zones=old.zones if old else [])
         try:
             self._roi_cfg.validate(self._config_frame_size())
@@ -4104,6 +4159,7 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         if self._roi_cfg and self._roi_cfg.zones:
             z = self._roi_cfg.zones.pop()
+            self._zone_ref_shift.pop(str(z.name), None)
             if z.kind == "substrate":
                 self._sync_substrate_zone()   # 撤销衬底标注：恢复默认可行域
             self.zones_label.setText(f"zones: {len(self._roi_cfg.zones)}")

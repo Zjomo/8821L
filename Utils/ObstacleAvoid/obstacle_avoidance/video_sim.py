@@ -367,15 +367,20 @@ class CameraWorld:
         uncertain = False
         uncertain_reason = ""
         if latest is not None:
-            if latest.substrate_polygon and not self.substrate_manual:
-                # 手动『衬底区域』标注优先：用户显式划定可行域时不再被
-                # 自动识别的衬底轮廓覆盖
-                recognizer = getattr(self.pipeline, "recognizer", None)
+            recognizer = getattr(self.pipeline, "recognizer", None)
+            measured = getattr(latest, "substrate_polygon", None)
+            # 识别链路给出的是"实测传播"的衬底多边形（手动多边形 + 配准实测
+            # 样品位移）；它比按命令值累加的模型更贴近真实衬底——真机小步
+            # 死区/回程差会让命令值模型一路漂走（衬底框脱离真实衬底边框）。
+            # 只在识别器确实持有手动多边形时采用：未画衬底时识别器退回整帧
+            # 兜底多边形，那会放大可行域，必须继续用 ROI 内缩默认值。
+            tracks_manual = bool(getattr(recognizer, "manual_substrate_polygon",
+                                         None))
+            if measured and (tracks_manual or not self.substrate_manual):
                 safety_margin = getattr(
                     getattr(recognizer, "config", None),
                     "substrate_safety_margin_px", 5.0)
-                substrate = SubstrateRegion(
-                    latest.substrate_polygon, safety_margin)
+                substrate = SubstrateRegion(measured, safety_margin)
             obstacles.extend(candidate.to_obstacle(index + 1)
                              for index, candidate in enumerate(latest.candidates))
             overall_confidence = latest.overall_confidence
@@ -546,8 +551,10 @@ def build_video_scenario(task: str = "video01", weights: str = WEIGHTS,
             config=AutoRecognitionConfig(
                 minimum_overall_confidence=float(
                     (motor or {}).get("recognition_min_confidence", 0.35)),
-                # 手动『衬底区域』标注时停用自动衬底识别（标注即事实）
-                auto_substrate=substrate_win is None))
+                # 衬底一律手动框定（『衬底区域』，未标注时用 ROI 内缩），
+                # 障碍一律由『障碍区』标注提供：两者都不做自动识别
+                auto_substrate=False,
+                auto_obstacles=False))
     model = CollisionModel(ball_radius_px=25.0)   # 实测球半径 ~25px
     edge = getattr(config, "edge_clearance_px", None) if task == "video03" else None
     planner = GridPlanner(PlanConfig(model=model, edge_clearance_px=edge))

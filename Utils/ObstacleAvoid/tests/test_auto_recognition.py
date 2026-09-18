@@ -1,6 +1,7 @@
 """Offline Alg2 automatic-recognition tests without loading YOLO weights."""
 import cv2
 import numpy as np
+import pytest
 
 from obstacle_avoidance.auto_recognition import (Alg2AutoRecognizer,
                                                   AutoRecognitionConfig,
@@ -123,6 +124,80 @@ def test_beam_detector_excludes_green_ball():
     assert abs(center[0] - 170.0) <= 2.0
     assert abs(center[1] - 80.0) <= 2.0
     assert confidence > 0.4
+
+
+_SUBSTRATE_TEXTURE = np.random.default_rng(3).integers(
+    120, 190, size=(240, 320, 3), dtype=np.uint8)
+
+
+def _textured_frame(shift_x: float, ball_x: float):
+    """有衬底宽谱纹理的帧；球（亮盘）位置可独立于纹理平移设置。"""
+    frame = np.roll(_SUBSTRATE_TEXTURE, int(shift_x), axis=1).copy()
+    cv2.circle(frame, (int(ball_x), 120), 14, (255, 255, 255), -1)
+    return frame
+
+
+def _ball_mask(*centers):
+    mask = np.zeros((240, 320), np.uint8)
+    for x, y in centers:
+        cv2.circle(mask, (int(x), int(y)), 20, 255, -1)
+    return mask
+
+
+def test_registration_ignores_moving_ball_and_tracks_substrate():
+    """球相对样品运动时，配准必须给出样品（衬底）位移，而不是跟着球走。"""
+    from obstacle_avoidance.auto_recognition import GlobalMotionEstimator
+
+    estimator = GlobalMotionEstimator(analysis_width=320)
+    estimator.update(_textured_frame(0.0, 80.0), _ball_mask((80.0, 120.0)))
+    # 纹理左移 12px（样品移动），球反而右移 30px（光镊相对样品拖动）
+    shift, confidence = estimator.update(_textured_frame(-12.0, 110.0),
+                                         _ball_mask((110.0, 120.0)))
+    assert confidence > 0.0
+    assert shift[0] == pytest.approx(-12.0, abs=3.0)
+    assert shift[1] == pytest.approx(0.0, abs=2.0)
+
+
+def test_registration_stays_still_when_only_ball_moves():
+    """样品不动、只有球动（光镊拖动）：衬底框不得跟着球跑。"""
+    from obstacle_avoidance.auto_recognition import GlobalMotionEstimator
+
+    faint = np.random.default_rng(11).integers(140, 161, size=(240, 320, 3),
+                                              dtype=np.uint8)
+
+    def frame(ball_x):
+        img = faint.copy()
+        cv2.circle(img, (int(ball_x), 120), 14, (255, 255, 255), -1)
+        return img
+
+    estimator = GlobalMotionEstimator(analysis_width=320)
+    estimator.update(frame(80.0), _ball_mask((80.0, 120.0)))
+    shift, confidence = estimator.update(frame(110.0), _ball_mask((110.0, 120.0)))
+    assert confidence > 0.0
+    assert abs(shift[0]) <= 5.0
+    assert abs(shift[1]) <= 5.0
+
+
+def test_manual_substrate_polygon_wins_over_stale_seed():
+    """画框后换用手动多边形：框落在用户画的位置（按累计位移反算参考帧）。"""
+    recognizer = Alg2AutoRecognizer(
+        particle_detector=_FixedParticleDetector([((80.0, 100.0), 12.0, 0.96)]),
+        config=AutoRecognitionConfig(auto_substrate=False))
+    recognizer.process(_microscope_frame(), frame_id=0)
+    recognizer.process(_textured_frame(-12.0, 80.0), frame_id=1)
+    accumulated = recognizer.motion.cumulative
+    assert accumulated[0] != 0.0
+
+    drawn = [(20.0, 40.0), (200.0, 40.0), (200.0, 160.0), (20.0, 160.0)]
+    recognizer.set_manual_substrate(drawn)
+    result = recognizer.process(_textured_frame(-12.0, 80.0), frame_id=2)
+    polygon = result.substrate_polygon
+    assert len(polygon) == 4
+    # 顶点可能有 1px 光栅化误差，按中心/范围核对：框必须落在用户画的位置
+    assert (sum(p[0] for p in polygon) / 4,
+            sum(p[1] for p in polygon) / 4) == pytest.approx((110.0, 100.0),
+                                                            abs=1.5)
+    assert result.substrate_confidence == pytest.approx(1.0)
 
 
 def test_controller_pipeline_exposes_workspace_contract():

@@ -217,6 +217,29 @@ def test_auto_recognition_pipeline_passes_manual_substrate():
     assert pipe.recognizer.config.auto_substrate is False
 
 
+def test_manual_substrate_and_obstacles_disable_auto_recognition():
+    """衬底/障碍均为手动框定：关闭自动识别后不再产出障碍候选。"""
+    import numpy as np
+
+    from obstacle_avoidance.auto_recognition import (Alg2AutoRecognizer,
+                                                     AutoRecognitionConfig)
+
+    class _Detector:
+        def detect_particles(self, frame):
+            return [((60.0, 60.0), 10.0, 0.9)], []
+
+    frame = np.full((120, 160, 3), 150, np.uint8)
+    polygon = [(10.0, 10.0), (150.0, 10.0), (150.0, 110.0), (10.0, 110.0)]
+    manual = AutoRecognitionConfig(auto_substrate=False, auto_obstacles=False)
+    result = Alg2AutoRecognizer(
+        particle_detector=_Detector(), manual_substrate_polygon=polygon,
+        config=manual).process(frame, 0)
+    assert result.candidates == []
+    assert set(result.substrate_polygon) == set(polygon)
+    # 默认（离线分析）仍保留自动障碍候选能力
+    assert AutoRecognitionConfig().auto_obstacles is True
+
+
 # ---------------- CameraWorld（frame_source 可注入）
 def test_camera_world_crop_and_snapshot():
     from obstacle_avoidance.vision import ClassicDetector, VisionPipeline
@@ -236,6 +259,46 @@ def test_camera_world_crop_and_snapshot():
     assert len(snap.particles) >= 1
     p = min(snap.particles, key=lambda p: math.dist(p.position_px, (250, 150)))
     assert math.dist(p.position_px, (250, 150)) <= 6
+
+
+def test_camera_world_prefers_measured_substrate_from_recognizer():
+    """运行期衬底以识别链路的『实测传播』多边形为准。
+
+    真机小步死区/回程差会让"按命令值累加"的模型一路漂走；识别链路按配准
+    实测位移传播手动衬底多边形，快照必须采用它（逼近期望：框贴合真实衬底）。
+    """
+    from obstacle_avoidance.auto_recognition import (AutoRecognitionConfig,
+                                                     AutoRecognitionPipeline)
+
+    class _NoParticles:
+        min_confidence = 0.45
+
+        def detect_particles(self, _frame, expected_radius_px=None):
+            return [], []
+
+    texture = np.random.default_rng(5).integers(120, 190,
+                                                size=(300, 400, 3),
+                                                dtype=np.uint8)
+    frames = [np.roll(texture, shift, axis=1).copy() for shift in (0, -12)]
+    manual = [(20.0, 20.0), (280.0, 20.0), (280.0, 220.0), (20.0, 220.0)]
+    world = video_sim.CameraWorld(frame_source=lambda: frames.pop(0),
+                                  window=(300, 240), offset=(0, 0),
+                                  px_per_mm=100.0)
+    world.set_substrate_polygon(manual)
+    pipe = AutoRecognitionPipeline(
+        particle_detector=_NoParticles(), manual_substrate_polygon=manual,
+        config=AutoRecognitionConfig(auto_substrate=False))
+    world.bind_pipeline(pipe)
+    pipe.process(world.render(), 1)
+    pipe.process(world.render(), 2)          # 样品实测左移 12px
+
+    snap = world.snapshot()
+    polygon = snap.substrate.polygon
+    centroid_x = sum(p[0] for p in polygon) / len(polygon)
+    # 命令值模型（world.substrate）没动；快照采用实测多边形 => 中心左移 12px
+    assert centroid_x == pytest.approx(138.0, abs=3.0)
+    assert world.substrate.polygon[0][0] == pytest.approx(20.0)
+    world.close()
 
 
 import cv2  # noqa: E402
